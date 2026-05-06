@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Tester - Arcade</title>
+    <style>
+        /* Shared Theme */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #100b16, #200f33, #150921); 
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden; user-select: none;
+        }
+
+        /* Header */
+        header { 
+            padding: 15px 30px; background: rgba(0,0,0,0.8); z-index: 10;
+            border-bottom: 2px solid #1dd1a1; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 15px rgba(29, 209, 161, 0.2);
+        }
+        .back-btn {
+            background: transparent; border: 2px solid #1dd1a1; color: #1dd1a1; padding: 8px 20px;
+            border-radius: 20px; text-decoration: none; font-weight: bold; transition: 0.3s;
+        }
+        .back-btn:hover { background: #1dd1a1; color: #000; box-shadow: 0 0 10px #1dd1a1; }
+
+        /* Main Game Area */
+        .game-wrapper {
+            display: flex; flex: 1; padding: 20px; gap: 20px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box;
+        }
+
+        /* Left: Settings & Stats Dashboard */
+        .dashboard {
+            width: 350px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 25px;
+            border: 1px solid rgba(29, 209, 161, 0.3); display: flex; flex-direction: column; gap: 20px;
+        }
+        .dashboard h3 { margin: 0; color: #48dbfb; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        
+        /* Mode Selectors */
+        .mode-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid transparent; color: white; padding: 12px;
+            border-radius: 10px; cursor: pointer; transition: 0.2s; font-weight: bold; font-size: 1em; width: 100%;
+        }
+        .mode-btn:hover { background: rgba(255,255,255,0.2); }
+        .mode-btn.active { background: #1dd1a1; color: #000; box-shadow: 0 0 15px rgba(29,209,161,0.5); }
+
+        /* Stats Panel */
+        .stat-box { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; border-left: 4px solid #feca57; }
+        .stat-label { font-size: 0.9em; color: #a4b0be; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #feca57; margin-top: 5px; }
+        
+        .history-list { list-style: none; padding: 0; margin: 0; }
+        .history-list li { padding: 8px 0; border-bottom: 1px solid #333; display: flex; justify-content: space-between; color: #c8d6e5; }
+        .history-list li:last-child { border-bottom: none; }
+
+        /* Right: The Reaction Pad */
+        .reaction-pad {
+            flex: 1; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: background-color 0.1s; border: 2px solid rgba(255,255,255,0.1);
+            background: #2f3640; /* Default Idle Color */
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+        }
+        .pad-icon { font-size: 5em; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
+        .pad-text { font-size: 3em; font-weight: bold; text-shadow: 2px 2px 10px rgba(0,0,0,0.5); text-align: center; }
+        .pad-subtext { font-size: 1.5em; opacity: 0.8; margin-top: 10px; text-shadow: 1px 1px 5px rgba(0,0,0,0.5); }
+
+        /* Status Colors */
+        .status-idle { background: #2f3640; color: #fff; }
+        .status-waiting { background: #ee5253; color: #fff; } /* Red */
+        .status-ready { background: #10ac84; color: #fff; } /* Green */
+        .status-early { background: #feca57; color: #000; } /* Yellow */
+        .status-result { background: #341f97; color: #fff; } /* Blue */
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn">⬅ Back to Hub</a>
+        <h2 style="margin:0; color:#fff;">Reflex Lab</h2>
+        <div style="width: 100px;"></div>
+    </header>
+
+    <div class="game-wrapper">
+        
+        <!-- Left Sidebar: Controls & Stats -->
+        <div class="dashboard">
+            <div>
+                <h3>Game Mode</h3>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button class="mode-btn active" id="btn-classic" onclick="setMode('classic')">Classic (1x)</button>
+                    <button class="mode-btn" id="btn-tourney" onclick="setMode('tourney')">Tourney (Avg 5)</button>
+                </div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-label">Global Best Time</div>
+                <div class="stat-value" id="bestTimeDisplay">--- ms</div>
+            </div>
+            
+            <div class="stat-box" style="border-left-color: #48dbfb;">
+                <div class="stat-label">Your Reflex Rank</div>
+                <div class="stat-value" id="rankDisplay" style="color: #48dbfb; font-size: 1.5em;">Unranked</div>
+            </div>
+
+            <div>
+                <h3>Recent Attempts</h3>
+                <ul class="history-list" id="historyList">
+                    <li><span>No attempts yet.</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Main Area: The Interactive Pad -->
+        <div class="reaction-pad status-idle" id="pad">
+            <div class="pad-icon" id="padIcon">⚡</div>
+            <div class="pad-text" id="padText">Click to Start</div>
+            <div class="pad-subtext" id="padSubText">Wait for the green screen.</div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Game Variables ---
+        let state = 'idle'; // idle, waiting, ready, result, early
+        let mode = 'classic'; // classic, tourney
+        let startTime = 0;
+        let timeoutId = null;
+        let recentScores = [];
+        let tourneyScores = [];
+        
+        // --- Hub Data Load ---
+        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || { clicker: 0, reaction: 9999, ttt: 0 };
+        
+        const bestTimeDisplay = document.getElementById('bestTimeDisplay');
+        if (globalScores.reaction !== 9999) {
+            bestTimeDisplay.innerText = globalScores.reaction + ' ms';
+        }
+
+        // --- DOM Elements ---
+        const pad = document.getElementById('pad');
+        const padIcon = document.getElementById('padIcon');
+        const padText = document.getElementById('padText');
+        const padSubText = document.getElementById('padSubText');
+        
+        // --- Mode Switching ---
+        function setMode(newMode) {
+            if (state === 'waiting' || state === 'ready') return; // Don't switch mid-game
+            
+            mode = newMode;
+            document.getElementById('btn-classic').classList.remove('active');
+            document.getElementById('btn-tourney').classList.remove('active');
+            document.getElementById(`btn-${newMode}`).classList.add('active');
+            
+            tourneyScores = [];
+            resetPad();
+            
+            if (mode === 'tourney') {
+                padSubText.innerText = 'Complete 5 rounds for an average score.';
+            }
+        }
+
+        // --- Core Game Logic ---
+        pad.addEventListener('mousedown', handleClick);
+
+        function handleClick() {
+            if (state === 'idle' || state === 'result' || state === 'early') {
+                startRound();
+            } else if (state === 'waiting') {
+                triggerEarly();
+            } else if (state === 'ready') {
+                triggerSuccess();
+            }
+        }
+
+        function setPadState(newState, icon, text, subtext, statusClass) {
+            state = newState;
+            padIcon.innerText = icon;
+            padText.innerText = text;
+            padSubText.innerText = subtext;
+            
+            // Clean up old classes and add new
+            pad.className = 'reaction-pad ' + statusClass;
+        }
+
+        function resetPad() {
+            setPadState('idle', '⚡', 'Click to Start', 'Wait for the green screen.', 'status-idle');
+        }
+
+        function startRound() {
+            let subTxt = mode === 'tourney' ? `Round ${tourneyScores.length + 1} of 5` : 'Do not click yet...';
+            setPadState('waiting', '🛑', 'Wait for Green...', subTxt, 'status-waiting');
+            
+            // Random delay between 1500ms and 5000ms
+            const delay = Math.floor(Math.random() * 3500) + 1500;
+            
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                setPadState('ready', '🟢', 'CLICK NOW!', '', 'status-ready');
+                startTime = Date.now();
+            }, delay);
+        }
+
+        function triggerEarly() {
+            clearTimeout(timeoutId);
+            setPadState('early', '⚠️', 'Too Early!', 'You clicked before it turned green. Click to try again.', 'status-early');
+        }
+
+        function triggerSuccess() {
+            const reactionTime = Date.now() - startTime;
+            
+            if (mode === 'classic') {
+                finishRound(reactionTime);
+                setPadState('result', '⏱️', `${reactionTime} ms`, 'Click to try again.', 'status-result');
+            } else if (mode === 'tourney') {
+                tourneyScores.push(reactionTime);
+                if (tourneyScores.length >= 5) {
+                    // Calculate Average
+                    const sum = tourneyScores.reduce((a, b) => a + b, 0);
+                    const avg = Math.floor(sum / 5);
+                    finishRound(avg);
+                    setPadState('result', '🏆', `Average: ${avg} ms`, 'Tournament Complete! Click to restart.', 'status-result');
+                    tourneyScores = []; // Reset for next tourney
+                } else {
+                    setPadState('result', '⏱️', `${reactionTime} ms`, `Round ${tourneyScores.length} complete. Click to continue.`, 'status-result');
+                }
+            }
+        }
+
+        // --- Stats & Leaderboard Integration ---
+        function finishRound(finalTime) {
+            // Update Rank
+            updateRank(finalTime);
+            
+            // Update History
+            recentScores.unshift(finalTime);
+            if (recentScores.length > 5) recentScores.pop();
+            updateHistoryUI();
+
+            // Save to Global Leaderboard if it's a new record
+            if (finalTime < globalScores.reaction || globalScores.reaction === 9999) {
+                globalScores.reaction = finalTime;
+                localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
+                bestTimeDisplay.innerText = finalTime + ' ms';
+                bestTimeDisplay.style.color = '#1dd1a1'; // Highlight new record
+                
+                // Add flash effect for new high score
+                setTimeout(() => bestTimeDisplay.style.color = '#feca57', 1000);
+            }
+        }
+
+        function updateRank(time) {
+            const rankDisplay = document.getElementById('rankDisplay');
+            let rank = "";
+            let color = "";
+
+            if (time < 180) { rank = "Alien 👽"; color = "#ff4757"; }
+            else if (time < 220) { rank = "Pro Gamer 🎮"; color = "#ff9f43"; }
+            else if (time < 280) { rank = "Sharpshooter 🎯"; color = "#1dd1a1"; }
+            else if (time < 350) { rank = "Average Joe 🧍"; color = "#48dbfb"; }
+            else { rank = "Sleepy Sloth 🦥"; color = "#a4b0be"; }
+
+            rankDisplay.innerText = rank;
+            rankDisplay.style.color = color;
+        }
+
+        function updateHistoryUI() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = ''; // Clear current
+            
+            recentScores.forEach((score, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>Attempt ${recentScores.length - index}</span> <strong>${score} ms</strong>`;
+                list.appendChild(li);
+            });
+        }
+
+    </script>
+</body>
+</html>

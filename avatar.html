@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Shop - Megaplex</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #100b16, #200f33, #150921); 
+            color: #fff; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; 
+        }
+        header { 
+            padding: 15px 30px; background: rgba(0,0,0,0.8); z-index: 10;
+            border-bottom: 2px solid #feca57; display: flex; justify-content: space-between; align-items: center;
+        }
+        .back-btn {
+            background: transparent; border: 2px solid #feca57; color: #feca57; padding: 8px 20px;
+            border-radius: 20px; text-decoration: none; font-weight: bold; transition: 0.3s;
+        }
+        .back-btn:hover { background: #feca57; color: #000; box-shadow: 0 0 10px #feca57; }
+        
+        .token-display { font-size: 1.5em; font-weight: bold; color: #feca57; }
+        
+        .shop-wrapper {
+            display: flex; flex: 1; padding: 20px; gap: 30px; max-width: 1200px; margin: 0 auto; width: 100%;
+            justify-content: center; flex-wrap: wrap;
+        }
+
+        /* --- Avatar Viewer --- */
+        .avatar-panel {
+            width: 350px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 30px;
+            border: 1px solid rgba(254, 202, 87, 0.3); display: flex; flex-direction: column; align-items: center;
+        }
+        
+        .avatar-stage {
+            width: 250px; height: 250px; border-radius: 20px; border: 4px solid #fff;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
+            background: #2f3640;
+            overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+            transition: background 0.3s;
+        }
+
+        /* The Robot Character */
+        .bot-head {
+            width: 100px; height: 80px; background: #c8d6e5; border-radius: 15px;
+            position: relative; display: flex; justify-content: center; align-items: center; z-index: 2;
+            transition: background 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .bot-eyes {
+            width: 60px; height: 30px; background: #000; border-radius: 5px;
+            display: flex; justify-content: space-around; align-items: center; padding: 0 5px;
+        }
+        .eye { width: 15px; height: 15px; background: #00d2d3; border-radius: 50%; box-shadow: 0 0 10px #00d2d3; }
+        
+        .bot-body {
+            width: 80px; height: 70px; background: #a4b0be; border-radius: 10px;
+            margin-top: 5px; position: relative; z-index: 1; transition: background 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        /* Fixed Hat Positioning */
+        .bot-hat {
+            position: absolute; top: -45px; left: 50%; transform: translateX(-50%);
+            font-size: 3.5em; z-index: 3; transition: 0.3s; line-height: 1;
+        }
+
+        /* Username Controls */
+        .username-container {
+            margin-top: 25px; width: 100%; display: flex; flex-direction: column; gap: 10px;
+        }
+        .username-input {
+            background: rgba(0,0,0,0.6); border: 2px solid #00d2d3; color: #fff;
+            padding: 12px; border-radius: 8px; font-size: 1.1em; text-align: center;
+            font-family: inherit; font-weight: bold;
+        }
+        .username-input:focus { outline: none; box-shadow: 0 0 10px #00d2d3; }
+        .username-btn {
+            background: #00d2d3; color: #000; border: none; padding: 10px; border-radius: 8px; 
+            font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1.1em;
+        }
+        .username-btn:hover { background: #fff; box-shadow: 0 0 15px #00d2d3; }
+
+        /* --- Shop Inventory --- */
+        .inventory-panel {
+            flex: 1; max-width: 650px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 25px;
+            border: 1px solid rgba(254, 202, 87, 0.3); overflow-y: auto; height: 70vh;
+        }
+        .inventory-panel h3 { margin: 0 0 15px 0; color: #feca57; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        
+        .shop-item {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+            padding: 15px; text-align: center; transition: 0.2s; position: relative;
+        }
+        .shop-item:hover { background: rgba(255,255,255,0.1); border-color: #feca57; transform: translateY(-3px); }
+        
+        .item-icon { font-size: 2.5em; margin-bottom: 10px; display: inline-block; width: 50px; height: 50px; border-radius: 10px; }
+        .item-name { font-weight: bold; color: #fff; margin-bottom: 5px; }
+        .item-price { color: #feca57; font-weight: bold; margin-bottom: 10px; }
+        .buy-btn {
+            background: #feca57; color: #000; border: none; padding: 8px 15px; font-weight: bold; 
+            border-radius: 8px; cursor: pointer; transition: 0.2s; width: 100%;
+        }
+        .buy-btn:hover { transform: scale(1.05); }
+        .buy-btn.equipped { background: #1dd1a1; color: #000; }
+        .buy-btn.locked { background: #333; color: #888; cursor: not-allowed; }
+        .buy-btn.locked:hover { transform: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn">⬅ Back to Hub</a>
+        <h2 style="margin:0; color:#fff;">Avatar Shop</h2>
+        <div class="token-display">🎟️ <span id="tokenUI">0</span></div>
+    </header>
+
+    <div class="shop-wrapper">
+        
+        <!-- Left: Avatar Preview -->
+        <div class="avatar-panel">
+            <h3 style="color: #fff; margin-top:0;">Your Cyber-Bot</h3>
+            <div class="avatar-stage" id="stageBG">
+                <div class="bot-head" id="botHead">
+                    <!-- Moved Hat INSIDE head for proper relative positioning -->
+                    <div class="bot-hat" id="botHat"></div>
+                    <div class="bot-eyes">
+                        <div class="eye"></div><div class="eye"></div>
+                    </div>
+                </div>
+                <div class="bot-body" id="botBody"></div>
+            </div>
+
+            <div class="username-container">
+                <input type="text" id="usernameInput" class="username-input" placeholder="Enter ID Name..." maxlength="16">
+                <button class="username-btn" onclick="saveUsername()" id="saveUserBtn">💾 Register ID</button>
+            </div>
+
+            <p style="color: #a4b0be; text-align: center; font-size: 0.9em; margin-top: 20px;">
+                Equip items to customize your look.<br>Your avatar saves automatically!
+            </p>
+        </div>
+
+        <!-- Right: The Store -->
+        <div class="inventory-panel">
+            <h3>🎨 Chassis Colors</h3>
+            <div class="shop-grid" id="color-shop"></div>
+
+            <h3>🎩 Hats & Accessories</h3>
+            <div class="shop-grid" id="hat-shop"></div>
+
+            <h3>🖼️ Backgrounds</h3>
+            <div class="shop-grid" id="bg-shop"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Data Management ---
+        let tokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+        document.getElementById('tokenUI').innerText = tokens;
+
+        // Load Username
+        let savedName = localStorage.getItem('megaplexUsername') || '';
+        document.getElementById('usernameInput').value = savedName;
+
+        // Default Avatar Data
+        let avatarData = JSON.parse(localStorage.getItem('avatarData')) || {
+            unlocked: ['color_default', 'hat_none', 'bg_default'],
+            equipped: { color: 'color_default', hat: 'hat_none', bg: 'bg_default' }
+        };
+
+        // --- Expanded Database of Items ---
+        const shopDatabase = {
+            colors: [
+                { id: 'color_default', name: 'Standard Grey', price: 0, hex: '#c8d6e5', bodyHex: '#a4b0be' },
+                { id: 'color_red', name: 'Crimson Fury', price: 100, hex: '#ff4757', bodyHex: '#c0392b' },
+                { id: 'color_gold', name: 'Golden Plating', price: 250, hex: '#feca57', bodyHex: '#f39c12' },
+                { id: 'color_pink', name: 'Neon Pink', price: 350, hex: '#ff9ff3', bodyHex: '#f368e0' },
+                { id: 'color_green', name: 'Toxic Slime', price: 400, hex: '#1dd1a1', bodyHex: '#10ac84' },
+                { id: 'color_cyber', name: 'Cyber Blue', price: 500, hex: '#00d2d3', bodyHex: '#0984e3' },
+                { id: 'color_ghost', name: 'Ghost White', price: 800, hex: '#f5f6fa', bodyHex: '#dcdde1' },
+                { id: 'color_void', name: 'Void Black', price: 1000, hex: '#2f3640', bodyHex: '#1e272e' }
+            ],
+            hats: [
+                { id: 'hat_none', name: 'No Hat', price: 0, icon: '' },
+                { id: 'hat_cap', name: 'Baseball Cap', price: 150, icon: '🧢' },
+                { id: 'hat_headphones', name: 'Headphones', price: 300, icon: '🎧' },
+                { id: 'hat_cowboy', name: 'Space Cowboy', price: 450, icon: '🤠' },
+                { id: 'hat_ninja', name: 'Stealth Bandana', price: 550, icon: '🥷' },
+                { id: 'hat_pirate', name: 'Pirate Captain', price: 650, icon: '🏴‍☠️' },
+                { id: 'hat_vr', name: 'VR Goggles', price: 750, icon: '🥽' },
+                { id: 'hat_crown', name: 'Royal Crown', price: 800, icon: '👑' },
+                { id: 'hat_halo', name: 'Cyber Halo', price: 1000, icon: '👼' },
+                { id: 'hat_alien', name: 'Alien Symbiote', price: 1500, icon: '👾' }
+            ],
+            bgs: [
+                { id: 'bg_default', name: 'Hangar Bay', price: 0, css: '#2f3640' },
+                { id: 'bg_matrix', name: 'The Mainframe', price: 400, css: 'repeating-linear-gradient(0deg, #000, #000 10px, #052c11 10px, #052c11 20px)' },
+                { id: 'bg_sunset', name: 'Vaporwave', price: 600, css: 'linear-gradient(180deg, #2c3e50, #e74c3c, #f1c40f)' },
+                { id: 'bg_synth', name: 'Synth Grid', price: 800, css: 'linear-gradient(0deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)' },
+                { id: 'bg_lava', name: 'Lava Pit', price: 1000, css: 'radial-gradient(circle at bottom, #eb4d4b, #130f40)' },
+                { id: 'bg_galaxy', name: 'Deep Space', price: 1200, css: 'radial-gradient(circle at center, #341f97, #000)' }
+            ]
+        };
+
+        // --- Username Logic ---
+        function saveUsername() {
+            const input = document.getElementById('usernameInput').value.trim();
+            const btn = document.getElementById('saveUserBtn');
+            
+            if(input) {
+                localStorage.setItem('megaplexUsername', input);
+                btn.innerText = "✔ Saved!";
+                btn.style.background = "#1dd1a1";
+                setTimeout(() => {
+                    btn.innerText = "💾 Register ID";
+                    btn.style.background = "#00d2d3";
+                }, 2000);
+            }
+        }
+
+        // --- Render UI ---
+        function renderShop() {
+            renderCategory('colors', 'color-shop');
+            renderCategory('hats', 'hat-shop');
+            renderCategory('bgs', 'bg-shop');
+            renderAvatar();
+        }
+
+        function renderCategory(categoryKey, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            shopDatabase[categoryKey].forEach(item => {
+                const isUnlocked = avatarData.unlocked.includes(item.id);
+                const isEquipped = Object.values(avatarData.equipped).includes(item.id);
+                const canAfford = tokens >= item.price;
+                
+                let btnHTML = '';
+                if (isEquipped) {
+                    btnHTML = `<button class="buy-btn equipped">Equipped ✔</button>`;
+                } else if (isUnlocked) {
+                    btnHTML = `<button class="buy-btn" onclick="equipItem('${categoryKey}', '${item.id}')">Equip</button>`;
+                } else if (canAfford) {
+                    btnHTML = `<button class="buy-btn" onclick="buyItem('${item.id}', ${item.price})">Buy (${item.price} 🎟️)</button>`;
+                } else {
+                    btnHTML = `<button class="buy-btn locked">Locked (${item.price} 🎟️)</button>`;
+                }
+
+                // Render the icon correctly based on category
+                let iconHTML = '';
+                if (categoryKey === 'colors') {
+                    iconHTML = `<div class="item-icon" style="background: ${item.hex}; border: 2px solid ${item.bodyHex};"></div>`;
+                } else if (categoryKey === 'hats') {
+                    iconHTML = `<div class="item-icon" style="font-size: 1.5em; line-height: 50px;">${item.icon || '❌'}</div>`;
+                } else if (categoryKey === 'bgs') {
+                    iconHTML = `<div class="item-icon" style="background: ${item.css}; border: 2px solid #fff;"></div>`;
+                }
+
+                const div = document.createElement('div');
+                div.className = 'shop-item';
+                div.innerHTML = `
+                    ${iconHTML}
+                    <div class="item-name">${item.name}</div>
+                    ${btnHTML}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // --- Render Avatar Graphics ---
+        function renderAvatar() {
+            const curColor = shopDatabase.colors.find(c => c.id === avatarData.equipped.color);
+            const curHat = shopDatabase.hats.find(h => h.id === avatarData.equipped.hat);
+            const curBg = shopDatabase.bgs.find(b => b.id === avatarData.equipped.bg);
+
+            document.getElementById('botHead').style.background = curColor.hex;
+            document.getElementById('botBody').style.background = curColor.bodyHex;
+            document.getElementById('botHat').innerText = curHat.icon;
+            document.getElementById('stageBG').style.background = curBg.css;
+        }
+
+        // --- Logic ---
+        function buyItem(id, price) {
+            if (tokens >= price) {
+                tokens -= price;
+                avatarData.unlocked.push(id);
+                
+                // Save
+                localStorage.setItem('megaplexTokens', tokens);
+                localStorage.setItem('avatarData', JSON.stringify(avatarData));
+                
+                document.getElementById('tokenUI').innerText = tokens;
+                renderShop();
+            }
+        }
+
+        function equipItem(categoryKey, id) {
+            const slotMap = { 'colors': 'color', 'hats': 'hat', 'bgs': 'bg' };
+            const slot = slotMap[categoryKey];
+            
+            avatarData.equipped[slot] = id;
+            localStorage.setItem('avatarData', JSON.stringify(avatarData));
+            renderShop();
+        }
+
+        // Boot
+        renderShop();
+    </script>
+</body>
+</html>

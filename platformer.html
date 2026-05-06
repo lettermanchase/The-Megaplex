@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Jumper - Arcade</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #0b1016, #0f2033, #091521); 
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden; user-select: none;
+        }
+
+        header { 
+            padding: 15px 30px; background: rgba(0,0,0,0.8); z-index: 10;
+            border-bottom: 2px solid #00d2d3; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 210, 211, 0.2); position: relative;
+        }
+        .back-btn {
+            background: transparent; border: 2px solid #00d2d3; color: #00d2d3; padding: 8px 20px;
+            border-radius: 20px; text-decoration: none; font-weight: bold; transition: 0.3s;
+        }
+        .back-btn:hover { background: #00d2d3; color: #000; box-shadow: 0 0 10px #00d2d3; }
+
+        .header-controls { display: flex; gap: 15px; align-items: center; }
+        .sound-btn {
+            background: rgba(0,0,0,0.8); border: 2px solid #48dbfb; color: #48dbfb;
+            font-size: 1.5em; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            transition: 0.3s; display: flex; align-items: center; justify-content: center;
+        }
+        .sound-btn.muted { border-color: #ff4757; color: #ff4757; }
+
+        .game-wrapper {
+            display: flex; flex: 1; padding: 20px; gap: 30px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;
+            justify-content: center; align-items: flex-start; margin-top: 10px;
+        }
+
+        .dashboard {
+            width: 280px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 25px;
+            border: 1px solid rgba(0, 210, 211, 0.3); display: flex; flex-direction: column; gap: 15px;
+        }
+        .dashboard h3 { margin: 0; color: #00d2d3; border-bottom: 1px solid #333; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;}
+
+        .stat-box { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 10px; border-left: 4px solid #00d2d3; }
+        .stat-label { font-size: 0.9em; color: #a4b0be; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #00d2d3; margin-top: 5px; text-shadow: 0 0 10px rgba(0,210,211,0.4); }
+
+        .controls-info { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; font-size: 0.85em; color: #c8d6e5; line-height: 1.6; }
+        .controls-info span { color: #feca57; font-weight: bold; }
+
+        .canvas-container {
+            position: relative; padding: 10px; background: rgba(0,0,0,0.6); border-radius: 15px;
+            border: 2px solid #333; box-shadow: 0 0 30px rgba(0,0,0,0.8); transition: border-color 0.3s;
+        }
+        .canvas-container.playing { border-color: #00d2d3; box-shadow: 0 0 30px rgba(0,210,211,0.2); }
+        .canvas-container.hard-mode { border-color: #e67e22; box-shadow: 0 0 30px rgba(230, 126, 34, 0.4); }
+        .canvas-container.damage { border-color: #ff4757; animation: shake 0.3s ease; box-shadow: 0 0 30px rgba(255,71,87,0.6); }
+
+        canvas { background: #050a0f; border-radius: 8px; display: block; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 20; opacity: 0; pointer-events: none; transition: 0.3s; border-radius: 10px;
+        }
+        .overlay.active { opacity: 1; pointer-events: all; }
+        
+        .btn-start { background: #00d2d3; color: #000; border: none; padding: 15px 30px; font-size: 1.3em; font-weight: bold; border-radius: 30px; cursor: pointer; text-transform: uppercase; transition: 0.2s;}
+        .btn-start:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0,210,211,0.6); }
+        .btn-start:focus { outline: none; } 
+
+        .lvl-btn {
+            background: rgba(0,0,0,0.6); border: 2px solid #00d2d3; color: #00d2d3; width: 55px; height: 55px;
+            font-size: 1.4em; font-weight: bold; border-radius: 10px; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .lvl-btn:hover { background: #00d2d3; color: #000; transform: scale(1.1); box-shadow: 0 0 15px rgba(0,210,211,0.5);}
+        .lvl-btn.hard { border-color: #e67e22; color: #e67e22; }
+        .lvl-btn.hard:hover { background: #e67e22; color: #000; box-shadow: 0 0 15px rgba(230,126,34,0.5);}
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn" onclick="sfx.click()">⬅ Back to Hub</a>
+        <h2 style="margin:0; color:#fff;">Neon Jumper</h2>
+        <div class="header-controls">
+            <div style="color: #a4b0be; margin-right: 15px;">Fewest Deaths (Full Run): <span id="bestScoreUI" style="color:#1dd1a1; font-weight:bold;">-</span></div>
+            <button id="soundToggleBtn" class="sound-btn" onclick="toggleSound()">🔊</button>
+        </div>
+    </header>
+
+    <div class="game-wrapper">
+        <div class="dashboard">
+            <h3>Mission Status</h3>
+            
+            <div class="stat-box" style="border-left-color: #f39c12;">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="levelUI" style="color:#f39c12;">1 / 20</div>
+            </div>
+
+            <div class="stat-box" style="border-left-color: #f1c40f;">
+                <div class="stat-label">Coins Required</div>
+                <div class="stat-value" id="coinUI" style="color:#f1c40f;">0 / 0</div>
+            </div>
+
+            <div class="stat-box" style="border-left-color: #ff4757;">
+                <div class="stat-label">Total Deaths</div>
+                <div class="stat-value" id="scoreUI" style="color: #ff4757;">0</div>
+            </div>
+
+            <div class="controls-info">
+                <strong>[A/D]</strong> or <strong>[Arrows]</strong> to Move.<br>
+                <strong>[W]</strong>, <strong>[Up]</strong>, or <span>[Space]</span> to Jump.<br><br>
+                ✨ <strong>Double Jump:</strong> Press jump again in mid-air.<br>
+                ⭐ <strong>Powerup (I):</strong> 5s Invincibility!<br>
+                🤖 <strong>Combat:</strong> Jump on Bots to destroy them.<br>
+                🚪 <strong>Exit:</strong> Collect all Coins to unlock!
+            </div>
+        </div>
+
+        <div>
+            <div class="canvas-container" id="canvasWrapper">
+                <canvas id="gameCanvas" width="800" height="480"></canvas>
+                
+                <div class="overlay active" id="overlay">
+                    
+                    <!-- MAIN MENU SCREEN -->
+                    <div id="mainScreen" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                        <h1 id="overlayTitle" style="font-size: 4em; margin: 0; color: #00d2d3; text-shadow: 0 0 20px rgba(0,210,211,0.5);">NEON JUMPER</h1>
+                        <p id="overlaySub" style="font-size: 1.2em; color: #a4b0be; margin-top: 10px;">Parkour through the 20-Level mainframe.</p>
+                        
+                        <div style="display: flex; gap: 15px; margin-top: 25px;">
+                            <button class="btn-start" id="startBtn" onclick="startLevel(false)">Start Game</button>
+                            <button class="btn-start" id="selectLvlBtn" style="background: transparent; border: 2px solid #00d2d3; color: #00d2d3;" onclick="showLevelSelect()">Levels</button>
+                        </div>
+                    </div>
+
+                    <!-- LEVEL SELECTION SCREEN -->
+                    <div id="levelScreen" style="display: none; flex-direction: column; align-items: center; width: 100%;">
+                        <h2 style="color: #fff; margin: 0 0 20px 0; font-size: 2em; text-shadow: 0 0 10px rgba(255,255,255,0.5);">SELECT LEVEL</h2>
+                        <div id="levelGrid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 25px;">
+                            <!-- Buttons injected by JS -->
+                        </div>
+                        <button class="btn-start" style="background: transparent; border: 2px solid #ff4757; color: #ff4757; padding: 10px 30px; font-size: 1.2em;" onclick="hideLevelSelect()">Cancel</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 🎵 RETRO SOUND ENGINE & MUSIC 🎵 ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        let soundEnabled = localStorage.getItem('megaplexSound') !== 'false';
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('megaplexSound', soundEnabled);
+            document.getElementById('soundToggleBtn').innerText = soundEnabled ? '🔊' : '🔇';
+            if (soundEnabled) { initAudio(); if (isPlaying) music.play(); } 
+            else { music.stop(); }
+        }
+        document.body.addEventListener('click', initAudio, { once: true });
+
+        function playTone(freq, type, duration, vol=0.1, time) {
+            if (!soundEnabled || !audioCtx) return;
+            let t = time !== undefined ? time : audioCtx.currentTime;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, t);
+            gain.gain.setValueAtTime(vol, t); gain.gain.setTargetAtTime(0.0001, t + duration, 0.05);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(t); osc.stop(t + duration + 0.1);
+        }
+
+        const sfx = {
+            click: () => playTone(400, 'square', 0.1, 0.05),
+            jump: () => { 
+                if(!soundEnabled || !audioCtx) return;
+                let t = audioCtx.currentTime;
+                let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(300, t); osc.frequency.exponentialRampToValueAtTime(600, t + 0.1);
+                gain.gain.setValueAtTime(0.1, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(t); osc.stop(t + 0.1);
+            },
+            walljump: () => playTone(800, 'square', 0.1, 0.05),
+            bounce: () => { 
+                if(!soundEnabled || !audioCtx) return;
+                let t = audioCtx.currentTime;
+                let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(150, t); osc.frequency.linearRampToValueAtTime(800, t + 0.2);
+                gain.gain.setValueAtTime(0.1, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(t); osc.stop(t + 0.2);
+            },
+            stomp: () => { playTone(200, 'square', 0.1, 0.1); setTimeout(()=>playTone(400, 'square', 0.1, 0.1), 50); },
+            coin: () => { playTone(900, 'sine', 0.1, 0.05); setTimeout(()=>playTone(1200, 'sine', 0.2, 0.05), 100); },
+            powerup: () => { playTone(400, 'triangle', 0.1, 0.1); setTimeout(()=>playTone(600, 'triangle', 0.1, 0.1), 100); setTimeout(()=>playTone(800, 'triangle', 0.2, 0.1), 200); },
+            unlock: () => { playTone(600, 'sine', 0.2, 0.1); setTimeout(()=>playTone(800, 'sine', 0.4, 0.1), 100); },
+            die: () => { playTone(150, 'sawtooth', 0.3, 0.1); setTimeout(()=>playTone(100, 'sawtooth', 0.4, 0.1), 150); },
+            win: () => { playTone(400, 'square', 0.1, 0.05); setTimeout(()=>playTone(500, 'square', 0.1, 0.05), 150); setTimeout(()=>playTone(600, 'square', 0.3, 0.05), 300); }
+        };
+
+        const music = {
+            isPlaying: false, timerID: null, step: 0, nextNoteTime: 0, tempo: 140, 
+            bass: [130.81, 0, 130.81, 155.56, 0, 155.56, 116.54, 0, 130.81, 0, 130.81, 0, 98.00, 0, 116.54, 0], 
+            playKick: function(time) {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.frequency.setValueAtTime(150, time); osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.1);
+                gain.gain.setValueAtTime(0.2, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(time); osc.stop(time + 0.1);
+            },
+            scheduleNote: function() {
+                let time = this.nextNoteTime;
+                let bFreq = this.bass[this.step % 16];
+                if (bFreq) playTone(bFreq, 'sawtooth', 0.15, 0.06, time);
+                if (this.step % 4 === 0) this.playKick(time);
+            },
+            scheduler: function() {
+                if (!music.isPlaying || !soundEnabled) return;
+                let stepTime = (60 / music.tempo) / 4; 
+                while (music.nextNoteTime < audioCtx.currentTime + 0.1) {
+                    music.scheduleNote();
+                    music.nextNoteTime += stepTime;
+                    music.step++;
+                }
+                music.timerID = setTimeout(() => music.scheduler(), 25);
+            },
+            play: function() {
+                if(this.isPlaying || !soundEnabled) return;
+                initAudio(); this.isPlaying = true; this.step = 0; this.nextNoteTime = audioCtx.currentTime + 0.05; this.scheduler();
+            },
+            stop: function() { this.isPlaying = false; clearTimeout(this.timerID); }
+        };
+
+        // --- Hub Data ---
+        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+        let bestDeaths = globalScores.platformer_deaths;
+        document.getElementById('bestScoreUI').innerText = bestDeaths !== undefined ? bestDeaths : '-';
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+
+        const TILE_SIZE = 32;
+        const COLS = 25;
+        const ROWS = 15;
+
+        // --- THE 20 CUSTOM LEVELS ---
+        const levels = [
+            [ // Level 1
+                "#########################",
+                "#.......................#",
+                "#.......................#",
+                "#.......................#",
+                "#.......................#",
+                "#.......................#",
+                "#.......................#",
+                "#.........***...........#",
+                "#........#####..........#",
+                "#...................E...#",
+                "#.......................#",
+                "#...*.................###",
+                "#@.###......###.........#",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 2: Spikes and Jumps
+                "#########################",
+                "#.......................#",
+                "#.......................#",
+                "#.......................#",
+                "#.......*.......*.......#",
+                "#......###.....###......#",
+                "#.......................#",
+                "#.......................#",
+                "####..................E.#",
+                "#.......................#",
+                "#....................####",
+                "#@......................#",
+                "######^^^^^^^^^^^^^^^^^^#",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 3: Security Bots
+                "#########################",
+                "#.......................#",
+                "#.......................#",
+                "#........*.....*........#",
+                "#.......###...###.......#",
+                "#.......................#",
+                "#....X.............X....#",
+                "#..######.......######..#",
+                "#.......................#",
+                "#......................E#",
+                "#...................#####",
+                "#@.......^^^#X.........*#",
+                "#########################",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 4: Bounce Pads
+                "#########################",
+                "#..................*....#",
+                "#.................##....#",
+                "#................##.....#",
+                "#.......................#",
+                "#.......*...............#",
+                "#.....#####.............#",
+                "#...................E...#",
+                "#...................#...#",
+                "#.......................#",
+                "#...........~..........X#",
+                "#@...#########..........#",
+                "####.#########^^^^^^^^^^#",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 5: The Invincibility Intro
+                "#########################",
+                "#.....................E.#",
+                "#....................####",
+                "#.......................#",
+                "#...*........I.........X#",
+                "#..############.........#",
+                "#.............#.........#",
+                "#.............#.........#",
+                "#......*......#.........#",
+                "#...#######...#.........#",
+                "#.............#.........#",
+                "#@...^^^^^....#.*.^^^^^*#",
+                "###############^^^#######",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 6: Wall Jumping
+                "#########################",
+                "#.......................#",
+                "#..E....................#",
+                "####....#...............#",
+                "#.......#...............#",
+                "#.......#........I.....X#",
+                "#.......#.......###.....#",
+                "#...*...#...............#",
+                "#####...#...............#",
+                "#.......#X....~......*..#",
+                "#.......#################",
+                "#@..^^........*........X#",
+                "################...######",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 7: The Stomp
+                "#########################",
+                "#.......................#",
+                "#.................E.....#",
+                "#.................##....#",
+                "#..*....................#",
+                "######........~.........#",
+                "#.........#######.......#",
+                "#.......................#",
+                "#......X................#",
+                "#.##########............#",
+                "#...............X.......#",
+                "#@..*.......#########...#",
+                "#####^^^...............*#",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 8: Precision
+                "#########################",
+                "#.........*.......E....X#",
+                "#........###......##....#",
+                "#.......................#",
+                "#.*.....................#",
+                "####.......*............#",
+                "#.........###...........#",
+                "#.......................#",
+                "#.......................#",
+                "#....~..........~......X#",
+                "#...###........###......#",
+                "#@..###^^^^^^^^###^^^^^^#",
+                "#########################",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 9: The Gauntlet
+                "#########################",
+                "#E...*....#.............#",
+                "######....#...#.......*.#",
+                "#.........#...####....#.#",
+                "#.####....#......#....#.#",
+                "#.#..#....#..X..*#...I#.#",
+                "#.#..#....########...##.#",
+                "#.#..#..................#",
+                "#.#..#..................#",
+                "#.#..#........~.........#",
+                "#.#..#....#####.........#",
+                "#@#..#....#####....X....#",
+                "###..#^^^^#####^^^^^^^^^#",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 10: The Matrix Core
+                "#########################",
+                "#*......*...#E.....#*...#",
+                "####.#.####.####.#.####.#",
+                "#....#.#*.#......#.#I.#.#",
+                "#.####.#..#.####.#.#..#.#",
+                "#.#..#.#..#.#..#.#.#..#.#",
+                "#.#..#.#..#.#..#.#.#..#.#",
+                "#.#..X.#..#.#.*#.#.#..X.#",
+                "#.#.####..#.#.##.#....###",
+                "#.#.......#.#....#......#",
+                "#.#......X#.#...X#.#....#",
+                "#@#...#...#.#.#..#^#..~.#",
+                "###^^^#^^^###^#^^###^^^^#",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 11: HARD MODE - Welcome to the Furnace
+                "#########################",
+                "#E.X.*..................#",
+                "####^#..................#",
+                "#..#.#...........X......#",
+                "#..#.#...*.....#####....#",
+                "#..#.#..###.............#",
+                "#..#.#..................#",
+                "#..#...~.....*..........#",
+                "#..####################.",
+                "#...................*...#",
+                "#......X...........#####",
+                "#....#####..............#",
+                "#@.......*.......I......#",
+                "####^^^^^^^#^^^^^^^^^^^^#",
+                "#########################"
+            ],
+            [ // Level 12: Walljump Hell
+                "#########################",
+                "#*...#..................#",
+                "#..X.#..................#",
+                "#...............#.....E.#",
+                "######..........#.....#.#",
+                "#...............#.....#.#",
+                "#.....*.........#.....#.#",
+                "#..........#....#.....#.#",
+                "#...............#.....#.#",
+                "#@..............#.....#.#",
+                "##..............#.....#.#",
+                "#...............#.....*X#",
+                "#...............#.......#",
+                "#^^^^^^^^^^^^^^^#^^^^^^^#",
+                "#########################"
+            ],
+            [ // Level 13: Bouncy Castle of Doom
+                "#########################",
+                "#.......................#",
+                "#X....*.....X*....*..X..#",
+                "#.......................#",
+                "#.......................#",
+                "#........X....X.........#",
+                "#.......................#",
+                "#.......................#",
+                "#.........X.....X.......#",
+                "#.......................#",
+                "#..............X........#",
+                "#@.....~.....~.....~..E.#",
+                "#..^^^^^^^^^^^^^^^^^^^^^#",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 14: The Ascent
+                "#########################",
+                "#X......................#",
+                "#.#..............#.....x#",
+                "#.#..............#......#",
+                "#.#..............#......#",
+                "#.#...*..........#......#",
+                "#.#..............#......#",
+                "#.#..............#...*..#",
+                "#@#..............#..###.#",
+                "#.#..............#......#",
+                "#.#*.............#......#",
+                "#.#..............#..X...#",
+                "#^#............~.########",
+                "###^^^^^^^^^^^^#X......E#",
+                "#########################"
+            ],
+            [ // Level 15: Needle Gauntlet
+                "#########################",
+                "#@......................#",
+                "#...^^.....^^......^^...#",
+                "#######################.#",
+                "#.^^^^^...^^^^^.*.^^^^^.#",
+                "#X......................#",
+                "#.#####################^#",
+                "#...........*..........X#",
+                "#^..^..^..^..^..^..^....#",
+                "#######################.#",
+                "#.....^^......^^........#",
+                "#..^......^^......^^...^#",
+                "#.#######################",
+                "#...........*..........E#",
+                "#########################"
+            ],
+            [ // Level 16: Enemy Patrol
+                "#########################",
+                "#*.........*............#",
+                "##.........#............#",
+                "#.X..................X#.#",
+                "#X...................X#.#",
+                "#.X..................X#*#",
+                "#X...................X#.#",
+                "#.X..................X#.#",
+                "#X...................X#.#",
+                "#*X..................X#@#",
+                "#X...................X#.#",
+                "#E....................#.#",
+                "#^^^^^^^^^^^^^^^^^^^^^#^#",
+                "#########################",
+                "#########################"
+            ],
+            [ // Level 17: Don't Look Down
+                "#########################",
+                "#..*...#..*.X#..*..#.*..#",
+                "#.X....#.....#.....#....#",
+                "#......#.....#.X...#....#",
+                "#......#.....#.....#.X..#",
+                "#......^.....^.....^....#",
+                "#.......................#",
+                "#.......................#",
+                "#..#.....#...........#..#",
+                "#@..............~.......#",
+                "#.......................#",
+                "###########............##",
+                "#.......................#",
+                "#E.X.X.X.X.X.X.X.X.X.X..#",
+                "#########################"
+            ],
+            [ // Level 18: The Core Breach
+                "#########################",
+                "#....#..................#",
+                "#..#.#.............#..#.#",
+                "#..#.#.............#..#.#",
+                "#..#.#............X#..#.#",
+                "#..#.#*X...........#....#",
+                "#..#.##############...#.#",
+                "#..#..................#.#",
+                "#..#.X.*...*...*......X.#",
+                "#..#..................#.#",
+                "#..#..................#.#",
+                "#@.^X...............X.#*#",
+                "#E.#.~.......~......~.#^#",
+                "#^^^^^^^^^^^^^^^^^^^^^^^#",
+                "#########################"
+            ],
+            [ // Level 19: The Final Climb
+                "#########################",
+                "#.*.#...#.....#.#.X.....#",
+                "#.#.#.#.#..*..#.#.#...#.#",
+                "#.#.#.#.#.......#.#X..^.#",
+                "#.#.#.#.#######.#.#...#.#",
+                "#.#.#.#.#.......#.#...#.#",
+                "#.#.#.#.#...*...#.#*..^X#",
+                "#.#.#.#.#...X...#.#...#.#",
+                "#.#.#.#.#..X....#.#...#.#",
+                "#.#.#.#.#....X..#.#X..^.#",
+                "#.#.#.#.#.......#.#...#.#",
+                "#.#.#.#.#.......#.#...#.#",
+                "#.#.#.#.#...~...#.#.X.^.#",
+                "#@#.X.#.*X#####...#^^^#E#",
+                "#########################"
+            ],
+            [ // Level 20: Inferno
+                "#########################",
+                "#......................*#",
+                "#......................##",
+                "#.E.....................#",
+                "####....................#",
+                "#..#X...................#",
+                "#..#...X................#",
+                "#..#..........X........X#",
+                "#..#.........X........X.#",
+                "#..#.X...............X..#",
+                "#..#X...................#",
+                "#@.#^^^^^^^^^^^^^^^^^^X.#",
+                "##.####################.#",
+                "#.......................#",
+                "#########################"
+            ]
+        ];
+
+        // --- Game State ---
+        let currentLevel = 0;
+        let deaths = 0;
+        let isPlaying = false;
+        let gameLoopId; 
+        let startedFromLevelOne = false; // Anti-cheat variable
+        
+        let grid = [];
+        let particles = [];
+        let enemies = [];
+        
+        let coinsRequired = 0;
+        let coinsCollected = 0;
+        let exitUnlocked = false;
+
+        const GRAVITY = 0.5;
+        const FRICTION = 0.8;
+        const JUMP_POWER = -9;
+        const MAX_FALL_SPEED = 12;
+        const SPEED = 5;
+
+        let player = {
+            x: 0, y: 0, width: 24, height: 24,
+            vx: 0, vy: 0,
+            grounded: false,
+            jumps: 0, maxJumps: 2,
+            wallSliding: false, wallDir: 0,
+            invTimer: 0 
+        };
+
+        let keys = { left: false, right: false, up: false };
+
+        const overlay = document.getElementById('overlay');
+        const titleUI = document.getElementById('overlayTitle');
+        const subUI = document.getElementById('overlaySub');
+        const btnStart = document.getElementById('startBtn');
+
+        // --- UI Logic ---
+        function initLevelSelect() {
+            const gridContainer = document.getElementById('levelGrid');
+            for(let i = 0; i < levels.length; i++) {
+                let btn = document.createElement('button');
+                btn.className = i >= 10 ? 'lvl-btn hard' : 'lvl-btn';
+                btn.innerText = i + 1;
+                btn.onclick = () => { selectLevel(i); sfx.click(); };
+                gridContainer.appendChild(btn);
+            }
+        }
+        initLevelSelect();
+
+        function showLevelSelect() {
+            sfx.click();
+            document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('levelScreen').style.display = 'flex';
+        }
+
+        function hideLevelSelect() {
+            sfx.click();
+            document.getElementById('mainScreen').style.display = 'flex';
+            document.getElementById('levelScreen').style.display = 'none';
+        }
+
+        function selectLevel(index) {
+            currentLevel = index;
+            hideLevelSelect();
+            startLevel(true); 
+        }
+
+        // --- Input ---
+        window.addEventListener('keydown', e => {
+            if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault(); 
+            }
+
+            if (e.key === 'a' || e.key === 'ArrowLeft') keys.left = true;
+            if (e.key === 'd' || e.key === 'ArrowRight') keys.right = true;
+            if (e.key === 'w' || e.key === 'ArrowUp' || e.key === ' ') {
+                if (!keys.up && isPlaying) jump();
+                keys.up = true;
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.key === 'a' || e.key === 'ArrowLeft') keys.left = false;
+            if (e.key === 'd' || e.key === 'ArrowRight') keys.right = false;
+            if (e.key === 'w' || e.key === 'ArrowUp' || e.key === ' ') {
+                keys.up = false;
+                if (player.vy < -3) player.vy *= 0.5; 
+            }
+        });
+
+        function jump() {
+            if (player.wallSliding) {
+                player.vy = JUMP_POWER;
+                player.vx = player.wallDir * SPEED * 2;
+                player.jumps = 1; 
+                sfx.walljump();
+                createParticles(player.x, player.y, isHardMode() ? '#e67e22' : '#00d2d3', 10);
+                return;
+            }
+            
+            if (player.jumps < player.maxJumps) {
+                player.vy = JUMP_POWER;
+                player.jumps++;
+                player.grounded = false;
+                sfx.jump();
+                createParticles(player.x + 12, player.y + 24, '#ffffff', 5);
+            }
+        }
+
+        function isHardMode() {
+            return currentLevel >= 10;
+        }
+
+        function loadLevelMap(levelIndex) {
+            grid = [];
+            enemies = [];
+            coinsRequired = 0;
+            coinsCollected = 0;
+            exitUnlocked = false;
+            player.invTimer = 0;
+
+            let mapData = levels[levelIndex];
+            
+            for (let r = 0; r < ROWS; r++) {
+                grid[r] = [];
+                for (let c = 0; c < COLS; c++) {
+                    let tile = mapData[r][c];
+                    
+                    if (tile === '*') coinsRequired++;
+                    if (tile === 'X') {
+                        let enemySpeed = isHardMode() ? 3 : 2; 
+                        enemies.push({ x: c * TILE_SIZE, y: r * TILE_SIZE, w: 24, h: 24, vx: enemySpeed, alive: true });
+                        grid[r][c] = '.'; 
+                    } else if (tile === '@') {
+                        player.x = c * TILE_SIZE + 4; 
+                        player.y = r * TILE_SIZE + 4;
+                        player.vx = 0; player.vy = 0;
+                        grid[r][c] = '.'; 
+                    } else {
+                        grid[r][c] = tile;
+                    }
+                }
+            }
+            
+            if(coinsRequired === 0) exitUnlocked = true; 
+            updateUI();
+        }
+
+        function startLevel(forceResetDeaths = false) {
+            btnStart.blur();
+            sfx.click();
+
+            if (currentLevel === 0 || forceResetDeaths) {
+                deaths = 0;
+                startedFromLevelOne = (currentLevel === 0);
+            }
+            
+            loadLevelMap(currentLevel);
+
+            isPlaying = true;
+            particles = [];
+            overlay.classList.remove('active');
+            canvasWrapper.classList.add('playing');
+            canvasWrapper.classList.remove('damage');
+             if (isHardMode()) {
+                canvasWrapper.classList.add('hard-mode');
+            } else {
+                canvasWrapper.classList.remove('hard-mode');
+            }
+            
+            updateUI();
+            music.play();
+
+            if (gameLoopId) cancelAnimationFrame(gameLoopId);
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function die() {
+            if (!isPlaying) return; 
+            deaths++;
+            sfx.die();
+            updateUI();
+            createParticles(player.x + 12, player.y + 12, '#ff4757', 30);
+            
+            canvasWrapper.classList.add('damage');
+            setTimeout(() => canvasWrapper.classList.remove('damage'), 300);
+            
+            loadLevelMap(currentLevel); 
+        }
+
+        function updatePhysics() {
+            if (keys.left) player.vx -= 1;
+            if (keys.right) player.vx += 1;
+            
+            player.vx *= FRICTION; 
+            if (Math.abs(player.vx) < 0.5) player.vx = 0; 
+            if (player.vx > SPEED) player.vx = SPEED;
+            if (player.vx < -SPEED) player.vx = -SPEED;
+
+            player.vy += GRAVITY;
+            if (player.vy > MAX_FALL_SPEED) player.vy = MAX_FALL_SPEED;
+
+            player.x += player.vx;
+            checkWallCollisions(true);
+            if (!isPlaying) return; 
+
+            player.y += player.vy;
+            player.grounded = false;
+            player.wallSliding = false;
+            checkWallCollisions(false);
+            if (!isPlaying) return; 
+
+            if (player.invTimer > 0) player.invTimer--;
+            checkObjectCollisions();
+
+            if (!player.grounded && player.vy > 0 && (keys.left || keys.right)) {
+                let cLeft = Math.floor((player.x - 1) / TILE_SIZE);
+                let cRight = Math.floor((player.x + player.width + 1) / TILE_SIZE);
+                let rMid = Math.floor((player.y + player.height/2) / TILE_SIZE);
+
+                let tLeft = (cLeft >= 0 && rMid >= 0 && rMid < ROWS) ? grid[rMid][cLeft] : '#';
+                let tRight = (cRight < COLS && rMid >= 0 && rMid < ROWS) ? grid[rMid][cRight] : '#';
+                
+                if ((keys.left && tLeft === '#') || (keys.right && tRight === '#')) {
+                    player.wallSliding = true;
+                    player.wallDir = keys.left ? 1 : -1; 
+                    player.vy = 2; 
+                    player.jumps = player.maxJumps - 1; 
+                    if(Math.random() < 0.3) createParticles(keys.left ? player.x : player.x+player.width, player.y+12, '#ffffff', 1);
+                }
+            }
+
+            enemies.forEach(en => {
+                if(!en.alive) return;
+                en.x += en.vx;
+                
+                let ecLeft = Math.floor(en.x / TILE_SIZE);
+                let ecRight = Math.floor((en.x + en.w) / TILE_SIZE);
+                let er = Math.floor((en.y + en.h/2) / TILE_SIZE);
+                
+                if(ecLeft >= 0 && ecRight < COLS) {
+                    if (grid[er][ecLeft] === '#' || grid[er][ecRight] === '#') {
+                        en.vx *= -1; 
+                        en.x += en.vx * 2;
+                    }
+                }
+
+                if (player.x < en.x + en.w && player.x + player.width > en.x &&
+                    player.y < en.y + en.h && player.y + player.height > en.y) {
+                    
+                    if (player.invTimer > 0) {
+                        en.alive = false;
+                        sfx.stomp();
+                        createParticles(en.x + 12, en.y + 12, '#f1c40f', 20);
+                    } 
+                    else if (player.vy > 0 && player.y + player.height < en.y + (en.h * 0.8)) {
+                        en.alive = false;
+                        player.vy = JUMP_POWER;
+                        sfx.stomp();
+                        createParticles(en.x + 12, en.y + 12, '#ff4757', 20);
+                    } else {
+                        die();
+                    }
+                }
+            });
+
+            if (player.y > canvas.height) die();
+        }
+
+        function checkWallCollisions(isX) {
+            let cMin = Math.floor(player.x / TILE_SIZE);
+            let cMax = Math.floor((player.x + player.width - 0.1) / TILE_SIZE);
+            let rMin = Math.floor(player.y / TILE_SIZE);
+            let rMax = Math.floor((player.y + player.height - 0.1) / TILE_SIZE);
+
+            for (let r = rMin; r <= rMax; r++) {
+                for (let c = cMin; c <= cMax; c++) {
+                    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+                    
+                    if (grid[r][c] === '#') {
+                        if (isX) {
+                            if (player.vx > 0) { player.x = c * TILE_SIZE - player.width; player.vx = 0; }
+                            else if (player.vx < 0) { player.x = c * TILE_SIZE + TILE_SIZE; player.vx = 0; }
+                        } else {
+                            if (player.vy > 0) { 
+                                player.y = r * TILE_SIZE - player.height; 
+                                player.vy = 0; 
+                                player.grounded = true; 
+                                player.jumps = 0; 
+                            }
+                            else if (player.vy < 0) { player.y = r * TILE_SIZE + TILE_SIZE; player.vy = 0; }
+                        }
+                    } 
+                }
+            }
+        }
+
+        function checkObjectCollisions() {
+            let cMin = Math.floor(player.x / TILE_SIZE);
+            let cMax = Math.floor((player.x + player.width - 0.1) / TILE_SIZE);
+            let rMin = Math.floor(player.y / TILE_SIZE);
+            let rMax = Math.floor((player.y + player.height - 0.1) / TILE_SIZE);
+
+            for (let r = rMin; r <= rMax; r++) {
+                for (let c = cMin; c <= cMax; c++) {
+                    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+                    let t = grid[r][c];
+
+                    if (t === '^') {
+                        if (player.y + player.height > r * TILE_SIZE + 20) {
+                            if (player.invTimer <= 0) {
+                                die(); return;
+                            }
+                        }
+                    } 
+                    else if (t === '~') {
+                        if (player.vy > 0 && player.y + player.height <= r * TILE_SIZE + 24) {
+                            player.vy = JUMP_POWER * 1.5; 
+                            player.jumps = 0; player.grounded = false;
+                            sfx.bounce();
+                            createParticles(c*TILE_SIZE+16, r*TILE_SIZE+TILE_SIZE, '#2ecc71', 15);
+                        }
+                    } 
+                    else if (t === '*') {
+                        grid[r][c] = '.';
+                        coinsCollected++;
+                        sfx.coin();
+                        createParticles(c*TILE_SIZE+16, r*TILE_SIZE+16, '#f1c40f', 8);
+                        
+                        if(coinsCollected >= coinsRequired) {
+                            exitUnlocked = true;
+                            sfx.unlock(); 
+                        }
+                        updateUI();
+                    } 
+                    else if (t === 'I') { 
+                        grid[r][c] = '.';
+                        player.invTimer = 300; 
+                        sfx.powerup();
+                        createParticles(c*TILE_SIZE+16, r*TILE_SIZE+16, '#f1c40f', 30);
+                    }
+                    else if (t === 'E') {
+                        if(exitUnlocked) {
+                            levelComplete(); return;
+                        }
+                    }
+                }
+            }
+        }
+
+        function createParticles(x, y, color, amount) {
+            for(let i=0; i<amount; i++){
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 1.0, color: color
+                });
+            }
+        }
+
+        function updateParticles() {
+            for(let i=particles.length-1; i>=0; i--){
+                let p = particles[i];
+                p.x += p.vx; p.y += p.vy;
+                p.life -= 0.05;
+                if(p.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        function draw() {
+            const hardMode = isHardMode();
+            ctx.fillStyle = hardMode ? '#2d0f0f' : '#050a0f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    let t = grid[r][c];
+                    let x = c * TILE_SIZE;
+                    let y = r * TILE_SIZE;
+
+                    if (t === '#') {
+                        ctx.fillStyle = hardMode ? '#4f1e1e' : '#09213b'; 
+                        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+                        ctx.strokeStyle = hardMode ? '#e67e22' : '#00d2d3'; 
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+                    } 
+                    else if (t === '^') {
+                        ctx.fillStyle = '#ff4757'; 
+                        ctx.shadowBlur = 10; ctx.shadowColor = '#ff4757';
+                        ctx.beginPath();
+                        ctx.moveTo(x + TILE_SIZE/2, y + 20); 
+                        ctx.lineTo(x + TILE_SIZE - 4, y + TILE_SIZE);
+                        ctx.lineTo(x + 4, y + TILE_SIZE);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    } else if (t === '*') {
+                        ctx.fillStyle = '#f1c40f'; 
+                        ctx.shadowBlur = 15; ctx.shadowColor = '#f1c40f';
+                        let width = Math.abs(Math.sin(Date.now() / 200)) * 16;
+                        ctx.fillRect(x + 16 - width/2, y + 8, width, 16);
+                        ctx.shadowBlur = 0;
+                    } else if (t === '~') {
+                        ctx.fillStyle = '#2ecc71'; 
+                        ctx.fillRect(x, y + TILE_SIZE - 10, TILE_SIZE, 10);
+                        ctx.fillStyle = '#27ae60';
+                        ctx.fillRect(x+4, y + TILE_SIZE - 15, TILE_SIZE-8, 5);
+                    } else if (t === 'I') { 
+                        ctx.fillStyle = '#f1c40f'; 
+                        ctx.shadowBlur = 20; ctx.shadowColor = '#f1c40f';
+                        let bounce = Math.sin(Date.now() / 150) * 4;
+                        ctx.beginPath();
+                        ctx.arc(x + 16, y + 16 + bounce, 8, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.fillStyle = '#fff';
+                        ctx.fillRect(x+14, y+14+bounce, 4, 4); 
+                        ctx.shadowBlur = 0;
+                    } else if (t === 'E') {
+                        let pColor = exitUnlocked ? '#9b59b6' : (hardMode ? '#c0392b' : '#e74c3c');
+                        ctx.fillStyle = pColor; 
+                        ctx.shadowBlur = 20; ctx.shadowColor = pColor;
+                        ctx.beginPath();
+                        ctx.arc(x + 16, y + 16, 12 + Math.sin(Date.now()/150)*4, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                        
+                        if(!exitUnlocked) {
+                            ctx.fillStyle = '#fff';
+                            ctx.fillRect(x+14, y+10, 4, 12); 
+                        }
+                    }
+                }
+            }
+
+            enemies.forEach(en => {
+                if(!en.alive) return;
+                ctx.fillStyle = hardMode ? '#d35400' : '#ff4757';
+                ctx.shadowBlur = 10; ctx.shadowColor = hardMode ? '#d35400' : '#ff4757';
+                ctx.fillRect(en.x, en.y + 4, en.w, en.h - 4); 
+                
+                ctx.fillStyle = '#000'; ctx.shadowBlur = 0;
+                let look = en.vx > 0 ? 4 : -4;
+                ctx.fillRect(en.x + 6 + look, en.y + 10, 4, 4);
+                ctx.fillRect(en.x + 14 + look, en.y + 10, 4, 4);
+            });
+
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.fillRect(p.x, p.y, 4, 4);
+            });
+            ctx.globalAlpha = 1.0;
+
+            if (player.invTimer > 0) {
+                let colors = ['#ff4757', '#feca57', '#1dd1a1', '#48dbfb', '#9b59b6'];
+                ctx.fillStyle = colors[Math.floor(Date.now() / 100) % colors.length];
+                ctx.shadowColor = ctx.fillStyle;
+            } else {
+                ctx.fillStyle = hardMode ? '#f39c12' : '#48dbfb';
+                ctx.shadowColor = hardMode ? '#f39c12' : '#48dbfb';
+            }
+            
+            ctx.shadowBlur = 15; 
+            
+            let dW = player.width; let dH = player.height;
+            if(!player.grounded) { dW = 20; dH = 28; } 
+            if(player.wallSliding) { dW = 28; dH = 20; } 
+            
+            ctx.fillRect(player.x + (player.width-dW)/2, player.y + (player.height-dH), dW, dH);
+            
+            ctx.fillStyle = '#000'; ctx.shadowBlur = 0;
+            let eyeOffsetX = (player.vx / SPEED) * 4; 
+            ctx.fillRect(player.x + 4 + eyeOffsetX, player.y + 6, 4, 4);
+            ctx.fillRect(player.x + 14 + eyeOffsetX, player.y + 6, 4, 4);
+        }
+
+        function gameLoop() {
+            if (!isPlaying) return;
+
+            updatePhysics();
+            if(!isPlaying) return; 
+
+            updateParticles();
+            draw();
+
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function updateUI() {
+            let displayLevel = currentLevel < levels.length ? currentLevel + 1 : levels.length;
+            document.getElementById('levelUI').innerText = `${displayLevel} / ${levels.length}`;
+            document.getElementById('coinUI').innerText = `${coinsCollected} / ${coinsRequired}`;
+            
+            if(coinsCollected >= coinsRequired && coinsRequired > 0) {
+                document.getElementById('coinUI').style.color = '#2ecc71';
+            } else {
+                document.getElementById('coinUI').style.color = '#f1c40f';
+            }
+
+            document.getElementById('scoreUI').innerText = deaths;
+        }
+
+        function levelComplete() {
+            if (!isPlaying) return; 
+            isPlaying = false;
+            
+            sfx.win(); 
+            currentLevel++;
+            
+            if (currentLevel >= levels.length) {
+                winGame();
+                return;
+            }
+            
+            let titleText = "AREA CLEARED";
+            let titleColor = "#00d2d3";
+
+            if (currentLevel === 10) { 
+                titleText = "HARD MODE ENGAGED";
+                titleColor = "#e67e22";
+            }
+
+            titleUI.innerText = titleText;
+            titleUI.style.color = titleColor;
+            subUI.innerHTML = `Current Deaths: ${deaths}`;
+            btnStart.innerText = "Next Level";
+            
+            overlay.classList.add('active');
+            updateUI();
+        }
+
+        function winGame() {
+            // Anti-cheat: Only save high score if they played from Level 1
+            if (startedFromLevelOne) {
+                if (bestDeaths === undefined || deaths < bestDeaths) {
+                    globalScores.platformer_deaths = deaths;
+                    localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
+                    bestDeaths = deaths;
+                    document.getElementById('bestScoreUI').innerText = bestDeaths;
+                }
+            }
+
+            titleUI.innerText = "SYSTEM HACKED";
+            titleUI.style.color = "#1dd1a1";
+            
+            let resultText = `You beat all ${levels.length} levels!<br><br>Final Death Count: <strong style="color:#ff4757; font-size:1.5em;">${deaths}</strong>`;
+            if (!startedFromLevelOne) {
+                resultText += `<br><br><span style="font-size:0.8em; color:#a4b0be;">(High Score not saved. Must start from Level 1)</span>`;
+            }
+            
+            subUI.innerHTML = resultText;
+            btnStart.innerText = "Play Again";
+            
+            music.stop(); 
+            currentLevel = 0; 
+            overlay.classList.add('active');
+            updateUI();
+        }
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) music.stop();
+            else if (isPlaying) music.play();
+        });
+
+        ctx.fillStyle = '#050a0f';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    </script>
+</body>
+</html>

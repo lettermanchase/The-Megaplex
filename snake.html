@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake: Cyber-Grid - Arcade</title>
+    <style>
+        /* Shared Arcade Theme */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #0b1016, #0f2033, #091521); 
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
+            user-select: none;
+        }
+
+        header { 
+            padding: 15px 30px; background: rgba(0,0,0,0.8); z-index: 10;
+            border-bottom: 2px solid #1dd1a1; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 15px rgba(29, 209, 161, 0.2);
+        }
+        .back-btn {
+            background: transparent; border: 2px solid #1dd1a1; color: #1dd1a1; padding: 8px 20px;
+            border-radius: 20px; text-decoration: none; font-weight: bold; transition: 0.3s;
+        }
+        .back-btn:hover { background: #1dd1a1; color: #000; box-shadow: 0 0 10px #1dd1a1; }
+
+        /* Game Layout */
+        .game-wrapper {
+            display: flex; flex: 1; padding: 20px; gap: 30px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;
+            justify-content: center; align-items: flex-start; margin-top: 10px;
+        }
+
+        /* Sidebar Stats */
+        .dashboard {
+            width: 280px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 25px;
+            border: 1px solid rgba(29, 209, 161, 0.3); display: flex; flex-direction: column; gap: 15px;
+        }
+        .dashboard h3 { margin: 0; color: #1dd1a1; border-bottom: 1px solid #333; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;}
+
+        .stat-box { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 10px; border-left: 4px solid #1dd1a1; }
+        .stat-label { font-size: 0.9em; color: #a4b0be; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #1dd1a1; margin-top: 5px; text-shadow: 0 0 10px rgba(29,209,161,0.4); }
+
+        .controls-info { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; font-size: 0.9em; color: #c8d6e5; line-height: 1.6; }
+        .controls-info span { color: #feca57; font-weight: bold; }
+
+        /* Main Game Canvas Area */
+        .canvas-container {
+            position: relative; padding: 10px; background: rgba(0,0,0,0.6); border-radius: 15px;
+            border: 2px solid #333; box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+        
+        .canvas-container.playing { border-color: #1dd1a1; box-shadow: 0 0 30px rgba(29,209,161,0.2); }
+        .canvas-container.turbo { border-color: #ff9f43; box-shadow: 0 0 30px rgba(255,159,67,0.4); }
+        .canvas-container.damage { border-color: #ff4757; animation: shake 0.3s ease; box-shadow: 0 0 30px rgba(255,71,87,0.6); }
+
+        canvas { background: #080c11; border-radius: 8px; display: block; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+
+        /* Mobile D-Pad */
+        .mobile-controls { display: none; grid-template-columns: 60px 60px 60px; grid-template-rows: 60px 60px; gap: 10px; justify-content: center; margin-top: 20px; }
+        .d-btn { background: rgba(255,255,255,0.1); border: 2px solid #1dd1a1; border-radius: 15px; color: #1dd1a1; font-size: 1.5em; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.1s; }
+        .d-btn:active { background: #1dd1a1; color: #000; transform: scale(0.9); }
+        .d-up { grid-column: 2; grid-row: 1; }
+        .d-left { grid-column: 1; grid-row: 2; }
+        .d-down { grid-column: 2; grid-row: 2; }
+        .d-right { grid-column: 3; grid-row: 2; }
+        
+        .btn-turbo { grid-column: 1 / span 3; background: rgba(255, 159, 67, 0.2); border-color: #ff9f43; color: #ff9f43; height: 50px; border-radius: 25px; margin-top: 10px;}
+        .btn-turbo:active { background: #ff9f43; color: #000; }
+
+        @media (max-width: 900px) {
+            .game-wrapper { flex-direction: column; align-items: center; }
+            .mobile-controls { display: grid; }
+        }
+
+        /* Overlay */
+        .overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 20; opacity: 0; pointer-events: none; transition: 0.3s; border-radius: 10px;
+        }
+        .overlay.active { opacity: 1; pointer-events: all; }
+        .btn-start { background: #1dd1a1; color: #000; border: none; padding: 15px 40px; font-size: 1.5em; font-weight: bold; border-radius: 30px; cursor: pointer; margin-top: 20px; transition: 0.2s; text-transform: uppercase;}
+        .btn-start:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(29,209,161,0.6); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn">⬅ Back to Hub</a>
+        <h2 style="margin:0; color:#fff;">Snake: Cyber-Grid</h2>
+        <div style="width: 100px; text-align: right; color: #a4b0be;">Max Length: <span id="bestScoreUI" style="color:#1dd1a1; font-weight:bold;">0</span></div>
+    </header>
+
+    <div class="game-wrapper">
+        
+        <!-- Left: Dashboard -->
+        <div class="dashboard">
+            <h3>System Stats</h3>
+            
+            <div class="stat-box">
+                <div class="stat-label">Current Score</div>
+                <div class="stat-value" id="scoreUI">0</div>
+            </div>
+
+            <div class="stat-box" style="border-left-color: #48dbfb;">
+                <div class="stat-label">Snake Length</div>
+                <div class="stat-value" id="lengthUI" style="color:#48dbfb;">1</div>
+            </div>
+
+            <div class="stat-box" style="border-left-color: #feca57;">
+                <div class="stat-label">Danger Level</div>
+                <div class="stat-value" id="levelUI" style="color:#feca57;">1</div>
+            </div>
+
+            <div class="controls-info">
+                <strong>[Arrows]</strong> or <strong>[WASD]</strong> to Move.<br><br>
+                Hold <span>[Spacebar]</span> to engage TURBO mode (Double Speed, Double Points).<br><br>
+                Avoid the 🔴 Mines.<br>
+                Use the 🟣 Portals to teleport.
+            </div>
+        </div>
+
+        <!-- Center: Game Board -->
+        <div>
+            <div class="canvas-container" id="canvasWrapper">
+                <canvas id="gameCanvas" width="500" height="500"></canvas>
+                
+                <div class="overlay active" id="startOverlay">
+                    <h1 id="overlayTitle" style="font-size: 4em; margin: 0; color: #1dd1a1; text-shadow: 0 0 20px rgba(29,209,161,0.5);">CYBER-SNAKE</h1>
+                    <p id="overlaySub" style="font-size: 1.2em; color: #a4b0be; margin-top: 10px;">Initialize the grid.</p>
+                    <button class="btn-start" onclick="startGame()">Initialize</button>
+                </div>
+            </div>
+
+            <!-- Mobile Controls -->
+            <div class="mobile-controls">
+                <div class="d-btn d-up" onclick="queueDirection('UP')">▲</div>
+                <div class="d-btn d-left" onclick="queueDirection('LEFT')">◀</div>
+                <div class="d-btn d-down" onclick="queueDirection('DOWN')">▼</div>
+                <div class="d-btn d-right" onclick="queueDirection('RIGHT')">▶</div>
+                <div class="d-btn btn-turbo" onmousedown="enableTurbo(true)" onmouseup="enableTurbo(false)" ontouchstart="enableTurbo(true)" ontouchend="enableTurbo(false)">⚡ TURBO BOOST</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Hub Data Load ---
+        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || { clicker: 0, reaction: 9999, math: 0, memory: 999, ttt: 0, guesser: 0, snake: 0 };
+        document.getElementById('bestScoreUI').innerText = globalScores.snake || 0;
+
+        // --- Game Constants & Setup ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        
+        const gridSize = 20; 
+        const tileCount = canvas.width / gridSize;
+
+        const COLOR_BG = '#080c11';
+        const COLOR_SNAKE_HEAD = '#ffffff';
+        const COLOR_SNAKE_BODY = '#1dd1a1';
+        const COLOR_FOOD = '#10ac84';
+        const COLOR_MINE = '#ff4757';
+        const COLOR_PORTAL = '#9b59b6';
+
+        let snake = [];
+        let dx = 0; let dy = 0;
+        let nextDx = 0; let nextDy = 0;
+        
+        let food = { x: 5, y: 5 };
+        let mines = [];
+        let portals = [];
+        
+        let score = 0;
+        let snakeLength = 1;
+        let level = 1;
+        
+        let isPlaying = false;
+        let isTurbo = false;
+        let gameLoopTimeout;
+        let baseSpeed = 120;
+
+        const scoreUI = document.getElementById('scoreUI');
+        const lengthUI = document.getElementById('lengthUI');
+        const levelUI = document.getElementById('levelUI');
+        const overlay = document.getElementById('startOverlay');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const overlaySub = document.getElementById('overlaySub');
+
+        // --- Input Handling ---
+        document.addEventListener('keydown', (e) => {
+            if (!isPlaying && e.key === 'Enter') startGame();
+            
+            // Prevent reversing
+            if ((e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') && dy === 0) { nextDx = 0; nextDy = -1; }
+            if ((e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') && dy === 0) { nextDx = 0; nextDy = 1; }
+            if ((e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') && dx === 0) { nextDx = -1; nextDy = 0; }
+            if ((e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') && dx === 0) { nextDx = 1; nextDy = 0; }
+
+            if (e.key === ' ' && isPlaying) enableTurbo(true);
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === ' ') enableTurbo(false);
+        });
+
+        function queueDirection(dir) {
+            if ((dir === 'UP') && dy === 0) { nextDx = 0; nextDy = -1; }
+            if ((dir === 'DOWN') && dy === 0) { nextDx = 0; nextDy = 1; }
+            if ((dir === 'LEFT') && dx === 0) { nextDx = -1; nextDy = 0; }
+            if ((dir === 'RIGHT') && dx === 0) { nextDx = 1; nextDy = 0; }
+        }
+
+        function enableTurbo(active) {
+            isTurbo = active;
+            if (active) canvasWrapper.classList.add('turbo');
+            else canvasWrapper.classList.remove('turbo');
+        }
+
+        // --- Initialization ---
+        function startGame() {
+            snake = [
+                { x: 10, y: 10 },
+                { x: 10, y: 11 },
+                { x: 10, y: 12 }
+            ];
+            dx = 0; dy = -1;
+            nextDx = 0; nextDy = -1;
+            
+            score = 0;
+            snakeLength = 3;
+            level = 1;
+            baseSpeed = 130;
+            mines = [];
+            
+            portals = [
+                { x: 2, y: Math.floor(tileCount/2) },
+                { x: tileCount - 3, y: Math.floor(tileCount/2) }
+            ];
+
+            spawnFood();
+            
+            updateUI();
+            overlay.classList.remove('active');
+            canvasWrapper.classList.add('playing');
+            canvasWrapper.classList.remove('damage');
+            
+            isPlaying = true;
+            isTurbo = false;
+            
+            clearTimeout(gameLoopTimeout);
+            gameLoop();
+        }
+
+        // --- Core Game Loop ---
+        function gameLoop() {
+            if (!isPlaying) return;
+
+            updateState();
+            drawCanvas();
+
+            let currentSpeed = isTurbo ? baseSpeed / 2 : baseSpeed;
+            gameLoopTimeout = setTimeout(gameLoop, currentSpeed);
+        }
+
+        function updateState() {
+            dx = nextDx;
+            dy = nextDy;
+
+            let headX = snake[0].x + dx;
+            let headY = snake[0].y + dy;
+
+            // Wrap-around
+            if (headX < 0) headX = tileCount - 1;
+            if (headX >= tileCount) headX = 0;
+            if (headY < 0) headY = tileCount - 1;
+            if (headY >= tileCount) headY = 0;
+
+            // Portals
+            let teleported = false;
+            if (headX === portals[0].x && headY === portals[0].y) {
+                headX = portals[1].x + dx; 
+                headY = portals[1].y + dy;
+                teleported = true;
+            } else if (headX === portals[1].x && headY === portals[1].y) {
+                headX = portals[0].x + dx;
+                headY = portals[0].y + dy;
+                teleported = true;
+            }
+
+            if (teleported) {
+                if (headX < 0) headX = tileCount - 1;
+                if (headX >= tileCount) headX = 0;
+                if (headY < 0) headY = tileCount - 1;
+                if (headY >= tileCount) headY = 0;
+            }
+
+            let newHead = { x: headX, y: headY };
+
+            // Collision: Self
+            for (let i = 0; i < snake.length; i++) {
+                if (newHead.x === snake[i].x && newHead.y === snake[i].y) {
+                    return gameOver("System Crash: Ouroboros (Hit Yourself)");
+                }
+            }
+
+            // Collision: Mines
+            for (let i = 0; i < mines.length; i++) {
+                if (newHead.x === mines[i].x && newHead.y === mines[i].y) {
+                    return gameOver("System Crash: Mine Detonated");
+                }
+            }
+
+            snake.unshift(newHead);
+
+            // Food Collision
+            if (newHead.x === food.x && newHead.y === food.y) {
+                let points = isTurbo ? 20 : 10;
+                score += points;
+                snakeLength++;
+                
+                checkLevelUp();
+                spawnFood();
+                updateUI();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function checkLevelUp() {
+            let newLevel = Math.floor(score / 100) + 1;
+            if (newLevel > level) {
+                level = newLevel;
+                baseSpeed = Math.max(60, baseSpeed - 10); 
+                spawnMine();
+                
+                canvasWrapper.classList.add('turbo');
+                setTimeout(() => {
+                    if(!isTurbo) canvasWrapper.classList.remove('turbo');
+                }, 300);
+            }
+        }
+
+        // --- BUG FIXED Spawners ---
+        function spawnFood() {
+            let valid = false;
+            let testX, testY;
+            
+            while (!valid) {
+                testX = Math.floor(Math.random() * tileCount);
+                testY = Math.floor(Math.random() * tileCount);
+                valid = true;
+
+                // Check Snake
+                for (let i = 0; i < snake.length; i++) {
+                    if (snake[i].x === testX && snake[i].y === testY) valid = false;
+                }
+                // Check Mines
+                for (let i = 0; i < mines.length; i++) {
+                    if (mines[i].x === testX && mines[i].y === testY) valid = false;
+                }
+                // Check Portals
+                for (let i = 0; i < portals.length; i++) {
+                    if (portals[i].x === testX && portals[i].y === testY) valid = false;
+                }
+            }
+            food.x = testX;
+            food.y = testY;
+        }
+
+        function spawnMine() {
+            let valid = false;
+            let testX, testY;
+            
+            while (!valid) {
+                testX = Math.floor(Math.random() * tileCount);
+                testY = Math.floor(Math.random() * tileCount);
+                valid = true;
+
+                // Don't spawn on snake
+                for (let i = 0; i < snake.length; i++) {
+                    if (snake[i].x === testX && snake[i].y === testY) valid = false;
+                }
+                // Don't spawn on other mines
+                for (let i = 0; i < mines.length; i++) {
+                    if (mines[i].x === testX && mines[i].y === testY) valid = false;
+                }
+                // Don't spawn on food
+                if (food.x === testX && food.y === testY) valid = false;
+                
+                // Don't spawn on OR directly adjacent to portals (give player breathing room)
+                for (let i = 0; i < portals.length; i++) {
+                    if (Math.abs(portals[i].x - testX) < 2 && Math.abs(portals[i].y - testY) < 2) valid = false;
+                }
+            }
+            mines.push({x: testX, y: testY});
+        }
+
+        // --- Rendering ---
+        function drawCanvas() {
+            ctx.fillStyle = COLOR_BG;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= tileCount; i++) {
+                ctx.beginPath(); ctx.moveTo(i * gridSize, 0); ctx.lineTo(i * gridSize, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i * gridSize); ctx.lineTo(canvas.width, i * gridSize); ctx.stroke();
+            }
+
+            // Draw Portals
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = COLOR_PORTAL;
+            ctx.fillStyle = COLOR_PORTAL;
+            portals.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x * gridSize + gridSize/2, p.y * gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw Mines
+            ctx.shadowColor = COLOR_MINE;
+            ctx.fillStyle = COLOR_MINE;
+            mines.forEach(m => {
+                ctx.fillRect(m.x * gridSize + 4, m.y * gridSize + 4, gridSize - 8, gridSize - 8);
+                ctx.fillRect(m.x * gridSize + 8, m.y * gridSize, gridSize - 16, gridSize);
+                ctx.fillRect(m.x * gridSize, m.y * gridSize + 8, gridSize, gridSize - 16);
+            });
+
+            // Draw Food
+            ctx.shadowColor = COLOR_FOOD;
+            ctx.fillStyle = COLOR_FOOD;
+            ctx.fillRect(food.x * gridSize + 2, food.y * gridSize + 2, gridSize - 4, gridSize - 4);
+
+            // Draw Snake Body
+            ctx.shadowColor = COLOR_SNAKE_BODY;
+            ctx.fillStyle = COLOR_SNAKE_BODY;
+            for (let i = 1; i < snake.length; i++) {
+                ctx.fillRect(snake[i].x * gridSize + 1, snake[i].y * gridSize + 1, gridSize - 2, gridSize - 2);
+            }
+
+            // Draw Snake Head
+            ctx.shadowColor = COLOR_SNAKE_BODY;
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = COLOR_SNAKE_HEAD;
+            ctx.fillRect(snake[0].x * gridSize, snake[0].y * gridSize, gridSize, gridSize);
+            
+            ctx.shadowBlur = 0;
+        }
+
+        // --- End Game ---
+        function gameOver(reason) {
+            isPlaying = false;
+            clearTimeout(gameLoopTimeout);
+            
+            canvasWrapper.classList.remove('playing', 'turbo');
+            canvasWrapper.classList.add('damage');
+
+            if (snakeLength > (globalScores.snake || 0)) {
+                globalScores.snake = snakeLength;
+                localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
+                document.getElementById('bestScoreUI').innerText = snakeLength;
+            }
+
+            overlayTitle.innerText = "GAME OVER";
+            overlayTitle.style.color = "#ff4757";
+            overlayTitle.style.textShadow = "0 0 20px rgba(255,71,87,0.5)";
+            
+            overlaySub.innerHTML = `${reason}<br><br>Final Score: <strong>${score}</strong> | Length: <strong>${snakeLength}</strong>`;
+            
+            setTimeout(() => {
+                overlay.classList.add('active');
+            }, 500);
+        }
+
+        function updateUI() {
+            scoreUI.innerText = score;
+            lengthUI.innerText = snakeLength;
+            levelUI.innerText = level;
+        }
+
+        ctx.fillStyle = COLOR_BG;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    </script>
+</body>
+</html>

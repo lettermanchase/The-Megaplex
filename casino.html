@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Megaplex Space Casino</title>
+    <style>
+        /* --- Deep Space / Cyberpunk Theme --- */
+        body { 
+            font-family: 'Courier New', Courier, monospace; 
+            background: radial-gradient(circle at center, #1b0033 0%, #000000 100%); 
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* CRT Overlay */
+        body::before {
+            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 100; background-size: 100% 4px, 6px 100%; pointer-events: none;
+            animation: flicker 0.15s infinite; opacity: 0.8;
+        }
+        @keyframes flicker { 0% { opacity: 0.75; } 50% { opacity: 0.85; } 100% { opacity: 0.75; } }
+
+        /* Stars Background */
+        .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: transparent; }
+
+        header { 
+            text-align: center; padding: 20px; background: rgba(10, 0, 20, 0.8); 
+            border-bottom: 2px solid #ff00ff; box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        h1 { margin: 0; font-size: 2.5em; text-transform: uppercase; text-shadow: 0 0 10px #ff00ff, 0 0 20px #8a2be2; letter-spacing: 3px; color: #ff99ff; }
+        
+        .token-display {
+            background: rgba(0,0,0,0.8); padding: 10px 25px; border-radius: 8px; border: 1px solid #00ffff;
+            font-size: 1.5em; font-weight: bold; color: #00ffff; box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+        }
+
+        .back-btn {
+            background: transparent; color: #ff0055; border: 1px solid #ff0055; padding: 10px 20px;
+            font-family: inherit; font-weight: bold; font-size: 1.1em; cursor: pointer; transition: 0.3s;
+            text-decoration: none; text-transform: uppercase;
+        }
+        .back-btn:hover { background: #ff0055; color: #000; box-shadow: 0 0 15px #ff0055; }
+
+        /* Navigation */
+        .casino-nav { display: flex; justify-content: center; gap: 20px; margin: 30px 0; position: relative; z-index: 10; }
+        .nav-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid #555; color: #aaa;
+            padding: 15px 30px; font-size: 1.2em; font-family: inherit; cursor: pointer; transition: 0.3s;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .nav-btn:hover { color: #fff; border-color: #fff; }
+        .nav-btn.active { background: rgba(0, 255, 255, 0.1); color: #00ffff; border-color: #00ffff; box-shadow: 0 0 15px rgba(0,255,255,0.4); text-shadow: 0 0 5px #00ffff; }
+
+        /* Game Containers */
+        .game-container { display: none; max-width: 800px; margin: 0 auto; background: rgba(0,0,0,0.6); border: 1px solid #333; padding: 30px; border-radius: 10px; position: relative; z-index: 10; text-align: center; backdrop-filter: blur(5px); }
+        .game-container.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Betting Area */
+        .bet-area { margin: 20px 0; padding: 20px; background: rgba(0,255,255,0.05); border: 1px dashed #00ffff; border-radius: 8px; }
+        .bet-input { background: #000; border: 1px solid #00ffff; color: #00ffff; padding: 10px; font-size: 1.2em; font-family: inherit; width: 150px; text-align: center; outline: none; }
+        .action-btn { background: #00ffff; color: #000; border: none; padding: 10px 25px; font-size: 1.2em; font-weight: bold; font-family: inherit; cursor: pointer; transition: 0.2s; text-transform: uppercase; margin: 5px; }
+        .action-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 15px #00ffff; }
+        .action-btn:disabled { background: #555; color: #222; cursor: not-allowed; box-shadow: none; }
+        .action-btn.danger { background: #ff0055; color: #fff; }
+        .action-btn.danger:hover:not(:disabled) { box-shadow: 0 0 15px #ff0055; }
+
+        .message-board { margin-top: 20px; font-size: 1.3em; height: 30px; color: #ff99ff; text-shadow: 0 0 5px #ff99ff; }
+
+        /* --- Game Specific Styles --- */
+        /* Slots */
+        .slot-machine { display: flex; justify-content: center; gap: 15px; margin: 30px 0; }
+        .reel { width: 100px; height: 120px; background: #111; border: 3px solid #ff00ff; border-radius: 10px; font-size: 4em; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 20px #000, 0 0 15px rgba(255,0,255,0.4); background: linear-gradient(180deg, #222 0%, #444 50%, #222 100%); }
+        .spinning { animation: spin 0.1s linear infinite; }
+        @keyframes spin { 0% { transform: translateY(-10px); } 100% { transform: translateY(10px); } }
+
+        /* Cards (Blackjack & Poker) */
+        .card-table { min-height: 150px; margin: 20px 0; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .playing-card { width: 80px; height: 120px; background: #fff; color: #000; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 2em; font-weight: bold; box-shadow: 2px 2px 10px rgba(0,0,0,0.8); position: relative; cursor: pointer; transition: 0.2s; }
+        .playing-card.red { color: #d63031; }
+        .playing-card.held { border: 3px solid #00ffff; box-shadow: 0 0 15px #00ffff; transform: translateY(-10px); }
+        .playing-card[data-hidden="true"] { background: repeating-linear-gradient(45deg, #111, #111 10px, #333 10px, #333 20px); color: transparent; border: 1px solid #555; }
+        .hand-score { font-size: 1.2em; color: #00ffff; margin-bottom: 10px; }
+
+        /* Roulette */
+        .roulette-wheel { font-size: 5em; margin: 20px 0; }
+        .roulette-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; margin: 0 auto; }
+        .r-btn { padding: 10px; font-weight: bold; cursor: pointer; border: 1px solid #fff; background: #222; color: #fff; transition: 0.2s; }
+        .r-btn.red { background: #d63031; }
+        .r-btn.black { background: #2d3436; }
+        .r-btn.green { background: #00b894; grid-column: 1 / -1; }
+        .r-btn:hover, .r-btn.selected { transform: scale(1.05); border-color: #00ffff; box-shadow: 0 0 15px #00ffff; z-index: 2; }
+    </style>
+</head>
+<body>
+
+    <!-- Simple CSS Stars -->
+    <div class="stars" id="stars"></div>
+    <script>
+        // Generate background stars
+        const stars = document.getElementById('stars');
+        for(let i=0; i<100; i++) {
+            let star = document.createElement('div');
+            star.style.position = 'absolute';
+            star.style.width = Math.random() * 3 + 'px';
+            star.style.height = star.style.width;
+            star.style.background = '#fff';
+            star.style.left = Math.random() * 100 + 'vw';
+            star.style.top = Math.random() * 100 + 'vh';
+            star.style.opacity = Math.random();
+            star.style.boxShadow = '0 0 5px #fff';
+            stars.appendChild(star);
+        }
+    </script>
+
+    <header>
+        <a href="index.html" class="back-btn">⬅ Megaplex</a>
+        <h1>🪐 Space Casino</h1>
+        <div class="token-display">🎟️ <span id="tokenBalance">0</span></div>
+    </header>
+
+    <div class="casino-nav">
+        <button class="nav-btn active" onclick="openGame('slots', this)">🎰 Supernova Slots</button>
+        <button class="nav-btn" onclick="openGame('roulette', this)">🎡 Quantum Roulette</button>
+        <button class="nav-btn" onclick="openGame('blackjack', this)">🃏 Nebula 21</button>
+        <button class="nav-btn" onclick="openGame('poker', this)">♠️ Pulsar Poker</button>
+    </div>
+
+    <!-- 1. SLOTS -->
+    <div id="slots" class="game-container active">
+        <h2>Supernova Slots</h2>
+        <p style="color:#aaa">Match 3. Realistic RTP odds. 👾 pays 50x!</p>
+        
+        <div class="slot-machine">
+            <div class="reel" id="reel1">🍒</div>
+            <div class="reel" id="reel2">🍒</div>
+            <div class="reel" id="reel3">🍒</div>
+        </div>
+
+        <div class="bet-area">
+            Bet Amount: <input type="number" id="slotBet" class="bet-input" value="10" min="1">
+            <button class="action-btn" id="btnSpin" onclick="playSlots()">SPIN</button>
+        </div>
+        <div class="message-board" id="slotMsg">Place your bet!</div>
+    </div>
+
+    <!-- 2. ROULETTE -->
+    <div id="roulette" class="game-container">
+        <h2>Quantum Roulette</h2>
+        <p style="color:#aaa">European rules (Single Zero). True 1/37 odds.</p>
+        
+        <div class="roulette-wheel" id="rWheel">🎡</div>
+        <h3 id="rResult" style="color:#00ffff; font-size: 2em; margin: 5px 0;">--</h3>
+
+        <div class="roulette-board" id="rBoard">
+            <button class="r-btn green" onclick="selectRouletteBet('0')">0 (Pays 35:1)</button>
+            <button class="r-btn red" onclick="selectRouletteBet('red')">RED (1:1)</button>
+            <button class="r-btn black" onclick="selectRouletteBet('black')">BLACK (1:1)</button>
+            <button class="r-btn" onclick="selectRouletteBet('even')">EVEN (1:1)</button>
+            <button class="r-btn" onclick="selectRouletteBet('odd')">ODD (1:1)</button>
+            <!-- A few numbers for UI simplicity -->
+            <button class="r-btn red" onclick="selectRouletteBet('7')">7 (35:1)</button>
+            <button class="r-btn black" onclick="selectRouletteBet('13')">13 (35:1)</button>
+            <button class="r-btn red" onclick="selectRouletteBet('21')">21 (35:1)</button>
+        </div>
+
+        <div class="bet-area">
+            Selected: <span id="rSelectedBet" style="color:#00ffff; font-weight:bold;">None</span><br><br>
+            Bet: <input type="number" id="rouletteBet" class="bet-input" value="10" min="1">
+            <button class="action-btn" id="btnRoulette" onclick="playRoulette()">SPIN WHEEL</button>
+        </div>
+        <div class="message-board" id="rouletteMsg">Select a bet on the board!</div>
+    </div>
+
+    <!-- 3. BLACKJACK -->
+    <div id="blackjack" class="game-container">
+        <h2>Nebula 21 (Blackjack)</h2>
+        <p style="color:#aaa">Dealer stands on 17. Blackjack pays 3:2.</p>
+
+        <div>
+            <div class="hand-score" id="bjDealerScore">Dealer: --</div>
+            <div class="card-table" id="bjDealerCards"></div>
+        </div>
+        <hr style="border-color:#333">
+        <div>
+            <div class="hand-score" id="bjPlayerScore">Player: --</div>
+            <div class="card-table" id="bjPlayerCards"></div>
+        </div>
+
+        <div class="bet-area" id="bjBetArea">
+            Bet: <input type="number" id="bjBet" class="bet-input" value="25" min="1">
+            <button class="action-btn" onclick="startBlackjack()">DEAL</button>
+        </div>
+        
+        <div class="bet-area" id="bjActionArea" style="display:none;">
+            <button class="action-btn" onclick="bjHit()">HIT</button>
+            <button class="action-btn danger" onclick="bjStand()">STAND</button>
+        </div>
+        
+        <div class="message-board" id="bjMsg">Place your bet to start!</div>
+    </div>
+
+    <!-- 4. VIDEO POKER -->
+    <div id="poker" class="game-container">
+        <h2>Pulsar Poker (Jacks or Better)</h2>
+        <p style="color:#aaa">Click cards to HOLD. Standard video poker odds.</p>
+
+        <div class="card-table" id="vpCards">
+            <!-- Cards will inject here -->
+        </div>
+
+        <div class="bet-area" id="vpBetArea">
+            Bet: <input type="number" id="vpBet" class="bet-input" value="10" min="1">
+            <button class="action-btn" onclick="startPoker()">DEAL</button>
+        </div>
+
+        <div class="bet-area" id="vpActionArea" style="display:none;">
+            <button class="action-btn" onclick="vpDraw()">DRAW</button>
+        </div>
+
+        <div class="message-board" id="vpMsg">Royal Flush pays 800x!</div>
+    </div>
+
+    <script>
+        // --- 1. CORE SYSTEM & ECONOMY ---
+        let tokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+        document.getElementById('tokenBalance').innerText = tokens;
+
+        function updateTokens(amount) {
+            tokens += amount;
+            localStorage.setItem('megaplexTokens', tokens);
+            document.getElementById('tokenBalance').innerText = tokens;
+        }
+
+        function checkBet(amount) {
+            if (isNaN(amount) || amount <= 0) return false;
+            if (amount > tokens) {
+                alert("Insufficient tokens! Go play arcade games in the Megaplex to earn more.");
+                return false;
+            }
+            return true;
+        }
+
+        function openGame(gameId, btn) {
+            document.querySelectorAll('.game-container').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(gameId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // --- 2. GAME: SUPERNOVA SLOTS ---
+        // Realistic weighted reels. 👾 is very rare.
+        const slotSymbols = [
+            { icon: '🍒', weight: 40, payout: 2 }, // 2x for 3 cherries
+            { icon: '🍋', weight: 30, payout: 3 },
+            { icon: '🔔', weight: 15, payout: 5 },
+            { icon: '💎', weight: 10, payout: 10 },
+            { icon: '🪐', weight: 4, payout: 25 },
+            { icon: '👾', weight: 1, payout: 50 }  // Jackpot
+        ];
+
+        function getRandomSymbol() {
+            let totalWeight = slotSymbols.reduce((sum, sym) => sum + sym.weight, 0);
+            let random = Math.random() * totalWeight;
+            for (let sym of slotSymbols) {
+                if (random < sym.weight) return sym;
+                random -= sym.weight;
+            }
+            return slotSymbols[0];
+        }
+
+        function playSlots() {
+            let bet = parseInt(document.getElementById('slotBet').value);
+            if (!checkBet(bet)) return;
+            
+            updateTokens(-bet);
+            let btn = document.getElementById('btnSpin');
+            let msg = document.getElementById('slotMsg');
+            btn.disabled = true;
+            msg.innerText = "Spinning...";
+
+            let reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
+            reels.forEach(r => r.classList.add('spinning'));
+
+            setTimeout(() => {
+                let results = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
+                
+                reels.forEach((r, i) => {
+                    r.classList.remove('spinning');
+                    r.innerText = results[i].icon;
+                });
+
+                // Win Logic
+                if (results[0].icon === results[1].icon && results[1].icon === results[2].icon) {
+                    let winAmount = bet * results[0].payout;
+                    updateTokens(winAmount);
+                    msg.innerText = `JACKPOT! Match 3 ${results[0].icon}! You won ${winAmount} 🎟️!`;
+                    msg.style.color = "#00ffff";
+                } else {
+                    msg.innerText = "No match. Try again!";
+                    msg.style.color = "#ff0055";
+                }
+                btn.disabled = false;
+            }, 1000);
+        }
+
+        // --- 3. GAME: QUANTUM ROULETTE ---
+        let currentRouletteBetType = null;
+        
+        function selectRouletteBet(type) {
+            currentRouletteBetType = type;
+            document.querySelectorAll('.r-btn').forEach(b => b.classList.remove('selected'));
+            event.target.classList.add('selected');
+            document.getElementById('rSelectedBet').innerText = type.toUpperCase();
+        }
+
+        function playRoulette() {
+            if (!currentRouletteBetType) {
+                alert("Please select a bet type from the board!");
+                return;
+            }
+            let bet = parseInt(document.getElementById('rouletteBet').value);
+            if (!checkBet(bet)) return;
+
+            updateTokens(-bet);
+            let msg = document.getElementById('rouletteMsg');
+            let wheel = document.getElementById('rWheel');
+            let resDisplay = document.getElementById('rResult');
+            
+            document.getElementById('btnRoulette').disabled = true;
+            msg.innerText = "Wheel is spinning...";
+            wheel.style.animation = "spin 0.2s linear infinite";
+
+            setTimeout(() => {
+                wheel.style.animation = "none";
+                let resultNumber = Math.floor(Math.random() * 37); // 0 to 36
+                let isRed = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(resultNumber);
+                let isBlack = resultNumber !== 0 && !isRed;
+                let colorText = resultNumber === 0 ? "GREEN" : (isRed ? "RED" : "BLACK");
+                
+                resDisplay.innerText = `${resultNumber} ${colorText}`;
+                resDisplay.style.color = resultNumber === 0 ? "#00b894" : (isRed ? "#d63031" : "#fff");
+
+                let won = false;
+                let winAmount = 0;
+
+                // Win Evaluation
+                if (currentRouletteBetType === resultNumber.toString()) { won = true; winAmount = bet * 36; }
+                else if (currentRouletteBetType === 'red' && isRed) { won = true; winAmount = bet * 2; }
+                else if (currentRouletteBetType === 'black' && isBlack) { won = true; winAmount = bet * 2; }
+                else if (currentRouletteBetType === 'even' && resultNumber !== 0 && resultNumber % 2 === 0) { won = true; winAmount = bet * 2; }
+                else if (currentRouletteBetType === 'odd' && resultNumber !== 0 && resultNumber % 2 !== 0) { won = true; winAmount = bet * 2; }
+
+                if (won) {
+                    updateTokens(winAmount);
+                    msg.innerText = `Winner! Payout: ${winAmount} 🎟️!`;
+                    msg.style.color = "#00ffff";
+                } else {
+                    msg.innerText = "House wins. Try again!";
+                    msg.style.color = "#ff0055";
+                }
+                document.getElementById('btnRoulette').disabled = false;
+            }, 1500);
+        }
+
+        // --- 4. SHARED CARD ENGINE ---
+        const suits = ['♠️', '♣️', '♥️', '♦️'];
+        const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        
+        function buildDeck() {
+            let deck = [];
+            for (let suit of suits) {
+                for (let val of values) {
+                    deck.push({ suit, val, isRed: suit === '♥️' || suit === '♦️' });
+                }
+            }
+            return deck.sort(() => Math.random() - 0.5); // Shuffle
+        }
+
+        function createCardDOM(card, hidden=false) {
+            let el = document.createElement('div');
+            el.className = `playing-card ${card.isRed ? 'red' : ''}`;
+            if (hidden) {
+                el.dataset.hidden = "true";
+            } else {
+                el.innerHTML = `${card.val}<br>${card.suit}`;
+            }
+            return el;
+        }
+
+        // --- 5. GAME: NEBULA BLACKJACK ---
+        let bjDeck = [];
+        let bjPlayer = [];
+        let bjDealer = [];
+        let bjCurrentBet = 0;
+
+        function getBjScore(hand) {
+            let score = 0;
+            let aces = 0;
+            for (let card of hand) {
+                if (card.val === 'A') { aces += 1; score += 11; }
+                else if (['J','Q','K'].includes(card.val)) score += 10;
+                else score += parseInt(card.val);
+            }
+            while (score > 21 && aces > 0) { score -= 10; aces -= 1; }
+            return score;
+        }
+
+        function renderBjBoard(hideDealer = false) {
+            let dTable = document.getElementById('bjDealerCards');
+            let pTable = document.getElementById('bjPlayerCards');
+            dTable.innerHTML = ''; pTable.innerHTML = '';
+            
+            bjPlayer.forEach(c => pTable.appendChild(createCardDOM(c)));
+            bjDealer.forEach((c, i) => dTable.appendChild(createCardDOM(c, hideDealer && i === 1)));
+            
+            document.getElementById('bjPlayerScore').innerText = `Player: ${getBjScore(bjPlayer)}`;
+            document.getElementById('bjDealerScore').innerText = hideDealer ? `Dealer: ?` : `Dealer: ${getBjScore(bjDealer)}`;
+        }
+
+        function startBlackjack() {
+            let bet = parseInt(document.getElementById('bjBet').value);
+            if (!checkBet(bet)) return;
+            bjCurrentBet = bet;
+            updateTokens(-bet);
+
+            bjDeck = buildDeck();
+            bjPlayer = [bjDeck.pop(), bjDeck.pop()];
+            bjDealer = [bjDeck.pop(), bjDeck.pop()];
+
+            document.getElementById('bjBetArea').style.display = 'none';
+            document.getElementById('bjActionArea').style.display = 'block';
+            document.getElementById('bjMsg').innerText = "Hit or Stand?";
+            document.getElementById('bjMsg').style.color = "#fff";
+
+            renderBjBoard(true);
+
+            if (getBjScore(bjPlayer) === 21) endGameBj("BLACKJACK! You win 3:2!", bet * 2.5);
+        }
+
+        function bjHit() {
+            bjPlayer.push(bjDeck.pop());
+            renderBjBoard(true);
+            if (getBjScore(bjPlayer) > 21) endGameBj("BUST! You went over 21.", 0);
+        }
+
+        function bjStand() {
+            renderBjBoard(false); // Reveal dealer
+            let dScore = getBjScore(bjDealer);
+            
+            function dealerPlay() {
+                if (dScore < 17) {
+                    bjDealer.push(bjDeck.pop());
+                    dScore = getBjScore(bjDealer);
+                    renderBjBoard(false);
+                    setTimeout(dealerPlay, 800);
+                } else {
+                    let pScore = getBjScore(bjPlayer);
+                    if (dScore > 21) endGameBj("Dealer Busts! You Win!", bjCurrentBet * 2);
+                    else if (pScore > dScore) endGameBj("You Win!", bjCurrentBet * 2);
+                    else if (pScore === dScore) endGameBj("Push (Tie). Bet returned.", bjCurrentBet);
+                    else endGameBj("Dealer Wins.", 0);
+                }
+            }
+            setTimeout(dealerPlay, 800);
+        }
+
+        function endGameBj(msg, payout) {
+            if (payout > 0) updateTokens(payout);
+            document.getElementById('bjMsg').innerText = msg;
+            document.getElementById('bjMsg').style.color = payout > 0 ? "#00ffff" : (payout === bjCurrentBet ? "#fff" : "#ff0055");
+            document.getElementById('bjActionArea').style.display = 'none';
+            document.getElementById('bjBetArea').style.display = 'block';
+        }
+
+        // --- 6. GAME: PULSAR VIDEO POKER ---
+        let vpDeck = [];
+        let vpHand = [];
+        let vpHeld = [false, false, false, false, false];
+        let vpCurrentBet = 0;
+
+        function startPoker() {
+            let bet = parseInt(document.getElementById('vpBet').value);
+            if (!checkBet(bet)) return;
+            vpCurrentBet = bet;
+            updateTokens(-bet);
+
+            vpDeck = buildDeck();
+            vpHand = [vpDeck.pop(), vpDeck.pop(), vpDeck.pop(), vpDeck.pop(), vpDeck.pop()];
+            vpHeld = [false, false, false, false, false];
+
+            document.getElementById('vpBetArea').style.display = 'none';
+            document.getElementById('vpActionArea').style.display = 'block';
+            document.getElementById('vpMsg').innerText = "Click cards to HOLD, then press DRAW.";
+            document.getElementById('vpMsg').style.color = "#fff";
+            
+            renderVpBoard();
+        }
+
+        function renderVpBoard() {
+            let table = document.getElementById('vpCards');
+            table.innerHTML = '';
+            vpHand.forEach((card, i) => {
+                let dom = createCardDOM(card);
+                if (vpHeld[i]) dom.classList.add('held');
+                dom.onclick = () => {
+                    vpHeld[i] = !vpHeld[i];
+                    renderVpBoard();
+                };
+                table.appendChild(dom);
+            });
+        }
+
+        function vpDraw() {
+            // Replace unheld cards
+            for(let i=0; i<5; i++) {
+                if(!vpHeld[i]) vpHand[i] = vpDeck.pop();
+            }
+            renderVpBoard();
+            
+            // Disable clicking after draw
+            document.querySelectorAll('#vpCards .playing-card').forEach(c => c.onclick = null);
+            
+            evaluatePokerHand();
+            
+            document.getElementById('vpActionArea').style.display = 'none';
+            document.getElementById('vpBetArea').style.display = 'block';
+        }
+
+        function evaluatePokerHand() {
+            // Simplified evaluator for Jacks or Better
+            let counts = {};
+            let faces = vpHand.map(c => c.val);
+            let suitsList = vpHand.map(c => c.suit);
+            
+            faces.forEach(f => counts[f] = (counts[f] || 0) + 1);
+            let isFlush = new Set(suitsList).size === 1;
+            
+            let vals = faces.map(f => {
+                if(f==='A') return 14; if(f==='K') return 13; if(f==='Q') return 12; if(f==='J') return 11; return parseInt(f);
+            }).sort((a,b)=>a-b);
+            
+            let isStraight = (vals[4]-vals[0]===4 && new Set(vals).size===5) || (vals.join(',') === "2,3,4,5,14"); // standard + A-5
+
+            let pairs = Object.values(counts).filter(v => v === 2).length;
+            let three = Object.values(counts).includes(3);
+            let four = Object.values(counts).includes(4);
+
+            let hasJacksOrBetter = false;
+            ['J','Q','K','A'].forEach(f => { if(counts[f] >= 2) hasJacksOrBetter = true; });
+
+            let msg = "Game Over. No Win.";
+            let mult = 0;
+
+            if (isFlush && isStraight && vals.includes(14) && vals.includes(13)) { mult = 800; msg = "ROYAL FLUSH!"; }
+            else if (isFlush && isStraight) { mult = 50; msg = "STRAIGHT FLUSH!"; }
+            else if (four) { mult = 25; msg = "FOUR OF A KIND!"; }
+            else if (three && pairs === 1) { mult = 9; msg = "FULL HOUSE!"; }
+            else if (isFlush) { mult = 6; msg = "FLUSH!"; }
+            else if (isStraight) { mult = 4; msg = "STRAIGHT!"; }
+            else if (three) { mult = 3; msg = "THREE OF A KIND!"; }
+            else if (pairs === 2) { mult = 2; msg = "TWO PAIR!"; }
+            else if (hasJacksOrBetter) { mult = 1; msg = "JACKS OR BETTER!"; }
+
+            if (mult > 0) {
+                let winAmount = vpCurrentBet * mult;
+                updateTokens(winAmount);
+                document.getElementById('vpMsg').innerText = `${msg} You won ${winAmount} 🎟️!`;
+                document.getElementById('vpMsg').style.color = "#00ffff";
+            } else {
+                document.getElementById('vpMsg').innerText = msg;
+                document.getElementById('vpMsg').style.color = "#ff0055";
+            }
+        }
+    </script>
+</body>
+</html>

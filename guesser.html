@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Breaker - Arcade</title>
+    <style>
+        /* Shared Arcade Theme */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #0b1610, #0f3320, #092115); 
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        header { 
+            padding: 15px 30px; background: rgba(0,0,0,0.8); z-index: 10;
+            border-bottom: 2px solid #1dd1a1; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 15px rgba(29, 209, 161, 0.2);
+        }
+        .back-btn {
+            background: transparent; border: 2px solid #1dd1a1; color: #1dd1a1; padding: 8px 20px;
+            border-radius: 20px; text-decoration: none; font-weight: bold; transition: 0.3s;
+        }
+        .back-btn:hover { background: #1dd1a1; color: #000; box-shadow: 0 0 10px #1dd1a1; }
+        
+        /* Game Layout */
+        .game-wrapper {
+            display: flex; flex: 1; padding: 20px; gap: 30px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;
+            justify-content: center; align-items: flex-start; margin-top: 10px;
+        }
+
+        /* Screen Shake Animation */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+        .shake-effect { animation: shake 0.3s ease-in-out; }
+
+        /* Sidebar Stats */
+        .dashboard {
+            width: 300px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 25px;
+            border: 1px solid rgba(29, 209, 161, 0.3); display: flex; flex-direction: column; gap: 15px; box-sizing: border-box;
+        }
+        .dashboard h3 { margin: 0; color: #1dd1a1; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .diff-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid transparent; color: white; padding: 10px;
+            border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: bold; width: 100%;
+        }
+        .diff-btn:hover { background: rgba(255,255,255,0.2); }
+        .diff-btn.active { background: #1dd1a1; color: #000; box-shadow: 0 0 15px rgba(29,209,161,0.5); }
+        
+        .stat-box { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 10px; border-left: 4px solid #feca57; }
+        .stat-label { font-size: 0.9em; color: #a4b0be; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #feca57; margin-top: 5px; }
+        
+        .lives-container { display: flex; gap: 5px; margin-top: 5px; font-size: 1.5em; }
+        .life { color: #ff4757; text-shadow: 0 0 10px #ff4757; transition: 0.3s; }
+        .life.lost { color: #333; text-shadow: none; opacity: 0.5; }
+        
+        .powerup-btn {
+            background: linear-gradient(45deg, #48dbfb, #0abde3); border: none; padding: 12px; color: #000; font-weight: bold;
+            border-radius: 10px; cursor: pointer; transition: 0.2s; text-transform: uppercase; width: 100%; box-sizing: border-box;
+        }
+        .powerup-btn.parity { background: linear-gradient(45deg, #a55eea, #8854d0); color: #fff; }
+        .powerup-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(72, 219, 251, 0.4); }
+        .powerup-btn.parity:hover { box-shadow: 0 5px 15px rgba(165, 94, 234, 0.4); }
+        .powerup-btn:disabled { background: #555; color: #888; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Main Board */
+        .main-board {
+            flex: 1; display: flex; flex-direction: column; align-items: center; max-width: 500px; position: relative;
+        }
+        .range-display {
+            font-size: 3em; font-weight: bold; letter-spacing: 2px; color: #fff; margin-bottom: 10px; text-align: center;
+            background: rgba(0,0,0,0.6); padding: 15px 40px; border-radius: 15px; border: 2px solid #48dbfb;
+            text-shadow: 0 0 15px rgba(72, 219, 251, 0.5); box-shadow: inset 0 0 20px rgba(72, 219, 251, 0.2);
+            width: 100%; box-sizing: border-box;
+        }
+        
+        .radar-box {
+            width: 100%; height: 60px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5em; font-weight: bold; margin-bottom: 20px; transition: 0.3s; background: #2f3640; color: #a4b0be;
+            border: 2px solid rgba(255,255,255,0.1); text-transform: uppercase; letter-spacing: 2px; text-align: center; box-sizing: border-box;
+        }
+
+        /* Radar Colors */
+        .radar-freezing { background: rgba(52, 31, 151, 0.2); border-color: #341f97; color: #341f97; text-shadow: 0 0 10px rgba(52, 31, 151, 0.8); }
+        .radar-cold { background: rgba(72, 219, 251, 0.2); border-color: #48dbfb; color: #48dbfb; text-shadow: 0 0 10px rgba(72, 219, 251, 0.8); }
+        .radar-warm { background: rgba(254, 202, 87, 0.2); border-color: #feca57; color: #feca57; text-shadow: 0 0 10px rgba(254, 202, 87, 0.8); }
+        .radar-hot { background: rgba(255, 159, 67, 0.2); border-color: #ff9f43; color: #ff9f43; text-shadow: 0 0 10px rgba(255, 159, 67, 0.8); }
+        .radar-burning { background: rgba(255, 71, 87, 0.2); border-color: #ff4757; color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.8); animation: pulse 0.5s infinite; }
+        .radar-win { background: rgba(29, 209, 161, 0.2); border-color: #1dd1a1; color: #1dd1a1; text-shadow: 0 0 10px rgba(29, 209, 161, 0.8); }
+        .radar-error { background: rgba(255, 71, 87, 0.2); border-color: #ff4757; color: #ff4757; }
+        .radar-parity { background: rgba(165, 94, 234, 0.2); border-color: #a55eea; color: #a55eea; text-shadow: 0 0 10px rgba(165, 94, 234, 0.8); }
+        .radar-ping { background: rgba(72, 219, 251, 0.2); border-color: #48dbfb; color: #48dbfb; text-shadow: 0 0 10px rgba(72, 219, 251, 0.8); }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
+        /* End Screen (Replaces Range and Radar visually) */
+        .overlay {
+            width: 100%; background: rgba(15, 32, 39, 0.95); border: 2px solid #1dd1a1; box-shadow: 0 0 30px rgba(29, 209, 161, 0.3);
+            border-radius: 20px; padding: 30px 20px; text-align: center; display: none; flex-direction: column; align-items: center; 
+            box-sizing: border-box; margin-bottom: 20px;
+        }
+        .overlay.active { display: flex; animation: fadeIn 0.3s ease-out; }
+        .overlay.loss { border-color: #ff4757; box-shadow: 0 0 30px rgba(255, 71, 87, 0.3); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .input-group { display: flex; width: 100%; gap: 10px; margin-bottom: 20px; position: relative; z-index: 30; }
+        .input-group input {
+            flex: 1; background: rgba(0,0,0,0.8); border: 2px solid #1dd1a1; color: #fff; font-size: 2em;
+            padding: 15px; border-radius: 10px; text-align: center; outline: none; font-weight: bold; width: 100%;
+            box-sizing: border-box; transition: 0.3s;
+        }
+        .input-group input:focus { box-shadow: 0 0 15px rgba(29, 209, 161, 0.4); }
+        .input-group input:disabled { border-color: #555; color: #888; background: rgba(0,0,0,0.5); }
+        
+        .btn-submit {
+            background: #1dd1a1; color: #000; border: none; font-size: 2em; font-weight: bold;
+            padding: 0 30px; border-radius: 10px; cursor: pointer; transition: 0.2s;
+        }
+        .btn-submit:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(29, 209, 161, 0.6); }
+        .btn-submit.replay { background: #feca57; box-shadow: 0 0 15px rgba(254, 202, 87, 0.6); }
+
+        /* History Log */
+        .history-panel {
+            width: 100%; background: rgba(0,0,0,0.4); border-radius: 15px; padding: 15px;
+            max-height: 200px; overflow-y: auto; border: 1px solid #333; box-sizing: border-box;
+        }
+        .history-list { list-style: none; padding: 0; margin: 0; }
+        .history-list li { padding: 8px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; font-family: monospace; font-size: 1.1em; }
+        .history-list li:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn">⬅ Back to Hub</a>
+        <h2 style="margin:0; color:#fff;">Code Breaker</h2>
+        <div style="width: 150px; text-align: right; color: #a4b0be;">Best Score: <span id="bestScoreUI" style="color:#feca57; font-weight:bold;">0</span></div>
+    </header>
+
+    <div class="game-wrapper" id="gameBoard">
+        
+        <!-- Left: Dashboard -->
+        <div class="dashboard">
+            <h3>Difficulty Limit</h3>
+            <button class="diff-btn active" id="btn-easy" onclick="setDifficulty('easy')">Easy (1 - 50)</button>
+            <button class="diff-btn" id="btn-med" onclick="setDifficulty('med')">Medium (1 - 100)</button>
+            <button class="diff-btn" id="btn-hard" onclick="setDifficulty('hard')">Hard (1 - 500)</button>
+            
+            <div class="stat-box" style="margin-top: 5px;">
+                <div class="stat-label">System Integrity (Lives)</div>
+                <div class="lives-container" id="livesContainer"></div>
+            </div>
+
+            <div class="stat-box" style="border-left-color: #48dbfb;">
+                <div class="stat-label">Current Score <span id="streakUI" style="float:right; color:#f368e0; font-size: 0.8em;">🔥 x1.0</span></div>
+                <div class="stat-value" id="scoreUI" style="color:#48dbfb;">0</div>
+            </div>
+
+            <button class="powerup-btn" id="btn-ping" onclick="usePing()">
+                📡 Ping Range (-500)
+            </button>
+            <button class="powerup-btn parity" id="btn-parity" onclick="useParity()">
+                🔍 Scan Parity (-200)
+            </button>
+        </div>
+
+        <!-- Center: Game Board -->
+        <div class="main-board">
+            
+            <!-- Standard Game Views -->
+            <div class="range-display" id="rangeDisplay">1 - 50</div>
+            <div class="radar-box" id="radarBox">Awaiting Input...</div>
+            
+            <!-- Sleek End Screen (Replaces Range/Radar on Game Over) -->
+            <div class="overlay" id="resultOverlay">
+                <h1 id="resultTitle" style="font-size: 2.5em; margin: 0; text-transform: uppercase;">System Locked</h1>
+                <p id="resultSub" style="font-size: 1.1em; color: #a4b0be; margin-top: 10px;">Target was: <strong id="revealCode">0</strong></p>
+                <p style="margin-top: 15px; font-size: 0.85em; color: #777; text-transform: uppercase; letter-spacing: 1px;">[ Press Enter or 🔄 to Replay ]</p>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-group">
+                <input type="number" id="guessInput" placeholder="Enter Code..." onkeypress="handleEnter(event)">
+                <button class="btn-submit" id="submitBtn" onclick="handleMainAction()">➜</button>
+            </div>
+
+            <div class="history-panel">
+                <ul class="history-list" id="historyList">
+                    <li style="color: #a4b0be; text-align: center; display: block;">No attempts yet.</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Hub Data Load ---
+        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+        document.getElementById('bestScoreUI').innerText = globalScores.guesser || 0;
+
+        // --- Game Variables ---
+        let difficulty = 'easy';
+        let targetNumber = 0;
+        let minRange = 1;
+        let maxRange = 50;
+        let maxLives = 7;
+        let currentLives = 7;
+        let score = 0;
+        let streak = 0; 
+        let isGameOver = false;
+
+        const rangeDisplay = document.getElementById('rangeDisplay');
+        const radarBox = document.getElementById('radarBox');
+        const guessInput = document.getElementById('guessInput');
+        const historyList = document.getElementById('historyList');
+        const livesContainer = document.getElementById('livesContainer');
+        const scoreUI = document.getElementById('scoreUI');
+        const streakUI = document.getElementById('streakUI');
+        const pingBtn = document.getElementById('btn-ping');
+        const parityBtn = document.getElementById('btn-parity');
+        const submitBtn = document.getElementById('submitBtn');
+        const gameBoard = document.getElementById('gameBoard');
+        const resultOverlay = document.getElementById('resultOverlay');
+
+        // --- Setup ---
+        function setDifficulty(level) {
+            difficulty = level;
+            document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${level}`).classList.add('active');
+            streak = 0; 
+            initGame();
+        }
+
+        function getConfig() {
+            if (difficulty === 'easy') return { max: 50, lives: 7 };
+            if (difficulty === 'med') return { max: 100, lives: 6 };
+            if (difficulty === 'hard') return { max: 500, lives: 5 };
+        }
+
+        function getStreakMultiplier() {
+            let step = difficulty === 'easy' ? 0.1 : (difficulty === 'med' ? 0.3 : 0.6);
+            return 1 + (streak * step);
+        }
+
+        function initGame() {
+            const config = getConfig();
+            minRange = 1;
+            maxRange = config.max;
+            maxLives = config.lives;
+            currentLives = maxLives;
+            isGameOver = false;
+            targetNumber = Math.floor(Math.random() * maxRange) + 1;
+            
+            // Toggle Display Panels
+            resultOverlay.classList.remove('active');
+            resultOverlay.classList.remove('loss');
+            rangeDisplay.style.display = 'block';
+            radarBox.style.display = 'flex';
+
+            // Reset Input
+            guessInput.value = '';
+            guessInput.disabled = false;
+            
+            // Reset Button to Play State
+            submitBtn.innerText = '➜';
+            submitBtn.classList.remove('replay');
+
+            historyList.innerHTML = '<li style="color: #a4b0be; text-align: center; display: block;">No attempts yet.</li>';
+            radarBox.className = 'radar-box';
+            radarBox.innerText = 'Awaiting Input...';
+            
+            updateRangeUI();
+            renderLives();
+            updateScoreUI();
+            
+            guessInput.focus();
+        }
+
+        // --- UI Updates ---
+        function updateRangeUI() {
+            rangeDisplay.innerText = `${minRange} - ${maxRange}`;
+        }
+
+        function renderLives() {
+            livesContainer.innerHTML = '';
+            for (let i = 0; i < maxLives; i++) {
+                const heart = document.createElement('span');
+                heart.innerText = '❤️';
+                heart.className = i < currentLives ? 'life' : 'life lost';
+                livesContainer.appendChild(heart);
+            }
+        }
+
+        function updateScoreUI() {
+            scoreUI.innerText = score;
+            let multi = getStreakMultiplier();
+            streakUI.innerText = `🔥 x${multi.toFixed(1)}`;
+            
+            pingBtn.disabled = score < 500 || isGameOver;
+            parityBtn.disabled = score < 200 || isGameOver;
+        }
+
+        function triggerShake() {
+            gameBoard.classList.remove('shake-effect');
+            void gameBoard.offsetWidth; // Trigger reflow
+            gameBoard.classList.add('shake-effect');
+        }
+
+        // --- Core Logic ---
+        function handleEnter(e) {
+            if (e.key === 'Enter') handleMainAction();
+        }
+
+        // Global Event Listener for "Enter" key replay when input is disabled
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && isGameOver) {
+                initGame();
+            }
+        });
+
+        function handleMainAction() {
+            if (isGameOver) {
+                initGame();
+            } else {
+                submitGuess();
+            }
+        }
+
+        function submitGuess() {
+            if (isGameOver) return;
+            
+            let guess = parseInt(guessInput.value);
+            
+            if (isNaN(guess) || guess < minRange || guess > maxRange) {
+                radarBox.className = 'radar-box radar-error';
+                radarBox.innerText = 'ERROR: OUT OF BOUNDS';
+                triggerShake();
+                guessInput.value = '';
+                return;
+            }
+
+            let distance = Math.abs(targetNumber - guess);
+            let isWin = (guess === targetNumber);
+
+            if (!isWin) {
+                if (guess < targetNumber && guess >= minRange) minRange = guess + 1;
+                if (guess > targetNumber && guess <= maxRange) maxRange = guess - 1;
+                currentLives--;
+                triggerShake(); // Shake on damage
+            }
+
+            let feedback = getFeedback(distance, maxRange - minRange);
+            if (isWin) feedback = { text: 'ACCESS GRANTED', class: 'radar-win', color: '#1dd1a1' };
+
+            radarBox.className = `radar-box ${feedback.class}`;
+            radarBox.innerText = isWin ? feedback.text : `${guess} is ${feedback.text}`;
+            
+            addHistory(guess, feedback);
+            updateRangeUI();
+            renderLives();
+            
+            if (isWin) {
+                handleWin();
+            } else if (currentLives <= 0) {
+                handleLoss();
+            }
+
+            if (!isGameOver) {
+                guessInput.value = '';
+                guessInput.focus();
+            }
+        }
+
+        // --- Radar Math ---
+        function getFeedback(dist, totalSpan) {
+            let percent = (dist / totalSpan) * 100;
+            
+            if (difficulty === 'easy' || totalSpan < 20) {
+                if (dist <= 2) return { text: 'BURNING UP', class: 'radar-burning', color: '#ff4757' };
+                if (dist <= 5) return { text: 'HOT', class: 'radar-hot', color: '#ff9f43' };
+                if (dist <= 10) return { text: 'WARM', class: 'radar-warm', color: '#feca57' };
+                if (dist <= 20) return { text: 'COLD', class: 'radar-cold', color: '#48dbfb' };
+                return { text: 'FREEZING', class: 'radar-freezing', color: '#341f97' };
+            }
+
+            if (percent <= 5) return { text: 'BURNING UP', class: 'radar-burning', color: '#ff4757' };
+            if (percent <= 15) return { text: 'HOT', class: 'radar-hot', color: '#ff9f43' };
+            if (percent <= 30) return { text: 'WARM', class: 'radar-warm', color: '#feca57' };
+            if (percent <= 60) return { text: 'COLD', class: 'radar-cold', color: '#48dbfb' };
+            return { text: 'FREEZING', class: 'radar-freezing', color: '#341f97' };
+        }
+
+        function addHistory(guess, feedback) {
+            if (historyList.children.length === 1 && historyList.children[0].innerText === 'No attempts yet.') {
+                historyList.innerHTML = '';
+            }
+            const li = document.createElement('li');
+            li.innerHTML = `<span>>_ Guessed: <strong>${guess}</strong></span> <span style="color: ${feedback.color};">${feedback.text}</span>`;
+            historyList.prepend(li);
+        }
+
+        // --- Powerups ---
+        function usePing() {
+            if (score < 500 || isGameOver) return;
+            score -= 500;
+            updateScoreUI();
+            
+            let midPoint = Math.floor((minRange + maxRange) / 2);
+            if (targetNumber <= midPoint) maxRange = midPoint;
+            else minRange = midPoint + 1;
+            
+            updateRangeUI();
+            radarBox.className = 'radar-box radar-ping';
+            radarBox.innerText = '📡 PING: RANGE HALVED';
+            guessInput.focus();
+        }
+
+        function useParity() {
+            if (score < 200 || isGameOver) return;
+            score -= 200;
+            updateScoreUI();
+            
+            let parity = (targetNumber % 2 === 0) ? "EVEN" : "ODD";
+            radarBox.className = 'radar-box radar-parity';
+            radarBox.innerText = `🔍 SCAN: TARGET IS ${parity}`;
+            
+            const li = document.createElement('li');
+            li.innerHTML = `<span style="color: #a55eea;">>_ SYS_SCAN: TARGET IS ${parity}</span>`;
+            historyList.prepend(li);
+            guessInput.focus();
+        }
+
+        // --- Win/Loss States ---
+        function handleWin() {
+            isGameOver = true;
+            
+            let baseScore = difficulty === 'easy' ? 100 : (difficulty === 'med' ? 250 : 500);
+            let lifeBonus = currentLives * 25;
+            let multi = getStreakMultiplier();
+            
+            let roundScore = Math.floor((baseScore + lifeBonus) * multi);
+            score += roundScore;
+            streak++; // Increase Streak
+            updateScoreUI();
+
+            if (score > (globalScores.guesser || 0)) {
+                globalScores.guesser = score;
+                localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
+                document.getElementById('bestScoreUI').innerText = score;
+            }
+
+            showEndScreen("Code Broken!", "#1dd1a1", `Gained <strong style="color:#1dd1a1;">+${roundScore}</strong> Score.<br>Combo x${multi.toFixed(1)}!`, false);
+        }
+
+        function handleLoss() {
+            isGameOver = true;
+            score = 0; 
+            streak = 0; // Break Streak
+            updateScoreUI();
+            showEndScreen("System Locked", "#ff4757", `You ran out of lives.`, true);
+        }
+
+        function showEndScreen(title, color, subText, isLoss) {
+            // Hide standard UI, show result screen
+            rangeDisplay.style.display = 'none';
+            radarBox.style.display = 'none';
+            
+            document.getElementById('resultTitle').innerText = title;
+            document.getElementById('resultTitle').style.color = color;
+            document.getElementById('resultSub').innerHTML = `${subText} <br><br> Target: <strong style="color:${color}; font-size:1.2em;">${targetNumber}</strong>`;
+            
+            if(isLoss) {
+                resultOverlay.classList.add('loss');
+            }
+
+            // Switch Input and Button to Replay State
+            submitBtn.innerText = '🔄';
+            submitBtn.classList.add('replay');
+            guessInput.disabled = true;
+            guessInput.value = 'ROUND OVER';
+            
+            resultOverlay.classList.add('active');
+        }
+
+        // Start
+        initGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Megaplex</title>
+    <style>
+        /* Base Theme */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); 
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+        }
+        
+        /* --- 2. CRT Scanline Overlay --- */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 100; /* Put it above everything */
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none; /* Crucial: Allows clicking through the overlay */
+            animation: flicker 0.15s infinite;
+            opacity: 0.6;
+        }
+        @keyframes flicker {
+            0% { opacity: 0.55; }
+            50% { opacity: 0.65; }
+            100% { opacity: 0.55; }
+        }
+        
+        header { 
+            text-align: center; padding: 30px; background: rgba(0,0,0,0.7); 
+            border-bottom: 3px solid #00d2d3; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            position: relative; min-height: 80px; display: flex; flex-direction: column; justify-content: center;
+        }
+        h1 { margin: 0; font-size: 3.5em; text-transform: uppercase; text-shadow: 0 0 15px #00d2d3; letter-spacing: 2px;}
+        .subtitle { color: #c8d6e5; font-size: 1.2em; margin-top: 10px; }
+        
+        /* Username Display */
+        .user-greeting {
+            position: absolute; bottom: 10px; left: 30px; font-weight: bold; color: #00d2d3; font-size: 1.1em;
+            text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 5px #00d2d3; z-index: 10;
+        }
+        
+        /* Top Right Controls */
+        .header-controls {
+            position: absolute; top: 30px; right: 40px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; z-index: 10;
+        }
+        .header-controls-top, .header-controls-bottom {
+            display: flex; gap: 15px; align-items: center;
+        }
+        .token-display {
+            background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 20px; border: 2px solid #feca57;
+            font-size: 1.5em; font-weight: bold; color: #feca57; box-shadow: 0 0 15px rgba(254, 202, 87, 0.4);
+        }
+        .sound-btn {
+            background: rgba(0,0,0,0.8); border: 2px solid #48dbfb; color: #48dbfb;
+            font-size: 1.2em; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            transition: 0.3s; display: flex; align-items: center; justify-content: center;
+        }
+        .sound-btn:hover { background: #48dbfb; color: #000; box-shadow: 0 0 15px rgba(72, 219, 251, 0.6); }
+        .sound-btn.muted { border-color: #ff4757; color: #ff4757; }
+        .sound-btn.muted:hover { background: #ff4757; color: #000; box-shadow: 0 0 15px rgba(255, 71, 87, 0.6); }
+        
+        /* --- Avatar Mini-Profile --- */
+        .hub-profile {
+            position: absolute; top: 15px; left: 30px;
+            transform: scale(0.4); transform-origin: top left;
+            cursor: pointer; transition: 0.2s; text-decoration: none; z-index: 10;
+        }
+        .hub-profile:hover { transform: scale(0.43); filter: brightness(1.2); }
+        
+        .avatar-stage {
+            width: 250px; height: 250px; border-radius: 20px; border: 4px solid #fff;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
+            background: #2f3640; overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
+            transition: background 0.3s;
+        }
+        .bot-head {
+            width: 100px; height: 80px; background: #c8d6e5; border-radius: 15px;
+            position: relative; display: flex; justify-content: center; align-items: center; z-index: 2;
+            transition: background 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .bot-eyes {
+            width: 60px; height: 30px; background: #000; border-radius: 5px;
+            display: flex; justify-content: space-around; align-items: center; padding: 0 5px;
+        }
+        .eye { width: 15px; height: 15px; background: #00d2d3; border-radius: 50%; box-shadow: 0 0 10px #00d2d3; }
+        
+        .bot-body {
+            width: 80px; height: 70px; background: #a4b0be; border-radius: 10px;
+            margin-top: 5px; position: relative; z-index: 1; transition: background 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        
+        .bot-hat { position: absolute; top: -45px; left: 50%; transform: translateX(-50%); font-size: 3.5em; z-index: 3; transition: 0.3s; line-height: 1; }
+        
+        /* Navigation Tabs */
+        .tab-container { display: flex; justify-content: center; gap: 15px; margin: 30px 0; flex-wrap: wrap; position: relative; z-index: 10; }
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.1); border: 1px solid #fff; color: white; padding: 10px 25px;
+            border-radius: 30px; cursor: pointer; transition: 0.3s; font-weight: bold; font-size: 1.1em;
+        }
+        .tab-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .tab-btn.active { background: #00d2d3; color: #000; border-color: #00d2d3; box-shadow: 0 0 15px #00d2d3; }
+        .tab-btn.leaderboard-btn { background: #ff9f43; border-color: #ff9f43; color: #000; }
+        .tab-btn.achievements-btn { background: #f368e0; border-color: #f368e0; color: #fff; }
+        .tab-btn.achievements-btn.active { background: #f368e0; color: #000; box-shadow: 0 0 15px #f368e0; }
+        
+        /* Grid & Cards */
+        .grid-container {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px; padding: 20px 40px 60px; max-width: 1400px; margin: 0 auto; position: relative; z-index: 10;
+        }
+        
+        .card-link {
+            text-decoration: none; color: inherit; display: flex; flex-direction: column; 
+            justify-content: space-between; align-items: center; /* Centering applied here */
+            background: rgba(0, 0, 0, 0.5); border-radius: 15px; 
+            padding: 25px; border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.3s; 
+            text-align: center; height: 180px; position: relative; overflow: hidden;
+            backdrop-filter: blur(5px);
+        }
+        .card-link > div { width: 100%; display: flex; flex-direction: column; align-items: center; } /* Centering titles inside */
+        
+        .card-link:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0, 210, 211, 0.4); border-color: #00d2d3; }
+        
+        /* --- Individual Card Colors --- */
+        .card-link.glitch { border-color: #f0f; background: rgba(255, 0, 255, 0.1); }
+        .card-link.glitch:hover { box-shadow: 0 15px 30px rgba(255, 0, 255, 0.4); }
+        .card-link.glitch h2 { color: #f0f; margin-top: 0;}
+        
+        .card-link.strikers { border-color: #00ffff; background: rgba(0, 255, 255, 0.1); }
+        .card-link.strikers:hover { box-shadow: 0 15px 30px rgba(0, 255, 255, 0.4); }
+        .card-link.strikers h2 { color: #00ffff; margin-top: 0;}
+
+        .card-link.asteroids { border-color: #00cec9; background: rgba(0, 206, 201, 0.1); }
+        .card-link.asteroids:hover { box-shadow: 0 15px 30px rgba(0, 206, 201, 0.4); }
+        .card-link.asteroids h2 { color: #00cec9; margin-top: 0;}
+
+        .card-link.tanks { border-color: #e67e22; background: rgba(230, 126, 34, 0.1); }
+        .card-link.tanks:hover { box-shadow: 0 15px 30px rgba(230, 126, 34, 0.4); }
+        .card-link.tanks h2 { color: #e67e22; margin-top: 0;}
+
+        .card-link.cyber { border-color: #9b59b6; background: rgba(155, 89, 182, 0.1); }
+        .card-link.cyber:hover { box-shadow: 0 15px 30px rgba(155, 89, 182, 0.4); }
+        .card-link.cyber h2 { color: #9b59b6; margin-top: 0;}
+
+        .card-link.fps { border-color: #ff4757; background: rgba(255, 71, 87, 0.1); }
+        .card-link.fps:hover { box-shadow: 0 15px 30px rgba(255, 71, 87, 0.4); }
+        .card-link.fps h2 { color: #ff4757; margin-top: 0;}
+
+        .card-link.platformer { border-color: #fd79a8; background: rgba(253, 121, 168, 0.1); }
+        .card-link.platformer:hover { box-shadow: 0 15px 30px rgba(253, 121, 168, 0.4); }
+        .card-link.platformer h2 { color: #fd79a8; margin-top: 0;}
+
+        .card-link.snake { border-color: #20bf6b; background: rgba(32, 191, 107, 0.1); }
+        .card-link.snake:hover { box-shadow: 0 15px 30px rgba(32, 191, 107, 0.4); }
+        .card-link.snake h2 { color: #20bf6b; margin-top: 0;}
+
+        .card-link.clicker { border-color: #f7b731; background: rgba(247, 183, 49, 0.1); }
+        .card-link.clicker:hover { box-shadow: 0 15px 30px rgba(247, 183, 49, 0.4); }
+        .card-link.clicker h2 { color: #f7b731; margin-top: 0;}
+
+        .card-link.reaction { border-color: #eb3b5a; background: rgba(235, 59, 90, 0.1); }
+        .card-link.reaction:hover { box-shadow: 0 15px 30px rgba(235, 59, 90, 0.4); }
+        .card-link.reaction h2 { color: #eb3b5a; margin-top: 0;}
+
+        .card-link.math { border-color: #3867d6; background: rgba(56, 103, 214, 0.1); }
+        .card-link.math:hover { box-shadow: 0 15px 30px rgba(56, 103, 214, 0.4); }
+        .card-link.math h2 { color: #3867d6; margin-top: 0;}
+
+        .card-link.ttt { border-color: #a55eea; background: rgba(165, 94, 234, 0.1); }
+        .card-link.ttt:hover { box-shadow: 0 15px 30px rgba(165, 94, 234, 0.4); }
+        .card-link.ttt h2 { color: #a55eea; margin-top: 0;}
+
+        .card-link.memory { border-color: #0fb9b1; background: rgba(15, 185, 177, 0.1); }
+        .card-link.memory:hover { box-shadow: 0 15px 30px rgba(15, 185, 177, 0.4); }
+        .card-link.memory h2 { color: #0fb9b1; margin-top: 0;}
+
+        .card-link.guesser { border-color: #fa8231; background: rgba(250, 130, 49, 0.1); }
+        .card-link.guesser:hover { box-shadow: 0 15px 30px rgba(250, 130, 49, 0.4); }
+        .card-link.guesser h2 { color: #fa8231; margin-top: 0;}
+
+        .card-link.racer { border-color: #ff007f; background: rgba(255, 0, 127, 0.1); }
+        .card-link.racer:hover { box-shadow: 0 15px 30px rgba(255, 0, 127, 0.4); }
+        .card-link.racer h2 { color: #ff007f; margin-top: 0;}
+        
+        .tag { font-size: 0.8em; padding: 4px 10px; border-radius: 12px; display: inline-block; margin-bottom: 10px; color: white; width: fit-content; }
+        
+        .play-btn {
+            padding: 10px 20px; border-radius: 8px; font-weight: bold; 
+            margin: auto auto 0 auto; transition: 0.3s; cursor: pointer; border: none; font-size: 1em; text-decoration: none; display: inline-block;
+        }
+        .play-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
+        
+        /* Leaderboard & Achievements View */
+        .panel-view { position: relative; z-index: 10; display: none; max-width: 1000px; margin: 0 auto; padding: 30px; background: rgba(0,0,0,0.8); border-radius: 15px; border: 1px solid #ff9f43; margin-bottom: 60px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #achievements-view { border-color: #f368e0; }
+        
+        /* Upgraded Leaderboard Rows */
+        .score-row { 
+            display: flex; justify-content: space-between; padding: 10px 15px; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1.1em; 
+            transition: 0.2s; border-radius: 8px; background: rgba(255,255,255,0.02);
+            margin-bottom: 5px; align-items: center;
+        }
+        .score-row:hover { 
+            background: rgba(255, 255, 255, 0.08); 
+            transform: translateX(5px); 
+            border-left: 4px solid #ff9f43; 
+        }
+        .score-row:last-child { border-bottom: none; }
+        .score-val { color: #ff9f43; font-weight: bold; font-family: monospace; font-size: 1.1em;}
+        .game-title-lb { display: flex; align-items: center; gap: 10px; }
+        
+        .save-system { display: flex; justify-content: center; gap: 15px; margin-top: 30px; border-top: 1px solid #444; padding-top: 20px; }
+        
+        /* Achievement Cards */
+        .ach-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 15px; margin-top: 20px; }
+        .ach-card {
+            background: rgba(255,255,255,0.05); border: 1px solid #444; border-radius: 12px; padding: 15px;
+            display: flex; align-items: center; gap: 20px; transition: 0.3s; position: relative; overflow: hidden;
+        }
+        .ach-card.unlocked { border-color: #feca57; background: rgba(254, 202, 87, 0.1); box-shadow: 0 0 15px rgba(254, 202, 87, 0.2); }
+        .ach-card.claimed { border-color: #1dd1a1; background: rgba(29, 209, 161, 0.05); opacity: 0.8; }
+        
+        .ach-icon { font-size: 2.5em; filter: grayscale(100%); opacity: 0.5; transition: 0.3s; }
+        .ach-card.unlocked .ach-icon, .ach-card.claimed .ach-icon { filter: grayscale(0%); opacity: 1; }
+        
+        .ach-info { flex: 1; }
+        .ach-title { margin: 0 0 5px 0; color: #fff; font-size: 1.2em; }
+        .ach-card.unlocked .ach-title { color: #feca57; }
+        .ach-card.claimed .ach-title { color: #1dd1a1; }
+        .ach-desc { margin: 0; color: #a4b0be; font-size: 0.9em; }
+        .ach-reward { color: #feca57; font-weight: bold; margin-top: 5px; font-size: 0.9em; }
+        .btn-claim {
+            background: #feca57; color: #000; border: none; padding: 8px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 1em;
+        }
+        .btn-claim:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(254, 202, 87, 0.6); }
+        .btn-claimed { background: #333; color: #1dd1a1; border: 1px solid #1dd1a1; padding: 8px 15px; font-weight: bold; border-radius: 8px; cursor: default; }
+        
+        .tier-header {
+            grid-column: 1 / -1; 
+            color: #feca57;
+            font-size: 1.5em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 2px solid rgba(254, 202, 87, 0.3);
+            padding-bottom: 5px;
+            margin: 20px 0 10px 0;
+            text-shadow: 0 0 10px rgba(254, 202, 87, 0.5);
+        }
+        /* --- 🛸 Secret Space Casino Button CSS --- */
+        .hidden-ufo {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            font-size: 35px;
+            text-decoration: none;
+            opacity: 0.15; /* Makes it look like a secret */
+            transition: all 0.4s ease-in-out;
+            z-index: 1000;
+            cursor: pointer;
+            filter: drop-shadow(0 0 0 rgba(0, 210, 211, 0));
+        }
+        .hidden-ufo:hover {
+            opacity: 1; /* Reveals the secret */
+            transform: scale(1.4) translateY(-15px); /* Pops up */
+            filter: drop-shadow(0 0 20px rgba(0, 210, 211, 0.9)); /* Neon cyan glow matching Megaplex */
+            animation: float 2s infinite ease-in-out;
+        }
+        @keyframes float {
+            0% { transform: scale(1.4) translateY(-15px); }
+            50% { transform: scale(1.4) translateY(-5px); }
+            100% { transform: scale(1.4) translateY(-15px); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <!-- The Avatar Mini-Profile -->
+        <a href="avatar.html" class="hub-profile" title="Go to Avatar Shop" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div class="avatar-stage" id="hubStageBG">
+                <div class="bot-head" id="hubBotHead">
+                    <div class="bot-hat" id="hubBotHat"></div>
+                    <div class="bot-eyes">
+                        <div class="eye"></div><div class="eye"></div>
+                    </div>
+                </div>
+                <div class="bot-body" id="hubBotBody"></div>
+            </div>
+        </a>
+        
+        <!-- NEW POSITION: The Avatar Shop Button immediately to the right of the Avatar -->
+        <a href="avatar.html" class="play-btn" style="position: absolute; top: 45px; left: 145px; background: #feca57; color: #000; border-radius: 20px; box-shadow: 0 0 10px rgba(254, 202, 87, 0.4); text-decoration: none; z-index: 10; font-size: 0.9em;" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            🛍️ Avatar Shop
+        </a>
+        <!-- 3. Inline Username Editor -->
+        <div class="user-greeting" id="userGreeting" onclick="changeUsername()" onmouseenter="sfx.hover()" style="cursor: pointer; padding: 5px; border-radius: 5px; transition: 0.2s;" onmouseover="this.style.background='rgba(0, 210, 211, 0.2)'" onmouseout="this.style.background='transparent'">
+            ID: GUEST_BOT ✏️
+        </div>
+        
+        <div>
+            <h1>🏙️ The Megaplex</h1>
+            <div class="subtitle">Select a game to open a new terminal!</div>
+        </div>
+        
+        <div class="header-controls">
+            <!-- Top Row: Daily Bonus & Tokens -->
+            <div class="header-controls-top">
+                <button id="dailyBonusBtn" class="play-btn" style="background: #f368e0; color: #fff; border: none; font-weight: bold; border-radius: 20px; cursor: pointer; transition: 0.3s; padding: 10px 20px;" onclick="claimDailyBonus()" onmouseenter="sfx.hover()">
+                    🎁 Daily Claim
+                </button>
+                <div class="token-display">🎟️ <span id="tokenBalance">0</span></div>
+            </div>
+            <!-- Bottom Row: Sound Toggle & Quick Export/Import Save -->
+            <div class="header-controls-bottom">
+                <button id="soundToggleBtn" class="sound-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+                <button class="play-btn" style="background: #3498db; color: #fff; padding: 8px 15px; font-size: 0.9em; border-radius: 12px 0 0 12px; height: fit-content; margin-right: -1px;" onmouseenter="sfx.hover()" onclick="exportSave(); sfx.click();">
+                    💾 Export
+                </button>
+                <button class="play-btn" style="background: #9b59b6; color: #fff; padding: 8px 15px; font-size: 0.9em; border-radius: 0 12px 12px 0; height: fit-content;" onmouseenter="sfx.hover()" onclick="document.getElementById('importFile').click(); sfx.click();">
+                    📂 Load
+                </button>
+                <input type="file" id="importFile" style="display:none" accept=".json" onchange="importSave(event)">
+            </div>
+        </div>
+    </header>
+    <div class="tab-container" id="tabs">
+        <button class="tab-btn active" onmouseenter="sfx.hover()" onclick="switchTab('all', this)">All Games</button>
+        <button class="tab-btn" onmouseenter="sfx.hover()" onclick="switchTab('arcade', this)">Arcade</button>
+        <button class="tab-btn" onmouseenter="sfx.hover()" onclick="switchTab('logic', this)">Logic & Puzzle</button>
+        <button class="tab-btn" onmouseenter="sfx.hover()" onclick="switchTab('fighting', this)">Fighting</button>
+        <button class="tab-btn" onmouseenter="sfx.hover()" onclick="switchTab('pvp', this)">PvP</button>
+        <button class="tab-btn achievements-btn" onmouseenter="sfx.hover()" onclick="switchTab('achievements', this)">🎖️ Trophy Room</button>
+        <button class="tab-btn leaderboard-btn" onmouseenter="sfx.hover()" onclick="switchTab('leaderboard', this)">🏆 Leaderboard</button>
+    </div>
+    
+    <!-- Device Hall of Fame Leaderboard View -->
+    <div id="leaderboard-view" class="panel-view">
+        <h2 style="text-align: center; color: #ff9f43; font-size: 2.5em; margin-top: 0; text-shadow: 0 0 15px rgba(255, 159, 67, 0.4);">Device Hall of Fame</h2>
+        <p style="text-align: center; color: #aaa; margin-bottom: 30px;">Top 3 scores across all users on this device.</p>
+        
+        <div id="master-leaderboards-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- JavaScript will automatically inject the Top 3 rows here -->
+        </div>
+        <div class="save-system">
+            <button class="play-btn" style="background: #3498db; color: #fff;" onmouseenter="sfx.hover()" onclick="exportSave(); sfx.click();">💾 Export Save Data</button>
+            <button class="play-btn" style="background: #9b59b6; color: #fff;" onmouseenter="sfx.hover()" onclick="document.getElementById('importFile').click(); sfx.click();">📂 Load Save Data</button>
+            <input type="file" id="importFile" style="display:none" accept=".json" onchange="importSave(event)">
+        </div>
+    </div>
+    <!-- Achievements View -->
+    <div id="achievements-view" class="panel-view">
+        <h2 style="text-align: center; color: #f368e0; margin-top: 0; font-size: 2.5em; text-shadow: 0 0 15px rgba(243, 104, 224, 0.4);">The Trophy Room</h2>
+        <p style="text-align: center; color: #aaa;">Complete milestones across the Megaplex to claim massive Token bounties!</p>
+        <div class="ach-grid" id="achievements-container"></div>
+    </div>
+    
+    <!-- Hub Grid -->
+    <div class="grid-container" id="gameGrid">
+        <a href="glitch_brawler.html" class="card-link glitch" data-category="fighting pvp" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>💥 Glitch Brawler</h2><span class="tag" style="background:#f0f;">PvP Fighting</span>
+            <p style="color:#aaa;">Corrupt your rivals in the arena!</p></div>
+            <div class="play-btn" style="background:#f0f; color:#000;">Play Game ➔</div>
+        </a>
+        
+        <a href="glitch_strikers.html" class="card-link strikers" data-category="arcade fighting pvp" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>⚔️ Glitch Strikers</h2><span class="tag" style="background:#00ffff; color:#000;">Beat 'Em Up</span>
+            <p style="color:#aaa;">Breach the Megaplex! Co-Op enabled.</p></div>
+            <div class="play-btn" style="background:#00ffff; color:#000;">Play Game ➔</div>
+        </a>
+        <a href="asteroids.html" class="card-link asteroids" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>☄️ Quantum Asteroids</h2><span class="tag" style="background:#00cec9;">Space Shooter</span>
+            <p style="color:#aaa;">Blast through the asteroid field!</p></div>
+            <div class="play-btn" style="background:#00cec9; color:#000;">Play Game ➔</div>
+        </a>
+        
+        <a href="tanks.html" class="card-link tanks" data-category="arcade pvp" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>💣 Plasma Tanks</h2><span class="tag" style="background:#e67e22;">PvP & PvE</span>
+            <p style="color:#aaa;">Blast enemies, unlock skins!</p></div>
+            <div class="play-btn" style="background:#e67e22; color:#fff;">Play Game ➔</div>
+        </a>
+        <a href="runner.html" class="card-link cyber" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>🏃‍♂️ Cyber Runner</h2><span class="tag" style="background:#9b59b6;">Endless Runner</span>
+            <p style="color:#aaa;">Dash through the neon city!</p></div>
+            <div class="play-btn" style="background:#9b59b6; color:#fff;">Play Game ➔</div>
+        </a>
+        <a href="fps.html" class="card-link fps" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>🔫 System Breach</h2><span class="tag" style="background:#ff4757;">3D FPS</span>
+            <p style="color:#aaa;">Survive the glitching waves!</p></div>
+            <div class="play-btn" style="background:#ff4757; color:#fff;">Play Game ➔</div>
+        </a>
+        <a href="platformer.html" class="card-link platformer" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>🏃 Matrix Jumper</h2><span class="tag" style="background:#fd79a8;">Platformer</span>
+            <p style="color:#aaa;">Leap across the mainframe!</p></div>
+            <div class="play-btn" style="background:#fd79a8; color:#000;">Play Game ➔</div>
+        </a>
+        <a href="racer.html" class="card-link racer" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2 style="color:#ff007f;">🏎️ Vaporwave Racer</h2><span class="tag" style="background:#ff007f;">Drift Racing</span>
+            <p style="color:#aaa;">Master the drift, beat your rivals.</p></div>
+            <div class="play-btn" style="background:#ff007f; color:#000;">Play Game ➔</div>
+        </a>
+        <a href="snake.html" class="card-link snake" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>🐍 Snake Classic</h2><span class="tag" style="background:#20bf6b;">Arcade</span>
+            <p style="color:#aaa;">Eat data, grow longer!</p></div>
+            <div class="play-btn" style="background:#20bf6b; color:#000;">Play Game ➔</div>
+        </a>
+        <a href="clicker.html" class="card-link clicker" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>👆 Clicker Frenzy</h2><span class="tag" style="background:#f7b731;">Arcade</span>
+            <p style="color:#aaa;">Click to mine tokens!</p></div>
+            <div class="play-btn" style="background:#f7b731; color:#000;">Play Game ➔</div>
+        </a>
+        <a href="reaction.html" class="card-link reaction" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>⚡ Reaction Tester</h2><span class="tag" style="background:#eb3b5a;">Arcade</span>
+            <p style="color:#aaa;">Test your raw reflexes!</p></div>
+            <div class="play-btn" style="background:#eb3b5a; color:#fff;">Play Game ➔</div>
+        </a>
+        <a href="math.html" class="card-link math" data-category="logic" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>🧠 Quick Math</h2><span class="tag" style="background:#3867d6;">Logic</span>
+            <p style="color:#aaa;">Solve equations quickly!</p></div>
+            <div class="play-btn" style="background:#3867d6; color:#fff;">Play Game ➔</div>
+        </a>
+        <a href="tictactoe.html" class="card-link ttt" data-category="logic pvp" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>⭕ Tic-Tac-Toe</h2><span class="tag" style="background:#a55eea;">Logic</span>
+            <p style="color:#aaa;">Classic X and O battles!</p></div>
+            <div class="play-btn" style="background:#a55eea; color:#fff;">Play Game ➔</div>
+        </a>
+        <a href="memory.html" class="card-link memory" data-category="logic" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>👁️ Memory Match</h2><span class="tag" style="background:#0fb9b1;">Puzzle</span>
+            <p style="color:#aaa;">Match the hidden cards!</p></div>
+            <div class="play-btn" style="background:#0fb9b1; color:#000;">Play Game ➔</div>
+        </a>
+        <a href="guesser.html" class="card-link guesser" data-category="logic" onmouseenter="sfx.hover()" onclick="sfx.start()">
+            <div><h2>🔐 Code Breaker</h2><span class="tag" style="background:#fa8231;">Logic</span>
+            <p style="color:#aaa;">Crack the secret vault!</p></div>
+            <div class="play-btn" style="background:#fa8231; color:#000;">Play Game ➔</div>
+        </a>
+    </div>
+    <!-- 🛸 Secret Space Casino HTML Hook -->
+    <a href="#" id="secret-casino-btn" class="hidden-ufo" onmouseenter="sfx.hover()" onclick="enterSpaceCasino(event)" title="???">🛸</a>
+    <script>
+        // --- Retro Sound Engine ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        let soundEnabled = localStorage.getItem('megaplexSound') !== 'false';
+        
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('megaplexSound', soundEnabled);
+            updateSoundIcon();
+            if (soundEnabled) { initAudio(); sfx.coin(); }
+        }
+        function updateSoundIcon() {
+            const btn = document.getElementById('soundToggleBtn');
+            if (soundEnabled) { btn.innerText = '🔊'; btn.classList.remove('muted'); } 
+            else { btn.innerText = '🔇'; btn.classList.add('muted'); }
+        }
+        updateSoundIcon(); 
+        document.body.addEventListener('click', initAudio, { once: true });
+        
+        function playTone(freq, type, duration, vol=0.1) {
+            if (!soundEnabled) return;
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+        const sfx = {
+            hover: () => playTone(800, 'sine', 0.05, 0.02),
+            click: () => playTone(400, 'square', 0.1, 0.05),
+            start: () => { playTone(300, 'square', 0.1, 0.05); setTimeout(()=>playTone(600, 'square', 0.2, 0.05), 100); },
+            coin: () => { playTone(900, 'sine', 0.1, 0.05); setTimeout(()=>playTone(1200, 'sine', 0.2, 0.05), 100); },
+            win: () => { playTone(400, 'square', 0.1, 0.05); setTimeout(()=>playTone(500, 'square', 0.1, 0.05), 150); setTimeout(()=>playTone(600, 'square', 0.3, 0.05), 300); }
+        };
+        // --- Avatar Rendering Engine ---
+        const shopDatabase = {
+            colors: [
+                { id: 'color_default', hex: '#c8d6e5', bodyHex: '#a4b0be' },
+                { id: 'color_red', hex: '#ff4757', bodyHex: '#c0392b' },
+                { id: 'color_gold', hex: '#feca57', bodyHex: '#f39c12' },
+                { id: 'color_pink', hex: '#ff9ff3', bodyHex: '#f368e0' },
+                { id: 'color_green', hex: '#1dd1a1', bodyHex: '#10ac84' },
+                { id: 'color_cyber', hex: '#00d2d3', bodyHex: '#0984e3' },
+                { id: 'color_ghost', hex: '#f5f6fa', bodyHex: '#dcdde1' },
+                { id: 'color_void', hex: '#2f3640', bodyHex: '#1e272e' }
+            ],
+            hats: [
+                { id: 'hat_none', icon: '' }, { id: 'hat_cap', icon: '🧢' },
+                { id: 'hat_headphones', icon: '🎧' }, { id: 'hat_cowboy', icon: '🤠' },
+                { id: 'hat_ninja', icon: '🥷' }, { id: 'hat_pirate', icon: '🏴‍☠️' },
+                { id: 'hat_vr', icon: '🥽' }, { id: 'hat_crown', icon: '👑' },
+                { id: 'hat_halo', icon: '👼' }, { id: 'hat_alien', icon: '👾' }
+            ],
+            bgs: [
+                { id: 'bg_default', css: '#2f3640' },
+                { id: 'bg_matrix', css: 'repeating-linear-gradient(0deg, #000, #000 10px, #052c11 10px, #052c11 20px)' },
+                { id: 'bg_sunset', css: 'linear-gradient(180deg, #2c3e50, #e74c3c, #f1c40f)' },
+                { id: 'bg_synth', css: 'linear-gradient(0deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)' },
+                { id: 'bg_lava', css: 'radial-gradient(circle at bottom, #eb4d4b, #130f40)' },
+                { id: 'bg_galaxy', css: 'radial-gradient(circle at center, #341f97, #000)' }
+            ]
+        };
+        
+        // --- Avatar Rendering Engine ---
+        function renderHubAvatar() {
+            let avatarData = JSON.parse(localStorage.getItem('avatarData'));
+            
+            // FIX: Ensure 'equipped' exists even if the loaded save file had an empty {} avatarData
+            if (!avatarData || !avatarData.equipped) {
+                avatarData = { equipped: { color: 'color_default', hat: 'hat_none', bg: 'bg_default' } };
+            }
+            const curColor = shopDatabase.colors.find(c => c.id === avatarData.equipped.color) || shopDatabase.colors[0];
+            const curHat = shopDatabase.hats.find(h => h.id === avatarData.equipped.hat) || shopDatabase.hats[0];
+            const curBg = shopDatabase.bgs.find(b => b.id === avatarData.equipped.bg) || shopDatabase.bgs[0];
+            document.getElementById('hubBotHead').style.background = curColor.hex;
+            document.getElementById('hubBotBody').style.background = curColor.bodyHex;
+            document.getElementById('hubBotHat').innerText = curHat.icon;
+            document.getElementById('hubStageBG').style.background = curBg.css;
+            const username = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
+            document.getElementById('userGreeting').innerHTML = `ID: ${username} ✏️`;
+        }
+        // --- Achievement Database ---
+        const achievementsList = [
+            { id: 'ach_asteroids_1', tier: 1, icon: '☄️', title: 'Asteroid Hunter', desc: 'Score 500 points in Quantum Asteroids.', reward: 1000, check: (s) => (s.asteroids || 0) >= 500 },
+            { id: 'ach_asteroids_2', tier: 2, icon: '🚀', title: 'Space Ace', desc: 'Score 2,500 points in Quantum Asteroids.', reward: 3000, check: (s) => (s.asteroids || 0) >= 2500 },
+            { id: 'ach_tanks_1', tier: 1, icon: '💣', title: 'Tank Cadet', desc: 'Score 1,000 points in Plasma Tanks.', reward: 1000, check: (s) => (s.tanks_score || 0) >= 1000 },
+            { id: 'ach_tanks_2', tier: 2, icon: '🎖️', title: 'Supreme Commander', desc: 'Score 5,000 points in Plasma Tanks.', reward: 3000, check: (s) => (s.tanks_score || 0) >= 5000 },
+            { id: 'ach_glitch_1', tier: 1, icon: '🛡️', title: 'Zero Corrupted', desc: 'Win an Arcade match with exactly 0% Corruption on your meter (A Flawless/Perfect Victory).', reward: 500, check: (s) => (s.glitch_perfect_wins || 0) > 0 },
+            { id: 'ach_glitch_2', tier: 2, icon: '👑', title: 'Omega Slayer', desc: 'Defeat the hidden OMEGA_BOSS on the highly lethal "Omega Protocol" difficulty.', reward: 1000, check: (s) => (s.glitch_omega_slain || 0) > 0 },
+            { id: 'ach_strikers_1', tier: 1, icon: '⚔️', title: 'Street Brawler', desc: 'Score 2,000 points in Glitch Strikers.', reward: 1000, check: (s) => (s.glitch_strikers || 0) >= 2000 },
+            { id: 'ach_strikers_2', tier: 2, icon: '🦾', title: 'Megaplex Savior', desc: 'Score 5,000 points in Glitch Strikers.', reward: 3000, check: (s) => (s.glitch_strikers || 0) >= 5000 },
+            { id: 'ach_cyber_1', tier: 1, icon: '🏃', title: 'Sector 2 Cleared', desc: 'Reach 1,000m in Cyber Runner.', reward: 800, check: (s) => (s.cyberrunner || 0) >= 1000 },
+            { id: 'ach_clicker', tier: 1, icon: '👆', title: 'Clicker God', desc: 'Reach 1,000 clicks.', reward: 500, check: (s) => (s.clicker || 0) >= 1000 },
+            { id: 'ach_reaction', tier: 1, icon: '⚡', title: 'Lightning Reflexes', desc: 'Reaction time < 220ms.', reward: 500, check: (s) => (s.reaction || 9999) <= 220 },
+            { id: 'ach_math', tier: 1, icon: '🧠', title: 'Human Calculator', desc: 'Math streak of 15.', reward: 600, check: (s) => (s.math || 0) >= 15 },
+            { id: 'ach_memory', tier: 1, icon: '👁️', title: 'Photographic Memory', desc: 'Beat Memory in 16 moves.', reward: 600, check: (s) => (s.memory || 999) <= 16 },
+            { id: 'ach_guesser', tier: 1, icon: '🔐', title: 'Master Hacker', desc: '1,000 in Code Breaker.', reward: 800, check: (s) => (s.guesser || 0) >= 1000 },
+            { id: 'ach_snake', tier: 1, icon: '🐍', title: 'Cyber-Serpent', desc: 'Snake length of 25.', reward: 800, check: (s) => (s.snake || 0) >= 25 },
+            { id: 'ach_racer_1', tier: 1, icon: '🏎️', title: 'Novice Driver', desc: 'Win your first race in Vaporwave Racer.', reward: 500, check: (s) => (s.racer_wins || 0) >= 1 },
+            { id: 'ach_platformer', tier: 1, icon: '🏃‍♂️', title: 'Mainframe Runner', desc: 'Beat all 20 levels in Neon Jumper.', reward: 1500, check: (s) => (s.platformer_deaths !== undefined) },
+            { id: 'ach_fps', tier: 1, icon: '🔫', title: 'System Breacher', desc: 'Score 2,500 in FPS.', reward: 1500, check: (s) => (s.fps || 0) >= 2500 },
+            { id: 'ach_cyber_2', tier: 2, icon: '🔥', title: 'System Overdrive', desc: 'Survive to 8,000m in Cyber Runner.', reward: 3000, check: (s) => (s.cyberrunner || 0) >= 8000 },
+            { id: 'ach_clicker_2', tier: 2, icon: '🖱️', title: 'Auto-Clicker', desc: 'Reach 5,000 clicks.', reward: 1500, check: (s) => (s.clicker || 0) >= 5000 },
+            { id: 'ach_reaction_2', tier: 2, icon: '🏎️', title: 'Sonic Speed', desc: 'Reaction time < 185ms.', reward: 2000, check: (s) => (s.reaction || 9999) <= 185 },
+            { id: 'ach_math_2', tier: 2, icon: '🎓', title: 'Quantum Mind', desc: 'Math streak of 35.', reward: 2000, check: (s) => (s.math || 0) >= 35 },
+            { id: 'ach_snake_2', tier: 2, icon: '🐉', title: 'World Eater', desc: 'Snake length of 60.', reward: 2500, check: (s) => (s.snake || 0) >= 60 },
+            { id: 'ach_racer_2', tier: 2, icon: '🏆', title: 'Grid Master', desc: 'Win a race on Hard difficulty in Vaporwave Racer.', reward: 1500, check: (s) => (s.racer_hard_wins || 0) >= 1 },
+            { id: 'ach_ttt_2', tier: 2, icon: '👑', title: 'Grandmaster', desc: 'Win 50 Tic-Tac-Toe games.', reward: 1500, check: (s) => (s.ttt || 0) >= 50 },
+            { id: 'ach_memory_2', tier: 2, icon: '🔮', title: 'Mind Reader', desc: 'Beat Memory in 12 moves.', reward: 2000, check: (s) => (s.memory || 999) <= 12 },
+            { id: 'ach_rich', tier: 2, icon: '💰', title: 'Token Billionaire', desc: 'Have 5,000 tokens.', reward: 1000, check: () => (parseInt(localStorage.getItem('megaplexTokens')) || 0) >= 5000 },
+            { id: 'ach_collector', tier: 2, icon: '🎒', title: 'Completionist', desc: 'Claim all other trophies.', reward: 5000, check: () => {
+                let claimed = JSON.parse(localStorage.getItem('claimedAchievements')) || [];
+                return claimed.length >= achievementsList.length - 1; 
+            }}
+        ];
+        let claimedAchievements = JSON.parse(localStorage.getItem('claimedAchievements')) || [];
+        // --- Economy Logic ---
+        function calculateTokens() {
+            let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+            let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+            let lastCalculatedValue = parseInt(localStorage.getItem('lastCalculatedScoreValue')) || 0;
+            
+            let scoreValue = Math.floor(
+                ((scores.glitch_score || 0) / 10) + 
+                ((scores.glitch_strikers || 0) / 10) +
+                ((scores.clicker || 0) / 50) + 
+                ((scores.ttt || 0) * 20) + 
+                ((scores.math || 0) * 10) + 
+                ((scores.snake || 0) * 5) + 
+                ((scores.guesser || 0) / 10) + 
+                ((scores.platformer || 0) / 20) +
+                ((scores.fps || 0) / 25) +
+                ((scores.cyberrunner || 0) / 20) +
+                ((scores.tanks_score || 0) / 15) +
+                ((scores.asteroids || 0) / 15)
+            );
+            
+            if (scoreValue > lastCalculatedValue) {
+                let tokensEarned = scoreValue - lastCalculatedValue;
+                currentTokens += tokensEarned;
+                localStorage.setItem('megaplexTokens', currentTokens);
+                localStorage.setItem('lastCalculatedScoreValue', scoreValue);
+            }
+            document.getElementById('tokenBalance').innerText = currentTokens;
+        }
+        // --- Navigation ---
+        function switchTab(target, btn) {
+            sfx.click(); 
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            document.getElementById('gameGrid').style.display = 'none';
+            document.getElementById('leaderboard-view').style.display = 'none';
+            document.getElementById('achievements-view').style.display = 'none';
+            
+            if (target === 'leaderboard') {
+                document.getElementById('leaderboard-view').style.display = 'block';
+                loadScores(); 
+            } else if (target === 'achievements') {
+                document.getElementById('achievements-view').style.display = 'block';
+                renderAchievements();
+            } else {
+                document.getElementById('gameGrid').style.display = 'grid';
+                document.querySelectorAll('.card-link').forEach(card => {
+                    if (target === 'all' || card.dataset.category.includes(target)) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+        }
+        // --- Achievement Render ---
+        function renderAchievements() {
+            let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+            const container = document.getElementById('achievements-container');
+            container.innerHTML = '';
+            
+            const renderTier = (tierNumber, tierTitle) => {
+                container.innerHTML += `<div class="tier-header">${tierTitle}</div>`;
+                achievementsList.filter(a => a.tier === tierNumber).forEach(ach => {
+                    let isClaimed = claimedAchievements.includes(ach.id);
+                    let isUnlocked = ach.check(scores);
+                    let cardClass = 'ach-card';
+                    let btnHTML = `<div style="color: #666; font-weight: bold;">Locked</div>`;
+                    
+                    if (isClaimed) {
+                        cardClass += ' claimed';
+                        btnHTML = `<button class="btn-claimed">Claimed ✔</button>`;
+                    } else if (isUnlocked) {
+                        cardClass += ' unlocked';
+                        btnHTML = `<button class="btn-claim" onmouseenter="sfx.hover()" onclick="claimReward('${ach.id}', ${ach.reward})">Claim +${ach.reward} 🎟️</button>`;
+                    }
+                    
+                    container.innerHTML += `
+                        <div class="${cardClass}">
+                            <div class="ach-icon">${ach.icon}</div>
+                            <div class="ach-info">
+                                <h3 class="ach-title">${ach.title}</h3>
+                                <p class="ach-desc">${ach.desc}</p>
+                                <div class="ach-reward">Reward: ${ach.reward} 🎟️</div>
+                            </div>
+                            <div>${btnHTML}</div>
+                        </div>
+                    `;
+                });
+            };
+            
+            renderTier(1, "Tier 1: Core Missions");
+            renderTier(2, "Tier 2: Elite Challenges");
+        }
+        
+        function claimReward(achId, rewardAmount) {
+            sfx.win(); 
+            let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+            currentTokens += rewardAmount;
+            localStorage.setItem('megaplexTokens', currentTokens);
+            
+            claimedAchievements.push(achId);
+            localStorage.setItem('claimedAchievements', JSON.stringify(claimedAchievements));
+            
+            document.getElementById('tokenBalance').innerText = currentTokens;
+            renderAchievements(); 
+        }
+        // --- CENTRALIZED MASTER LEADERBOARD ENGINE ---
+        const gameConfigs = [
+            { key: 'glitch_score', title: '💥 Glitch Brawler', unit: ' Pts', reverse: false, default: 0 },
+            { key: 'glitch_strikers', title: '⚔️ Glitch Strikers', unit: ' Pts', reverse: false, default: 0 },
+            { key: 'asteroids', title: '☄️ Quantum Asteroids', unit: ' Pts', reverse: false, default: 0 }, 
+            { key: 'tanks_score', title: '💣 Plasma Tanks', unit: ' Pts', reverse: false, default: 0 }, 
+            { key: 'cyberrunner', title: '🏃‍♂️ Cyber Runner', unit: 'm', reverse: false, default: 0 },
+            { key: 'racer_best_time', title: '🏎️ Vaporwave Racer', unit: 's', reverse: true, default: 999.99 },
+            { key: 'fps', title: '🔫 System Breach', unit: '', reverse: false, default: 0 },
+            { key: 'platformer_deaths', title: '🏃 Matrix Jumper', unit: ' Deaths', reverse: true, default: 999 },
+            { key: 'snake', title: '🐍 Snake Classic', unit: '', reverse: false, default: 0 },
+            { key: 'clicker', title: '👆 Clicker Frenzy', unit: '', reverse: false, default: 0 },
+            { key: 'reaction', title: '⚡ Reaction Time', unit: 'ms', reverse: true, default: 9999 },
+            { key: 'ttt', title: '⭕ Tic-Tac-Toe', unit: ' Wins', reverse: false, default: 0 },
+            { key: 'math', title: '🧠 Quick Math', unit: '', reverse: false, default: 0 },
+            { key: 'memory', title: '👁️ Memory Match', unit: ' Moves', reverse: true, default: 999 },
+            { key: 'guesser', title: '🔐 Code Breaker', unit: '', reverse: false, default: 0 }
+        ];
+        function loadScores() {
+            let currentScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+            let gsData = JSON.parse(localStorage.getItem('glitchStrikersScores')) || { neon: 0, void: 0, mainframe: 0 };
+            currentScores.glitch_strikers = Math.max(gsData.neon || 0, gsData.void || 0, gsData.mainframe || 0); 
+            localStorage.setItem('arcadeScores', JSON.stringify(currentScores));
+            calculateTokens(); 
+            renderHubAvatar(); 
+            
+            let currentUser = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
+            let masterLB = JSON.parse(localStorage.getItem('MegaplexMasterLB')) || {};
+            let lbContainer = document.getElementById('master-leaderboards-container');
+            if(lbContainer) lbContainer.innerHTML = ''; 
+            
+            gameConfigs.forEach(game => {
+                let myScore = currentScores[game.key];
+                if (myScore === undefined) myScore = game.default;
+                
+                let globalLB = masterLB[game.key] || [];
+                
+                let legacyLB = JSON.parse(localStorage.getItem(`masterLB_${game.key}`));
+                if (legacyLB && globalLB.length === 0) {
+                    globalLB = legacyLB;
+                }
+                
+                if (myScore !== game.default) {
+                    globalLB = globalLB.filter(entry => entry.user !== currentUser);
+                    globalLB.push({ user: currentUser, score: myScore });
+                }
+                
+                if (game.reverse) {
+                    globalLB.sort((a, b) => a.score - b.score);
+                } else {
+                    globalLB.sort((a, b) => b.score - a.score);
+                }
+                globalLB = globalLB.slice(0, 3);
+                
+                masterLB[game.key] = globalLB;
+                
+                if(lbContainer) {
+                    let displayScore = myScore === game.default ? '---' : myScore + game.unit;
+                    
+                    let html = `
+                    <div class="score-row" style="flex-direction: column; align-items: stretch; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <span class="game-title-lb" style="font-weight:bold; font-size: 1.1em;">${game.title} (Your Best)</span> 
+                            <span class="score-val" style="color: #fff; font-size: 1.1em;">${displayScore}</span>
+                        </div>
+                        <div style="font-size: 0.9em; color: #a4b0be; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #ff9f43;">
+                            <div style="color: #ff9f43; font-size: 0.8em; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px;">Device Top 3:</div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                                <span>🥇 1st: <span style="color:#fff; font-weight:bold;">${globalLB[0] ? globalLB[0].user : '---'}</span></span> 
+                                <span style="color:#1dd1a1; font-weight:bold;">${globalLB[0] ? globalLB[0].score + game.unit : '---'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                                <span>🥈 2nd: <span style="color:#fff; font-weight:bold;">${globalLB[1] ? globalLB[1].user : '---'}</span></span> 
+                                <span style="color:#1dd1a1; font-weight:bold;">${globalLB[1] ? globalLB[1].score + game.unit : '---'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>🥉 3rd: <span style="color:#fff; font-weight:bold;">${globalLB[2] ? globalLB[2].user : '---'}</span></span> 
+                                <span style="color:#1dd1a1; font-weight:bold;">${globalLB[2] ? globalLB[2].score + game.unit : '---'}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                    
+                    lbContainer.innerHTML += html;
+                }
+            });
+            
+            localStorage.setItem('MegaplexMasterLB', JSON.stringify(masterLB));
+        }
+        // --- Save System ---
+        function exportSave() {
+            const username = localStorage.getItem('megaplexUsername') || 'player';
+            const saveData = {
+                arcadeScores: JSON.parse(localStorage.getItem('arcadeScores')) || {},
+                glitchStrikersScores: JSON.parse(localStorage.getItem('glitchStrikersScores')) || { neon: 0, void: 0, mainframe: 0 },
+                tttCoins: localStorage.getItem('tttCoins') || 0,
+                tttInventory: JSON.parse(localStorage.getItem('tttInventory')) || {},
+                megaplexTokens: localStorage.getItem('megaplexTokens') || 0,
+                lastCalculatedScoreValue: localStorage.getItem('lastCalculatedScoreValue') || 0,
+                avatarData: JSON.parse(localStorage.getItem('avatarData')) || {},
+                claimedAchievements: JSON.parse(localStorage.getItem('claimedAchievements')) || [],
+                megaplexUsername: username
+            };
+            const dataStr = JSON.stringify(saveData);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `megaplex_save_data_${username}.json`; 
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // --- Save System ---
+        function importSave(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(data.arcadeScores) localStorage.setItem('arcadeScores', JSON.stringify(data.arcadeScores));
+                    if(data.glitchStrikersScores) localStorage.setItem('glitchStrikersScores', JSON.stringify(data.glitchStrikersScores)); // Sync Strikers Highscore
+                    if(data.tttCoins) localStorage.setItem('tttCoins', data.tttCoins);
+                    if(data.tttInventory) localStorage.setItem('tttInventory', JSON.stringify(data.tttInventory));
+                    if(data.megaplexTokens) localStorage.setItem('megaplexTokens', data.megaplexTokens);
+                    if(data.lastCalculatedScoreValue) localStorage.setItem('lastCalculatedScoreValue', data.lastCalculatedScoreValue);
+                    if(data.avatarData) localStorage.setItem('avatarData', JSON.stringify(data.avatarData));
+                    if(data.megaplexUsername) localStorage.setItem('megaplexUsername', data.megaplexUsername);
+                    if(data.claimedAchievements) {
+                        claimedAchievements = data.claimedAchievements;
+                        localStorage.setItem('claimedAchievements', JSON.stringify(claimedAchievements));
+                    }
+                    
+                    loadScores(); 
+                    alert("Save data loaded successfully! Device Leaderboards updated.");
+                } catch (error) {
+                    console.error("Save Import Error:", error);
+                    alert("Error: Something went wrong while loading the save data.");
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+        // --- 1. Daily Bonus System ---
+        function checkDailyBonus() {
+            const lastClaim = localStorage.getItem('megaplexLastDaily');
+            const now = new Date().getTime();
+            const btn = document.getElementById('dailyBonusBtn');
+            
+            if (!lastClaim || now - parseInt(lastClaim) > 86400000) {
+                btn.innerText = "🎁 Daily Claim";
+                btn.style.opacity = "1";
+                btn.style.cursor = "pointer";
+                btn.disabled = false;
+            } else {
+                btn.innerText = "⏳ Claimed";
+                btn.style.opacity = "0.5";
+                btn.style.cursor = "not-allowed";
+                btn.disabled = true;
+            }
+        }
+        function claimDailyBonus() {
+            const btn = document.getElementById('dailyBonusBtn');
+            if (btn.disabled) return;
+            sfx.win();
+            let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+            currentTokens += 250; 
+            
+            localStorage.setItem('megaplexTokens', currentTokens);
+            localStorage.setItem('megaplexLastDaily', new Date().getTime());
+            
+            document.getElementById('tokenBalance').innerText = currentTokens;
+            checkDailyBonus();
+            
+            btn.innerText = "+250 🎟️!";
+            setTimeout(checkDailyBonus, 2000);
+        }
+        // --- 3. Inline Username Editor ---
+        function changeUsername() {
+            sfx.click();
+            let currentName = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
+            let newName = prompt("Enter your new Megaplex ID (Max 12 chars):", currentName);
+            
+            if (newName && newName.trim() !== "") {
+                newName = newName.trim().substring(0, 12).toUpperCase();
+                localStorage.setItem('megaplexUsername', newName);
+                document.getElementById('userGreeting').innerHTML = `ID: ${newName} ✏️`;
+                loadScores();
+                sfx.coin();
+            }
+        }
+        // --- 🛸 Secret Space Casino Integration Script ---
+        function enterSpaceCasino(e) {
+            e.preventDefault(); 
+            sfx.start(); 
+            
+            let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+            console.log(`Hyperdrive active. Transporting ${currentTokens} Tokens to the Space Casino...`);
+            
+            setTimeout(() => {
+                window.location.href = "casino.html";
+            }, 500);
+        }
+        // Run functions on load
+        loadScores();
+        checkDailyBonus();
+    </script>
+</body>
+</html>

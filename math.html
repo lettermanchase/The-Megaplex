@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Math - Arcade</title>
+    <style>
+        /* Shared Theme */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #100b16, #200f33, #150921); 
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* Header */
+        header { 
+            padding: 15px 30px; background: rgba(0,0,0,0.8); z-index: 10;
+            border-bottom: 2px solid #54a0ff; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 15px rgba(84, 160, 255, 0.2);
+        }
+        .back-btn {
+            background: transparent; border: 2px solid #54a0ff; color: #54a0ff; padding: 8px 20px;
+            border-radius: 20px; text-decoration: none; font-weight: bold; transition: 0.3s;
+        }
+        .back-btn:hover { background: #54a0ff; color: #000; box-shadow: 0 0 10px #54a0ff; }
+
+        /* Main Game Area */
+        .game-wrapper {
+            display: flex; flex: 1; padding: 20px; gap: 20px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;
+            justify-content: center; align-items: flex-start; margin-top: 20px;
+        }
+
+        /* Stats & Settings Panel */
+        .side-panel {
+            width: 300px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 25px;
+            border: 1px solid rgba(84, 160, 255, 0.3);
+        }
+        .side-panel h3 { margin: 0 0 15px 0; color: #48dbfb; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        
+        .difficulty-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid transparent; color: white; padding: 10px;
+            border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: bold; width: 100%; margin-bottom: 10px;
+        }
+        .difficulty-btn:hover { background: rgba(255,255,255,0.2); }
+        .diff-easy.active { background: #1dd1a1; color: #000; box-shadow: 0 0 15px rgba(29,209,161,0.5); }
+        .diff-med.active { background: #feca57; color: #000; box-shadow: 0 0 15px rgba(254,202,87,0.5); }
+        .diff-hard.active { background: #ff4757; color: #fff; box-shadow: 0 0 15px rgba(255,71,87,0.5); }
+
+        .stat-box { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; margin-top: 15px; border-left: 4px solid #54a0ff; }
+        .stat-label { font-size: 0.9em; color: #a4b0be; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #54a0ff; margin-top: 5px; }
+
+        /* The Math Board */
+        .math-board {
+            flex: 1; max-width: 600px; background: rgba(0,0,0,0.6); border-radius: 20px; padding: 40px;
+            border: 2px solid #54a0ff; text-align: center; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Timer Bar */
+        .timer-container { width: 100%; height: 10px; background: #222; border-radius: 5px; margin-bottom: 30px; overflow: hidden; }
+        .timer-bar { height: 100%; width: 100%; background: #1dd1a1; transition: width 0.1s linear, background-color 0.3s; }
+
+        /* Problem Display */
+        .problem-display { font-size: 4em; font-weight: bold; margin-bottom: 20px; letter-spacing: 5px; text-shadow: 2px 2px 10px rgba(0,0,0,0.8); }
+        
+        /* Custom Input & Numpad */
+        .answer-display { 
+            font-size: 3em; height: 70px; background: rgba(255,255,255,0.1); border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center; margin-bottom: 30px; color: #feca57; font-weight: bold;
+            border: 2px dashed #a4b0be;
+        }
+        
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto; }
+        .num-btn {
+            background: #2f3640; border: none; padding: 15px; font-size: 1.5em; color: white; border-radius: 10px;
+            cursor: pointer; transition: 0.1s; font-weight: bold; box-shadow: 0 4px 0 #1e272e;
+        }
+        .num-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #1e272e; }
+        .num-btn.action { background: #54a0ff; box-shadow: 0 4px 0 #2e86de; }
+        .num-btn.action:active { box-shadow: 0 0 0 #2e86de; }
+        .num-btn.clear { background: #ff4757; box-shadow: 0 4px 0 #c0392b; }
+        .num-btn.clear:active { box-shadow: 0 0 0 #c0392b; }
+
+        /* Game Over Overlay */
+        .overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9);
+            border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 20; opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        .overlay.active { opacity: 1; pointer-events: all; }
+        .btn-start { background: #1dd1a1; color: #000; border: none; padding: 15px 40px; font-size: 1.5em; font-weight: bold; border-radius: 30px; cursor: pointer; margin-top: 20px; transition: 0.2s; }
+        .btn-start:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(29,209,161,0.6); }
+
+        /* Animations */
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        .shake { animation: shake 0.3s ease-in-out; border-color: #ff4757 !important; }
+        .correct-flash { border-color: #1dd1a1 !important; background: rgba(29,209,161,0.1); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn">⬅ Back to Hub</a>
+        <h2 style="margin:0; color:#fff;">Quick Math</h2>
+        <div style="width: 100px;"></div>
+    </header>
+
+    <div class="game-wrapper">
+        
+        <!-- Sidebar -->
+        <div class="side-panel">
+            <h3>Difficulty</h3>
+            <button class="difficulty-btn diff-easy active" onclick="setDifficulty('easy')">Easy (+, -)</button>
+            <button class="difficulty-btn diff-med" onclick="setDifficulty('med')">Medium (x, ÷)</button>
+            <button class="difficulty-btn diff-hard" onclick="setDifficulty('hard')">Hard (Mixed)</button>
+
+            <div class="stat-box">
+                <div class="stat-label">Current Score</div>
+                <div class="stat-value" id="scoreDisplay">0</div>
+            </div>
+
+            <div class="stat-box" style="border-left-color: #feca57;">
+                <div class="stat-label">Global High Score</div>
+                <div class="stat-value" id="highScoreDisplay" style="color: #feca57;">0</div>
+            </div>
+        </div>
+
+        <!-- Main Math Board -->
+        <div class="math-board" id="board">
+            
+            <div class="overlay active" id="startOverlay">
+                <h1 style="color: #54a0ff; font-size: 3em; margin: 0;">Ready?</h1>
+                <p style="color: #a4b0be;">Solve before the bar runs out!</p>
+                <button class="btn-start" onclick="startGame()">Start Game</button>
+            </div>
+
+            <div class="timer-container">
+                <div class="timer-bar" id="timerBar"></div>
+            </div>
+
+            <div class="problem-display" id="problemDisplay">? + ?</div>
+            
+            <div class="answer-display" id="answerDisplay"></div>
+
+            <div class="numpad">
+                <button class="num-btn" onclick="typeNum('1')">1</button>
+                <button class="num-btn" onclick="typeNum('2')">2</button>
+                <button class="num-btn" onclick="typeNum('3')">3</button>
+                <button class="num-btn" onclick="typeNum('4')">4</button>
+                <button class="num-btn" onclick="typeNum('5')">5</button>
+                <button class="num-btn" onclick="typeNum('6')">6</button>
+                <button class="num-btn" onclick="typeNum('7')">7</button>
+                <button class="num-btn" onclick="typeNum('8')">8</button>
+                <button class="num-btn" onclick="typeNum('9')">9</button>
+                <button class="num-btn clear" onclick="clearAns()">C</button>
+                <button class="num-btn" onclick="typeNum('0')">0</button>
+                <button class="num-btn action" onclick="checkAnswer()">Enter</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Hub Data Load ---
+        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || { clicker: 0, reaction: 9999, math: 0, ttt: 0 };
+        document.getElementById('highScoreDisplay').innerText = globalScores.math || 0;
+
+        // --- Game State ---
+        let score = 0;
+        let difficulty = 'easy'; // easy, med, hard
+        let currentAnswer = 0;
+        let typedAnswer = "";
+        
+        let timerInterval;
+        let timeLeft = 100; // Percentage
+        let drainRate = 1.0; // How fast the bar drains
+        let isPlaying = false;
+
+        // DOM Elements
+        const problemDisplay = document.getElementById('problemDisplay');
+        const answerDisplay = document.getElementById('answerDisplay');
+        const timerBar = document.getElementById('timerBar');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const board = document.getElementById('board');
+
+        // --- Keyboard Support ---
+        document.addEventListener('keydown', (e) => {
+            if (!isPlaying) {
+                if (e.key === 'Enter') startGame();
+                return;
+            }
+            if (e.key >= '0' && e.key <= '9') typeNum(e.key);
+            if (e.key === 'Backspace') clearAns();
+            if (e.key === 'Enter') checkAnswer();
+        });
+
+        // --- Difficulty Selector ---
+        function setDifficulty(level) {
+            if (isPlaying) return; // Can't change mid-game
+            difficulty = level;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.diff-${level}`).classList.add('active');
+        }
+
+        // --- Input Logic ---
+        function typeNum(num) {
+            if (!isPlaying) return;
+            if (typedAnswer.length < 5) {
+                typedAnswer += num;
+                answerDisplay.innerText = typedAnswer;
+            }
+        }
+
+        function clearAns() {
+            typedAnswer = "";
+            answerDisplay.innerText = typedAnswer;
+        }
+
+        // --- Game Logic ---
+        function startGame() {
+            score = 0;
+            drainRate = 1.0;
+            isPlaying = true;
+            scoreDisplay.innerText = score;
+            document.getElementById('startOverlay').classList.remove('active');
+            
+            generateProblem();
+            startTimer();
+        }
+
+        function generateProblem() {
+            typedAnswer = "";
+            answerDisplay.innerText = typedAnswer;
+            
+            let num1, num2, operator;
+            const opsEasy = ['+', '-'];
+            const opsMed = ['*', '/'];
+            const opsHard = ['+', '-', '*', '/'];
+
+            let chosenOps;
+            if (difficulty === 'easy') chosenOps = opsEasy;
+            else if (difficulty === 'med') chosenOps = opsMed;
+            else chosenOps = opsHard;
+
+            operator = chosenOps[Math.floor(Math.random() * chosenOps.length)];
+
+            if (operator === '+') {
+                num1 = Math.floor(Math.random() * 20) + 1;
+                num2 = Math.floor(Math.random() * 20) + 1;
+                currentAnswer = num1 + num2;
+            } else if (operator === '-') {
+                num1 = Math.floor(Math.random() * 20) + 10;
+                num2 = Math.floor(Math.random() * num1) + 1; // Ensure positive result
+                currentAnswer = num1 - num2;
+            } else if (operator === '*') {
+                num1 = Math.floor(Math.random() * 12) + 1;
+                num2 = Math.floor(Math.random() * 12) + 1;
+                currentAnswer = num1 * num2;
+            } else if (operator === '/') {
+                // Ensure clean division
+                num2 = Math.floor(Math.random() * 10) + 2; 
+                currentAnswer = Math.floor(Math.random() * 10) + 1;
+                num1 = num2 * currentAnswer; 
+            }
+
+            // Replace * and / with prettier symbols
+            let displayOp = operator;
+            if (operator === '*') displayOp = '×';
+            if (operator === '/') displayOp = '÷';
+
+            problemDisplay.innerText = `${num1} ${displayOp} ${num2}`;
+            
+            // Reset timer visually for new question
+            timeLeft = 100;
+            updateTimerColor();
+        }
+
+        function checkAnswer() {
+            if (!isPlaying || typedAnswer === "") return;
+
+            if (parseInt(typedAnswer) === currentAnswer) {
+                // Correct!
+                score++;
+                scoreDisplay.innerText = score;
+                drainRate += 0.05; // Slightly faster every correct answer
+                
+                // Visual feedback
+                answerDisplay.classList.add('correct-flash');
+                setTimeout(() => answerDisplay.classList.remove('correct-flash'), 200);
+                
+                generateProblem();
+            } else {
+                // Wrong! Penalize time and shake
+                timeLeft -= 20; 
+                board.classList.add('shake');
+                setTimeout(() => board.classList.remove('shake'), 300);
+                clearAns();
+            }
+        }
+
+        // --- Timer Logic ---
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft -= drainRate;
+                timerBar.style.width = `${Math.max(0, timeLeft)}%`;
+                
+                updateTimerColor();
+
+                if (timeLeft <= 0) {
+                    gameOver();
+                }
+            }, 50); // Updates 20 times a second for smoothness
+        }
+
+        function updateTimerColor() {
+            if (timeLeft > 50) timerBar.style.backgroundColor = '#1dd1a1'; // Green
+            else if (timeLeft > 20) timerBar.style.backgroundColor = '#feca57'; // Yellow
+            else timerBar.style.backgroundColor = '#ff4757'; // Red
+        }
+
+        function gameOver() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            
+            // Save Score
+            if (score > (globalScores.math || 0)) {
+                globalScores.math = score;
+                localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
+                document.getElementById('highScoreDisplay').innerText = score;
+                document.getElementById('highScoreDisplay').style.color = '#1dd1a1';
+            }
+
+            // Show Game Over Overlay
+            const overlay = document.getElementById('startOverlay');
+            overlay.innerHTML = `
+                <h1 style="color: #ff4757; font-size: 3em; margin: 0;">Time's Up!</h1>
+                <p style="color: #fff; font-size: 1.5em;">Score: <strong>${score}</strong></p>
+                <button class="btn-start" onclick="startGame()">Play Again</button>
+            `;
+            overlay.classList.add('active');
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe: Overdrive</title>
+    <style>
+        /* Shared Theme */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #100b16, #200f33, #150921); 
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
+            user-select: none;
+        }
+
+        header { 
+            padding: 15px 30px; background: rgba(0,0,0,0.8); z-index: 10;
+            border-bottom: 2px solid #f368e0; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 15px rgba(243, 104, 224, 0.2);
+        }
+        .back-btn {
+            background: transparent; border: 2px solid #f368e0; color: #f368e0; padding: 8px 20px;
+            border-radius: 20px; text-decoration: none; font-weight: bold; transition: 0.3s;
+        }
+        .back-btn:hover { background: #f368e0; color: #000; box-shadow: 0 0 10px #f368e0; }
+
+        .game-wrapper {
+            display: flex; flex: 1; padding: 20px; gap: 30px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;
+            justify-content: center; align-items: flex-start; margin-top: 20px;
+        }
+
+        .shop-panel {
+            width: 320px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 25px;
+            border: 1px solid rgba(243, 104, 224, 0.3);
+        }
+        .shop-panel h3 { margin: 0 0 10px 0; color: #f368e0; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        
+        .coin-display { font-size: 2em; color: #ffd700; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        
+        .powerup-card {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+            padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .powerup-info h4 { margin: 0 0 5px 0; color: #48dbfb; }
+        .powerup-info p { margin: 0; font-size: 0.8em; color: #a4b0be; }
+        .buy-btn { background: #ffd700; color: #000; border: none; padding: 8px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .buy-btn:hover { transform: scale(1.05); }
+        .buy-btn:disabled { background: #555; color: #888; cursor: not-allowed; transform: none; }
+
+        .board-container {
+            flex: 1; max-width: 500px; display: flex; flex-direction: column; align-items: center;
+        }
+        
+        .status-msg { font-size: 2em; font-weight: bold; color: #fff; margin-bottom: 20px; height: 40px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+
+        .ttt-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f368e0; padding: 10px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(243, 104, 224, 0.4);
+        }
+        .cell {
+            width: 120px; height: 120px; background: #150921; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 5em; font-weight: bold; cursor: pointer; transition: 0.2s; color: #fff;
+        }
+        .cell:hover { background: #2c1a40; }
+        .cell.x-mark { color: #48dbfb; text-shadow: 0 0 20px rgba(72, 219, 251, 0.8); }
+        .cell.o-mark { color: #ff4757; text-shadow: 0 0 20px rgba(255, 71, 87, 0.8); }
+        
+        .targeting-eraser .cell.o-mark { background: rgba(255, 71, 87, 0.2); border: 2px dashed #ff4757; animation: pulse 1s infinite; }
+        .targeting-steal .cell.o-mark { background: rgba(72, 219, 251, 0.2); border: 2px dashed #48dbfb; animation: pulse 1s infinite; }
+
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; transform: scale(1.05); } 100% { opacity: 0.8; } }
+
+        .inventory-panel {
+            width: 250px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 25px;
+            border: 1px solid #1dd1a1;
+        }
+        .inventory-panel h3 { margin: 0 0 15px 0; color: #1dd1a1; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        
+        .inv-item {
+            background: rgba(255,255,255,0.05); border: 2px solid transparent; border-radius: 10px;
+            padding: 15px; margin-bottom: 15px; cursor: pointer; text-align: center; transition: 0.2s;
+        }
+        .inv-item:hover { background: rgba(255,255,255,0.1); }
+        .inv-item.active { border-color: #1dd1a1; background: rgba(29, 209, 161, 0.2); box-shadow: 0 0 15px rgba(29, 209, 161, 0.4); }
+        
+        .inv-count { font-size: 1.5em; font-weight: bold; color: #1dd1a1; }
+        .inv-name { font-size: 1.1em; color: #fff; margin-top: 5px; }
+
+        .btn-restart { background: #f368e0; color: #fff; border: none; padding: 15px 30px; font-size: 1.2em; font-weight: bold; border-radius: 30px; cursor: pointer; margin-top: 20px; width: 100%; transition: 0.2s; }
+        .btn-restart:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(243, 104, 224, 0.6); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn">⬅ Back to Hub</a>
+        <h2 style="margin:0; color:#fff;">Tic-Tac-Toe: Overdrive</h2>
+        <div style="width: 100px; text-align: right; color: #a4b0be;">Total Wins: <span id="totalWins" style="color:#fff; font-weight:bold;">0</span></div>
+    </header>
+
+    <div class="game-wrapper">
+        
+        <!-- Left: Cheat Shop -->
+        <div class="shop-panel">
+            <h3>Cheat Shop</h3>
+            <div class="coin-display">🪙 <span id="coinUI">0</span></div>
+            
+            <div class="powerup-card">
+                <div class="powerup-info">
+                    <h4>The Eraser</h4>
+                    <p>Destroy an enemy 'O'.</p>
+                </div>
+                <button class="buy-btn" id="buy-eraser" onclick="buyItem('eraser', 30)">30 🪙</button>
+            </div>
+
+            <div class="powerup-card">
+                <div class="powerup-info">
+                    <h4>The Steal</h4>
+                    <p>Convert an 'O' to an 'X'.</p>
+                </div>
+                <button class="buy-btn" id="buy-steal" onclick="buyItem('steal', 50)">50 🪙</button>
+            </div>
+            
+            <p style="font-size: 0.8em; color: #a4b0be; margin-top: 20px;">Earn coins by playing! Win = 10, Draw = 5.</p>
+        </div>
+
+        <!-- Center: Game Board -->
+        <div class="board-container">
+            <div class="status-msg" id="statusMsg">Your Turn (X)</div>
+            
+            <div class="ttt-grid" id="grid">
+                <!-- Cells generated by JS -->
+            </div>
+
+            <button class="btn-restart" id="restartBtn" onclick="initGame()" style="display:none;">Next Match ➔</button>
+        </div>
+
+        <!-- Right: Active Inventory -->
+        <div class="inventory-panel">
+            <h3>Your Powerups</h3>
+            
+            <div class="inv-item" id="inv-eraser" onclick="togglePowerup('eraser')">
+                <div class="inv-count" id="count-eraser">0</div>
+                <div class="inv-name">Erasers</div>
+                <div style="font-size: 0.8em; color:#a4b0be; margin-top:5px;">Click to Activate</div>
+            </div>
+
+            <div class="inv-item" id="inv-steal" onclick="togglePowerup('steal')">
+                <div class="inv-count" id="count-steal">0</div>
+                <div class="inv-name">Steals</div>
+                <div style="font-size: 0.8em; color:#a4b0be; margin-top:5px;">Click to Activate</div>
+            </div>
+            
+            <p id="powerupHelp" style="color: #ff9f43; font-size: 0.9em; display: none; text-align: center;">Select an enemy piece!</p>
+        </div>
+
+    </div>
+
+    <script>
+        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || { clicker: 0, reaction: 9999, math: 0, ttt: 0 };
+        let coins = parseInt(localStorage.getItem('tttCoins')) || 0;
+        let inventory = JSON.parse(localStorage.getItem('tttInventory')) || { eraser: 0, steal: 0 };
+
+        document.getElementById('totalWins').innerText = globalScores.ttt || 0;
+
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+        let activePowerup = null;
+
+        const winConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]            
+        ];
+
+        const gridElement = document.getElementById('grid');
+        const statusMsg = document.getElementById('statusMsg');
+        const restartBtn = document.getElementById('restartBtn');
+        const coinUI = document.getElementById('coinUI');
+        const helpText = document.getElementById('powerupHelp');
+
+        function updateShopUI() {
+            coinUI.innerText = coins;
+            document.getElementById('buy-eraser').disabled = coins < 30;
+            document.getElementById('buy-steal').disabled = coins < 50;
+            
+            document.getElementById('count-eraser').innerText = inventory.eraser;
+            document.getElementById('count-steal').innerText = inventory.steal;
+            
+            localStorage.setItem('tttCoins', coins);
+            localStorage.setItem('tttInventory', JSON.stringify(inventory));
+        }
+
+        function buyItem(item, cost) {
+            if (coins >= cost) {
+                coins -= cost;
+                inventory[item]++;
+                updateShopUI();
+            }
+        }
+
+        function togglePowerup(type) {
+            if (!gameActive || inventory[type] <= 0) return;
+
+            if (activePowerup === type) {
+                activePowerup = null;
+                document.getElementById(`inv-${type}`).classList.remove('active');
+                gridElement.className = 'ttt-grid';
+                helpText.style.display = 'none';
+                return;
+            }
+
+            activePowerup = type;
+            document.getElementById('inv-eraser').classList.remove('active');
+            document.getElementById('inv-steal').classList.remove('active');
+            document.getElementById(`inv-${type}`).classList.add('active');
+            
+            gridElement.className = `ttt-grid targeting-${type}`;
+            helpText.style.display = 'block';
+        }
+
+        function consumePowerup() {
+            inventory[activePowerup]--;
+            activePowerup = null;
+            document.getElementById('inv-eraser').classList.remove('active');
+            document.getElementById('inv-steal').classList.remove('active');
+            gridElement.className = 'ttt-grid';
+            helpText.style.display = 'none';
+            updateShopUI();
+        }
+
+        function initGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            activePowerup = null;
+            statusMsg.innerText = "Your Turn (X)";
+            statusMsg.style.color = "#fff";
+            restartBtn.style.display = "none";
+            gridElement.className = 'ttt-grid';
+            helpText.style.display = 'none';
+            document.getElementById('inv-eraser').classList.remove('active');
+            document.getElementById('inv-steal').classList.remove('active');
+            
+            renderBoard();
+            updateShopUI();
+        }
+
+        function renderBoard() {
+            gridElement.innerHTML = '';
+            board.forEach((cell, index) => {
+                const cellDiv = document.createElement('div');
+                cellDiv.classList.add('cell');
+                
+                if (cell === 'X') {
+                    cellDiv.innerText = 'X';
+                    cellDiv.classList.add('x-mark');
+                } else if (cell === 'O') {
+                    cellDiv.innerText = 'O';
+                    cellDiv.classList.add('o-mark');
+                }
+
+                cellDiv.addEventListener('click', () => handleCellClick(index));
+                gridElement.appendChild(cellDiv);
+            });
+        }
+
+        function handleCellClick(index) {
+            if (!gameActive) return;
+
+            // Powerup Logic Fixes
+            if (activePowerup) {
+                let usedPowerup = activePowerup; // Store it before consuming
+                if (board[index] === 'O') {
+                    if (usedPowerup === 'eraser') {
+                        board[index] = ''; 
+                        statusMsg.innerText = "Target Vaporized! Your move.";
+                    } else if (usedPowerup === 'steal') {
+                        board[index] = 'X'; 
+                        statusMsg.innerText = "Piece Stolen!";
+                    }
+                    consumePowerup();
+                    renderBoard();
+                    
+                    if (!checkWin()) {
+                        // If we stole a piece, we placed an X, so it's the CPU's turn!
+                        if (usedPowerup === 'steal') {
+                            statusMsg.innerText = "CPU Thinking...";
+                            gameActive = false; 
+                            setTimeout(cpuTurn, 800);
+                        }
+                    }
+                }
+                return;
+            }
+
+            if (board[index] !== '') return;
+
+            board[index] = 'X';
+            renderBoard();
+
+            if (!checkWin()) {
+                statusMsg.innerText = "CPU Thinking...";
+                gameActive = false; // Lock player input
+                setTimeout(cpuTurn, 600);
+            }
+        }
+
+        function cpuTurn() {
+            // BUG FIX: Removed the early return that was locking the CPU out!
+            
+            let emptyCells = board.map((val, idx) => val === '' ? idx : null).filter(val => val !== null);
+            if (emptyCells.length === 0) return;
+
+            let moveIndex = -1;
+
+            moveIndex = findBestMove('O');
+            if (moveIndex === -1) moveIndex = findBestMove('X');
+
+            if (moveIndex === -1) {
+                moveIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            }
+
+            board[moveIndex] = 'O';
+            renderBoard();
+            
+            if (!checkWin()) {
+                statusMsg.innerText = "Your Turn (X)";
+                gameActive = true; // Unlock player input
+            }
+        }
+
+        function findBestMove(player) {
+            for (let condition of winConditions) {
+                let [a, b, c] = condition;
+                if (board[a] === player && board[b] === player && board[c] === '') return c;
+                if (board[a] === player && board[c] === player && board[b] === '') return b;
+                if (board[b] === player && board[c] === player && board[a] === '') return a;
+            }
+            return -1;
+        }
+
+        function checkWin() {
+            let roundWon = false;
+            let winner = null;
+
+            for (let i = 0; i < winConditions.length; i++) {
+                const [a, b, c] = winConditions[i];
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    roundWon = true;
+                    winner = board[a];
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                gameActive = false;
+                restartBtn.style.display = "block";
+                
+                if (winner === 'X') {
+                    statusMsg.innerText = "YOU WIN! +10 Coins 🪙";
+                    statusMsg.style.color = "#1dd1a1";
+                    coins += 10;
+                    
+                    globalScores.ttt = (globalScores.ttt || 0) + 1;
+                    localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
+                    document.getElementById('totalWins').innerText = globalScores.ttt;
+
+                } else {
+                    statusMsg.innerText = "CPU WINS! 💀";
+                    statusMsg.style.color = "#ff4757";
+                }
+                updateShopUI();
+                return true;
+            }
+
+            if (!board.includes('')) {
+                statusMsg.innerText = "DRAW! +5 Coins 🪙";
+                statusMsg.style.color = "#feca57";
+                coins += 5;
+                gameActive = false;
+                restartBtn.style.display = "block";
+                updateShopUI();
+                return true;
+            }
+
+            return false;
+        }
+
+        initGame();
+
+    </script>
+</body>
+</html>

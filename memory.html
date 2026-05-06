@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Matrix - Arcade</title>
+    <style>
+        /* Shared Theme */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #100b16, #200f33, #150921); 
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
+            user-select: none;
+        }
+
+        header { 
+            padding: 15px 30px; background: rgba(0,0,0,0.8); z-index: 10;
+            border-bottom: 2px solid #9b59b6; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 15px rgba(155, 89, 182, 0.2);
+        }
+        .back-btn {
+            background: transparent; border: 2px solid #9b59b6; color: #9b59b6; padding: 8px 20px;
+            border-radius: 20px; text-decoration: none; font-weight: bold; transition: 0.3s;
+        }
+        .back-btn:hover { background: #9b59b6; color: #fff; box-shadow: 0 0 10px #9b59b6; }
+
+        /* Game Layout */
+        .game-wrapper {
+            display: flex; flex: 1; padding: 20px; gap: 30px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;
+            justify-content: center; align-items: flex-start; margin-top: 10px;
+        }
+
+        /* Sidebar Stats & Controls */
+        .dashboard {
+            width: 280px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 25px;
+            border: 1px solid rgba(155, 89, 182, 0.3); display: flex; flex-direction: column; gap: 15px;
+        }
+        .dashboard h3 { margin: 0; color: #9b59b6; border-bottom: 1px solid #333; padding-bottom: 10px; }
+
+        .diff-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid transparent; color: white; padding: 10px;
+            border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: bold; width: 100%;
+        }
+        .diff-btn:hover { background: rgba(255,255,255,0.2); }
+        .diff-btn.active { background: #9b59b6; color: #fff; box-shadow: 0 0 15px rgba(155,89,182,0.5); }
+
+        .stat-box { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 10px; border-left: 4px solid #3498db; }
+        .stat-label { font-size: 0.9em; color: #a4b0be; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #3498db; margin-top: 5px; }
+        
+        .combo-text { color: #f39c12; font-weight: bold; font-size: 1.2em; transition: 0.2s; }
+        .combo-text.active { color: #e74c3c; transform: scale(1.1); text-shadow: 0 0 10px #e74c3c; }
+
+        .powerup-btn {
+            background: linear-gradient(45deg, #e67e22, #d35400); border: none; padding: 15px; color: white; font-weight: bold;
+            border-radius: 10px; cursor: pointer; margin-top: 10px; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .powerup-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(230, 126, 34, 0.4); }
+        .powerup-btn:active { transform: translateY(2px); }
+        .powerup-btn:disabled { background: #555; color: #888; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* The Board */
+        .board-container {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+        }
+
+        .status-msg { font-size: 1.8em; font-weight: bold; color: #fff; margin-bottom: 15px; height: 35px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+
+        .memory-grid {
+            display: grid; gap: 12px; perspective: 1000px;
+        }
+
+        /* 3D Card Styling */
+        .card {
+            width: 90px; height: 110px; cursor: pointer; position: relative;
+        }
+        
+        .card-inner {
+            width: 100%; height: 100%; position: absolute; transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        
+        .card.flipped .card-inner, .card.matched .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            width: 100%; height: 100%; position: absolute; backface-visibility: hidden;
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #2c3e50, #34495e); color: #9b59b6; font-size: 2.5em; font-weight: bold;
+        }
+        
+        .card-back {
+            background: linear-gradient(135deg, #ecf0f1, #bdc3c7); font-size: 3em;
+            transform: rotateY(180deg); border-color: #fff;
+        }
+
+        /* Card States */
+        .card.matched .card-back {
+            background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 0 20px rgba(46, 204, 113, 0.6); border-color: #2ecc71;
+        }
+        
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .card.error .card-inner { animation: shake 0.4s ease; }
+
+        /* Game Over Overlay */
+        .overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9);
+            border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 20; opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        .overlay.active { opacity: 1; pointer-events: all; }
+        .btn-start { background: #9b59b6; color: #fff; border: none; padding: 12px 30px; font-size: 1.2em; font-weight: bold; border-radius: 30px; cursor: pointer; margin-top: 20px; transition: 0.2s; }
+        .btn-start:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(155, 89, 182, 0.6); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn">⬅ Back to Hub</a>
+        <h2 style="margin:0; color:#fff;">Memory Matrix</h2>
+        <div style="width: 100px; text-align: right; color: #a4b0be;">Best (Moves): <span id="bestMoves" style="color:#2ecc71; font-weight:bold;">---</span></div>
+    </header>
+
+    <div class="game-wrapper">
+        
+        <!-- Left: Stats & Controls -->
+        <div class="dashboard">
+            <h3>Difficulty</h3>
+            <button class="diff-btn active" id="btn-easy" onclick="setDifficulty('easy')">Easy (12 Cards)</button>
+            <button class="diff-btn" id="btn-med" onclick="setDifficulty('med')">Medium (16 Cards)</button>
+            <button class="diff-btn" id="btn-hard" onclick="setDifficulty('hard')">Hard (20 Cards)</button>
+
+            <div class="stat-box" style="margin-top: 10px;">
+                <div class="stat-label">Moves Made</div>
+                <div class="stat-value" id="moveCount">0</div>
+            </div>
+
+            <div class="stat-box" style="border-left-color: #f39c12;">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="scoreCount" style="color:#f39c12;">0</div>
+                <div class="combo-text" id="comboText">Combo: 1x</div>
+            </div>
+
+            <button class="powerup-btn" id="btn-scan" onclick="useScanner()">
+                👁️ System Scan (Cost: 500)
+            </button>
+        </div>
+
+        <!-- Center: Game Board -->
+        <div class="board-container" style="position: relative;">
+            <div class="status-msg" id="statusMsg">Find the matching pairs!</div>
+            
+            <div class="memory-grid" id="grid">
+                <!-- Cards injected here -->
+            </div>
+
+            <div class="overlay" id="winOverlay">
+                <h1 style="color: #2ecc71; font-size: 3.5em; margin: 0;">System Cleared!</h1>
+                <p style="color: #fff; font-size: 1.5em; margin: 10px 0;">Moves: <strong id="finalMoves">0</strong> | Score: <strong id="finalScore">0</strong></p>
+                <p id="recordMsg" style="color: #f1c40f; font-weight: bold; display: none;">🏆 New Global Record! 🏆</p>
+                <button class="btn-start" onclick="initGame()">Play Again</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Hub Data Load ---
+        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || { clicker: 0, reaction: 9999, math: 0, memory: 999, ttt: 0 };
+        document.getElementById('bestMoves').innerText = globalScores.memory === 999 ? '---' : globalScores.memory;
+
+        // --- Game State ---
+        const allEmojis = ['👾','🚀','🪐','🛸','⭐','🌙','🔥','⚡','💎','🔮'];
+        let cardsArray = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let totalPairs = 0;
+        let moves = 0;
+        let score = 0;
+        let combo = 1;
+        let isLocked = false;
+        let difficulty = 'easy'; // easy (12), med (16), hard (20)
+
+        const gridElement = document.getElementById('grid');
+        const moveCountEl = document.getElementById('moveCount');
+        const scoreCountEl = document.getElementById('scoreCount');
+        const comboTextEl = document.getElementById('comboText');
+        const statusMsg = document.getElementById('statusMsg');
+        const scanBtn = document.getElementById('btn-scan');
+
+        // --- Difficulty Setup ---
+        function setDifficulty(level) {
+            difficulty = level;
+            document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${level}`).classList.add('active');
+            initGame();
+        }
+
+        function getConfig() {
+            if (difficulty === 'easy') return { pairs: 6, cols: 4 };
+            if (difficulty === 'med') return { pairs: 8, cols: 4 };
+            if (difficulty === 'hard') return { pairs: 10, cols: 5 };
+        }
+
+        // --- Core Logic ---
+        function initGame() {
+            document.getElementById('winOverlay').classList.remove('active');
+            document.getElementById('recordMsg').style.display = 'none';
+            
+            const config = getConfig();
+            totalPairs = config.pairs;
+            
+            // Set CSS Grid Columns
+            gridElement.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
+
+            moves = 0;
+            score = 0;
+            combo = 1;
+            matchedPairs = 0;
+            flippedCards = [];
+            isLocked = false;
+            
+            updateStats();
+            statusMsg.innerText = "Find the matching pairs!";
+            statusMsg.style.color = "#fff";
+
+            // Generate Deck
+            let deck = allEmojis.slice(0, totalPairs);
+            cardsArray = [...deck, ...deck];
+            cardsArray.sort(() => 0.5 - Math.random()); // Shuffle
+
+            renderBoard();
+        }
+
+        function renderBoard() {
+            gridElement.innerHTML = '';
+            cardsArray.forEach((emoji, index) => {
+                const cardDiv = document.createElement('div');
+                cardDiv.classList.add('card');
+                cardDiv.dataset.index = index;
+                cardDiv.dataset.value = emoji;
+
+                cardDiv.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">?</div>
+                        <div class="card-back">${emoji}</div>
+                    </div>
+                `;
+
+                cardDiv.addEventListener('click', () => flipCard(cardDiv));
+                gridElement.appendChild(cardDiv);
+            });
+        }
+
+        function flipCard(card) {
+            if (isLocked) return;
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                moves++;
+                moveCountEl.innerText = moves;
+                checkForMatch();
+            }
+        }
+
+        function checkForMatch() {
+            isLocked = true;
+            const [card1, card2] = flippedCards;
+            const match = card1.dataset.value === card2.dataset.value;
+
+            if (match) {
+                // It's a match!
+                setTimeout(() => {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    matchedPairs++;
+                    
+                    // Score & Combo Math
+                    score += (100 * combo);
+                    combo++;
+                    updateStats();
+                    
+                    statusMsg.innerText = "Match! 🔥";
+                    statusMsg.style.color = "#2ecc71";
+
+                    resetBoardState();
+                    if (matchedPairs === totalPairs) handleWin();
+                }, 400);
+
+            } else {
+                // Not a match
+                combo = 1; // Break combo
+                updateStats();
+                
+                statusMsg.innerText = "Miss!";
+                statusMsg.style.color = "#e74c3c";
+
+                setTimeout(() => {
+                    card1.classList.add('error');
+                    card2.classList.add('error');
+                }, 400);
+
+                setTimeout(() => {
+                    card1.classList.remove('flipped', 'error');
+                    card2.classList.remove('flipped', 'error');
+                    resetBoardState();
+                    statusMsg.innerText = "Find the matching pairs!";
+                    statusMsg.style.color = "#fff";
+                }, 1000);
+            }
+        }
+
+        function resetBoardState() {
+            flippedCards = [];
+            isLocked = false;
+        }
+
+        function updateStats() {
+            scoreCountEl.innerText = score;
+            comboTextEl.innerText = `Combo: ${combo}x`;
+            
+            if (combo > 1) {
+                comboTextEl.classList.add('active');
+            } else {
+                comboTextEl.classList.remove('active');
+            }
+
+            // Powerup button state
+            if (score >= 500 && !isLocked && matchedPairs < totalPairs) {
+                scanBtn.disabled = false;
+            } else {
+                scanBtn.disabled = true;
+            }
+        }
+
+        // --- Scanner Powerup ---
+        function useScanner() {
+            if (score < 500 || isLocked) return;
+            
+            score -= 500;
+            updateStats();
+            isLocked = true;
+            statusMsg.innerText = "👁️ SYSTEM SCAN ACTIVE 👁️";
+            statusMsg.style.color = "#3498db";
+
+            const allCards = document.querySelectorAll('.card:not(.matched)');
+            
+            // Flip them all up
+            allCards.forEach(c => c.classList.add('flipped'));
+
+            // Flip them back down after 1.5s
+            setTimeout(() => {
+                allCards.forEach(c => {
+                    // Don't unflip the ones that the user had manually clicked before scanning
+                    if (!flippedCards.includes(c)) {
+                        c.classList.remove('flipped');
+                    }
+                });
+                isLocked = false;
+                statusMsg.innerText = "Scan Complete.";
+                statusMsg.style.color = "#fff";
+            }, 1500);
+        }
+
+        // --- Win State ---
+        function handleWin() {
+            document.getElementById('finalMoves').innerText = moves;
+            document.getElementById('finalScore').innerText = score;
+            
+            // Update Global High Score (Fewest Moves is better)
+            // We only save the score if it's the absolute best across ALL difficulties to keep it simple,
+            // or you could separate them later. For now, lower moves = better.
+            if (moves < globalScores.memory || globalScores.memory === 999) {
+                globalScores.memory = moves;
+                localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
+                document.getElementById('bestMoves').innerText = moves;
+                document.getElementById('recordMsg').style.display = 'block';
+            }
+
+            setTimeout(() => {
+                document.getElementById('winOverlay').classList.add('active');
+            }, 500);
+        }
+
+        // Start Game on Load
+        initGame();
+
+    </script>
+</body>
+</html>

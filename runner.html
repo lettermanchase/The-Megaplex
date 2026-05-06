@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Runner | The Megaplex</title>
+    <style>
+        /* Megaplex Base Theme */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #050a0f; 
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            overflow: hidden; 
+            display: flex; flex-direction: column; align-items: center;
+        }
+        
+        header { 
+            width: 100%; text-align: center; padding: 15px 30px; background: rgba(0,0,0,0.85); 
+            border-bottom: 3px solid #00d2d3; box-shadow: 0 4px 20px rgba(0, 210, 211, 0.2);
+            display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;
+            z-index: 100;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+        
+        header.overdrive {
+            background: rgba(40,0,0,0.9);
+            border-bottom: 3px solid #ff4757;
+            box-shadow: 0 4px 30px rgba(255, 71, 87, 0.6);
+        }
+
+        h1 { margin: 0; font-size: 2.2em; text-transform: uppercase; text-shadow: 0 0 15px #00d2d3; letter-spacing: 2px; color: #fff; transition: 0.3s;}
+        header.overdrive h1 { text-shadow: 0 0 20px #ff4757; color: #ff4757; }
+        
+        .header-controls { display: flex; gap: 15px; align-items: center; }
+        
+        .token-display {
+            background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 20px; border: 2px solid #feca57;
+            font-size: 1.3em; font-weight: bold; color: #feca57; box-shadow: 0 0 15px rgba(254, 202, 87, 0.4);
+        }
+
+        .btn {
+            background: #1dd1a1; padding: 10px 20px; border-radius: 8px; color: #000; font-weight: bold; 
+            text-decoration: none; transition: 0.3s; cursor: pointer; border: none; font-size: 1.1em;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:hover { background: #00d2d3; transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 210, 211, 0.6); }
+        .btn.back { background: transparent; color: #ff4757; border: 2px solid #ff4757; }
+        .btn.back:hover { background: #ff4757; color: white; box-shadow: 0 0 15px rgba(255, 71, 87, 0.6); }
+
+        /* Game UI & Canvas */
+        #game-wrapper {
+            position: relative;
+            margin-top: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 50px rgba(0, 210, 211, 0.2);
+            border: 2px solid rgba(0, 210, 211, 0.4);
+            background: #000;
+            transition: 0.5s;
+        }
+        
+        #game-wrapper.overdrive {
+            box-shadow: 0 0 80px rgba(255, 71, 87, 0.4);
+            border-color: #ff4757;
+        }
+
+        canvas { display: block; border-radius: 10px; }
+
+        /* Scanline Overlay for Retro feel */
+        #scanlines {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.25));
+            background-size: 100% 4px;
+            pointer-events: none; border-radius: 10px; z-index: 5;
+        }
+
+        /* Overlay Menus */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 10, 15, 0.9); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10; border-radius: 10px;
+            backdrop-filter: blur(8px);
+        }
+        
+        #game-over { display: none; }
+        #game-over h2 { color: #ff4757; font-size: 4em; margin: 0 0 10px 0; text-shadow: 0 0 35px #ff4757; text-transform: uppercase; }
+        
+        #start-screen h2 { color: #00d2d3; font-size: 4em; margin: 0 0 20px 0; text-shadow: 0 0 30px #00d2d3; letter-spacing: 3px; }
+        
+        .stats-text { color: #fff; font-size: 1.5em; margin: 5px 0; letter-spacing: 1px; }
+        .stats-highlight { color: #feca57; font-weight: bold; }
+
+        .instructions {
+            background: rgba(0,0,0,0.6); padding: 20px 30px; border-radius: 10px;
+            margin-bottom: 25px; color: #c8d6e5; text-align: center; font-size: 1.1em;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .key { background: #5f27cd; padding: 4px 10px; border-radius: 6px; color: white; font-weight: bold; }
+        .legend { display: flex; gap: 20px; justify-content: center; margin-top: 15px; font-size: 0.9em; flex-wrap: wrap; }
+        .legend span { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 5px; }
+
+    </style>
+</head>
+<body>
+
+    <header id="mainHeader">
+        <a href="index.html" class="btn back">⬅ HUB</a>
+        <h1>🏃‍♂️ Cyber Runner</h1>
+        <div class="header-controls">
+            <div class="token-display">🎟️ <span id="runBalance">0</span></div>
+        </div>
+    </header>
+
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="1000" height="420"></canvas>
+        <div id="scanlines"></div>
+        
+        <!-- Start Screen -->
+        <div id="start-screen" class="overlay">
+            <h2>CYBER RUNNER</h2>
+            <div class="instructions">
+                WARNING: HIGH SPEED KINETIC ENVIRONMENT.<br><br>
+                Press <span class="key">SPACE</span> or <span class="key">CLICK</span> to flip gravity instantly.<br>
+                Survive through changing Sectors. Prepare for System Overdrive.
+                <div class="legend">
+                    <span><span style="color:#feca57">🟡</span> Coin</span>
+                    <span><span style="color:#00d2d3">🛡️</span> Shield</span>
+                    <span><span style="color:#9b59b6">🧲</span> Magnet</span>
+                    <span><span style="color:#ff4757">🔺</span> Spike</span>
+                    <span><span style="color:#ff4757">💥</span> Laser</span>
+                </div>
+            </div>
+            <button class="btn" style="font-size: 1.4em; padding: 15px 50px;" onclick="startGame()">INITIALIZE RUN ➔</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over" class="overlay">
+            <h2>BOT DESTROYED</h2>
+            <div class="stats-text">Distance Survived: <span id="final-score" class="stats-highlight">0</span> m</div>
+            <div class="stats-text">Sectors Cleared: <span id="final-sectors" class="stats-highlight">0</span></div>
+            <div class="stats-text">Tokens Extracted: <span id="final-coins" class="stats-highlight">0</span></div>
+            <button class="btn" style="margin-top: 30px; font-size: 1.2em;" onclick="resetGame()">REBOOT SYSTEM ➔</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Megaplex Integration ---
+        let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+        let soundEnabled = localStorage.getItem('megaplexSound') !== 'false';
+        document.getElementById('runBalance').innerText = currentTokens;
+
+        // --- Retro Audio Engine ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx && soundEnabled) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type, duration, vol=0.1, slideFreq=null) {
+            if(!audioCtx || !soundEnabled) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            if(slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, audioCtx.currentTime + duration);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const sfx = {
+            flip: () => playTone(350, 'square', 0.1, 0.04, 600),
+            coin: () => { playTone(900, 'square', 0.1, 0.03); setTimeout(()=>playTone(1200, 'sine', 0.15, 0.05), 50); },
+            powerup: () => { playTone(300, 'square', 0.1, 0.05, 800); setTimeout(()=>playTone(600, 'square', 0.2, 0.05, 1200), 100); },
+            hitShield: () => playTone(150, 'sawtooth', 0.3, 0.1, 50),
+            death: () => { playTone(100, 'sawtooth', 0.4, 0.2, 20); setTimeout(()=>playTone(50, 'square', 0.5, 0.2, 10), 150); },
+            sectorClear: () => { playTone(400, 'square', 0.2, 0.1, 600); setTimeout(()=>playTone(600, 'square', 0.3, 0.1, 800), 200); },
+            overdrive: () => { playTone(200, 'sawtooth', 1.5, 0.2, 800); setTimeout(()=>playTone(150, 'square', 1.0, 0.3, 50), 500); }
+        };
+
+        // --- GEOMETRY DASH STYLE MUSIC SEQUENCER ---
+        const music = {
+            isPlaying: false,
+            timerID: null,
+            nextNoteTime: 0,
+            current16thNote: 0,
+            tempo: 150,
+            lookahead: 25,
+            scheduleAheadTime: 0.1,
+
+            // Music theory helper
+            midiToFreq: (note) => 440 * Math.pow(2, (note - 69) / 12),
+            
+            // Patterns
+            bassPattern: [0, 0, 0, 0, 3, 3, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7], 
+            arpPattern:  [12, 15, 19, 24, 15, 19, 24, 27, 19, 24, 27, 31, 24, 27, 31, 36], 
+
+            nextNote() {
+                const secondsPerBeat = 60.0 / this.tempo;
+                this.nextNoteTime += 0.25 * secondsPerBeat; // 16th note advance
+                this.current16thNote = (this.current16thNote + 1) % 16;
+            },
+
+            scheduleNote(beatNumber, time) {
+                if(!audioCtx || !soundEnabled) return;
+
+                // 1. Driving Kick Drum on every beat
+                if (beatNumber % 4 === 0) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.frequency.setValueAtTime(150, time);
+                    osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
+                    gain.gain.setValueAtTime(0.4, time);
+                    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(time); osc.stop(time + 0.5);
+                }
+
+                // 2. Off-beat Hi-Hat
+                if (beatNumber % 2 !== 0) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(4000, time);
+                    gain.gain.setValueAtTime(0.02, time);
+                    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(time); osc.stop(time + 0.05);
+                }
+
+                // Base note shifts based on Sector (Dynamic Key Changes!)
+                const roots = [36, 38, 41, 39, 43, 45, 48]; // C, D, F, Eb, G, A, C
+                let rootNote = roots[currentSector % roots.length];
+
+                // 3. Gritty Sawtooth Bassline
+                let bFreq = this.midiToFreq(rootNote + this.bassPattern[beatNumber]);
+                const bOsc = audioCtx.createOscillator();
+                const bGain = audioCtx.createGain();
+                bOsc.type = 'sawtooth';
+                bOsc.frequency.setValueAtTime(bFreq, time);
+                bGain.gain.setValueAtTime(0.06, time);
+                bGain.gain.setTargetAtTime(0.01, time + 0.1, 0.05);
+                bOsc.connect(bGain); bGain.connect(audioCtx.destination);
+                bOsc.start(time); bOsc.stop(time + 0.15);
+
+                // 4. Plucky Arpeggio
+                let aFreq = this.midiToFreq(rootNote + this.arpPattern[beatNumber]);
+                const aOsc = audioCtx.createOscillator();
+                const aGain = audioCtx.createGain();
+                aOsc.type = 'square';
+                aOsc.frequency.setValueAtTime(aFreq, time);
+                aGain.gain.setValueAtTime(0.02, time);
+                aGain.gain.setTargetAtTime(0.01, time + 0.05, 0.02);
+                aOsc.connect(aGain); aGain.connect(audioCtx.destination);
+                aOsc.start(time); aOsc.stop(time + 0.1);
+            },
+
+            scheduler() {
+                while (this.nextNoteTime < audioCtx.currentTime + this.scheduleAheadTime) {
+                    this.scheduleNote(this.current16thNote, this.nextNoteTime);
+                    this.nextNote();
+                }
+                this.timerID = setTimeout(() => this.scheduler(), this.lookahead);
+            },
+
+            start() {
+                if (this.isPlaying || !soundEnabled) return;
+                initAudio();
+                if(!audioCtx) return;
+                this.isPlaying = true;
+                this.current16thNote = 0;
+                this.tempo = 150; // Base Tempo
+                this.nextNoteTime = audioCtx.currentTime + 0.1;
+                this.scheduler();
+            },
+
+            stop() {
+                this.isPlaying = false;
+                clearTimeout(this.timerID);
+            }
+        };
+
+        // --- Engine Setup ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let frames = 0, gameActive = false, score = 0, sessionCoins = 0;
+        
+        // Progression Mechanics
+        let gameSpeed = 12, maxSpeed = 30, gravityBase = 1.15; 
+        let screenShake = 0;
+        let isOverdrive = false;
+        let overdriveThreshold = 8000; 
+        
+        let currentSector = 0;
+        let nextSectorScore = 500;
+        let sectorDisplayTimer = 0;
+        
+        const THEMES = [
+            { main: '#00d2d3', bg: '#02080a', plat: '#041f22' }, // 0: Cyber
+            { main: '#f368e0', bg: '#0a0208', plat: '#22041c' }, // 1: Neon
+            { main: '#ff9f43', bg: '#0a0501', plat: '#221102' }, // 2: Amber
+            { main: '#1dd1a1', bg: '#020a05', plat: '#042211' }, // 3: Toxic
+            { main: '#ff4757', bg: '#0a0202', plat: '#220404' }, // 4: Lava
+            { main: '#54a0ff', bg: '#01050a', plat: '#021122' }, // 5: Ocean
+            { main: '#9b59b6', bg: '#05010a', plat: '#110222' }  // 6: Void
+        ];
+        let currentTheme = THEMES[0];
+
+        // --- Entities ---
+        const player = {
+            x: 150, y: 210, w: 32, h: 32, vy: 0, 
+            gravity: gravityBase, flipped: false, 
+            shield: false, magnetTimer: 0, grounded: false,
+            
+            update() {
+                this.gravity = isOverdrive ? gravityBase * 1.3 : gravityBase;
+                this.vy += this.flipped ? -this.gravity : this.gravity;
+                
+                let termVel = isOverdrive ? 24 : 18;
+                if(this.vy > termVel) this.vy = termVel;
+                if(this.vy < -termVel) this.vy = -termVel;
+                
+                this.y += this.vy;
+                this.grounded = false;
+                if(this.magnetTimer > 0) this.magnetTimer--;
+            },
+            
+            flip() {
+                if(!gameActive) return;
+                initAudio();
+                this.flipped = !this.flipped;
+                this.vy = this.flipped ? -2.5 : 2.5; 
+                createParticles(this.x + this.w/2, this.flipped ? this.y : this.y + this.h, currentTheme.main, 15, 6);
+                screenShake = Math.max(screenShake, isOverdrive ? 8 : 4); 
+                sfx.flip();
+            },
+
+            draw() {
+                ctx.save();
+                if(this.magnetTimer > 0) {
+                    ctx.beginPath();
+                    ctx.arc(this.x + this.w/2, this.y + this.h/2, 70 + Math.sin(frames*0.3)*15, 0, Math.PI*2);
+                    ctx.fillStyle = 'rgba(155, 89, 182, 0.15)'; ctx.fill();
+                    ctx.strokeStyle = 'rgba(155, 89, 182, 0.6)'; ctx.stroke();
+                }
+
+                ctx.fillStyle = this.flipped ? 'rgba(0, 210, 211, 0.7)' : 'rgba(255, 71, 87, 0.7)';
+                if(isOverdrive) ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                
+                ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
+                let thrusterY = this.flipped ? this.y - 5 : this.y + this.h;
+                let thrustLen = isOverdrive ? 35 : 25; 
+                ctx.fillRect(this.x + 4, thrusterY, 8, this.flipped ? thrustLen : -thrustLen);
+                ctx.fillRect(this.x + 20, thrusterY, 8, this.flipped ? thrustLen : -thrustLen);
+                
+                ctx.fillStyle = '#c8d6e5';
+                ctx.shadowBlur = this.shield ? 25 : 12;
+                ctx.shadowColor = this.shield ? '#00d2d3' : currentTheme.main;
+                
+                if(this.shield) {
+                    ctx.strokeStyle = '#00d2d3'; ctx.lineWidth = 4;
+                    ctx.strokeRect(this.x - 6, this.y - 6, this.w + 12, this.h + 12);
+                }
+                
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+                
+                ctx.fillStyle = '#1e272e';
+                let eyeY = this.flipped ? this.y + this.h - 12 : this.y + 4;
+                ctx.fillRect(this.x + 16, eyeY, 16, 8); 
+                ctx.fillStyle = isOverdrive ? '#ff4757' : currentTheme.main;
+                ctx.shadowBlur = 8;
+                ctx.fillRect(this.x + 22, eyeY + 2, 8, 4); 
+                
+                ctx.restore();
+            }
+        };
+
+        let platforms = [], hazards = [], collectibles = [], particles = [];
+        let worldX = 0;
+
+        function addPlatform(x, y, w, h) { platforms.push({x, y, w, h}); }
+        function addHazard(x, y, w, h, type='spike', flipped=false, move=null) { 
+            hazards.push({x, y, startY: y, w, h, type, flipped, move}); 
+        }
+        function addCollectible(x, y, type) { collectibles.push({x, y, size: 20, type, active: true}); }
+
+        const CHUNKS = [
+            (x) => { // 1. Spike Tunnel
+                addPlatform(x, canvas.height - 40, 900, 40); addPlatform(x, 0, 900, 40);
+                addHazard(x + 300, canvas.height - 70, 150, 30, 'spike', false);
+                addHazard(x + 500, 40, 150, 30, 'spike', true);
+                if(Math.random()>0.5) addCollectible(x + 450, canvas.height/2, 'coin');
+                return x + 900;
+            },
+            (x) => { // 2. Void Jumps
+                addPlatform(x, canvas.height - 40, 200, 40);
+                addCollectible(x + 100, canvas.height - 80, 'coin');
+                addPlatform(x + 500, 0, 200, 40); 
+                addPlatform(x + 1000, canvas.height - 40, 200, 40); 
+                return x + 1200;
+            },
+            (x) => { // 3. Laser Matrix 
+                let lSpeed = 0.05 + (currentSector * 0.015); 
+                addPlatform(x, canvas.height - 40, 1200, 40); addPlatform(x, 0, 1200, 40);
+                addHazard(x + 400, 40, 20, 200, 'laser', false, {range: 80, speed: lSpeed, offset: 0});
+                addHazard(x + 700, canvas.height - 240, 20, 200, 'laser', false, {range: -80, speed: lSpeed, offset: Math.PI});
+                addHazard(x + 1000, 40, 20, 200, 'laser', false, {range: 80, speed: lSpeed, offset: 0});
+                addCollectible(x + 550, canvas.height/2, 'coin');
+                return x + 1200;
+            },
+            (x) => { // 4. Claustrophobia
+                addPlatform(x, canvas.height/2 + 80, 600, 400); 
+                addPlatform(x, 0, 600, canvas.height/2 - 80);   
+                if(Math.random() < 0.3) addCollectible(x + 300, canvas.height/2, 'shield');
+                else addCollectible(x + 300, canvas.height/2, 'coin');
+                return x + 600;
+            },
+            (x) => { // 5. Zig-Zag Spike Run 
+                addPlatform(x, canvas.height - 40, 1100, 40); addPlatform(x, 0, 1100, 40);
+                addHazard(x + 300, canvas.height - 70, 100, 30, 'spike', false);
+                addHazard(x + 500, 40, 100, 30, 'spike', true);
+                addHazard(x + 700, canvas.height - 70, 100, 30, 'spike', false);
+                addCollectible(x + 600, canvas.height/2, 'coin');
+                return x + 1100;
+            }
+        ];
+
+        function handleWorldGeneration() {
+            let maxRight = 0;
+            platforms.forEach(p => { if(p.x + p.w > maxRight) maxRight = p.x + p.w; });
+            
+            if (maxRight < canvas.width + 1200) { 
+                let speedMultiplier = isOverdrive ? 15 : 5;
+                let baseGap = 100 + (currentSector * 20); 
+                let gap = Math.random() * (150 + (gameSpeed * speedMultiplier)) + baseGap; 
+                
+                if(Math.random() < 0.2) {
+                    let pType = Math.random() > 0.5 ? 'shield' : 'magnet';
+                    addCollectible(maxRight + gap/2, canvas.height/2, pType);
+                }
+
+                let chunkGenerator = CHUNKS[Math.floor(Math.random() * CHUNKS.length)];
+                worldX = chunkGenerator(maxRight + gap);
+            }
+        }
+
+        // --- Visual Chaos & FX ---
+        function createParticles(x, y, color, count=10, speed=5) {
+            for(let i=0; i<count; i++) {
+                particles.push({
+                    x, y, size: Math.random()*8+2,
+                    vx: (Math.random()-0.5)*speed - (gameSpeed*0.6), 
+                    vy: (Math.random()-0.5)*speed,
+                    life: 1, color
+                });
+            }
+        }
+
+        function drawBackground() {
+            ctx.fillStyle = isOverdrive ? (frames % 10 < 3 ? '#1a0000' : '#050000') : currentTheme.bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = isOverdrive ? 'rgba(255, 71, 87, 0.1)' : 'rgba(255, 255, 255, 0.04)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            let gridSpeed = gameSpeed * 0.7;
+            let gridSpacing = isOverdrive ? 250 : 100 + ((currentSector % 4) * 40); 
+            let offset = (frames * gridSpeed) % gridSpacing;
+            
+            for(let x = -offset; x < canvas.width; x += gridSpacing) {
+                ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+            }
+            for(let y = 0; y < canvas.height; y += gridSpacing) {
+                ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+            }
+            ctx.stroke();
+        }
+
+        function drawForegroundFX() {
+            let numLines = Math.floor(gameSpeed / 1.5);
+            ctx.fillStyle = isOverdrive ? 'rgba(255, 71, 87, 0.2)' : 'rgba(255, 255, 255, 0.15)';
+            for(let i=0; i<numLines; i++) {
+                let w = Math.random() * 300 + 50;
+                let h = Math.random() * 3 + 1;
+                let x = (Math.random() * canvas.width * 2) - ((frames * gameSpeed * 1.5) % (canvas.width * 2));
+                let y = Math.random() * canvas.height;
+                ctx.fillRect(x, y, w, h);
+            }
+
+            if (isOverdrive || (gameSpeed > 20 && Math.random() < 0.08)) {
+                if (Math.random() < 0.3) {
+                    ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255, 0, 0, 0.15)' : 'rgba(0, 210, 211, 0.15)';
+                    ctx.fillRect(0, Math.random()*canvas.height, canvas.width, Math.random()*40 + 10);
+                    ctx.translate((Math.random()-0.5)*8, 0);
+                }
+            }
+        }
+
+        // --- Core Logic ---
+        function handleCollisions() {
+            let hitLethal = false;
+            let padding = 3;
+
+            for (let i = 0; i < platforms.length; i++) {
+                let p = platforms[i];
+                p.x -= gameSpeed;
+
+                if (player.x + padding < p.x + p.w && player.x + player.w - padding > p.x &&
+                    player.y + padding < p.y + p.h && player.y + player.h - padding > p.y) {
+                    
+                    let fromAbove = (player.y - player.vy + player.h) <= p.y + padding + 15;
+                    let fromBelow = (player.y - player.vy) >= p.y + p.h - padding - 15;
+
+                    if (fromAbove && player.vy > 0) {
+                        player.y = p.y - player.h; player.vy = 0; player.grounded = true;
+                    } 
+                    else if (fromBelow && player.vy < 0) {
+                        player.y = p.y + p.h; player.vy = 0; player.grounded = true;
+                    } 
+                    else { hitLethal = true; }
+                }
+            }
+
+            for (let i = 0; i < hazards.length; i++) {
+                let h = hazards[i];
+                h.x -= gameSpeed;
+                if(h.move) h.y = h.startY + Math.sin((frames + h.move.offset) * h.move.speed) * h.move.range;
+                
+                let shrink = h.type === 'spike' ? 8 : 4; 
+                if (player.x + shrink < h.x + h.w - shrink && player.x + player.w - shrink > h.x + shrink &&
+                    player.y + shrink < h.y + h.h - shrink && player.y + player.h - shrink > h.y + shrink) {
+                    hitLethal = true; 
+                }
+            }
+
+            if (hitLethal || player.y > canvas.height + 150 || player.y < -150) {
+                if (player.shield) {
+                    player.shield = false;
+                    player.x += 150; 
+                    player.y = canvas.height/2; player.vy = 0; 
+                    screenShake = 35;
+                    createParticles(player.x, player.y, '#00d2d3', 50, 15);
+                    sfx.hitShield();
+                } else {
+                    triggerGameOver();
+                }
+            }
+
+            for(let i=0; i < collectibles.length; i++) {
+                let c = collectibles[i];
+                c.x -= gameSpeed;
+
+                if (c.active && c.type === 'coin' && player.magnetTimer > 0) {
+                    let dx = (player.x + player.w/2) - (c.x + c.size/2);
+                    let dy = (player.y + player.h/2) - (c.y + c.size/2);
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < 400) { 
+                        c.x += dx * 0.2; c.y += dy * 0.2;
+                    }
+                }
+
+                if (c.active && player.x < c.x + c.size && player.x + player.w > c.x &&
+                    player.y < c.y + c.size && player.y + player.h > c.y) {
+                    
+                    c.active = false;
+                    if(c.type === 'coin') {
+                        sessionCoins++; currentTokens += isOverdrive ? 4 : 2; 
+                        document.getElementById('runBalance').innerText = currentTokens;
+                        createParticles(c.x, c.y, '#feca57', 10, 5);
+                        sfx.coin();
+                    } else if (c.type === 'shield') {
+                        player.shield = true;
+                        createParticles(c.x, c.y, '#00d2d3', 20, 8);
+                        sfx.powerup();
+                    } else if (c.type === 'magnet') {
+                        player.magnetTimer = 400; 
+                        createParticles(c.x, c.y, '#9b59b6', 20, 8);
+                        sfx.powerup();
+                    }
+                }
+            }
+
+            platforms = platforms.filter(p => p.x + p.w > -100);
+            hazards = hazards.filter(h => h.x + h.w > -100);
+            collectibles = collectibles.filter(c => c.active && c.x + c.size > -100);
+        }
+
+        function drawEntities() {
+            ctx.shadowBlur = isOverdrive ? 20 : 12;
+            ctx.shadowColor = isOverdrive ? '#ff4757' : currentTheme.main;
+            ctx.fillStyle = isOverdrive ? '#300' : currentTheme.plat;
+            ctx.strokeStyle = isOverdrive ? '#ff4757' : currentTheme.main;
+            ctx.lineWidth = 3;
+
+            platforms.forEach(p => {
+                ctx.fillRect(p.x, p.y, p.w, p.h);
+                ctx.strokeRect(p.x, p.y, p.w, p.h);
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(p.x+6, p.y+6, p.w-12, p.h-12);
+                ctx.fillStyle = isOverdrive ? '#300' : currentTheme.plat;
+            });
+
+            hazards.forEach(h => {
+                ctx.shadowBlur = 25; ctx.shadowColor = '#ff4757';
+                if (h.type === 'spike') {
+                    ctx.fillStyle = '#ff4757';
+                    ctx.beginPath();
+                    if(!h.flipped) { 
+                        for(let sx=h.x; sx<h.x+h.w; sx+=20) {
+                            ctx.moveTo(sx, h.y+h.h); ctx.lineTo(sx+10, h.y); ctx.lineTo(sx+20, h.y+h.h);
+                        }
+                    } else { 
+                        for(let sx=h.x; sx<h.x+h.w; sx+=20) {
+                            ctx.moveTo(sx, h.y); ctx.lineTo(sx+10, h.y+h.h); ctx.lineTo(sx+20, h.y);
+                        }
+                    }
+                    ctx.fill();
+                } else if (h.type === 'laser') {
+                    let pulse = Math.abs(Math.sin(frames * 0.3)) * 15;
+                    ctx.fillStyle = '#ff4757'; ctx.fillRect(h.x, h.y, h.w, h.h);
+                    ctx.fillStyle = '#fff'; ctx.fillRect(h.x + h.w/2 - 2, h.y, 4, h.h);
+                    ctx.shadowBlur = 20 + pulse;
+                }
+            });
+
+            collectibles.forEach(c => {
+                if(!c.active) return;
+                ctx.save();
+                ctx.translate(c.x + c.size/2, c.y + c.size/2);
+                ctx.rotate(frames * 0.1); 
+                
+                if(c.type === 'coin') {
+                    ctx.shadowColor = '#feca57'; ctx.fillStyle = '#feca57';
+                    ctx.beginPath(); ctx.arc(0, 0, c.size/2, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#fff'; ctx.fillRect(-2, -6, 4, 12);
+                } else if (c.type === 'shield') {
+                    ctx.shadowColor = '#00d2d3'; ctx.strokeStyle = '#00d2d3'; ctx.lineWidth = 3; 
+                    ctx.strokeRect(-c.size/2, -c.size/2, c.size, c.size);
+                    ctx.fillStyle = 'rgba(0, 210, 211, 0.4)'; ctx.fillRect(-c.size/2, -c.size/2, c.size, c.size);
+                } else if (c.type === 'magnet') {
+                    ctx.shadowColor = '#9b59b6'; ctx.strokeStyle = '#9b59b6'; ctx.lineWidth = 4; 
+                    ctx.beginPath(); ctx.arc(0, 0, c.size/2, 0, Math.PI, true);
+                    ctx.lineTo(-c.size/2, c.size/2); ctx.lineTo(-c.size/2+4, c.size/2); ctx.stroke();
+                }
+                ctx.restore();
+            });
+
+            ctx.shadowBlur = 0;
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+                p.x += p.vx; p.y += p.vy; p.life -= 0.04;
+            });
+            ctx.globalAlpha = 1;
+            particles = particles.filter(p => p.life > 0);
+        }
+
+        function drawHUD() {
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 24px "Segoe UI"';
+            ctx.fillText(`DIST: ${Math.floor(score)}m`, 20, 40);
+            ctx.fillStyle = '#feca57';
+            ctx.fillText(`COINS: ${sessionCoins}`, 20, 75);
+            
+            if(sectorDisplayTimer > 0) {
+                let alpha = Math.min(1, sectorDisplayTimer / 60);
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.textAlign = 'center';
+                ctx.font = 'bold 50px "Segoe UI"';
+                ctx.fillText(`SECTOR ${currentSector + 1}`, canvas.width/2, canvas.height/2 - 20);
+                ctx.fillStyle = `rgba(${currentTheme.main.replace('#','').match(/.{2}/g).map(x=>parseInt(x,16)).join(',')}, ${alpha})`;
+                ctx.font = 'bold 24px "Segoe UI"';
+                ctx.fillText(`SPEED INCREASED`, canvas.width/2, canvas.height/2 + 20);
+                ctx.textAlign = 'left';
+            }
+
+            if(score > overdriveThreshold - 500 && !isOverdrive) {
+                ctx.fillStyle = '#feca57';
+                ctx.textAlign = 'center';
+                if(frames % 20 < 10) ctx.fillText("WARNING: ANOMALY DETECTED", canvas.width/2, 50);
+                ctx.textAlign = 'left';
+            } else if (isOverdrive) {
+                ctx.fillStyle = '#ff4757';
+                ctx.textAlign = 'center';
+                ctx.font = 'bold 28px "Segoe UI"';
+                if(frames % 15 < 10) ctx.fillText("!!! SYSTEM OVERDRIVE !!!", canvas.width/2, 50);
+                ctx.textAlign = 'left';
+            }
+            
+            ctx.fillStyle = isOverdrive ? '#ff4757' : '#00d2d3';
+            ctx.font = 'italic 16px "Segoe UI"';
+            ctx.fillText(`SPEED: ${gameSpeed.toFixed(1)} MAC`, canvas.width - 150, 40);
+        }
+
+        function triggerOverdrive() {
+            isOverdrive = true;
+            maxSpeed = 38; 
+            gameSpeed += 4; 
+            sfx.overdrive();
+            music.tempo = 185; // Speed up the music!
+            document.getElementById('mainHeader').classList.add('overdrive');
+            document.getElementById('game-wrapper').classList.add('overdrive');
+        }
+
+        function triggerGameOver() {
+            gameActive = false;
+            music.stop(); // Stop the music
+            screenShake = 50; 
+            createParticles(player.x, player.y, '#ff4757', 100, 25);
+            createParticles(player.x, player.y, '#fff', 30, 30); 
+            sfx.death();
+            
+            setTimeout(() => {
+                document.getElementById('game-over').style.display = 'flex';
+                document.getElementById('final-score').innerText = Math.floor(score);
+                document.getElementById('final-sectors').innerText = currentSector;
+                document.getElementById('final-coins').innerText = sessionCoins;
+
+                // 1. Economy Save
+                localStorage.setItem('megaplexTokens', currentTokens);
+                let arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+                let finalScore = Math.floor(score);
+                if(finalScore > (arcadeScores.cyberrunner || 0)) {
+                    arcadeScores.cyberrunner = finalScore; 
+                    localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
+                }
+
+                // 2. Global Leaderboard Save
+                let currentUser = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
+                let globalLB = JSON.parse(localStorage.getItem('masterLB_cyberrunner')) || [];
+                globalLB = globalLB.filter(entry => entry.user !== currentUser);
+                globalLB.push({ user: currentUser, score: finalScore });
+                globalLB.sort((a, b) => b.score - a.score);
+                globalLB = globalLB.slice(0, 3);
+                localStorage.setItem('masterLB_cyberrunner', JSON.stringify(globalLB));
+
+            }, 1200);
+        }
+
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            resetGame();
+        }
+
+        function resetGame() {
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('mainHeader').classList.remove('overdrive');
+            document.getElementById('game-wrapper').classList.remove('overdrive');
+            
+            player.x = 150; player.y = canvas.height/2; player.vy = 0; 
+            player.flipped = false; player.shield = false; player.magnetTimer = 0;
+            
+            platforms = []; hazards = []; collectibles = []; particles = [];
+            score = 0; sessionCoins = 0; frames = 0; worldX = 0;
+            gameSpeed = 12; 
+            
+            currentSector = 0;
+            nextSectorScore = 500;
+            sectorDisplayTimer = 0;
+            isOverdrive = false;
+            currentTheme = THEMES[0];
+            
+            addPlatform(0, canvas.height - 40, 800, 40);
+            addPlatform(0, 0, 800, 40);
+            worldX = 800;
+            
+            gameActive = true;
+            music.start(); // Start the music!
+        }
+
+        function gameLoop() {
+            requestAnimationFrame(gameLoop);
+            ctx.save();
+            
+            if(isOverdrive && screenShake < 2) screenShake = 2; 
+
+            if(screenShake > 0) {
+                let dx = (Math.random()-0.5)*screenShake;
+                let dy = (Math.random()-0.5)*screenShake;
+                ctx.translate(dx, dy);
+                screenShake *= isOverdrive ? 0.9 : 0.85;
+                if(screenShake < 0.5) screenShake = 0;
+            }
+
+            if (gameActive) {
+                frames++;
+                score += gameSpeed / 10;
+
+                if (score >= nextSectorScore && !isOverdrive) {
+                    currentSector++;
+                    nextSectorScore += 500;
+                    sectorDisplayTimer = 120; 
+                    currentTheme = THEMES[currentSector % THEMES.length];
+                    gameSpeed = Math.min(gameSpeed + 0.8, maxSpeed); 
+                    sfx.sectorClear();
+                }
+
+                if(score >= overdriveThreshold && !isOverdrive) {
+                    triggerOverdrive();
+                }
+
+                if (isOverdrive && frames % 120 === 0 && gameSpeed < maxSpeed) {
+                    gameSpeed += 0.2; 
+                }
+                
+                if (sectorDisplayTimer > 0) sectorDisplayTimer--;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                handleWorldGeneration();
+                player.update();
+                handleCollisions();
+                
+                drawBackground();
+                drawEntities();
+                drawForegroundFX();
+                player.draw();
+                drawHUD();
+            } else if (!gameActive && screenShake > 0) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBackground();
+                drawEntities(); 
+                drawForegroundFX();
+            }
+
+            ctx.restore();
+        }
+
+        // --- Controls ---
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                player.flip();
+            }
+        });
+        canvas.addEventListener('mousedown', () => player.flip());
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); player.flip(); }, {passive: false});
+
+        gameLoop();
+
+    </script>
+</body>
+</html>
