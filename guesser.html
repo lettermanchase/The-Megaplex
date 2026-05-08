@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Code Breaker - Arcade</title>
+	<link rel="icon" type="image/png" href="favicon.png">
     <style>
-        /* Shared Arcade Theme */
+        /* ===== Shared Arcade Theme ===== */
+        * { box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background: linear-gradient(135deg, #0b1610, #0f3320, #092115); 
             color: #fff; margin: 0; padding: 0; min-height: 100vh;
-            display: flex; flex-direction: column; overflow: hidden;
+            display: flex; flex-direction: column; overflow-x: hidden;
         }
         header { 
             padding: 15px 30px; background: rgba(0,0,0,0.8); z-index: 10;
@@ -23,26 +25,47 @@
         }
         .back-btn:hover { background: #1dd1a1; color: #000; box-shadow: 0 0 10px #1dd1a1; }
         
-        /* Game Layout */
+        /* ===== Game Layout ===== */
         .game-wrapper {
-            display: flex; flex: 1; padding: 20px; gap: 30px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;
-            justify-content: center; align-items: flex-start; margin-top: 10px;
+            display: flex; flex: 1; padding: 20px; gap: 30px; max-width: 1200px; margin: 10px auto 0; width: 100%;
+            justify-content: center; align-items: flex-start;
+        }
+        @media (max-width: 850px) {
+            .game-wrapper { flex-direction: column; align-items: center; }
+            .dashboard { width: 100% !important; max-width: 500px; }
         }
 
-        /* Screen Shake Animation */
+        /* ===== Animations ===== */
         @keyframes shake {
-            0% { transform: translateX(0); }
+            0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
             50% { transform: translateX(10px); }
             75% { transform: translateX(-10px); }
-            100% { transform: translateX(0); }
         }
         .shake-effect { animation: shake 0.3s ease-in-out; }
 
-        /* Sidebar Stats */
+        @keyframes flash {
+            0%, 100% { background-color: transparent; }
+            50% { background-color: rgba(255, 71, 87, 0.3); }
+        }
+        .flash-red { animation: flash 0.4s ease-in-out; }
+
+        @keyframes pop { 
+            0% { transform: scale(0.8); opacity: 0; } 
+            50% { transform: scale(1.1); } 
+            100% { transform: scale(1); opacity: 1; } 
+        }
+        .pop-anim { animation: pop 0.4s ease-out; }
+
+        @keyframes scanLine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* ===== Sidebar Stats ===== */
         .dashboard {
             width: 300px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 25px;
-            border: 1px solid rgba(29, 209, 161, 0.3); display: flex; flex-direction: column; gap: 15px; box-sizing: border-box;
+            border: 1px solid rgba(29, 209, 161, 0.3); display: flex; flex-direction: column; gap: 15px;
         }
         .dashboard h3 { margin: 0; color: #1dd1a1; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .diff-btn {
@@ -54,40 +77,47 @@
         
         .stat-box { background: rgba(0,0,0,0.4); padding: 12px; border-radius: 10px; border-left: 4px solid #feca57; }
         .stat-label { font-size: 0.9em; color: #a4b0be; }
-        .stat-value { font-size: 1.5em; font-weight: bold; color: #feca57; margin-top: 5px; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #feca57; margin-top: 5px; transition: 0.3s; }
         
-        .lives-container { display: flex; gap: 5px; margin-top: 5px; font-size: 1.5em; }
+        .lives-container { display: flex; gap: 5px; margin-top: 5px; font-size: 1.5em; flex-wrap: wrap; }
         .life { color: #ff4757; text-shadow: 0 0 10px #ff4757; transition: 0.3s; }
-        .life.lost { color: #333; text-shadow: none; opacity: 0.5; }
+        .life.lost { color: #333; text-shadow: none; opacity: 0.5; transform: scale(0.8); }
         
         .powerup-btn {
             background: linear-gradient(45deg, #48dbfb, #0abde3); border: none; padding: 12px; color: #000; font-weight: bold;
-            border-radius: 10px; cursor: pointer; transition: 0.2s; text-transform: uppercase; width: 100%; box-sizing: border-box;
+            border-radius: 10px; cursor: pointer; transition: 0.2s; text-transform: uppercase; width: 100%;
+            position: relative; overflow: hidden;
         }
         .powerup-btn.parity { background: linear-gradient(45deg, #a55eea, #8854d0); color: #fff; }
-        .powerup-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(72, 219, 251, 0.4); }
-        .powerup-btn.parity:hover { box-shadow: 0 5px 15px rgba(165, 94, 234, 0.4); }
-        .powerup-btn:disabled { background: #555; color: #888; cursor: not-allowed; transform: none; box-shadow: none; }
+        .powerup-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(72, 219, 251, 0.4); }
+        .powerup-btn.parity:hover:not(:disabled) { box-shadow: 0 5px 15px rgba(165, 94, 234, 0.4); }
+        .powerup-btn:disabled { background: #555; color: #888; cursor: not-allowed; }
 
-        /* Main Board */
+        /* ===== Main Board ===== */
         .main-board {
-            flex: 1; display: flex; flex-direction: column; align-items: center; max-width: 500px; position: relative;
+            flex: 1; display: flex; flex-direction: column; align-items: center; max-width: 500px; width: 100%; position: relative;
         }
         .range-display {
             font-size: 3em; font-weight: bold; letter-spacing: 2px; color: #fff; margin-bottom: 10px; text-align: center;
             background: rgba(0,0,0,0.6); padding: 15px 40px; border-radius: 15px; border: 2px solid #48dbfb;
             text-shadow: 0 0 15px rgba(72, 219, 251, 0.5); box-shadow: inset 0 0 20px rgba(72, 219, 251, 0.2);
-            width: 100%; box-sizing: border-box;
+            width: 100%; transition: 0.3s;
         }
         
         .radar-box {
             width: 100%; height: 60px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            font-size: 1.5em; font-weight: bold; margin-bottom: 20px; transition: 0.3s; background: #2f3640; color: #a4b0be;
-            border: 2px solid rgba(255,255,255,0.1); text-transform: uppercase; letter-spacing: 2px; text-align: center; box-sizing: border-box;
+            font-size: 1.4em; font-weight: bold; margin-bottom: 20px; transition: 0.3s; background: #2f3640; color: #a4b0be;
+            border: 2px solid rgba(255,255,255,0.1); text-transform: uppercase; letter-spacing: 2px; text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .radar-box::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 30%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            animation: scanLine 2.5s infinite linear; pointer-events: none;
         }
 
         /* Radar Colors */
-        .radar-freezing { background: rgba(52, 31, 151, 0.2); border-color: #341f97; color: #341f97; text-shadow: 0 0 10px rgba(52, 31, 151, 0.8); }
+        .radar-freezing { background: rgba(52, 31, 151, 0.2); border-color: #341f97; color: #5e72e4; text-shadow: 0 0 10px rgba(94, 114, 228, 0.8); }
         .radar-cold { background: rgba(72, 219, 251, 0.2); border-color: #48dbfb; color: #48dbfb; text-shadow: 0 0 10px rgba(72, 219, 251, 0.8); }
         .radar-warm { background: rgba(254, 202, 87, 0.2); border-color: #feca57; color: #feca57; text-shadow: 0 0 10px rgba(254, 202, 87, 0.8); }
         .radar-hot { background: rgba(255, 159, 67, 0.2); border-color: #ff9f43; color: #ff9f43; text-shadow: 0 0 10px rgba(255, 159, 67, 0.8); }
@@ -97,13 +127,13 @@
         .radar-parity { background: rgba(165, 94, 234, 0.2); border-color: #a55eea; color: #a55eea; text-shadow: 0 0 10px rgba(165, 94, 234, 0.8); }
         .radar-ping { background: rgba(72, 219, 251, 0.2); border-color: #48dbfb; color: #48dbfb; text-shadow: 0 0 10px rgba(72, 219, 251, 0.8); }
         
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
 
-        /* End Screen (Replaces Range and Radar visually) */
+        /* ===== End Screen ===== */
         .overlay {
             width: 100%; background: rgba(15, 32, 39, 0.95); border: 2px solid #1dd1a1; box-shadow: 0 0 30px rgba(29, 209, 161, 0.3);
             border-radius: 20px; padding: 30px 20px; text-align: center; display: none; flex-direction: column; align-items: center; 
-            box-sizing: border-box; margin-bottom: 20px;
+            margin-bottom: 20px;
         }
         .overlay.active { display: flex; animation: fadeIn 0.3s ease-out; }
         .overlay.loss { border-color: #ff4757; box-shadow: 0 0 30px rgba(255, 71, 87, 0.3); }
@@ -113,7 +143,12 @@
         .input-group input {
             flex: 1; background: rgba(0,0,0,0.8); border: 2px solid #1dd1a1; color: #fff; font-size: 2em;
             padding: 15px; border-radius: 10px; text-align: center; outline: none; font-weight: bold; width: 100%;
-            box-sizing: border-box; transition: 0.3s;
+            transition: 0.3s;
+            -moz-appearance: textfield;
+        }
+        .input-group input::-webkit-outer-spin-button,
+        .input-group input::-webkit-inner-spin-button {
+            -webkit-appearance: none; margin: 0;
         }
         .input-group input:focus { box-shadow: 0 0 15px rgba(29, 209, 161, 0.4); }
         .input-group input:disabled { border-color: #555; color: #888; background: rgba(0,0,0,0.5); }
@@ -125,27 +160,58 @@
         .btn-submit:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(29, 209, 161, 0.6); }
         .btn-submit.replay { background: #feca57; box-shadow: 0 0 15px rgba(254, 202, 87, 0.6); }
 
-        /* History Log */
+        /* ===== History Log ===== */
         .history-panel {
             width: 100%; background: rgba(0,0,0,0.4); border-radius: 15px; padding: 15px;
-            max-height: 200px; overflow-y: auto; border: 1px solid #333; box-sizing: border-box;
+            max-height: 200px; overflow-y: auto; border: 1px solid #333;
         }
         .history-list { list-style: none; padding: 0; margin: 0; }
         .history-list li { padding: 8px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; font-family: monospace; font-size: 1.1em; }
         .history-list li:last-child { border-bottom: none; }
+
+        /* ===== Particle Canvas ===== */
+        #particleCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 100;
+        }
+
+        /* ===== Achievement Toast ===== */
+        .achievement {
+            position: fixed; top: 80px; right: -400px; background: linear-gradient(135deg, #feca57, #ff9f43);
+            color: #000; padding: 15px 25px; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            font-weight: bold; z-index: 200; transition: right 0.5s ease-out; min-width: 250px;
+        }
+        .achievement.show { right: 20px; }
+        .achievement-title { font-size: 0.8em; opacity: 0.7; text-transform: uppercase; }
+        .achievement-name { font-size: 1.2em; }
+
+        /* ===== Mute Button ===== */
+        .mute-btn {
+            background: transparent; border: 1px solid #888; color: #888; padding: 5px 10px;
+            border-radius: 5px; cursor: pointer; font-size: 0.9em; margin-left: 10px;
+        }
+        .mute-btn:hover { color: #fff; border-color: #fff; }
     </style>
 </head>
 <body>
 
+    <canvas id="particleCanvas"></canvas>
+    <div class="achievement" id="achievementToast">
+        <div class="achievement-title">🏆 Achievement Unlocked</div>
+        <div class="achievement-name" id="achievementName">First Win!</div>
+    </div>
+
     <header>
         <a href="index.html" class="back-btn">⬅ Back to Hub</a>
         <h2 style="margin:0; color:#fff;">Code Breaker</h2>
-        <div style="width: 150px; text-align: right; color: #a4b0be;">Best Score: <span id="bestScoreUI" style="color:#feca57; font-weight:bold;">0</span></div>
+        <div style="text-align: right; color: #a4b0be;">
+            Best: <span id="bestScoreUI" style="color:#feca57; font-weight:bold;">0</span>
+            <button class="mute-btn" id="muteBtn" onclick="toggleMute()">🔊</button>
+        </div>
     </header>
 
     <div class="game-wrapper" id="gameBoard">
         
-        <!-- Left: Dashboard -->
         <div class="dashboard">
             <h3>Difficulty Limit</h3>
             <button class="diff-btn active" id="btn-easy" onclick="setDifficulty('easy')">Easy (1 - 50)</button>
@@ -170,23 +236,19 @@
             </button>
         </div>
 
-        <!-- Center: Game Board -->
         <div class="main-board">
             
-            <!-- Standard Game Views -->
             <div class="range-display" id="rangeDisplay">1 - 50</div>
             <div class="radar-box" id="radarBox">Awaiting Input...</div>
             
-            <!-- Sleek End Screen (Replaces Range/Radar on Game Over) -->
             <div class="overlay" id="resultOverlay">
                 <h1 id="resultTitle" style="font-size: 2.5em; margin: 0; text-transform: uppercase;">System Locked</h1>
                 <p id="resultSub" style="font-size: 1.1em; color: #a4b0be; margin-top: 10px;">Target was: <strong id="revealCode">0</strong></p>
                 <p style="margin-top: 15px; font-size: 0.85em; color: #777; text-transform: uppercase; letter-spacing: 1px;">[ Press Enter or 🔄 to Replay ]</p>
             </div>
 
-            <!-- Input Area -->
             <div class="input-group">
-                <input type="number" id="guessInput" placeholder="Enter Code..." onkeypress="handleEnter(event)">
+                <input type="text" inputmode="numeric" pattern="[0-9]*" id="guessInput" placeholder="Enter Code..." onkeypress="handleEnter(event)" maxlength="4">
                 <button class="btn-submit" id="submitBtn" onclick="handleMainAction()">➜</button>
             </div>
 
@@ -200,11 +262,56 @@
     </div>
 
     <script>
-        // --- Hub Data Load ---
-        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-        document.getElementById('bestScoreUI').innerText = globalScores.guesser || 0;
+    // ============================================================
+    // ENTIRE GAME WRAPPED IN IIFE TO HIDE TARGET FROM CONSOLE
+    // ============================================================
+    (function() {
+        'use strict';
 
-        // --- Game Variables ---
+        // ---------- Tamper-resistant Score Storage ----------
+        // Uses a checksum so editing localStorage directly invalidates the score.
+        const SECRET_SALT = "cb_v2_x9f3k2"; // obscurity, not real security
+        function simpleHash(str) {
+            let h = 0;
+            for (let i = 0; i < str.length; i++) {
+                h = ((h << 5) - h) + str.charCodeAt(i);
+                h |= 0;
+            }
+            return h.toString(36);
+        }
+        function loadBestScore() {
+            try {
+                const raw = localStorage.getItem('arcadeScores_v2');
+                if (!raw) return 0;
+                const data = JSON.parse(raw);
+                const expected = simpleHash(SECRET_SALT + data.guesser);
+                if (data.checksum !== expected) {
+                    // Tampered - reset
+                    localStorage.removeItem('arcadeScores_v2');
+                    return 0;
+                }
+                return data.guesser || 0;
+            } catch(e) { return 0; }
+        }
+        function saveBestScore(val) {
+            const data = { guesser: val, checksum: simpleHash(SECRET_SALT + val) };
+            localStorage.setItem('arcadeScores_v2', JSON.stringify(data));
+        }
+        function loadAchievements() {
+            try {
+                return JSON.parse(localStorage.getItem('cb_achievements') || '[]');
+            } catch(e) { return []; }
+        }
+        function saveAchievement(name) {
+            const list = loadAchievements();
+            if (!list.includes(name)) {
+                list.push(name);
+                localStorage.setItem('cb_achievements', JSON.stringify(list));
+                showAchievement(name);
+            }
+        }
+
+        // ---------- Game State (private to closure) ----------
         let difficulty = 'easy';
         let targetNumber = 0;
         let minRange = 1;
@@ -214,7 +321,14 @@
         let score = 0;
         let streak = 0; 
         let isGameOver = false;
+        let isProcessing = false; // prevents double-submits
+        let invalidAttempts = 0; // counts out-of-bounds attempts
+        let bestScore = loadBestScore();
+        let usedPowerupsThisRound = { ping: false, parity: false };
+        let totalGuessesThisRound = 0;
+        let isMuted = localStorage.getItem('cb_muted') === '1';
 
+        // ---------- DOM ----------
         const rangeDisplay = document.getElementById('rangeDisplay');
         const radarBox = document.getElementById('radarBox');
         const guessInput = document.getElementById('guessInput');
@@ -227,24 +341,136 @@
         const submitBtn = document.getElementById('submitBtn');
         const gameBoard = document.getElementById('gameBoard');
         const resultOverlay = document.getElementById('resultOverlay');
+        const muteBtn = document.getElementById('muteBtn');
 
-        // --- Setup ---
-        function setDifficulty(level) {
+        document.getElementById('bestScoreUI').innerText = bestScore;
+        muteBtn.innerText = isMuted ? '🔇' : '🔊';
+
+        // ---------- Sound Engine (Web Audio - no files needed) ----------
+        let audioCtx = null;
+        function getAudio() {
+            if (!audioCtx) {
+                try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+                catch(e) { return null; }
+            }
+            return audioCtx;
+        }
+        function playTone(freq, duration, type = 'sine', vol = 0.1) {
+            if (isMuted) return;
+            const ctx = getAudio();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            gain.gain.setValueAtTime(vol, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + duration);
+        }
+        function soundWin() {
+            playTone(523, 0.1, 'square'); 
+            setTimeout(() => playTone(659, 0.1, 'square'), 100);
+            setTimeout(() => playTone(784, 0.2, 'square'), 200);
+        }
+        function soundLoss() {
+            playTone(200, 0.2, 'sawtooth', 0.15);
+            setTimeout(() => playTone(150, 0.3, 'sawtooth', 0.15), 200);
+        }
+        function soundError() { playTone(120, 0.15, 'square', 0.1); }
+        function soundGuess(temp) {
+            const map = { burning: 880, hot: 700, warm: 550, cold: 400, freezing: 280 };
+            playTone(map[temp] || 440, 0.08, 'triangle', 0.08);
+        }
+        function soundPowerup() {
+            playTone(440, 0.05, 'square'); 
+            setTimeout(() => playTone(660, 0.05, 'square'), 50);
+            setTimeout(() => playTone(880, 0.1, 'square'), 100);
+        }
+
+        window.toggleMute = function() {
+            isMuted = !isMuted;
+            localStorage.setItem('cb_muted', isMuted ? '1' : '0');
+            muteBtn.innerText = isMuted ? '🔇' : '🔊';
+        };
+
+        // ---------- Particle Engine ----------
+        const canvas = document.getElementById('particleCanvas');
+        const pctx = canvas.getContext('2d');
+        let particles = [];
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function spawnParticles(x, y, color, count = 30) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8 - 2,
+                    life: 1,
+                    color,
+                    size: Math.random() * 4 + 2
+                });
+            }
+        }
+        function animateParticles() {
+            pctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; // gravity
+                p.life -= 0.02;
+                pctx.globalAlpha = p.life;
+                pctx.fillStyle = p.color;
+                pctx.beginPath();
+                pctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                pctx.fill();
+            });
+            pctx.globalAlpha = 1;
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ---------- Achievement Toast ----------
+        const toast = document.getElementById('achievementToast');
+        const toastName = document.getElementById('achievementName');
+        let toastTimeout;
+        function showAchievement(name) {
+            toastName.innerText = name;
+            toast.classList.add('show');
+            playTone(660, 0.1, 'square');
+            setTimeout(() => playTone(880, 0.15, 'square'), 100);
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        // ---------- Setup ----------
+        window.setDifficulty = function(level) {
+            if (isProcessing) return;
             difficulty = level;
             document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`btn-${level}`).classList.add('active');
+            document.getElementById('btn-' + level).classList.add('active');
+            // Reset score and streak when changing difficulty - prevents abuse
+            score = 0;
             streak = 0; 
             initGame();
-        }
+        };
 
         function getConfig() {
             if (difficulty === 'easy') return { max: 50, lives: 7 };
             if (difficulty === 'med') return { max: 100, lives: 6 };
-            if (difficulty === 'hard') return { max: 500, lives: 5 };
+            return { max: 500, lives: 5 };
         }
 
         function getStreakMultiplier() {
-            let step = difficulty === 'easy' ? 0.1 : (difficulty === 'med' ? 0.3 : 0.6);
+            const step = difficulty === 'easy' ? 0.1 : (difficulty === 'med' ? 0.3 : 0.6);
             return 1 + (streak * step);
         }
 
@@ -255,19 +481,19 @@
             maxLives = config.lives;
             currentLives = maxLives;
             isGameOver = false;
-            targetNumber = Math.floor(Math.random() * maxRange) + 1;
+            isProcessing = false;
+            invalidAttempts = 0;
+            usedPowerupsThisRound = { ping: false, parity: false };
+            totalGuessesThisRound = 0;
+            // Use crypto for stronger randomness
+            targetNumber = secureRandomInt(1, maxRange);
             
-            // Toggle Display Panels
-            resultOverlay.classList.remove('active');
-            resultOverlay.classList.remove('loss');
+            resultOverlay.classList.remove('active', 'loss');
             rangeDisplay.style.display = 'block';
             radarBox.style.display = 'flex';
 
-            // Reset Input
             guessInput.value = '';
             guessInput.disabled = false;
-            
-            // Reset Button to Play State
             submitBtn.innerText = '➜';
             submitBtn.classList.remove('replay');
 
@@ -282,9 +508,23 @@
             guessInput.focus();
         }
 
-        // --- UI Updates ---
+        function secureRandomInt(min, max) {
+            // Cryptographically strong random integer
+            const range = max - min + 1;
+            if (window.crypto && window.crypto.getRandomValues) {
+                const arr = new Uint32Array(1);
+                window.crypto.getRandomValues(arr);
+                return min + (arr[0] % range);
+            }
+            return min + Math.floor(Math.random() * range);
+        }
+
+        // ---------- UI Updates ----------
         function updateRangeUI() {
-            rangeDisplay.innerText = `${minRange} - ${maxRange}`;
+            rangeDisplay.innerText = minRange + ' - ' + maxRange;
+            rangeDisplay.classList.remove('pop-anim');
+            void rangeDisplay.offsetWidth;
+            rangeDisplay.classList.add('pop-anim');
         }
 
         function renderLives() {
@@ -299,67 +539,88 @@
 
         function updateScoreUI() {
             scoreUI.innerText = score;
-            let multi = getStreakMultiplier();
-            streakUI.innerText = `🔥 x${multi.toFixed(1)}`;
+            const multi = getStreakMultiplier();
+            streakUI.innerText = '🔥 x' + multi.toFixed(1);
             
-            pingBtn.disabled = score < 500 || isGameOver;
-            parityBtn.disabled = score < 200 || isGameOver;
+            const span = maxRange - minRange + 1;
+            // Disable powerups when game over OR already used OR span too small to be useful
+            pingBtn.disabled = score < 500 || isGameOver || usedPowerupsThisRound.ping || span < 4;
+            parityBtn.disabled = score < 200 || isGameOver || usedPowerupsThisRound.parity || span < 3;
         }
 
         function triggerShake() {
             gameBoard.classList.remove('shake-effect');
-            void gameBoard.offsetWidth; // Trigger reflow
+            void gameBoard.offsetWidth;
             gameBoard.classList.add('shake-effect');
         }
 
-        // --- Core Logic ---
-        function handleEnter(e) {
+        // ---------- Core Logic ----------
+        window.handleEnter = function(e) {
             if (e.key === 'Enter') handleMainAction();
-        }
+        };
 
-        // Global Event Listener for "Enter" key replay when input is disabled
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && isGameOver) {
+            if (e.key === 'Enter' && isGameOver && !isProcessing) {
                 initGame();
             }
         });
 
-        function handleMainAction() {
-            if (isGameOver) {
-                initGame();
-            } else {
-                submitGuess();
-            }
-        }
+        window.handleMainAction = function() {
+            if (isProcessing) return;
+            if (isGameOver) initGame();
+            else submitGuess();
+        };
 
         function submitGuess() {
-            if (isGameOver) return;
+            if (isGameOver || isProcessing) return;
             
-            let guess = parseInt(guessInput.value);
+            // Strict integer validation - blocks decimals, scientific notation, negatives
+            const raw = (guessInput.value || '').trim();
+            if (!/^[0-9]+$/.test(raw)) {
+                showError('INVALID INPUT - DIGITS ONLY');
+                return;
+            }
+            const guess = parseInt(raw, 10);
             
             if (isNaN(guess) || guess < minRange || guess > maxRange) {
-                radarBox.className = 'radar-box radar-error';
-                radarBox.innerText = 'ERROR: OUT OF BOUNDS';
-                triggerShake();
-                guessInput.value = '';
+                invalidAttempts++;
+                if (invalidAttempts >= 3) {
+                    // Penalty for spam
+                    currentLives = Math.max(0, currentLives - 1);
+                    renderLives();
+                    showError('OUT OF BOUNDS! -1 LIFE');
+                    invalidAttempts = 0;
+                    if (currentLives <= 0) {
+                        setTimeout(handleLoss, 300);
+                    }
+                } else {
+                    showError('OUT OF BOUNDS (' + minRange + '-' + maxRange + ')');
+                }
                 return;
             }
 
-            let distance = Math.abs(targetNumber - guess);
-            let isWin = (guess === targetNumber);
+            isProcessing = true;
+            totalGuessesThisRound++;
+            
+            const distance = Math.abs(targetNumber - guess);
+            const isWin = (guess === targetNumber);
 
             if (!isWin) {
                 if (guess < targetNumber && guess >= minRange) minRange = guess + 1;
                 if (guess > targetNumber && guess <= maxRange) maxRange = guess - 1;
                 currentLives--;
-                triggerShake(); // Shake on damage
+                triggerShake();
+                radarBox.classList.add('flash-red');
+                setTimeout(() => radarBox.classList.remove('flash-red'), 400);
             }
 
-            let feedback = getFeedback(distance, maxRange - minRange);
-            if (isWin) feedback = { text: 'ACCESS GRANTED', class: 'radar-win', color: '#1dd1a1' };
+            let feedback = getFeedback(distance, getConfig().max);
+            if (isWin) feedback = { text: 'ACCESS GRANTED', class: 'radar-win', color: '#1dd1a1', key: 'win' };
 
-            radarBox.className = `radar-box ${feedback.class}`;
-            radarBox.innerText = isWin ? feedback.text : `${guess} is ${feedback.text}`;
+            radarBox.className = 'radar-box ' + feedback.class;
+            radarBox.innerText = isWin ? feedback.text : (guess + ' is ' + feedback.text);
+            
+            soundGuess(feedback.key);
             
             addHistory(guess, feedback);
             updateRangeUI();
@@ -369,31 +630,31 @@
                 handleWin();
             } else if (currentLives <= 0) {
                 handleLoss();
-            }
-
-            if (!isGameOver) {
+            } else {
                 guessInput.value = '';
                 guessInput.focus();
+                isProcessing = false;
             }
         }
 
-        // --- Radar Math ---
-        function getFeedback(dist, totalSpan) {
-            let percent = (dist / totalSpan) * 100;
-            
-            if (difficulty === 'easy' || totalSpan < 20) {
-                if (dist <= 2) return { text: 'BURNING UP', class: 'radar-burning', color: '#ff4757' };
-                if (dist <= 5) return { text: 'HOT', class: 'radar-hot', color: '#ff9f43' };
-                if (dist <= 10) return { text: 'WARM', class: 'radar-warm', color: '#feca57' };
-                if (dist <= 20) return { text: 'COLD', class: 'radar-cold', color: '#48dbfb' };
-                return { text: 'FREEZING', class: 'radar-freezing', color: '#341f97' };
-            }
+        function showError(msg) {
+            radarBox.className = 'radar-box radar-error';
+            radarBox.innerText = msg;
+            triggerShake();
+            soundError();
+            guessInput.value = '';
+        }
 
-            if (percent <= 5) return { text: 'BURNING UP', class: 'radar-burning', color: '#ff4757' };
-            if (percent <= 15) return { text: 'HOT', class: 'radar-hot', color: '#ff9f43' };
-            if (percent <= 30) return { text: 'WARM', class: 'radar-warm', color: '#feca57' };
-            if (percent <= 60) return { text: 'COLD', class: 'radar-cold', color: '#48dbfb' };
-            return { text: 'FREEZING', class: 'radar-freezing', color: '#341f97' };
+        // ---------- Radar Math ----------
+        function getFeedback(dist, fullRange) {
+            // Use the FULL difficulty range (not the narrowing window) for fair temp readings
+            const percent = (dist / fullRange) * 100;
+            
+            if (percent <= 3) return { text: 'BURNING UP 🔥', class: 'radar-burning', color: '#ff4757', key: 'burning' };
+            if (percent <= 8) return { text: 'HOT', class: 'radar-hot', color: '#ff9f43', key: 'hot' };
+            if (percent <= 18) return { text: 'WARM', class: 'radar-warm', color: '#feca57', key: 'warm' };
+            if (percent <= 40) return { text: 'COLD', class: 'radar-cold', color: '#48dbfb', key: 'cold' };
+            return { text: 'FREEZING ❄️', class: 'radar-freezing', color: '#5e72e4', key: 'freezing' };
         }
 
         function addHistory(guess, feedback) {
@@ -401,95 +662,126 @@
                 historyList.innerHTML = '';
             }
             const li = document.createElement('li');
-            li.innerHTML = `<span>>_ Guessed: <strong>${guess}</strong></span> <span style="color: ${feedback.color};">${feedback.text}</span>`;
+            li.innerHTML = '<span>>_ Guessed: <strong>' + guess + '</strong></span> <span style="color: ' + feedback.color + ';">' + feedback.text + '</span>';
             historyList.prepend(li);
         }
 
-        // --- Powerups ---
-        function usePing() {
-            if (score < 500 || isGameOver) return;
+        // ---------- Powerups ----------
+        window.usePing = function() {
+            const span = maxRange - minRange + 1;
+            if (score < 500 || isGameOver || usedPowerupsThisRound.ping || span < 4 || isProcessing) return;
             score -= 500;
-            updateScoreUI();
+            usedPowerupsThisRound.ping = true;
             
-            let midPoint = Math.floor((minRange + maxRange) / 2);
+            const midPoint = Math.floor((minRange + maxRange) / 2);
             if (targetNumber <= midPoint) maxRange = midPoint;
             else minRange = midPoint + 1;
             
             updateRangeUI();
+            updateScoreUI();
             radarBox.className = 'radar-box radar-ping';
             radarBox.innerText = '📡 PING: RANGE HALVED';
+            soundPowerup();
             guessInput.focus();
-        }
+        };
 
-        function useParity() {
-            if (score < 200 || isGameOver) return;
+        window.useParity = function() {
+            const span = maxRange - minRange + 1;
+            if (score < 200 || isGameOver || usedPowerupsThisRound.parity || span < 3 || isProcessing) return;
             score -= 200;
+            usedPowerupsThisRound.parity = true;
             updateScoreUI();
             
-            let parity = (targetNumber % 2 === 0) ? "EVEN" : "ODD";
+            const parity = (targetNumber % 2 === 0) ? "EVEN" : "ODD";
             radarBox.className = 'radar-box radar-parity';
-            radarBox.innerText = `🔍 SCAN: TARGET IS ${parity}`;
+            radarBox.innerText = '🔍 SCAN: TARGET IS ' + parity;
             
             const li = document.createElement('li');
-            li.innerHTML = `<span style="color: #a55eea;">>_ SYS_SCAN: TARGET IS ${parity}</span>`;
+            li.innerHTML = '<span style="color: #a55eea;">>_ SYS_SCAN: TARGET IS ' + parity + '</span>';
             historyList.prepend(li);
+            soundPowerup();
             guessInput.focus();
-        }
+        };
 
-        // --- Win/Loss States ---
+        // ---------- Win/Loss ----------
         function handleWin() {
             isGameOver = true;
             
-            let baseScore = difficulty === 'easy' ? 100 : (difficulty === 'med' ? 250 : 500);
-            let lifeBonus = currentLives * 25;
-            let multi = getStreakMultiplier();
+            const baseScore = difficulty === 'easy' ? 100 : (difficulty === 'med' ? 250 : 500);
+            const lifeBonus = currentLives * 25;
+            const noPowerupBonus = (!usedPowerupsThisRound.ping && !usedPowerupsThisRound.parity) ? 100 : 0;
+            const multi = getStreakMultiplier();
             
-            let roundScore = Math.floor((baseScore + lifeBonus) * multi);
+            const roundScore = Math.floor((baseScore + lifeBonus + noPowerupBonus) * multi);
             score += roundScore;
-            streak++; // Increase Streak
+            streak++;
             updateScoreUI();
 
-            if (score > (globalScores.guesser || 0)) {
-                globalScores.guesser = score;
-                localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
-                document.getElementById('bestScoreUI').innerText = score;
+            // Particle burst at radar position
+            const rect = radarBox.getBoundingClientRect();
+            spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2, '#1dd1a1', 50);
+            spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2, '#feca57', 30);
+
+            soundWin();
+
+            // Achievements
+            saveAchievement('First Win');
+            if (currentLives === maxLives) saveAchievement('Flawless Victory');
+            if (totalGuessesThisRound === 1) saveAchievement('Lucky Guess (1 try!)');
+            if (streak >= 5) saveAchievement('Combo Master x5');
+            if (streak >= 10) saveAchievement('Unstoppable x10');
+            if (difficulty === 'hard' && !usedPowerupsThisRound.ping && !usedPowerupsThisRound.parity) {
+                saveAchievement('Pure Skill (Hard, No Powerups)');
             }
 
-            showEndScreen("Code Broken!", "#1dd1a1", `Gained <strong style="color:#1dd1a1;">+${roundScore}</strong> Score.<br>Combo x${multi.toFixed(1)}!`, false);
+            if (score > bestScore) {
+                bestScore = score;
+                saveBestScore(score);
+                document.getElementById('bestScoreUI').innerText = score;
+                saveAchievement('New High Score!');
+            }
+
+            const bonusText = noPowerupBonus > 0 ? '<br>+100 No-Powerup Bonus!' : '';
+            showEndScreen("Code Broken!", "#1dd1a1", 
+                'Gained <strong style="color:#1dd1a1;">+' + roundScore + '</strong> Score.<br>Combo x' + multi.toFixed(1) + bonusText, false);
         }
 
         function handleLoss() {
             isGameOver = true;
             score = 0; 
-            streak = 0; // Break Streak
+            streak = 0;
             updateScoreUI();
-            showEndScreen("System Locked", "#ff4757", `You ran out of lives.`, true);
+            soundLoss();
+            triggerShake();
+            
+            const rect = radarBox.getBoundingClientRect();
+            spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2, '#ff4757', 40);
+            
+            showEndScreen("System Locked", "#ff4757", "You ran out of lives.", true);
         }
 
         function showEndScreen(title, color, subText, isLoss) {
-            // Hide standard UI, show result screen
             rangeDisplay.style.display = 'none';
             radarBox.style.display = 'none';
             
             document.getElementById('resultTitle').innerText = title;
             document.getElementById('resultTitle').style.color = color;
-            document.getElementById('resultSub').innerHTML = `${subText} <br><br> Target: <strong style="color:${color}; font-size:1.2em;">${targetNumber}</strong>`;
+            document.getElementById('resultSub').innerHTML = subText + ' <br><br> Target: <strong style="color:' + color + '; font-size:1.2em;">' + targetNumber + '</strong>';
             
-            if(isLoss) {
-                resultOverlay.classList.add('loss');
-            }
+            if (isLoss) resultOverlay.classList.add('loss');
 
-            // Switch Input and Button to Replay State
             submitBtn.innerText = '🔄';
             submitBtn.classList.add('replay');
             guessInput.disabled = true;
             guessInput.value = 'ROUND OVER';
             
             resultOverlay.classList.add('active');
+            isProcessing = false;
         }
 
-        // Start
+        // Start the game
         initGame();
+    })();
     </script>
 </body>
 </html>

@@ -49,7 +49,7 @@
         .boot-bar { width: 300px; height: 8px; background: #111; border: 1px solid #00d2d3; margin-top: 20px; overflow: hidden; }
         .boot-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #00d2d3, #feca57); transition: width 0.1s linear; }
 
-        /* ====== HEADER (FIXED - Smooth collapse, no jump) ====== */
+        /* ====== HEADER ====== */
         header { 
             text-align: center; padding: 30px; background: rgba(0,0,0,0.7); 
             border-bottom: 3px solid #00d2d3; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
@@ -79,7 +79,6 @@
         body.light-mode .subtitle { color: #222; }
         header.scrolled .subtitle { opacity: 0; max-height: 0; margin-top: 0; }
 
-        /* Header content blocks fade out when scrolled */
         .header-side {
     transition: opacity 0.25s ease, transform 0.4s ease, visibility 0.25s ease;
     visibility: visible;
@@ -127,7 +126,6 @@ header.scrolled .header-side {
         .sound-btn:hover { background: #48dbfb; color: #000; box-shadow: 0 0 15px rgba(72, 219, 251, 0.6); }
         .sound-btn.muted { border-color: #ff4757; color: #ff4757; }
 
-        /* Mini header bar (appears when scrolled) */
         .mini-controls {
     position: absolute; top: 50%; transform: translateY(-50%);
     display: flex; gap: 10px; align-items: center; z-index: 11;
@@ -197,7 +195,7 @@ header.scrolled .mini-controls {
         .tab-btn.achievements-btn { background: #f368e0; border-color: #f368e0; color: #fff; }
         .tab-btn.achievements-btn.active { background: #f368e0; color: #000; box-shadow: 0 0 15px #f368e0; }
 
-        /* ====== GAME GRID (FIXED) ====== */
+        /* GAME GRID */
         .grid-container {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 25px; padding: 20px 40px 60px; max-width: 1400px; margin: 0 auto;
@@ -262,6 +260,8 @@ header.scrolled .mini-controls {
         .card-link.fps h2 { color: #ff4757; }
         .card-link.platformer { border-color: #fd79a8; background: rgba(253, 121, 168, 0.1); }
         .card-link.platformer h2 { color: #fd79a8; }
+        .card-link.platformer2 { border-color: #ff00ff; background: rgba(255, 0, 255, 0.12); }
+        .card-link.platformer2 h2 { color: #ff00ff; }
         .card-link.snake { border-color: #20bf6b; background: rgba(32, 191, 107, 0.1); }
         .card-link.snake h2 { color: #20bf6b; }
         .card-link.clicker { border-color: #f7b731; background: rgba(247, 183, 49, 0.1); }
@@ -293,7 +293,7 @@ header.scrolled .mini-controls {
         #leaderboard-view { border: 1px solid #ff9f43; }
         #achievements-view { border: 1px solid #f368e0; }
 
-        /* ====== TROPHY ROOM REDESIGN ====== */
+        /* TROPHY ROOM */
         .trophy-stats {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px; margin-bottom: 25px;
@@ -364,7 +364,7 @@ header.scrolled .mini-controls {
         }
         .tier-count { font-size: 0.7em; color: #aaa; letter-spacing: 1px; }
 
-        /* ====== LEADERBOARD REDESIGN ====== */
+        /* LEADERBOARD */
         .lb-summary {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px; margin-bottom: 25px;
@@ -434,7 +434,7 @@ header.scrolled .mini-controls {
 
         .save-system { display: flex; justify-content: center; gap: 15px; margin-top: 30px; border-top: 1px solid #444; padding-top: 20px; flex-wrap: wrap; }
 
-        /* ====== LEVEL MODAL ====== */
+        /* LEVEL MODAL */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.85);
             display: none; align-items: center; justify-content: center;
@@ -616,18 +616,16 @@ header.scrolled .mini-controls {
             </div>
         </div>
 
-        <!-- Mini controls (only visible when scrolled) -->
-        <!-- Mini controls: only visible when scrolled -->
-<div class="mini-controls mini-left">
-    <span class="mini-token" style="border-color:#00d2d3; color:#00d2d3; cursor:pointer;" onclick="changeUsername()" title="Change username">
-        👤 <span id="miniUsername">GUEST_BOT</span>
-    </span>
-</div>
-<div class="mini-controls mini-right">
-    <span class="mini-token">🎟️ <span id="miniTokenBalance">0</span></span>
-    <span class="mini-token" style="border-color:#feca57; color:#feca57; cursor:pointer;" onclick="openLevelModal()" title="Level details">⚡ LV.<span id="miniLevel">1</span></span>
-    <button class="sound-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
-</div>
+        <div class="mini-controls mini-left">
+            <span class="mini-token" style="border-color:#00d2d3; color:#00d2d3; cursor:pointer;" onclick="changeUsername()" title="Change username">
+                👤 <span id="miniUsername">GUEST_BOT</span>
+            </span>
+        </div>
+        <div class="mini-controls mini-right">
+            <span class="mini-token">🎟️ <span id="miniTokenBalance">0</span></span>
+            <span class="mini-token" style="border-color:#feca57; color:#feca57; cursor:pointer;" onclick="openLevelModal()" title="Level details">⚡ LV.<span id="miniLevel">1</span></span>
+            <button class="sound-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+        </div>
     </header>
 
     <div class="featured-carousel" id="featuredCarousel">
@@ -652,7 +650,7 @@ header.scrolled .mini-controls {
         <button class="tab-btn leaderboard-btn" onmouseenter="sfx.hover()" onclick="switchTab('leaderboard', this)">🏆 Leaderboard</button>
     </div>
 
-    <!-- ====== Leaderboard View ====== -->
+    <!-- Leaderboard View -->
     <div id="leaderboard-view" class="panel-view">
         <h2 style="text-align: center; color: #ff9f43; font-size: 2.5em; margin: 0 0 5px; text-shadow: 0 0 15px rgba(255, 159, 67, 0.4); font-family: 'Orbitron', sans-serif;">🏆 Hall of Fame</h2>
         <p style="text-align: center; color: #aaa; margin-bottom: 25px;">Top 3 scores across all users on this device</p>
@@ -677,7 +675,7 @@ header.scrolled .mini-controls {
         </div>
     </div>
 
-    <!-- ====== Achievements View ====== -->
+    <!-- Achievements View -->
     <div id="achievements-view" class="panel-view">
         <h2 style="text-align: center; color: #f368e0; margin: 0 0 5px; font-size: 2.5em; text-shadow: 0 0 15px rgba(243, 104, 224, 0.4); font-family: 'Orbitron', sans-serif;">🎖️ Trophy Room</h2>
         <p style="text-align: center; color: #aaa; margin-bottom: 25px;">Complete milestones to claim massive Token bounties!</p>
@@ -702,7 +700,7 @@ header.scrolled .mini-controls {
         <div class="ach-grid" id="achievements-container"></div>
     </div>
 
-    <!-- ====== Game Grid ====== -->
+    <!-- Game Grid -->
     <div class="grid-container" id="gameGrid">
         <a href="glitch_brawler.html" class="card-link glitch" data-category="fighting pvp" data-name="glitch brawler" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
             <div class="card-content">
@@ -752,16 +750,24 @@ header.scrolled .mini-controls {
             </div>
             <div class="play-btn" style="background:#ff4757; color:#fff;">Play Game ➔</div>
         </a>
-        <a href="platformer.html" class="card-link platformer" data-category="arcade" data-name="matrix jumper platformer" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+        <a href="platformer.html" class="card-link platformer" data-category="arcade" data-name="neon jumper platformer" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
             <div class="card-content">
-                <h2>🏃 Matrix Jumper</h2>
+                <h2>🏃 Neon Jumper</h2>
                 <span class="tag" style="background:#fd79a8;">Platformer</span>
                 <p>Leap across the mainframe!</p>
             </div>
             <div class="play-btn" style="background:#fd79a8; color:#000;">Play Game ➔</div>
         </a>
-        <a href="racer.html" class="card-link racer" data-category="arcade" data-name="vaporwave racer racing" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+        <a href="neonjumper2.html" class="card-link platformer2" data-category="arcade" data-name="neon jumper 2 system overload sequel platformer" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
             <span class="new-badge">NEW</span>
+            <div class="card-content">
+                <h2>⚡ Neon Jumper 2</h2>
+                <span class="tag" style="background:#ff00ff;">Platformer Sequel</span>
+                <p>System Overload! Dash, grapple, and battle 3 bosses across 18 levels.</p>
+            </div>
+            <div class="play-btn" style="background:#ff00ff; color:#000;">Play Game ➔</div>
+        </a>
+        <a href="racer.html" class="card-link racer" data-category="arcade" data-name="vaporwave racer racing" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
             <div class="card-content">
                 <h2>🏎️ Vaporwave Racer</h2>
                 <span class="tag" style="background:#ff007f;">Drift Racing</span>
@@ -898,7 +904,7 @@ header.scrolled .mini-controls {
             setTimeout(() => t.remove(), 4000);
         }
 
-        /* ====== Header Scroll (smooth, debounced) ====== */
+        /* ====== Header Scroll ====== */
         let scrollTicking = false;
         window.addEventListener('scroll', () => {
             if (!scrollTicking) {
@@ -979,11 +985,7 @@ header.scrolled .mini-controls {
             ]
         };
 
-        /* ====== LEVEL SYSTEM ======
-           XP = total tokens ever earned (lifetime, never decreases).
-           Level requires Level² × 100 XP total.
-           L1: 0-399, L2: 400-899, L3: 900-1599, L4: 1600-2499, L5: 2500-3599...
-        */
+        /* ====== LEVEL SYSTEM ====== */
         const levelTitles = ['Rookie','Initiate','Operator','Hacker','Pro','Veteran','Elite','Master','Legend','Cyber God'];
         function getLifetimeXp() {
             return parseInt(localStorage.getItem('megaplexLifetimeXp')) || 0;
@@ -994,9 +996,6 @@ header.scrolled .mini-controls {
         }
         function getLevelInfo() {
             const xp = getLifetimeXp();
-            // Solve for level: xp >= level^2 * 100
-            const level = Math.max(1, Math.floor(Math.sqrt(xp / 100)) + (xp >= 100 ? 0 : 0));
-            // Refine
             let lvl = 1;
             while ((lvl+1) * (lvl+1) * 100 <= xp) lvl++;
             const currentLvlXp = lvl * lvl * 100;
@@ -1025,8 +1024,8 @@ header.scrolled .mini-controls {
                 <span class="player-level" onclick="openLevelModal()" title="Click for level details">LV.${lvlInfo.level}</span>
             `;
             document.getElementById('miniLevel').innerText = lvlInfo.level;
-const miniUser = document.getElementById('miniUsername');
-if (miniUser) miniUser.innerText = username;
+            const miniUser = document.getElementById('miniUsername');
+            if (miniUser) miniUser.innerText = username;
         }
 
         function openLevelModal() {
@@ -1063,6 +1062,7 @@ if (miniUser) miniUser.innerText = username;
             { id: 'ach_snake', tier: 1, icon: '🐍', title: 'Cyber-Serpent', desc: 'Snake length of 25.', reward: 800, check: (s) => (s.snake || 0) >= 25 },
             { id: 'ach_racer_1', tier: 1, icon: '🏎️', title: 'Novice Driver', desc: 'Win first race in Vaporwave Racer.', reward: 500, check: (s) => (s.racer_wins || 0) >= 1 },
             { id: 'ach_platformer', tier: 1, icon: '🏃‍♂️', title: 'Mainframe Runner', desc: 'Beat all 20 levels in Neon Jumper.', reward: 1500, check: (s) => (s.platformer_deaths !== undefined) },
+            { id: 'ach_platformer2_1', tier: 1, icon: '⚡', title: 'System Overloaded', desc: 'Defeat the first boss in Neon Jumper 2.', reward: 1500, check: (s) => (s.nj2_world1_cleared || 0) >= 1 },
             { id: 'ach_fps', tier: 1, icon: '🔫', title: 'System Breacher', desc: 'Score 2,500 in FPS.', reward: 1500, check: (s) => (s.fps || 0) >= 2500 },
             { id: 'ach_cyber_2', tier: 2, icon: '🔥', title: 'System Overdrive', desc: 'Reach 8,000m in Cyber Runner.', reward: 3000, check: (s) => (s.cyberrunner || 0) >= 8000 },
             { id: 'ach_clicker_2', tier: 2, icon: '🖱️', title: 'Auto-Clicker', desc: 'Reach 5,000 clicks.', reward: 1500, check: (s) => (s.clicker || 0) >= 5000 },
@@ -1072,6 +1072,7 @@ if (miniUser) miniUser.innerText = username;
             { id: 'ach_racer_2', tier: 2, icon: '🏆', title: 'Grid Master', desc: 'Win race on Hard difficulty.', reward: 1500, check: (s) => (s.racer_hard_wins || 0) >= 1 },
             { id: 'ach_ttt_2', tier: 2, icon: '👑', title: 'Grandmaster', desc: 'Win 50 Tic-Tac-Toe games.', reward: 1500, check: (s) => (s.ttt || 0) >= 50 },
             { id: 'ach_memory_2', tier: 2, icon: '🔮', title: 'Mind Reader', desc: 'Beat Memory in 12 moves.', reward: 2000, check: (s) => (s.memory || 999) <= 12 },
+            { id: 'ach_platformer2_2', tier: 2, icon: '👹', title: 'The Root Slayer', desc: 'Defeat the FINAL BOSS in Neon Jumper 2.', reward: 5000, check: (s) => (s.nj2_completed || 0) >= 1 },
             { id: 'ach_rich', tier: 2, icon: '💰', title: 'Token Billionaire', desc: 'Have 5,000 tokens.', reward: 1000, check: () => (parseInt(localStorage.getItem('megaplexTokens')) || 0) >= 5000 },
             { id: 'ach_collector', tier: 2, icon: '🎒', title: 'Completionist', desc: 'Claim all other trophies.', reward: 5000, check: () => {
                 let claimed = JSON.parse(localStorage.getItem('claimedAchievements')) || [];
@@ -1092,7 +1093,8 @@ if (miniUser) miniUser.innerText = username;
                 ((scores.math || 0) * 10) + ((scores.snake || 0) * 5) + 
                 ((scores.guesser || 0) / 10) + ((scores.platformer || 0) / 20) +
                 ((scores.fps || 0) / 25) + ((scores.cyberrunner || 0) / 20) +
-                ((scores.tanks_score || 0) / 15) + ((scores.asteroids || 0) / 15)
+                ((scores.tanks_score || 0) / 15) + ((scores.asteroids || 0) / 15) +
+                ((scores.nj2_score || 0) / 10)
             );
             if (scoreValue > lastCalculatedValue) {
                 let earned = scoreValue - lastCalculatedValue;
@@ -1187,7 +1189,6 @@ if (miniUser) miniUser.innerText = username;
             const lockedCount = total - claimedCount - readyCount;
             const totalRewardClaimed = achievementsList.filter(a => claimedAchievements.includes(a.id)).reduce((sum, a) => sum + a.reward, 0);
 
-            // Stats
             document.getElementById('trophyStats').innerHTML = `
                 <div class="trophy-stat"><div class="trophy-stat-value">${claimedCount}</div><div class="trophy-stat-label">Claimed</div></div>
                 <div class="trophy-stat" style="border-color:#feca57;"><div class="trophy-stat-value" style="color:#feca57;">${readyCount}</div><div class="trophy-stat-label">Ready ⭐</div></div>
@@ -1195,7 +1196,6 @@ if (miniUser) miniUser.innerText = username;
                 <div class="trophy-stat" style="border-color:#1dd1a1;"><div class="trophy-stat-value" style="color:#1dd1a1;">${totalRewardClaimed.toLocaleString()}</div><div class="trophy-stat-label">🎟️ Earned</div></div>
             `;
 
-            // Progress bar
             document.getElementById('achProgressBar').style.width = ((claimedCount / total) * 100) + '%';
             document.getElementById('achProgressText').innerText = `${claimedCount} / ${total} (${Math.floor((claimedCount/total)*100)}%)`;
 
@@ -1203,7 +1203,6 @@ if (miniUser) miniUser.innerText = username;
                 const tierAch = achievementsList.filter(a => a.tier === tierNumber);
                 const tierClaimed = tierAch.filter(a => claimedAchievements.includes(a.id)).length;
                 
-                // Determine which to show after filter
                 const visible = tierAch.filter(ach => {
                     const claimed = claimedAchievements.includes(ach.id);
                     const unlocked = ach.check(scores) && !claimed;
@@ -1275,7 +1274,8 @@ if (miniUser) miniUser.innerText = username;
             { key: 'cyberrunner', title: '🏃‍♂️ Cyber Runner', unit: 'm', reverse: false, default: 0 },
             { key: 'racer_best_time', title: '🏎️ Vaporwave Racer', unit: 's', reverse: true, default: 999.99 },
             { key: 'fps', title: '🔫 System Breach', unit: '', reverse: false, default: 0 },
-            { key: 'platformer_deaths', title: '🏃 Matrix Jumper', unit: ' Deaths', reverse: true, default: 999 },
+            { key: 'platformer_deaths', title: '🏃 Neon Jumper', unit: ' Deaths', reverse: true, default: 999 },
+            { key: 'nj2_score', title: '⚡ Neon Jumper 2', unit: ' Pts', reverse: false, default: 0 },
             { key: 'snake', title: '🐍 Snake Classic', unit: '', reverse: false, default: 0 },
             { key: 'clicker', title: '👆 Clicker Frenzy', unit: '', reverse: false, default: 0 },
             { key: 'reaction', title: '⚡ Reaction Time', unit: 'ms', reverse: true, default: 9999 },
@@ -1305,7 +1305,7 @@ if (miniUser) miniUser.innerText = username;
                 }
                 if (game.reverse) globalLB.sort((a, b) => a.score - b.score);
                 else globalLB.sort((a, b) => b.score - a.score);
-                masterLB[game.key] = globalLB.slice(0, 10); // store more for ranking
+                masterLB[game.key] = globalLB.slice(0, 10);
             });
             localStorage.setItem('MegaplexMasterLB', JSON.stringify(masterLB));
         }
@@ -1321,7 +1321,6 @@ if (miniUser) miniUser.innerText = username;
             const search = (document.getElementById('lbSearch')?.value || '').toLowerCase();
             const sort = document.getElementById('lbSort')?.value || 'default';
 
-            // Calculate stats
             let totalGold = 0, totalRanked = 0, gamesPlayed = 0;
             gameConfigs.forEach(game => {
                 const lb = (masterLB[game.key] || []).slice(0, 3);
@@ -1337,7 +1336,6 @@ if (miniUser) miniUser.innerText = username;
                 <div class="lb-stat" style="border-color:#00d2d3;"><div class="lb-stat-value" style="color:#00d2d3;">${totalRanked}</div><div class="lb-stat-label">Top 3 Rankings</div></div>
             `;
 
-            // Filter & sort
             let games = [...gameConfigs];
             if (search) games = games.filter(g => g.title.toLowerCase().includes(search));
             if (sort === 'ranked') {
@@ -1423,6 +1421,7 @@ if (miniUser) miniUser.innerText = username;
                 lastCalculatedScoreValue: localStorage.getItem('lastCalculatedScoreValue') || 0,
                 avatarData: JSON.parse(localStorage.getItem('avatarData')) || {},
                 claimedAchievements: JSON.parse(localStorage.getItem('claimedAchievements')) || [],
+                nj2_times: JSON.parse(localStorage.getItem('nj2_times')) || {},
                 megaplexUsername: username
             };
             const blob = new Blob([JSON.stringify(saveData)], { type: "application/json" });
@@ -1450,6 +1449,7 @@ if (miniUser) miniUser.innerText = username;
                     if(data.lastCalculatedScoreValue) localStorage.setItem('lastCalculatedScoreValue', data.lastCalculatedScoreValue);
                     if(data.avatarData) localStorage.setItem('avatarData', JSON.stringify(data.avatarData));
                     if(data.megaplexUsername) localStorage.setItem('megaplexUsername', data.megaplexUsername);
+                    if(data.nj2_times) localStorage.setItem('nj2_times', JSON.stringify(data.nj2_times));
                     if(data.claimedAchievements) {
                         claimedAchievements = data.claimedAchievements;
                         localStorage.setItem('claimedAchievements', JSON.stringify(claimedAchievements));
@@ -1518,6 +1518,7 @@ if (miniUser) miniUser.innerText = username;
 
         /* ====== Carousel ====== */
         const featuredGames = [
+            { icon: "⚡", title: "Neon Jumper 2: System Overload", desc: "NEW! Dash, grapple, and battle 3 mandatory bosses across 18 levels!", link: "neonjumper2.html" },
             { icon: "💥", title: "Glitch Brawler", desc: "Corrupt your rivals in the arena! PvP action.", link: "glitch_brawler.html" },
             { icon: "☄️", title: "Quantum Asteroids", desc: "Blast through the asteroid field!", link: "asteroids.html" },
             { icon: "🏃‍♂️", title: "Cyber Runner", desc: "Dash through the neon city!", link: "runner.html" },
