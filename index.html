@@ -4,335 +4,644 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Megaplex</title>
+	<link rel="icon" type="image/png" href="favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        /* Base Theme */
+        * { box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); 
             color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            overflow-x: hidden;
         }
-        
-        /* --- 2. CRT Scanline Overlay --- */
+        body.light-mode {
+            background: linear-gradient(135deg, #f5f6fa, #c8d6e5, #feca57);
+            color: #222;
+        }
+
+        /* Starfield */
+        .starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle linear infinite; }
+        @keyframes twinkle { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
+        body.light-mode .star { background: #feca57; }
+
+        /* CRT Scanline */
         body::before {
-            content: " ";
-            display: block;
-            position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
+            content: " "; display: block; position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            z-index: 100; /* Put it above everything */
-            background-size: 100% 4px, 6px 100%;
-            pointer-events: none; /* Crucial: Allows clicking through the overlay */
-            animation: flicker 0.15s infinite;
-            opacity: 0.6;
+            z-index: 100; background-size: 100% 4px, 6px 100%;
+            pointer-events: none; animation: flicker 0.15s infinite; opacity: 0.6;
         }
-        @keyframes flicker {
-            0% { opacity: 0.55; }
-            50% { opacity: 0.65; }
-            100% { opacity: 0.55; }
+        @keyframes flicker { 0%,100% { opacity: 0.55; } 50% { opacity: 0.65; } }
+
+        /* Boot Screen */
+        #bootScreen {
+            position: fixed; inset: 0; background: #000; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-family: 'Orbitron', monospace; color: #00d2d3;
+            transition: opacity 0.6s ease;
         }
-        
+        #bootScreen.hide { opacity: 0; pointer-events: none; }
+        .boot-logo { font-size: 3em; margin-bottom: 30px; text-shadow: 0 0 20px #00d2d3; animation: bootPulse 1.5s infinite alternate; }
+        @keyframes bootPulse { from { text-shadow: 0 0 10px #00d2d3; } to { text-shadow: 0 0 30px #00d2d3, 0 0 60px #00d2d3; } }
+        .boot-text { font-size: 0.9em; line-height: 1.8; min-height: 120px; white-space: pre; text-align: left; }
+        .boot-bar { width: 300px; height: 8px; background: #111; border: 1px solid #00d2d3; margin-top: 20px; overflow: hidden; }
+        .boot-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #00d2d3, #feca57); transition: width 0.1s linear; }
+
+        /* ====== HEADER (FIXED - Smooth collapse, no jump) ====== */
         header { 
             text-align: center; padding: 30px; background: rgba(0,0,0,0.7); 
             border-bottom: 3px solid #00d2d3; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            position: relative; min-height: 80px; display: flex; flex-direction: column; justify-content: center;
+            position: sticky; top: 0; z-index: 50;
+            min-height: 280px;
+            display: flex; flex-direction: column; justify-content: center;
+            backdrop-filter: blur(10px);
+            transition: min-height 0.4s ease, padding 0.4s ease;
         }
-        h1 { margin: 0; font-size: 3.5em; text-transform: uppercase; text-shadow: 0 0 15px #00d2d3; letter-spacing: 2px;}
-        .subtitle { color: #c8d6e5; font-size: 1.2em; margin-top: 10px; }
-        
-        /* Username Display */
+        header.scrolled { min-height: 70px; padding: 12px 30px; }
+        body.light-mode header { background: rgba(255,255,255,0.85) !important; color: #222 !important; }
+
+        .megaplex-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5em; color: #00d2d3; letter-spacing: 4px;
+            text-shadow: 0 0 10px #00d2d3, 0 0 20px #00d2d3, 0 0 40px #00d2d3, 0 0 80px #00d2d3;
+            animation: neon-flicker 2.5s infinite alternate; user-select: none;
+            transition: font-size 0.4s ease;
+        }
+        header.scrolled .megaplex-logo { font-size: 1.8em; }
+        body.light-mode .megaplex-logo { color: #00d2d3; text-shadow: 0 0 10px #feca57, 0 0 20px #feca57; }
+        @keyframes neon-flicker {
+            0%,100% { opacity: 1; } 10%{opacity:.8;} 20%{opacity:1;} 30%{opacity:.7;}
+            40%{opacity:1;} 50%{opacity:.9;} 60%{opacity:1;} 70%{opacity:.85;} 80%{opacity:1;} 90%{opacity:.95;}
+        }
+        .subtitle { color: #c8d6e5; font-size: 1.2em; margin-top: 10px; transition: opacity 0.3s, max-height 0.4s, margin 0.4s; max-height: 30px; overflow: hidden; }
+        body.light-mode .subtitle { color: #222; }
+        header.scrolled .subtitle { opacity: 0; max-height: 0; margin-top: 0; }
+
+        /* Header content blocks fade out when scrolled */
+        .header-side {
+    transition: opacity 0.25s ease, transform 0.4s ease, visibility 0.25s ease;
+    visibility: visible;
+}
+header.scrolled .header-side {
+    opacity: 0;
+    transform: translateY(-20px);
+    pointer-events: none;
+    visibility: hidden;
+}
+
         .user-greeting {
-            position: absolute; bottom: 10px; left: 30px; font-weight: bold; color: #00d2d3; font-size: 1.1em;
+            position: absolute; bottom: 15px; left: 30px; font-weight: bold; color: #00d2d3; font-size: 1.1em;
             text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 5px #00d2d3; z-index: 10;
+            display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; border-radius: 5px;
         }
-        
-        /* Top Right Controls */
+        .player-level {
+            background: linear-gradient(135deg, #feca57, #ff9f43); color: #000;
+            padding: 4px 12px; border-radius: 12px; font-size: 0.85em;
+            box-shadow: 0 0 10px rgba(254, 202, 87, 0.5); cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .player-level:hover { transform: scale(1.1); }
+
         .header-controls {
-            position: absolute; top: 30px; right: 40px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; z-index: 10;
+            position: absolute; top: 25px; right: 30px;
+            display: flex; flex-direction: column; gap: 10px; align-items: flex-end; z-index: 10;
         }
-        .header-controls-top, .header-controls-bottom {
-            display: flex; gap: 15px; align-items: center;
-        }
+        .header-controls-top, .header-controls-bottom { display: flex; gap: 12px; align-items: center; }
+
         .token-display {
             background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 20px; border: 2px solid #feca57;
-            font-size: 1.5em; font-weight: bold; color: #feca57; box-shadow: 0 0 15px rgba(254, 202, 87, 0.4);
+            font-size: 1.4em; font-weight: bold; color: #feca57; box-shadow: 0 0 15px rgba(254, 202, 87, 0.4);
+            transition: transform 0.2s;
         }
+        .token-display.pop { animation: tokenPop 0.5s; }
+        @keyframes tokenPop { 0%,100%{transform:scale(1);} 50%{transform:scale(1.2);} }
+        body.light-mode .token-display { background: #fff; color: #feca57; }
+
         .sound-btn {
             background: rgba(0,0,0,0.8); border: 2px solid #48dbfb; color: #48dbfb;
-            font-size: 1.2em; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            font-size: 1.1em; width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
             transition: 0.3s; display: flex; align-items: center; justify-content: center;
         }
         .sound-btn:hover { background: #48dbfb; color: #000; box-shadow: 0 0 15px rgba(72, 219, 251, 0.6); }
         .sound-btn.muted { border-color: #ff4757; color: #ff4757; }
-        .sound-btn.muted:hover { background: #ff4757; color: #000; box-shadow: 0 0 15px rgba(255, 71, 87, 0.6); }
-        
-        /* --- Avatar Mini-Profile --- */
+
+        /* Mini header bar (appears when scrolled) */
+        .mini-controls {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    display: flex; gap: 10px; align-items: center; z-index: 11;
+    opacity: 0; pointer-events: none; visibility: hidden;
+    transition: opacity 0.4s ease 0.1s, visibility 0.4s ease 0.1s;
+}
+.mini-controls.mini-left { left: 30px; }
+.mini-controls.mini-right { right: 30px; }
+header.scrolled .mini-controls {
+    opacity: 1; pointer-events: all; visibility: visible;
+}
+header.scrolled .mini-controls {
+    opacity: 1; pointer-events: all; visibility: visible;
+}
+        .mini-token {
+            background: rgba(254, 202, 87, 0.15); border: 1px solid #feca57;
+            padding: 6px 14px; border-radius: 15px; color: #feca57; font-weight: bold;
+        }
+        .mini-controls .sound-btn { width: 32px; height: 32px; font-size: 0.9em; }
+
         .hub-profile {
             position: absolute; top: 15px; left: 30px;
             transform: scale(0.4); transform-origin: top left;
             cursor: pointer; transition: 0.2s; text-decoration: none; z-index: 10;
         }
         .hub-profile:hover { transform: scale(0.43); filter: brightness(1.2); }
-        
         .avatar-stage {
             width: 250px; height: 250px; border-radius: 20px; border: 4px solid #fff;
             display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
             background: #2f3640; overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
-            transition: background 0.3s;
         }
-        .bot-head {
-            width: 100px; height: 80px; background: #c8d6e5; border-radius: 15px;
-            position: relative; display: flex; justify-content: center; align-items: center; z-index: 2;
-            transition: background 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        .bot-head { width: 100px; height: 80px; background: #c8d6e5; border-radius: 15px; position: relative; display: flex; justify-content: center; align-items: center; z-index: 2; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .bot-eyes { width: 60px; height: 30px; background: #000; border-radius: 5px; display: flex; justify-content: space-around; align-items: center; padding: 0 5px; }
+        .eye { width: 15px; height: 15px; background: #00d2d3; border-radius: 50%; box-shadow: 0 0 10px #00d2d3; animation: eyeBlink 4s infinite; }
+        @keyframes eyeBlink { 0%,95%,100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+        .bot-body { width: 80px; height: 70px; background: #a4b0be; border-radius: 10px; margin-top: 5px; position: relative; z-index: 1; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .bot-hat { position: absolute; top: -45px; left: 50%; transform: translateX(-50%); font-size: 3.5em; z-index: 3; line-height: 1; }
+
+        .avatar-shop-btn {
+            position: absolute; top: 45px; left: 145px;
+            background: #feca57; color: #000; border-radius: 20px;
+            box-shadow: 0 0 10px rgba(254, 202, 87, 0.4); text-decoration: none;
+            z-index: 10; font-size: 0.9em; padding: 8px 16px;
         }
-        .bot-eyes {
-            width: 60px; height: 30px; background: #000; border-radius: 5px;
-            display: flex; justify-content: space-around; align-items: center; padding: 0 5px;
+
+        /* Search Bar */
+        .search-bar-wrapper { max-width: 600px; margin: 25px auto 0; padding: 0 20px; position: relative; z-index: 10; }
+        .search-bar {
+            width: 100%; padding: 14px 20px 14px 50px; border-radius: 30px;
+            border: 2px solid rgba(0, 210, 211, 0.4); background: rgba(0,0,0,0.6);
+            color: #fff; font-size: 1.1em; outline: none;
+            transition: 0.3s; backdrop-filter: blur(10px);
         }
-        .eye { width: 15px; height: 15px; background: #00d2d3; border-radius: 50%; box-shadow: 0 0 10px #00d2d3; }
-        
-        .bot-body {
-            width: 80px; height: 70px; background: #a4b0be; border-radius: 10px;
-            margin-top: 5px; position: relative; z-index: 1; transition: background 0.3s;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
-        
-        .bot-hat { position: absolute; top: -45px; left: 50%; transform: translateX(-50%); font-size: 3.5em; z-index: 3; transition: 0.3s; line-height: 1; }
-        
-        /* Navigation Tabs */
-        .tab-container { display: flex; justify-content: center; gap: 15px; margin: 30px 0; flex-wrap: wrap; position: relative; z-index: 10; }
+        .search-bar:focus { border-color: #00d2d3; box-shadow: 0 0 20px rgba(0, 210, 211, 0.5); }
+        .search-bar-wrapper::before { content: '🔍'; position: absolute; left: 35px; top: 50%; transform: translateY(-50%); font-size: 1.2em; pointer-events: none; }
+        .search-shortcut { position: absolute; right: 35px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 6px; font-size: 0.8em; color: #aaa; pointer-events: none; }
+
+        /* Tabs */
+        .tab-container { display: flex; justify-content: center; gap: 12px; margin: 30px 0; flex-wrap: wrap; position: relative; z-index: 10; padding: 0 15px; }
         .tab-btn {
-            background: rgba(255, 255, 255, 0.1); border: 1px solid #fff; color: white; padding: 10px 25px;
-            border-radius: 30px; cursor: pointer; transition: 0.3s; font-weight: bold; font-size: 1.1em;
+            background: rgba(255, 255, 255, 0.1); border: 1px solid #fff; color: white; padding: 10px 22px;
+            border-radius: 30px; cursor: pointer; transition: 0.3s; font-weight: bold; font-size: 1em;
         }
-        .tab-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .tab-btn:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
         .tab-btn.active { background: #00d2d3; color: #000; border-color: #00d2d3; box-shadow: 0 0 15px #00d2d3; }
         .tab-btn.leaderboard-btn { background: #ff9f43; border-color: #ff9f43; color: #000; }
         .tab-btn.achievements-btn { background: #f368e0; border-color: #f368e0; color: #fff; }
         .tab-btn.achievements-btn.active { background: #f368e0; color: #000; box-shadow: 0 0 15px #f368e0; }
-        
-        /* Grid & Cards */
+
+        /* ====== GAME GRID (FIXED) ====== */
         .grid-container {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px; padding: 20px 40px 60px; max-width: 1400px; margin: 0 auto; position: relative; z-index: 10;
+            gap: 25px; padding: 20px 40px 60px; max-width: 1400px; margin: 0 auto;
+            position: relative; z-index: 10;
+            justify-items: stretch;
         }
-        
         .card-link {
-            text-decoration: none; color: inherit; display: flex; flex-direction: column; 
-            justify-content: space-between; align-items: center; /* Centering applied here */
+            text-decoration: none; color: inherit;
+            display: flex; flex-direction: column; 
+            justify-content: space-between; align-items: stretch;
             background: rgba(0, 0, 0, 0.5); border-radius: 15px; 
-            padding: 25px; border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.3s; 
-            text-align: center; height: 180px; position: relative; overflow: hidden;
+            padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); 
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; 
+            text-align: center; min-height: 220px; position: relative; overflow: hidden;
             backdrop-filter: blur(5px);
         }
-        .card-link > div { width: 100%; display: flex; flex-direction: column; align-items: center; } /* Centering titles inside */
-        
+        .card-content {
+            flex: 1;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 8px; padding-bottom: 12px;
+        }
+        .card-content h2 { margin: 0; font-size: 1.4em; }
+        .card-content p { margin: 0; color: #aaa; font-size: 0.9em; line-height: 1.4; }
         .card-link:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0, 210, 211, 0.4); border-color: #00d2d3; }
-        
-        /* --- Individual Card Colors --- */
+        body.light-mode .card-link { background: rgba(255,255,255,0.7); color: #222; }
+
+        .card-link::after {
+            content: ''; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(transparent, rgba(0, 210, 211, 0.3), transparent 30%);
+            animation: rotate 4s linear infinite; opacity: 0; transition: opacity 0.3s;
+        }
+        .card-link:hover::after { opacity: 1; }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+        .card-link > * { position: relative; z-index: 1; }
+
+        .new-badge {
+            position: absolute; top: 8px; right: 8px;
+            background: #ff4757; color: #fff; font-size: 0.7em; font-weight: bold;
+            padding: 3px 8px; border-radius: 10px; z-index: 5;
+            animation: newPulse 1.5s infinite; text-transform: uppercase; letter-spacing: 1px;
+        }
+        @keyframes newPulse { 0%,100% { box-shadow: 0 0 5px #ff4757; } 50% { box-shadow: 0 0 20px #ff4757; } }
+        .recent-badge {
+            position: absolute; top: 8px; left: 8px;
+            background: rgba(0, 210, 211, 0.9); color: #000;
+            font-size: 0.65em; font-weight: bold; padding: 3px 8px; border-radius: 10px; z-index: 5;
+        }
+
+        /* Card colors */
         .card-link.glitch { border-color: #f0f; background: rgba(255, 0, 255, 0.1); }
-        .card-link.glitch:hover { box-shadow: 0 15px 30px rgba(255, 0, 255, 0.4); }
-        .card-link.glitch h2 { color: #f0f; margin-top: 0;}
-        
+        .card-link.glitch h2 { color: #f0f; }
         .card-link.strikers { border-color: #00ffff; background: rgba(0, 255, 255, 0.1); }
-        .card-link.strikers:hover { box-shadow: 0 15px 30px rgba(0, 255, 255, 0.4); }
-        .card-link.strikers h2 { color: #00ffff; margin-top: 0;}
-
+        .card-link.strikers h2 { color: #00ffff; }
         .card-link.asteroids { border-color: #00cec9; background: rgba(0, 206, 201, 0.1); }
-        .card-link.asteroids:hover { box-shadow: 0 15px 30px rgba(0, 206, 201, 0.4); }
-        .card-link.asteroids h2 { color: #00cec9; margin-top: 0;}
-
+        .card-link.asteroids h2 { color: #00cec9; }
         .card-link.tanks { border-color: #e67e22; background: rgba(230, 126, 34, 0.1); }
-        .card-link.tanks:hover { box-shadow: 0 15px 30px rgba(230, 126, 34, 0.4); }
-        .card-link.tanks h2 { color: #e67e22; margin-top: 0;}
-
+        .card-link.tanks h2 { color: #e67e22; }
         .card-link.cyber { border-color: #9b59b6; background: rgba(155, 89, 182, 0.1); }
-        .card-link.cyber:hover { box-shadow: 0 15px 30px rgba(155, 89, 182, 0.4); }
-        .card-link.cyber h2 { color: #9b59b6; margin-top: 0;}
-
+        .card-link.cyber h2 { color: #9b59b6; }
         .card-link.fps { border-color: #ff4757; background: rgba(255, 71, 87, 0.1); }
-        .card-link.fps:hover { box-shadow: 0 15px 30px rgba(255, 71, 87, 0.4); }
-        .card-link.fps h2 { color: #ff4757; margin-top: 0;}
-
+        .card-link.fps h2 { color: #ff4757; }
         .card-link.platformer { border-color: #fd79a8; background: rgba(253, 121, 168, 0.1); }
-        .card-link.platformer:hover { box-shadow: 0 15px 30px rgba(253, 121, 168, 0.4); }
-        .card-link.platformer h2 { color: #fd79a8; margin-top: 0;}
-
+        .card-link.platformer h2 { color: #fd79a8; }
         .card-link.snake { border-color: #20bf6b; background: rgba(32, 191, 107, 0.1); }
-        .card-link.snake:hover { box-shadow: 0 15px 30px rgba(32, 191, 107, 0.4); }
-        .card-link.snake h2 { color: #20bf6b; margin-top: 0;}
-
+        .card-link.snake h2 { color: #20bf6b; }
         .card-link.clicker { border-color: #f7b731; background: rgba(247, 183, 49, 0.1); }
-        .card-link.clicker:hover { box-shadow: 0 15px 30px rgba(247, 183, 49, 0.4); }
-        .card-link.clicker h2 { color: #f7b731; margin-top: 0;}
-
+        .card-link.clicker h2 { color: #f7b731; }
         .card-link.reaction { border-color: #eb3b5a; background: rgba(235, 59, 90, 0.1); }
-        .card-link.reaction:hover { box-shadow: 0 15px 30px rgba(235, 59, 90, 0.4); }
-        .card-link.reaction h2 { color: #eb3b5a; margin-top: 0;}
-
+        .card-link.reaction h2 { color: #eb3b5a; }
         .card-link.math { border-color: #3867d6; background: rgba(56, 103, 214, 0.1); }
-        .card-link.math:hover { box-shadow: 0 15px 30px rgba(56, 103, 214, 0.4); }
-        .card-link.math h2 { color: #3867d6; margin-top: 0;}
-
+        .card-link.math h2 { color: #3867d6; }
         .card-link.ttt { border-color: #a55eea; background: rgba(165, 94, 234, 0.1); }
-        .card-link.ttt:hover { box-shadow: 0 15px 30px rgba(165, 94, 234, 0.4); }
-        .card-link.ttt h2 { color: #a55eea; margin-top: 0;}
-
+        .card-link.ttt h2 { color: #a55eea; }
         .card-link.memory { border-color: #0fb9b1; background: rgba(15, 185, 177, 0.1); }
-        .card-link.memory:hover { box-shadow: 0 15px 30px rgba(15, 185, 177, 0.4); }
-        .card-link.memory h2 { color: #0fb9b1; margin-top: 0;}
-
+        .card-link.memory h2 { color: #0fb9b1; }
         .card-link.guesser { border-color: #fa8231; background: rgba(250, 130, 49, 0.1); }
-        .card-link.guesser:hover { box-shadow: 0 15px 30px rgba(250, 130, 49, 0.4); }
-        .card-link.guesser h2 { color: #fa8231; margin-top: 0;}
-
+        .card-link.guesser h2 { color: #fa8231; }
         .card-link.racer { border-color: #ff007f; background: rgba(255, 0, 127, 0.1); }
-        .card-link.racer:hover { box-shadow: 0 15px 30px rgba(255, 0, 127, 0.4); }
-        .card-link.racer h2 { color: #ff007f; margin-top: 0;}
-        
-        .tag { font-size: 0.8em; padding: 4px 10px; border-radius: 12px; display: inline-block; margin-bottom: 10px; color: white; width: fit-content; }
-        
+        .card-link.racer h2 { color: #ff007f; }
+
+        .tag { font-size: 0.75em; padding: 3px 10px; border-radius: 12px; display: inline-block; color: white; width: fit-content; margin: 0 auto; }
         .play-btn {
             padding: 10px 20px; border-radius: 8px; font-weight: bold; 
-            margin: auto auto 0 auto; transition: 0.3s; cursor: pointer; border: none; font-size: 1em; text-decoration: none; display: inline-block;
+            transition: 0.3s; cursor: pointer; border: none; font-size: 0.95em;
+            text-decoration: none; display: inline-block;
+            width: fit-content; margin: 0 auto;
         }
         .play-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
-        
-        /* Leaderboard & Achievements View */
-        .panel-view { position: relative; z-index: 10; display: none; max-width: 1000px; margin: 0 auto; padding: 30px; background: rgba(0,0,0,0.8); border-radius: 15px; border: 1px solid #ff9f43; margin-bottom: 60px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        #achievements-view { border-color: #f368e0; }
-        
-        /* Upgraded Leaderboard Rows */
-        .score-row { 
-            display: flex; justify-content: space-between; padding: 10px 15px; 
-            border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1.1em; 
-            transition: 0.2s; border-radius: 8px; background: rgba(255,255,255,0.02);
-            margin-bottom: 5px; align-items: center;
+
+        /* Panel View base */
+        .panel-view { position: relative; z-index: 10; display: none; max-width: 1100px; margin: 0 auto 60px; padding: 30px; background: rgba(0,0,0,0.85); border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #leaderboard-view { border: 1px solid #ff9f43; }
+        #achievements-view { border: 1px solid #f368e0; }
+
+        /* ====== TROPHY ROOM REDESIGN ====== */
+        .trophy-stats {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px; margin-bottom: 25px;
         }
-        .score-row:hover { 
-            background: rgba(255, 255, 255, 0.08); 
-            transform: translateX(5px); 
-            border-left: 4px solid #ff9f43; 
+        .trophy-stat {
+            background: linear-gradient(135deg, rgba(243, 104, 224, 0.15), rgba(0,0,0,0.5));
+            border: 1px solid rgba(243, 104, 224, 0.4); border-radius: 12px;
+            padding: 15px; text-align: center;
         }
-        .score-row:last-child { border-bottom: none; }
-        .score-val { color: #ff9f43; font-weight: bold; font-family: monospace; font-size: 1.1em;}
-        .game-title-lb { display: flex; align-items: center; gap: 10px; }
-        
-        .save-system { display: flex; justify-content: center; gap: 15px; margin-top: 30px; border-top: 1px solid #444; padding-top: 20px; }
-        
-        /* Achievement Cards */
-        .ach-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 15px; margin-top: 20px; }
+        .trophy-stat-value { font-size: 2em; font-weight: bold; color: #f368e0; text-shadow: 0 0 10px rgba(243, 104, 224, 0.5); font-family: 'Orbitron', sans-serif; }
+        .trophy-stat-label { font-size: 0.85em; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+
+        .achievement-progress {
+            background: linear-gradient(135deg, rgba(243, 104, 224, 0.1), rgba(0,0,0,0.4));
+            padding: 18px 22px; border-radius: 12px; margin-bottom: 25px;
+            border: 1px solid rgba(243, 104, 224, 0.3);
+        }
+        .progress-bar-bg { width: 100%; height: 14px; background: #1a1a1a; border-radius: 7px; overflow: hidden; margin-top: 10px; position: relative; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #f368e0, #feca57); transition: width 0.6s ease; border-radius: 7px; box-shadow: 0 0 15px rgba(243, 104, 224, 0.6); }
+
+        .ach-filters {
+            display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+            margin-bottom: 20px;
+        }
+        .ach-filter-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(243,104,224,0.4);
+            color: #fff; padding: 6px 14px; border-radius: 15px;
+            font-size: 0.85em; cursor: pointer; transition: 0.2s;
+        }
+        .ach-filter-btn:hover { background: rgba(243,104,224,0.2); }
+        .ach-filter-btn.active { background: #f368e0; color: #000; box-shadow: 0 0 10px #f368e0; }
+
+        .ach-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
         .ach-card {
-            background: rgba(255,255,255,0.05); border: 1px solid #444; border-radius: 12px; padding: 15px;
-            display: flex; align-items: center; gap: 20px; transition: 0.3s; position: relative; overflow: hidden;
+            background: rgba(255,255,255,0.04); border: 1px solid #333; border-radius: 12px; padding: 16px;
+            display: flex; align-items: center; gap: 18px; transition: 0.3s; position: relative; overflow: hidden;
         }
-        .ach-card.unlocked { border-color: #feca57; background: rgba(254, 202, 87, 0.1); box-shadow: 0 0 15px rgba(254, 202, 87, 0.2); }
-        .ach-card.claimed { border-color: #1dd1a1; background: rgba(29, 209, 161, 0.05); opacity: 0.8; }
-        
-        .ach-icon { font-size: 2.5em; filter: grayscale(100%); opacity: 0.5; transition: 0.3s; }
+        .ach-card.locked { opacity: 0.6; }
+        .ach-card.unlocked { border-color: #feca57; background: rgba(254, 202, 87, 0.08); box-shadow: 0 0 15px rgba(254, 202, 87, 0.2); animation: unlockedGlow 2s infinite alternate; }
+        @keyframes unlockedGlow { from { box-shadow: 0 0 10px rgba(254, 202, 87, 0.2); } to { box-shadow: 0 0 25px rgba(254, 202, 87, 0.5); } }
+        .ach-card.claimed { border-color: #1dd1a1; background: rgba(29, 209, 161, 0.05); }
+        .ach-icon-wrap {
+            width: 60px; height: 60px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5); flex-shrink: 0;
+        }
+        .ach-card.unlocked .ach-icon-wrap { background: rgba(254, 202, 87, 0.2); }
+        .ach-card.claimed .ach-icon-wrap { background: rgba(29, 209, 161, 0.2); }
+        .ach-icon { font-size: 2em; filter: grayscale(100%); opacity: 0.5; transition: 0.3s; }
         .ach-card.unlocked .ach-icon, .ach-card.claimed .ach-icon { filter: grayscale(0%); opacity: 1; }
-        
-        .ach-info { flex: 1; }
-        .ach-title { margin: 0 0 5px 0; color: #fff; font-size: 1.2em; }
+        .ach-info { flex: 1; min-width: 0; }
+        .ach-title { margin: 0 0 4px 0; color: #fff; font-size: 1.1em; }
         .ach-card.unlocked .ach-title { color: #feca57; }
         .ach-card.claimed .ach-title { color: #1dd1a1; }
-        .ach-desc { margin: 0; color: #a4b0be; font-size: 0.9em; }
-        .ach-reward { color: #feca57; font-weight: bold; margin-top: 5px; font-size: 0.9em; }
-        .btn-claim {
-            background: #feca57; color: #000; border: none; padding: 8px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 1em;
-        }
+        .ach-desc { margin: 0; color: #a4b0be; font-size: 0.85em; line-height: 1.3; }
+        .ach-reward { color: #feca57; font-weight: bold; margin-top: 4px; font-size: 0.85em; }
+        .btn-claim { background: linear-gradient(135deg, #feca57, #ff9f43); color: #000; border: none; padding: 8px 14px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 0.9em; white-space: nowrap; }
         .btn-claim:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(254, 202, 87, 0.6); }
-        .btn-claimed { background: #333; color: #1dd1a1; border: 1px solid #1dd1a1; padding: 8px 15px; font-weight: bold; border-radius: 8px; cursor: default; }
-        
+        .btn-claimed { background: transparent; color: #1dd1a1; border: 1px solid #1dd1a1; padding: 8px 14px; font-weight: bold; border-radius: 8px; cursor: default; font-size: 0.9em; }
+
         .tier-header {
-            grid-column: 1 / -1; 
-            color: #feca57;
-            font-size: 1.5em;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            grid-column: 1 / -1; color: #feca57; font-size: 1.3em;
+            text-transform: uppercase; letter-spacing: 2px;
             border-bottom: 2px solid rgba(254, 202, 87, 0.3);
-            padding-bottom: 5px;
-            margin: 20px 0 10px 0;
+            padding-bottom: 8px; margin: 15px 0 5px 0;
             text-shadow: 0 0 10px rgba(254, 202, 87, 0.5);
+            display: flex; justify-content: space-between; align-items: center;
         }
-        /* --- 🛸 Secret Space Casino Button CSS --- */
+        .tier-count { font-size: 0.7em; color: #aaa; letter-spacing: 1px; }
+
+        /* ====== LEADERBOARD REDESIGN ====== */
+        .lb-summary {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px; margin-bottom: 25px;
+        }
+        .lb-stat {
+            background: linear-gradient(135deg, rgba(255, 159, 67, 0.15), rgba(0,0,0,0.5));
+            border: 1px solid rgba(255, 159, 67, 0.4); border-radius: 12px;
+            padding: 15px; text-align: center;
+        }
+        .lb-stat-value { font-size: 1.8em; font-weight: bold; color: #ff9f43; font-family: 'Orbitron', sans-serif; }
+        .lb-stat-label { font-size: 0.85em; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+
+        .lb-controls {
+            display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+            align-items: center; justify-content: center;
+        }
+        .lb-search {
+            flex: 1; min-width: 200px; max-width: 300px;
+            padding: 10px 15px; border-radius: 10px;
+            border: 1px solid rgba(255, 159, 67, 0.4);
+            background: rgba(0,0,0,0.6); color: #fff; font-size: 0.95em; outline: none;
+        }
+        .lb-search:focus { border-color: #ff9f43; }
+        .lb-sort {
+            padding: 10px 15px; border-radius: 10px;
+            border: 1px solid rgba(255, 159, 67, 0.4);
+            background: rgba(0,0,0,0.6); color: #fff; cursor: pointer;
+        }
+
+        .lb-game-card {
+            background: linear-gradient(135deg, rgba(0,0,0,0.5), rgba(255, 159, 67, 0.05));
+            border: 1px solid rgba(255, 159, 67, 0.2); border-radius: 14px;
+            padding: 18px; margin-bottom: 15px;
+            transition: 0.3s;
+        }
+        .lb-game-card:hover { border-color: #ff9f43; transform: translateX(3px); box-shadow: -3px 0 15px rgba(255, 159, 67, 0.3); }
+        .lb-game-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px; padding-bottom: 10px;
+            border-bottom: 1px dashed rgba(255, 159, 67, 0.3);
+        }
+        .lb-game-title { font-size: 1.15em; font-weight: bold; color: #fff; }
+        .lb-my-score { display: flex; align-items: center; gap: 8px; font-size: 0.95em; }
+        .lb-my-score-label { color: #888; font-size: 0.85em; }
+        .lb-my-score-val { color: #00d2d3; font-weight: bold; font-family: monospace; }
+        .lb-my-rank-badge {
+            background: #ff9f43; color: #000; padding: 2px 8px;
+            border-radius: 10px; font-size: 0.75em; font-weight: bold;
+        }
+        .lb-podium {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+        }
+        .lb-podium-slot {
+            background: rgba(0,0,0,0.4); border-radius: 10px; padding: 12px 10px;
+            text-align: center; position: relative; transition: 0.2s;
+        }
+        .lb-podium-slot:hover { background: rgba(255, 159, 67, 0.1); }
+        .lb-podium-slot.gold { border: 1px solid #feca57; background: linear-gradient(180deg, rgba(254, 202, 87, 0.15), rgba(0,0,0,0.4)); }
+        .lb-podium-slot.silver { border: 1px solid #c8d6e5; background: linear-gradient(180deg, rgba(200, 214, 229, 0.15), rgba(0,0,0,0.4)); }
+        .lb-podium-slot.bronze { border: 1px solid #cd7f32; background: linear-gradient(180deg, rgba(205, 127, 50, 0.15), rgba(0,0,0,0.4)); }
+        .lb-podium-slot.is-me { box-shadow: 0 0 15px rgba(0, 210, 211, 0.6); border-color: #00d2d3 !important; }
+        .lb-podium-medal { font-size: 1.5em; }
+        .lb-podium-name { font-weight: bold; color: #fff; margin-top: 4px; font-size: 0.9em; word-break: break-all; }
+        .lb-podium-name.is-me-text { color: #00d2d3; }
+        .lb-podium-score { color: #1dd1a1; font-weight: bold; font-family: monospace; font-size: 0.9em; margin-top: 4px; }
+        .lb-empty { color: #555; font-style: italic; }
+
+        .save-system { display: flex; justify-content: center; gap: 15px; margin-top: 30px; border-top: 1px solid #444; padding-top: 20px; flex-wrap: wrap; }
+
+        /* ====== LEVEL MODAL ====== */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            display: none; align-items: center; justify-content: center;
+            z-index: 8000; backdrop-filter: blur(8px);
+        }
+        .modal-overlay.show { display: flex; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal {
+            background: linear-gradient(135deg, #1a1a2e, #0f2027);
+            border: 2px solid #feca57; border-radius: 16px;
+            padding: 30px; max-width: 480px; width: 90%;
+            box-shadow: 0 0 40px rgba(254, 202, 87, 0.4);
+            position: relative;
+        }
+        .modal-close {
+            position: absolute; top: 12px; right: 16px;
+            background: none; border: none; color: #fff; font-size: 1.5em;
+            cursor: pointer; opacity: 0.7;
+        }
+        .modal-close:hover { opacity: 1; }
+        .modal h2 { margin: 0 0 5px; color: #feca57; font-family: 'Orbitron', sans-serif; text-align: center; }
+        .modal-level-display {
+            text-align: center; margin: 20px 0;
+        }
+        .modal-level-num {
+            font-family: 'Orbitron', sans-serif; font-size: 4em;
+            color: #feca57; text-shadow: 0 0 20px rgba(254, 202, 87, 0.6);
+            line-height: 1;
+        }
+        .modal-level-label { color: #aaa; text-transform: uppercase; letter-spacing: 2px; }
+        .modal-xp-bar { background: #1a1a1a; height: 18px; border-radius: 9px; overflow: hidden; margin: 15px 0 10px; border: 1px solid rgba(254, 202, 87, 0.3); }
+        .modal-xp-fill { height: 100%; background: linear-gradient(90deg, #feca57, #ff9f43); transition: width 0.8s; box-shadow: 0 0 10px rgba(254, 202, 87, 0.6); }
+        .modal-xp-text { text-align: center; color: #ccc; font-size: 0.95em; }
+        .modal-info-list { margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.4); border-radius: 10px; font-size: 0.9em; line-height: 1.7; color: #ccc; }
+        .modal-info-list strong { color: #feca57; }
+
+        /* Hidden UFO */
         .hidden-ufo {
-            position: fixed;
-            bottom: 25px;
-            right: 25px;
-            font-size: 35px;
-            text-decoration: none;
-            opacity: 0.15; /* Makes it look like a secret */
-            transition: all 0.4s ease-in-out;
-            z-index: 1000;
-            cursor: pointer;
+            position: fixed; bottom: 25px; right: 25px; font-size: 35px;
+            text-decoration: none; opacity: 0.15; transition: all 0.4s ease-in-out;
+            z-index: 1000; cursor: pointer;
             filter: drop-shadow(0 0 0 rgba(0, 210, 211, 0));
         }
         .hidden-ufo:hover {
-            opacity: 1; /* Reveals the secret */
-            transform: scale(1.4) translateY(-15px); /* Pops up */
-            filter: drop-shadow(0 0 20px rgba(0, 210, 211, 0.9)); /* Neon cyan glow matching Megaplex */
+            opacity: 1; transform: scale(1.4) translateY(-15px);
+            filter: drop-shadow(0 0 20px rgba(0, 210, 211, 0.9));
             animation: float 2s infinite ease-in-out;
         }
-        @keyframes float {
-            0% { transform: scale(1.4) translateY(-15px); }
-            50% { transform: scale(1.4) translateY(-5px); }
-            100% { transform: scale(1.4) translateY(-15px); }
+        @keyframes float { 0%,100% { transform: scale(1.4) translateY(-15px); } 50% { transform: scale(1.4) translateY(-5px); } }
+
+        /* Carousel */
+        .featured-carousel {
+            width: calc(100% - 40px); max-width: 900px;
+            margin: 30px auto 0 auto;
+            background: rgba(0,0,0,0.7); border-radius: 18px;
+            box-shadow: 0 0 30px #00d2d3a0;
+            overflow: hidden; position: relative; z-index: 20;
+            display: flex; align-items: center; min-height: 180px;
+        }
+        body.light-mode .featured-carousel { background: rgba(255,255,255,0.85) !important; color: #222 !important; }
+        .carousel-slide { flex: 1; display: flex; align-items: center; gap: 30px; padding: 30px; transition: opacity 0.5s; }
+        .carousel-img { width: 120px; height: 120px; border-radius: 16px; background: #222; display: flex; align-items: center; justify-content: center; font-size: 3em; box-shadow: 0 0 20px #00d2d3a0; animation: floatIcon 3s infinite ease-in-out; }
+        @keyframes floatIcon { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .carousel-info h3 { margin: 0 0 10px 0; color: #00d2d3; font-size: 1.5em; }
+        .carousel-info p { margin: 0; color: #c8d6e5; }
+        .carousel-nav { position: absolute; top: 50%; transform: translateY(-50%); font-size: 2em; color: #00d2d3; background: rgba(0,0,0,0.5); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; z-index: 2; transition: background 0.2s; }
+        .carousel-nav:hover { background: #00d2d3; color: #222; }
+        .carousel-nav.left { left: 10px; }
+        .carousel-nav.right { right: 10px; }
+        .carousel-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 2; }
+        .carousel-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3); cursor: pointer; transition: 0.3s; }
+        .carousel-dot.active { background: #00d2d3; box-shadow: 0 0 8px #00d2d3; transform: scale(1.3); }
+
+        /* Toast */
+        #toastContainer { position: fixed; top: 20px; right: 20px; z-index: 9000; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            background: rgba(0,0,0,0.95); color: #fff;
+            border-left: 4px solid #00d2d3; padding: 15px 25px;
+            border-radius: 8px; min-width: 250px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            animation: slideIn 0.4s ease, fadeOut 0.4s ease 3.6s forwards;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .toast.success { border-color: #1dd1a1; }
+        .toast.error { border-color: #ff4757; }
+        .toast.warning { border-color: #feca57; }
+        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateX(120%); } }
+
+        /* Footer */
+        footer { width: 100%; background: rgba(0,0,0,0.8); color: #c8d6e5; text-align: center; padding: 25px 10px 15px 10px; font-size: 1em; border-top: 2px solid #00d2d3; margin-top: 60px; z-index: 100; position: relative; }
+        body.light-mode footer { background: rgba(255,255,255,0.85) !important; color: #222 !important; }
+        .footer-links { margin: 10px 0 0 0; display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; align-items: center; }
+        .footer-links a { color: #00d2d3; text-decoration: none; font-weight: bold; }
+        .footer-links a:hover { color: #feca57; }
+        .theme-toggle-btn { background: #00d2d3; color: #222; border: none; border-radius: 12px; padding: 7px 18px; font-weight: bold; margin-left: 18px; cursor: pointer; }
+        .theme-toggle-btn:hover { background: #feca57; color: #000; }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            header { min-height: auto; padding: 20px 10px; }
+            .hub-profile { position: static; transform: scale(0.4); margin: -50px auto -60px; }
+            .avatar-shop-btn { position: static; margin: 0 auto 15px; display: block; width: fit-content; }
+            .user-greeting { position: static; justify-content: center; margin: 10px 0; }
+            .header-controls { position: static; align-items: center; margin-top: 15px; }
+            .mini-controls, .mini-controls.mini-left, .mini-controls.mini-right {
+    position: static; transform: none; margin-top: 10px;
+    left: auto; right: auto; }
+            .megaplex-logo { font-size: 2.2em; }
+            .grid-container { padding: 20px 15px 60px; gap: 15px; }
+            .carousel-slide { flex-direction: column; text-align: center; gap: 15px; padding: 20px; }
+            .ach-grid { grid-template-columns: 1fr; }
+            .lb-podium { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <header>
-        <!-- The Avatar Mini-Profile -->
-        <a href="avatar.html" class="hub-profile" title="Go to Avatar Shop" onmouseenter="sfx.hover()" onclick="sfx.start()">
+    <div id="bootScreen">
+        <div class="boot-logo">🏙️ MEGAPLEX</div>
+        <div class="boot-text" id="bootText"></div>
+        <div class="boot-bar"><div class="boot-bar-fill" id="bootBarFill"></div></div>
+    </div>
+
+    <div class="starfield" id="starfield"></div>
+    <div id="toastContainer"></div>
+
+    <!-- Level Info Modal -->
+    <div class="modal-overlay" id="levelModal" onclick="if(event.target===this)closeLevelModal()">
+        <div class="modal">
+            <button class="modal-close" onclick="closeLevelModal()">×</button>
+            <h2>⚡ Player Level</h2>
+            <div class="modal-level-display">
+                <div class="modal-level-num" id="modalLevelNum">1</div>
+                <div class="modal-level-label" id="modalLevelTitle">Rookie</div>
+            </div>
+            <div class="modal-xp-bar"><div class="modal-xp-fill" id="modalXpFill" style="width:0%"></div></div>
+            <div class="modal-xp-text" id="modalXpText">0 / 100 XP</div>
+            <div class="modal-info-list">
+                <strong>How leveling works:</strong><br>
+                • Every <strong>🎟️ Token</strong> you earn = <strong>1 XP</strong><br>
+                • Level requires <strong>Level² × 100</strong> total XP<br>
+                • Level 2 needs 400 XP, Level 3 needs 900, etc.<br>
+                • Earn tokens by playing games, claiming trophies, and the daily bonus<br>
+                <br>
+                <strong>Total Lifetime XP:</strong> <span id="modalLifetimeXp" style="color:#00d2d3;">0</span>
+            </div>
+        </div>
+    </div>
+
+    <header id="mainHeader">
+        <a href="avatar.html" class="hub-profile header-side" title="Avatar Shop" onmouseenter="sfx.hover()" onclick="sfx.start()">
             <div class="avatar-stage" id="hubStageBG">
                 <div class="bot-head" id="hubBotHead">
                     <div class="bot-hat" id="hubBotHat"></div>
-                    <div class="bot-eyes">
-                        <div class="eye"></div><div class="eye"></div>
-                    </div>
+                    <div class="bot-eyes"><div class="eye"></div><div class="eye"></div></div>
                 </div>
                 <div class="bot-body" id="hubBotBody"></div>
             </div>
         </a>
-        
-        <!-- NEW POSITION: The Avatar Shop Button immediately to the right of the Avatar -->
-        <a href="avatar.html" class="play-btn" style="position: absolute; top: 45px; left: 145px; background: #feca57; color: #000; border-radius: 20px; box-shadow: 0 0 10px rgba(254, 202, 87, 0.4); text-decoration: none; z-index: 10; font-size: 0.9em;" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            🛍️ Avatar Shop
-        </a>
-        <!-- 3. Inline Username Editor -->
-        <div class="user-greeting" id="userGreeting" onclick="changeUsername()" onmouseenter="sfx.hover()" style="cursor: pointer; padding: 5px; border-radius: 5px; transition: 0.2s;" onmouseover="this.style.background='rgba(0, 210, 211, 0.2)'" onmouseout="this.style.background='transparent'">
-            ID: GUEST_BOT ✏️
+        <a href="avatar.html" class="play-btn avatar-shop-btn header-side" onmouseenter="sfx.hover()" onclick="sfx.start()">🛍️ Avatar Shop</a>
+        <div class="user-greeting header-side" id="userGreeting" onmouseenter="sfx.hover()">
+            <span onclick="changeUsername()">ID: GUEST_BOT ✏️</span>
+            <span class="player-level" id="playerLevel" onclick="openLevelModal()" title="Click for level details">LV.1</span>
         </div>
-        
         <div>
-            <h1>🏙️ The Megaplex</h1>
+            <div class="megaplex-logo" aria-label="The Megaplex">🏙️ The Megaplex</div>
             <div class="subtitle">Select a game to open a new terminal!</div>
         </div>
-        
-        <div class="header-controls">
-            <!-- Top Row: Daily Bonus & Tokens -->
+        <div class="header-controls header-side">
             <div class="header-controls-top">
-                <button id="dailyBonusBtn" class="play-btn" style="background: #f368e0; color: #fff; border: none; font-weight: bold; border-radius: 20px; cursor: pointer; transition: 0.3s; padding: 10px 20px;" onclick="claimDailyBonus()" onmouseenter="sfx.hover()">
-                    🎁 Daily Claim
-                </button>
-                <div class="token-display">🎟️ <span id="tokenBalance">0</span></div>
+                <button id="dailyBonusBtn" class="play-btn" style="background: #f368e0; color: #fff; border-radius: 20px; padding: 10px 20px;" onclick="claimDailyBonus()" onmouseenter="sfx.hover()">🎁 Daily Claim</button>
+                <div class="token-display" id="tokenDisplayBox">🎟️ <span id="tokenBalance">0</span></div>
             </div>
-            <!-- Bottom Row: Sound Toggle & Quick Export/Import Save -->
             <div class="header-controls-bottom">
-                <button id="soundToggleBtn" class="sound-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
-                <button class="play-btn" style="background: #3498db; color: #fff; padding: 8px 15px; font-size: 0.9em; border-radius: 12px 0 0 12px; height: fit-content; margin-right: -1px;" onmouseenter="sfx.hover()" onclick="exportSave(); sfx.click();">
-                    💾 Export
-                </button>
-                <button class="play-btn" style="background: #9b59b6; color: #fff; padding: 8px 15px; font-size: 0.9em; border-radius: 0 12px 12px 0; height: fit-content;" onmouseenter="sfx.hover()" onclick="document.getElementById('importFile').click(); sfx.click();">
-                    📂 Load
-                </button>
+                <button id="soundToggleBtn" class="sound-btn" onclick="toggleSound()" title="Toggle Sound (M)">🔊</button>
+                <button class="play-btn" style="background: #3498db; color: #fff; padding: 8px 15px; font-size: 0.9em; border-radius: 12px 0 0 12px;" onmouseenter="sfx.hover()" onclick="exportSave(); sfx.click();">💾 Export</button>
+                <button class="play-btn" style="background: #9b59b6; color: #fff; padding: 8px 15px; font-size: 0.9em; border-radius: 0 12px 12px 0;" onmouseenter="sfx.hover()" onclick="document.getElementById('importFile').click(); sfx.click();">📂 Load</button>
                 <input type="file" id="importFile" style="display:none" accept=".json" onchange="importSave(event)">
             </div>
         </div>
+
+        <!-- Mini controls (only visible when scrolled) -->
+        <!-- Mini controls: only visible when scrolled -->
+<div class="mini-controls mini-left">
+    <span class="mini-token" style="border-color:#00d2d3; color:#00d2d3; cursor:pointer;" onclick="changeUsername()" title="Change username">
+        👤 <span id="miniUsername">GUEST_BOT</span>
+    </span>
+</div>
+<div class="mini-controls mini-right">
+    <span class="mini-token">🎟️ <span id="miniTokenBalance">0</span></span>
+    <span class="mini-token" style="border-color:#feca57; color:#feca57; cursor:pointer;" onclick="openLevelModal()" title="Level details">⚡ LV.<span id="miniLevel">1</span></span>
+    <button class="sound-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+</div>
     </header>
+
+    <div class="featured-carousel" id="featuredCarousel">
+        <button class="carousel-nav left" onclick="carouselPrev()">←</button>
+        <div class="carousel-slide" id="carouselSlide"></div>
+        <button class="carousel-nav right" onclick="carouselNext()">→</button>
+        <div class="carousel-dots" id="carouselDots"></div>
+    </div>
+
+    <div class="search-bar-wrapper">
+        <input type="text" id="searchBar" class="search-bar" placeholder="Search games..." oninput="filterBySearch()">
+        <span class="search-shortcut">/</span>
+    </div>
+
     <div class="tab-container" id="tabs">
         <button class="tab-btn active" onmouseenter="sfx.hover()" onclick="switchTab('all', this)">All Games</button>
         <button class="tab-btn" onmouseenter="sfx.hover()" onclick="switchTab('arcade', this)">Arcade</button>
@@ -342,134 +651,285 @@
         <button class="tab-btn achievements-btn" onmouseenter="sfx.hover()" onclick="switchTab('achievements', this)">🎖️ Trophy Room</button>
         <button class="tab-btn leaderboard-btn" onmouseenter="sfx.hover()" onclick="switchTab('leaderboard', this)">🏆 Leaderboard</button>
     </div>
-    
-    <!-- Device Hall of Fame Leaderboard View -->
+
+    <!-- ====== Leaderboard View ====== -->
     <div id="leaderboard-view" class="panel-view">
-        <h2 style="text-align: center; color: #ff9f43; font-size: 2.5em; margin-top: 0; text-shadow: 0 0 15px rgba(255, 159, 67, 0.4);">Device Hall of Fame</h2>
-        <p style="text-align: center; color: #aaa; margin-bottom: 30px;">Top 3 scores across all users on this device.</p>
-        
-        <div id="master-leaderboards-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <!-- JavaScript will automatically inject the Top 3 rows here -->
+        <h2 style="text-align: center; color: #ff9f43; font-size: 2.5em; margin: 0 0 5px; text-shadow: 0 0 15px rgba(255, 159, 67, 0.4); font-family: 'Orbitron', sans-serif;">🏆 Hall of Fame</h2>
+        <p style="text-align: center; color: #aaa; margin-bottom: 25px;">Top 3 scores across all users on this device</p>
+
+        <div class="lb-summary" id="lbSummary"></div>
+
+        <div class="lb-controls">
+            <input type="text" class="lb-search" id="lbSearch" placeholder="🔍 Search game..." oninput="renderLeaderboard()">
+            <select class="lb-sort" id="lbSort" onchange="renderLeaderboard()">
+                <option value="default">Sort: Default</option>
+                <option value="ranked">Sort: My Ranked First</option>
+                <option value="unranked">Sort: Unranked First</option>
+                <option value="alpha">Sort: Alphabetical</option>
+            </select>
         </div>
+
+        <div id="master-leaderboards-container"></div>
+
         <div class="save-system">
             <button class="play-btn" style="background: #3498db; color: #fff;" onmouseenter="sfx.hover()" onclick="exportSave(); sfx.click();">💾 Export Save Data</button>
             <button class="play-btn" style="background: #9b59b6; color: #fff;" onmouseenter="sfx.hover()" onclick="document.getElementById('importFile').click(); sfx.click();">📂 Load Save Data</button>
-            <input type="file" id="importFile" style="display:none" accept=".json" onchange="importSave(event)">
         </div>
     </div>
-    <!-- Achievements View -->
+
+    <!-- ====== Achievements View ====== -->
     <div id="achievements-view" class="panel-view">
-        <h2 style="text-align: center; color: #f368e0; margin-top: 0; font-size: 2.5em; text-shadow: 0 0 15px rgba(243, 104, 224, 0.4);">The Trophy Room</h2>
-        <p style="text-align: center; color: #aaa;">Complete milestones across the Megaplex to claim massive Token bounties!</p>
+        <h2 style="text-align: center; color: #f368e0; margin: 0 0 5px; font-size: 2.5em; text-shadow: 0 0 15px rgba(243, 104, 224, 0.4); font-family: 'Orbitron', sans-serif;">🎖️ Trophy Room</h2>
+        <p style="text-align: center; color: #aaa; margin-bottom: 25px;">Complete milestones to claim massive Token bounties!</p>
+
+        <div class="trophy-stats" id="trophyStats"></div>
+
+        <div class="achievement-progress">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong>Overall Progress</strong>
+                <span id="achProgressText" style="color: #f368e0; font-weight: bold;">0 / 0</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="achProgressBar"></div></div>
+        </div>
+
+        <div class="ach-filters">
+            <button class="ach-filter-btn active" data-filter="all" onclick="setAchFilter('all', this)">All</button>
+            <button class="ach-filter-btn" data-filter="ready" onclick="setAchFilter('ready', this)">⭐ Ready to Claim</button>
+            <button class="ach-filter-btn" data-filter="locked" onclick="setAchFilter('locked', this)">🔒 Locked</button>
+            <button class="ach-filter-btn" data-filter="claimed" onclick="setAchFilter('claimed', this)">✓ Claimed</button>
+        </div>
+
         <div class="ach-grid" id="achievements-container"></div>
     </div>
-    
-    <!-- Hub Grid -->
+
+    <!-- ====== Game Grid ====== -->
     <div class="grid-container" id="gameGrid">
-        <a href="glitch_brawler.html" class="card-link glitch" data-category="fighting pvp" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>💥 Glitch Brawler</h2><span class="tag" style="background:#f0f;">PvP Fighting</span>
-            <p style="color:#aaa;">Corrupt your rivals in the arena!</p></div>
+        <a href="glitch_brawler.html" class="card-link glitch" data-category="fighting pvp" data-name="glitch brawler" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>💥 Glitch Brawler</h2>
+                <span class="tag" style="background:#f0f;">PvP Fighting</span>
+                <p>Corrupt your rivals in the arena!</p>
+            </div>
             <div class="play-btn" style="background:#f0f; color:#000;">Play Game ➔</div>
         </a>
-        
-        <a href="glitch_strikers.html" class="card-link strikers" data-category="arcade fighting pvp" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>⚔️ Glitch Strikers</h2><span class="tag" style="background:#00ffff; color:#000;">Beat 'Em Up</span>
-            <p style="color:#aaa;">Breach the Megaplex! Co-Op enabled.</p></div>
+        <a href="glitch_strikers.html" class="card-link strikers" data-category="arcade fighting pvp" data-name="glitch strikers" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>⚔️ Glitch Strikers</h2>
+                <span class="tag" style="background:#00ffff; color:#000;">Beat 'Em Up</span>
+                <p>Breach the Megaplex! Co-Op enabled.</p>
+            </div>
             <div class="play-btn" style="background:#00ffff; color:#000;">Play Game ➔</div>
         </a>
-        <a href="asteroids.html" class="card-link asteroids" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>☄️ Quantum Asteroids</h2><span class="tag" style="background:#00cec9;">Space Shooter</span>
-            <p style="color:#aaa;">Blast through the asteroid field!</p></div>
+        <a href="asteroids.html" class="card-link asteroids" data-category="arcade" data-name="quantum asteroids" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>☄️ Quantum Asteroids</h2>
+                <span class="tag" style="background:#00cec9;">Space Shooter</span>
+                <p>Blast through the asteroid field!</p>
+            </div>
             <div class="play-btn" style="background:#00cec9; color:#000;">Play Game ➔</div>
         </a>
-        
-        <a href="tanks.html" class="card-link tanks" data-category="arcade pvp" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>💣 Plasma Tanks</h2><span class="tag" style="background:#e67e22;">PvP & PvE</span>
-            <p style="color:#aaa;">Blast enemies, unlock skins!</p></div>
+        <a href="tanks.html" class="card-link tanks" data-category="arcade pvp" data-name="plasma tanks" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>💣 Plasma Tanks</h2>
+                <span class="tag" style="background:#e67e22;">PvP & PvE</span>
+                <p>Blast enemies, unlock skins!</p>
+            </div>
             <div class="play-btn" style="background:#e67e22; color:#fff;">Play Game ➔</div>
         </a>
-        <a href="runner.html" class="card-link cyber" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>🏃‍♂️ Cyber Runner</h2><span class="tag" style="background:#9b59b6;">Endless Runner</span>
-            <p style="color:#aaa;">Dash through the neon city!</p></div>
+        <a href="runner.html" class="card-link cyber" data-category="arcade" data-name="cyber runner" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>🏃‍♂️ Cyber Runner</h2>
+                <span class="tag" style="background:#9b59b6;">Endless Runner</span>
+                <p>Dash through the neon city!</p>
+            </div>
             <div class="play-btn" style="background:#9b59b6; color:#fff;">Play Game ➔</div>
         </a>
-        <a href="fps.html" class="card-link fps" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>🔫 System Breach</h2><span class="tag" style="background:#ff4757;">3D FPS</span>
-            <p style="color:#aaa;">Survive the glitching waves!</p></div>
+        <a href="fps.html" class="card-link fps" data-category="arcade" data-name="system breach fps" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>🔫 System Breach</h2>
+                <span class="tag" style="background:#ff4757;">3D FPS</span>
+                <p>Survive the glitching waves!</p>
+            </div>
             <div class="play-btn" style="background:#ff4757; color:#fff;">Play Game ➔</div>
         </a>
-        <a href="platformer.html" class="card-link platformer" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>🏃 Matrix Jumper</h2><span class="tag" style="background:#fd79a8;">Platformer</span>
-            <p style="color:#aaa;">Leap across the mainframe!</p></div>
+        <a href="platformer.html" class="card-link platformer" data-category="arcade" data-name="matrix jumper platformer" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>🏃 Matrix Jumper</h2>
+                <span class="tag" style="background:#fd79a8;">Platformer</span>
+                <p>Leap across the mainframe!</p>
+            </div>
             <div class="play-btn" style="background:#fd79a8; color:#000;">Play Game ➔</div>
         </a>
-        <a href="racer.html" class="card-link racer" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2 style="color:#ff007f;">🏎️ Vaporwave Racer</h2><span class="tag" style="background:#ff007f;">Drift Racing</span>
-            <p style="color:#aaa;">Master the drift, beat your rivals.</p></div>
+        <a href="racer.html" class="card-link racer" data-category="arcade" data-name="vaporwave racer racing" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <span class="new-badge">NEW</span>
+            <div class="card-content">
+                <h2>🏎️ Vaporwave Racer</h2>
+                <span class="tag" style="background:#ff007f;">Drift Racing</span>
+                <p>Master the drift, beat your rivals.</p>
+            </div>
             <div class="play-btn" style="background:#ff007f; color:#000;">Play Game ➔</div>
         </a>
-        <a href="snake.html" class="card-link snake" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>🐍 Snake Classic</h2><span class="tag" style="background:#20bf6b;">Arcade</span>
-            <p style="color:#aaa;">Eat data, grow longer!</p></div>
+        <a href="snake.html" class="card-link snake" data-category="arcade" data-name="snake classic" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>🐍 Snake Classic</h2>
+                <span class="tag" style="background:#20bf6b;">Arcade</span>
+                <p>Eat data, grow longer!</p>
+            </div>
             <div class="play-btn" style="background:#20bf6b; color:#000;">Play Game ➔</div>
         </a>
-        <a href="clicker.html" class="card-link clicker" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>👆 Clicker Frenzy</h2><span class="tag" style="background:#f7b731;">Arcade</span>
-            <p style="color:#aaa;">Click to mine tokens!</p></div>
+        <a href="clicker.html" class="card-link clicker" data-category="arcade" data-name="clicker frenzy" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>👆 Clicker Frenzy</h2>
+                <span class="tag" style="background:#f7b731;">Arcade</span>
+                <p>Click to mine tokens!</p>
+            </div>
             <div class="play-btn" style="background:#f7b731; color:#000;">Play Game ➔</div>
         </a>
-        <a href="reaction.html" class="card-link reaction" data-category="arcade" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>⚡ Reaction Tester</h2><span class="tag" style="background:#eb3b5a;">Arcade</span>
-            <p style="color:#aaa;">Test your raw reflexes!</p></div>
+        <a href="reaction.html" class="card-link reaction" data-category="arcade" data-name="reaction tester reflex" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>⚡ Reaction Tester</h2>
+                <span class="tag" style="background:#eb3b5a;">Arcade</span>
+                <p>Test your raw reflexes!</p>
+            </div>
             <div class="play-btn" style="background:#eb3b5a; color:#fff;">Play Game ➔</div>
         </a>
-        <a href="math.html" class="card-link math" data-category="logic" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>🧠 Quick Math</h2><span class="tag" style="background:#3867d6;">Logic</span>
-            <p style="color:#aaa;">Solve equations quickly!</p></div>
+        <a href="math.html" class="card-link math" data-category="logic" data-name="quick math" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>🧠 Quick Math</h2>
+                <span class="tag" style="background:#3867d6;">Logic</span>
+                <p>Solve equations quickly!</p>
+            </div>
             <div class="play-btn" style="background:#3867d6; color:#fff;">Play Game ➔</div>
         </a>
-        <a href="tictactoe.html" class="card-link ttt" data-category="logic pvp" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>⭕ Tic-Tac-Toe</h2><span class="tag" style="background:#a55eea;">Logic</span>
-            <p style="color:#aaa;">Classic X and O battles!</p></div>
+        <a href="tictactoe.html" class="card-link ttt" data-category="logic pvp" data-name="tic tac toe" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>⭕ Tic-Tac-Toe</h2>
+                <span class="tag" style="background:#a55eea;">Logic</span>
+                <p>Classic X and O battles!</p>
+            </div>
             <div class="play-btn" style="background:#a55eea; color:#fff;">Play Game ➔</div>
         </a>
-        <a href="memory.html" class="card-link memory" data-category="logic" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>👁️ Memory Match</h2><span class="tag" style="background:#0fb9b1;">Puzzle</span>
-            <p style="color:#aaa;">Match the hidden cards!</p></div>
+        <a href="memory.html" class="card-link memory" data-category="logic" data-name="memory match cards" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>👁️ Memory Match</h2>
+                <span class="tag" style="background:#0fb9b1;">Puzzle</span>
+                <p>Match the hidden cards!</p>
+            </div>
             <div class="play-btn" style="background:#0fb9b1; color:#000;">Play Game ➔</div>
         </a>
-        <a href="guesser.html" class="card-link guesser" data-category="logic" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div><h2>🔐 Code Breaker</h2><span class="tag" style="background:#fa8231;">Logic</span>
-            <p style="color:#aaa;">Crack the secret vault!</p></div>
+        <a href="guesser.html" class="card-link guesser" data-category="logic" data-name="code breaker guesser" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-content">
+                <h2>🔐 Code Breaker</h2>
+                <span class="tag" style="background:#fa8231;">Logic</span>
+                <p>Crack the secret vault!</p>
+            </div>
             <div class="play-btn" style="background:#fa8231; color:#000;">Play Game ➔</div>
         </a>
     </div>
-    <!-- 🛸 Secret Space Casino HTML Hook -->
+
     <a href="#" id="secret-casino-btn" class="hidden-ufo" onmouseenter="sfx.hover()" onclick="enterSpaceCasino(event)" title="???">🛸</a>
+
+    <footer>
+        <div>© 2026 The Megaplex — Created by <a href="https://yourportfolio.com" style="color:#00d2d3;">Cheese</a></div>
+        <div class="footer-links">
+            <a href="https://twitter.com/" target="_blank" rel="noopener">Twitter</a>
+            <a href="https://discord.com/" target="_blank" rel="noopener">Discord</a>
+            <a href="mailto:contact@megaplex.com">Contact</a>
+            <button class="theme-toggle-btn" onclick="toggleTheme()">Toggle Theme</button>
+        </div>
+        <div style="margin-top: 15px; font-size: 0.8em; color: #666;">
+            Shortcuts: <kbd>/</kbd> search • <kbd>M</kbd> mute • <kbd>1-7</kbd> tabs • <kbd>↑↑↓↓←→←→BA</kbd>
+        </div>
+    </footer>
+
     <script>
-        // --- Retro Sound Engine ---
+        /* ====== Boot ====== */
+        const bootMessages = [
+            "> INITIALIZING MEGAPLEX_OS v3.0...",
+            "> LOADING NEURAL INTERFACE...",
+            "> CONNECTING TO ARCADE NET...",
+            "> SYSTEM READY. WELCOME, USER."
+        ];
+        function runBoot() {
+            const txt = document.getElementById('bootText');
+            const bar = document.getElementById('bootBarFill');
+            let i = 0, progress = 0;
+            const interval = setInterval(() => {
+                if (i < bootMessages.length) { txt.textContent += bootMessages[i] + "\n"; i++; }
+                progress += 5;
+                bar.style.width = progress + '%';
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        document.getElementById('bootScreen').classList.add('hide');
+                        setTimeout(() => document.getElementById('bootScreen').remove(), 600);
+                    }, 400);
+                }
+            }, 100);
+        }
+        if (sessionStorage.getItem('bootSeen')) document.getElementById('bootScreen').remove();
+        else { sessionStorage.setItem('bootSeen', '1'); runBoot(); }
+
+        /* ====== Stars ====== */
+        function generateStars() {
+            const sf = document.getElementById('starfield');
+            for (let i = 0; i < 80; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 2 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                sf.appendChild(star);
+            }
+        }
+        generateStars();
+
+        /* ====== Toast ====== */
+        function toast(message, type='info', icon='✨') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = `<span style="font-size:1.5em;">${icon}</span><span>${message}</span>`;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        }
+
+        /* ====== Header Scroll (smooth, debounced) ====== */
+        let scrollTicking = false;
+        window.addEventListener('scroll', () => {
+            if (!scrollTicking) {
+                window.requestAnimationFrame(() => {
+                    document.getElementById('mainHeader').classList.toggle('scrolled', window.scrollY > 80);
+                    scrollTicking = false;
+                });
+                scrollTicking = true;
+            }
+        });
+
+        /* ====== Audio ====== */
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
         let soundEnabled = localStorage.getItem('megaplexSound') !== 'false';
-        
-        function initAudio() {
-            if (!audioCtx) audioCtx = new AudioContext();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
         function toggleSound() {
             soundEnabled = !soundEnabled;
             localStorage.setItem('megaplexSound', soundEnabled);
             updateSoundIcon();
             if (soundEnabled) { initAudio(); sfx.coin(); }
+            toast(soundEnabled ? 'Sound ON' : 'Sound OFF', 'info', soundEnabled ? '🔊' : '🔇');
         }
         function updateSoundIcon() {
-            const btn = document.getElementById('soundToggleBtn');
-            if (soundEnabled) { btn.innerText = '🔊'; btn.classList.remove('muted'); } 
-            else { btn.innerText = '🔇'; btn.classList.add('muted'); }
+            document.querySelectorAll('.sound-btn').forEach(btn => {
+                if (soundEnabled) { btn.innerText = '🔊'; btn.classList.remove('muted'); }
+                else { btn.innerText = '🔇'; btn.classList.add('muted'); }
+            });
         }
-        updateSoundIcon(); 
+        updateSoundIcon();
         document.body.addEventListener('click', initAudio, { once: true });
-        
         function playTone(freq, type, duration, vol=0.1) {
             if (!soundEnabled) return;
             initAudio();
@@ -489,7 +949,8 @@
             coin: () => { playTone(900, 'sine', 0.1, 0.05); setTimeout(()=>playTone(1200, 'sine', 0.2, 0.05), 100); },
             win: () => { playTone(400, 'square', 0.1, 0.05); setTimeout(()=>playTone(500, 'square', 0.1, 0.05), 150); setTimeout(()=>playTone(600, 'square', 0.3, 0.05), 300); }
         };
-        // --- Avatar Rendering Engine ---
+
+        /* ====== Avatar ====== */
         const shopDatabase = {
             colors: [
                 { id: 'color_default', hex: '#c8d6e5', bodyHex: '#a4b0be' },
@@ -517,12 +978,36 @@
                 { id: 'bg_galaxy', css: 'radial-gradient(circle at center, #341f97, #000)' }
             ]
         };
-        
-        // --- Avatar Rendering Engine ---
+
+        /* ====== LEVEL SYSTEM ======
+           XP = total tokens ever earned (lifetime, never decreases).
+           Level requires Level² × 100 XP total.
+           L1: 0-399, L2: 400-899, L3: 900-1599, L4: 1600-2499, L5: 2500-3599...
+        */
+        const levelTitles = ['Rookie','Initiate','Operator','Hacker','Pro','Veteran','Elite','Master','Legend','Cyber God'];
+        function getLifetimeXp() {
+            return parseInt(localStorage.getItem('megaplexLifetimeXp')) || 0;
+        }
+        function addLifetimeXp(amount) {
+            let xp = getLifetimeXp() + amount;
+            localStorage.setItem('megaplexLifetimeXp', xp);
+        }
+        function getLevelInfo() {
+            const xp = getLifetimeXp();
+            // Solve for level: xp >= level^2 * 100
+            const level = Math.max(1, Math.floor(Math.sqrt(xp / 100)) + (xp >= 100 ? 0 : 0));
+            // Refine
+            let lvl = 1;
+            while ((lvl+1) * (lvl+1) * 100 <= xp) lvl++;
+            const currentLvlXp = lvl * lvl * 100;
+            const nextLvlXp = (lvl+1) * (lvl+1) * 100;
+            const progressXp = xp - currentLvlXp;
+            const neededXp = nextLvlXp - currentLvlXp;
+            const title = levelTitles[Math.min(lvl-1, levelTitles.length-1)];
+            return { level: lvl, xp, currentLvlXp, nextLvlXp, progressXp, neededXp, title };
+        }
         function renderHubAvatar() {
             let avatarData = JSON.parse(localStorage.getItem('avatarData'));
-            
-            // FIX: Ensure 'equipped' exists even if the loaded save file had an empty {} avatarData
             if (!avatarData || !avatarData.equipped) {
                 avatarData = { equipped: { color: 'color_default', hat: 'hat_none', bg: 'bg_default' } };
             }
@@ -534,34 +1019,57 @@
             document.getElementById('hubBotHat').innerText = curHat.icon;
             document.getElementById('hubStageBG').style.background = curBg.css;
             const username = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
-            document.getElementById('userGreeting').innerHTML = `ID: ${username} ✏️`;
+            const lvlInfo = getLevelInfo();
+            document.getElementById('userGreeting').innerHTML = `
+                <span onclick="changeUsername()" style="cursor:pointer;">ID: ${username} ✏️</span>
+                <span class="player-level" onclick="openLevelModal()" title="Click for level details">LV.${lvlInfo.level}</span>
+            `;
+            document.getElementById('miniLevel').innerText = lvlInfo.level;
+const miniUser = document.getElementById('miniUsername');
+if (miniUser) miniUser.innerText = username;
         }
-        // --- Achievement Database ---
+
+        function openLevelModal() {
+            const info = getLevelInfo();
+            document.getElementById('modalLevelNum').innerText = info.level;
+            document.getElementById('modalLevelTitle').innerText = info.title;
+            const pct = (info.progressXp / info.neededXp) * 100;
+            document.getElementById('modalXpFill').style.width = pct + '%';
+            document.getElementById('modalXpText').innerText = `${info.progressXp} / ${info.neededXp} XP to Level ${info.level + 1}`;
+            document.getElementById('modalLifetimeXp').innerText = info.xp.toLocaleString();
+            document.getElementById('levelModal').classList.add('show');
+            sfx.click();
+        }
+        function closeLevelModal() {
+            document.getElementById('levelModal').classList.remove('show');
+        }
+
+        /* ====== Achievements DB ====== */
         const achievementsList = [
-            { id: 'ach_asteroids_1', tier: 1, icon: '☄️', title: 'Asteroid Hunter', desc: 'Score 500 points in Quantum Asteroids.', reward: 1000, check: (s) => (s.asteroids || 0) >= 500 },
-            { id: 'ach_asteroids_2', tier: 2, icon: '🚀', title: 'Space Ace', desc: 'Score 2,500 points in Quantum Asteroids.', reward: 3000, check: (s) => (s.asteroids || 0) >= 2500 },
-            { id: 'ach_tanks_1', tier: 1, icon: '💣', title: 'Tank Cadet', desc: 'Score 1,000 points in Plasma Tanks.', reward: 1000, check: (s) => (s.tanks_score || 0) >= 1000 },
-            { id: 'ach_tanks_2', tier: 2, icon: '🎖️', title: 'Supreme Commander', desc: 'Score 5,000 points in Plasma Tanks.', reward: 3000, check: (s) => (s.tanks_score || 0) >= 5000 },
-            { id: 'ach_glitch_1', tier: 1, icon: '🛡️', title: 'Zero Corrupted', desc: 'Win an Arcade match with exactly 0% Corruption on your meter (A Flawless/Perfect Victory).', reward: 500, check: (s) => (s.glitch_perfect_wins || 0) > 0 },
-            { id: 'ach_glitch_2', tier: 2, icon: '👑', title: 'Omega Slayer', desc: 'Defeat the hidden OMEGA_BOSS on the highly lethal "Omega Protocol" difficulty.', reward: 1000, check: (s) => (s.glitch_omega_slain || 0) > 0 },
-            { id: 'ach_strikers_1', tier: 1, icon: '⚔️', title: 'Street Brawler', desc: 'Score 2,000 points in Glitch Strikers.', reward: 1000, check: (s) => (s.glitch_strikers || 0) >= 2000 },
-            { id: 'ach_strikers_2', tier: 2, icon: '🦾', title: 'Megaplex Savior', desc: 'Score 5,000 points in Glitch Strikers.', reward: 3000, check: (s) => (s.glitch_strikers || 0) >= 5000 },
+            { id: 'ach_asteroids_1', tier: 1, icon: '☄️', title: 'Asteroid Hunter', desc: 'Score 500 in Quantum Asteroids.', reward: 1000, check: (s) => (s.asteroids || 0) >= 500 },
+            { id: 'ach_asteroids_2', tier: 2, icon: '🚀', title: 'Space Ace', desc: 'Score 2,500 in Quantum Asteroids.', reward: 3000, check: (s) => (s.asteroids || 0) >= 2500 },
+            { id: 'ach_tanks_1', tier: 1, icon: '💣', title: 'Tank Cadet', desc: 'Score 1,000 in Plasma Tanks.', reward: 1000, check: (s) => (s.tanks_score || 0) >= 1000 },
+            { id: 'ach_tanks_2', tier: 2, icon: '🎖️', title: 'Supreme Commander', desc: 'Score 5,000 in Plasma Tanks.', reward: 3000, check: (s) => (s.tanks_score || 0) >= 5000 },
+            { id: 'ach_glitch_1', tier: 1, icon: '🛡️', title: 'Zero Corrupted', desc: 'Win an Arcade match with 0% Corruption.', reward: 500, check: (s) => (s.glitch_perfect_wins || 0) > 0 },
+            { id: 'ach_glitch_2', tier: 2, icon: '👑', title: 'Omega Slayer', desc: 'Defeat OMEGA_BOSS on Omega Protocol.', reward: 1000, check: (s) => (s.glitch_omega_slain || 0) > 0 },
+            { id: 'ach_strikers_1', tier: 1, icon: '⚔️', title: 'Street Brawler', desc: 'Score 2,000 in Glitch Strikers.', reward: 1000, check: (s) => (s.glitch_strikers || 0) >= 2000 },
+            { id: 'ach_strikers_2', tier: 2, icon: '🦾', title: 'Megaplex Savior', desc: 'Score 5,000 in Glitch Strikers.', reward: 3000, check: (s) => (s.glitch_strikers || 0) >= 5000 },
             { id: 'ach_cyber_1', tier: 1, icon: '🏃', title: 'Sector 2 Cleared', desc: 'Reach 1,000m in Cyber Runner.', reward: 800, check: (s) => (s.cyberrunner || 0) >= 1000 },
             { id: 'ach_clicker', tier: 1, icon: '👆', title: 'Clicker God', desc: 'Reach 1,000 clicks.', reward: 500, check: (s) => (s.clicker || 0) >= 1000 },
-            { id: 'ach_reaction', tier: 1, icon: '⚡', title: 'Lightning Reflexes', desc: 'Reaction time < 220ms.', reward: 500, check: (s) => (s.reaction || 9999) <= 220 },
+            { id: 'ach_reaction', tier: 1, icon: '⚡', title: 'Lightning Reflexes', desc: 'Reaction < 220ms.', reward: 500, check: (s) => (s.reaction || 9999) <= 220 },
             { id: 'ach_math', tier: 1, icon: '🧠', title: 'Human Calculator', desc: 'Math streak of 15.', reward: 600, check: (s) => (s.math || 0) >= 15 },
             { id: 'ach_memory', tier: 1, icon: '👁️', title: 'Photographic Memory', desc: 'Beat Memory in 16 moves.', reward: 600, check: (s) => (s.memory || 999) <= 16 },
             { id: 'ach_guesser', tier: 1, icon: '🔐', title: 'Master Hacker', desc: '1,000 in Code Breaker.', reward: 800, check: (s) => (s.guesser || 0) >= 1000 },
             { id: 'ach_snake', tier: 1, icon: '🐍', title: 'Cyber-Serpent', desc: 'Snake length of 25.', reward: 800, check: (s) => (s.snake || 0) >= 25 },
-            { id: 'ach_racer_1', tier: 1, icon: '🏎️', title: 'Novice Driver', desc: 'Win your first race in Vaporwave Racer.', reward: 500, check: (s) => (s.racer_wins || 0) >= 1 },
+            { id: 'ach_racer_1', tier: 1, icon: '🏎️', title: 'Novice Driver', desc: 'Win first race in Vaporwave Racer.', reward: 500, check: (s) => (s.racer_wins || 0) >= 1 },
             { id: 'ach_platformer', tier: 1, icon: '🏃‍♂️', title: 'Mainframe Runner', desc: 'Beat all 20 levels in Neon Jumper.', reward: 1500, check: (s) => (s.platformer_deaths !== undefined) },
             { id: 'ach_fps', tier: 1, icon: '🔫', title: 'System Breacher', desc: 'Score 2,500 in FPS.', reward: 1500, check: (s) => (s.fps || 0) >= 2500 },
-            { id: 'ach_cyber_2', tier: 2, icon: '🔥', title: 'System Overdrive', desc: 'Survive to 8,000m in Cyber Runner.', reward: 3000, check: (s) => (s.cyberrunner || 0) >= 8000 },
+            { id: 'ach_cyber_2', tier: 2, icon: '🔥', title: 'System Overdrive', desc: 'Reach 8,000m in Cyber Runner.', reward: 3000, check: (s) => (s.cyberrunner || 0) >= 8000 },
             { id: 'ach_clicker_2', tier: 2, icon: '🖱️', title: 'Auto-Clicker', desc: 'Reach 5,000 clicks.', reward: 1500, check: (s) => (s.clicker || 0) >= 5000 },
-            { id: 'ach_reaction_2', tier: 2, icon: '🏎️', title: 'Sonic Speed', desc: 'Reaction time < 185ms.', reward: 2000, check: (s) => (s.reaction || 9999) <= 185 },
+            { id: 'ach_reaction_2', tier: 2, icon: '🏎️', title: 'Sonic Speed', desc: 'Reaction < 185ms.', reward: 2000, check: (s) => (s.reaction || 9999) <= 185 },
             { id: 'ach_math_2', tier: 2, icon: '🎓', title: 'Quantum Mind', desc: 'Math streak of 35.', reward: 2000, check: (s) => (s.math || 0) >= 35 },
             { id: 'ach_snake_2', tier: 2, icon: '🐉', title: 'World Eater', desc: 'Snake length of 60.', reward: 2500, check: (s) => (s.snake || 0) >= 60 },
-            { id: 'ach_racer_2', tier: 2, icon: '🏆', title: 'Grid Master', desc: 'Win a race on Hard difficulty in Vaporwave Racer.', reward: 1500, check: (s) => (s.racer_hard_wins || 0) >= 1 },
+            { id: 'ach_racer_2', tier: 2, icon: '🏆', title: 'Grid Master', desc: 'Win race on Hard difficulty.', reward: 1500, check: (s) => (s.racer_hard_wins || 0) >= 1 },
             { id: 'ach_ttt_2', tier: 2, icon: '👑', title: 'Grandmaster', desc: 'Win 50 Tic-Tac-Toe games.', reward: 1500, check: (s) => (s.ttt || 0) >= 50 },
             { id: 'ach_memory_2', tier: 2, icon: '🔮', title: 'Mind Reader', desc: 'Beat Memory in 12 moves.', reward: 2000, check: (s) => (s.memory || 999) <= 12 },
             { id: 'ach_rich', tier: 2, icon: '💰', title: 'Token Billionaire', desc: 'Have 5,000 tokens.', reward: 1000, check: () => (parseInt(localStorage.getItem('megaplexTokens')) || 0) >= 5000 },
@@ -571,115 +1079,194 @@
             }}
         ];
         let claimedAchievements = JSON.parse(localStorage.getItem('claimedAchievements')) || [];
-        // --- Economy Logic ---
+        let achFilterMode = 'all';
+
+        /* ====== Tokens ====== */
         function calculateTokens() {
             let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
             let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
             let lastCalculatedValue = parseInt(localStorage.getItem('lastCalculatedScoreValue')) || 0;
-            
             let scoreValue = Math.floor(
-                ((scores.glitch_score || 0) / 10) + 
-                ((scores.glitch_strikers || 0) / 10) +
-                ((scores.clicker || 0) / 50) + 
-                ((scores.ttt || 0) * 20) + 
-                ((scores.math || 0) * 10) + 
-                ((scores.snake || 0) * 5) + 
-                ((scores.guesser || 0) / 10) + 
-                ((scores.platformer || 0) / 20) +
-                ((scores.fps || 0) / 25) +
-                ((scores.cyberrunner || 0) / 20) +
-                ((scores.tanks_score || 0) / 15) +
-                ((scores.asteroids || 0) / 15)
+                ((scores.glitch_score || 0) / 10) + ((scores.glitch_strikers || 0) / 10) +
+                ((scores.clicker || 0) / 50) + ((scores.ttt || 0) * 20) + 
+                ((scores.math || 0) * 10) + ((scores.snake || 0) * 5) + 
+                ((scores.guesser || 0) / 10) + ((scores.platformer || 0) / 20) +
+                ((scores.fps || 0) / 25) + ((scores.cyberrunner || 0) / 20) +
+                ((scores.tanks_score || 0) / 15) + ((scores.asteroids || 0) / 15)
             );
-            
             if (scoreValue > lastCalculatedValue) {
-                let tokensEarned = scoreValue - lastCalculatedValue;
-                currentTokens += tokensEarned;
+                let earned = scoreValue - lastCalculatedValue;
+                currentTokens += earned;
+                addLifetimeXp(earned);
                 localStorage.setItem('megaplexTokens', currentTokens);
                 localStorage.setItem('lastCalculatedScoreValue', scoreValue);
+                if (earned > 0) toast(`+${earned} Tokens / +${earned} XP earned!`, 'success', '🎟️');
             }
             document.getElementById('tokenBalance').innerText = currentTokens;
+            document.getElementById('miniTokenBalance').innerText = currentTokens;
         }
-        // --- Navigation ---
+
+        /* ====== Tabs ====== */
         function switchTab(target, btn) {
-            sfx.click(); 
+            sfx.click();
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
+            if (btn) btn.classList.add('active');
             document.getElementById('gameGrid').style.display = 'none';
             document.getElementById('leaderboard-view').style.display = 'none';
             document.getElementById('achievements-view').style.display = 'none';
-            
             if (target === 'leaderboard') {
                 document.getElementById('leaderboard-view').style.display = 'block';
-                loadScores(); 
+                loadScores();
+                renderLeaderboard();
             } else if (target === 'achievements') {
                 document.getElementById('achievements-view').style.display = 'block';
                 renderAchievements();
             } else {
                 document.getElementById('gameGrid').style.display = 'grid';
                 document.querySelectorAll('.card-link').forEach(card => {
-                    if (target === 'all' || card.dataset.category.includes(target)) {
-                        card.style.display = 'flex';
-                    } else {
-                        card.style.display = 'none';
-                    }
+                    if (target === 'all' || card.dataset.category.includes(target)) card.style.display = 'flex';
+                    else card.style.display = 'none';
                 });
             }
         }
-        // --- Achievement Render ---
+
+        /* ====== Search ====== */
+        function filterBySearch() {
+            const q = document.getElementById('searchBar').value.toLowerCase().trim();
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.tab-btn').classList.add('active');
+            document.getElementById('gameGrid').style.display = 'grid';
+            document.getElementById('leaderboard-view').style.display = 'none';
+            document.getElementById('achievements-view').style.display = 'none';
+            document.querySelectorAll('.card-link').forEach(card => {
+                const name = (card.dataset.name || '').toLowerCase();
+                const cat = (card.dataset.category || '').toLowerCase();
+                card.style.display = (q === '' || name.includes(q) || cat.includes(q)) ? 'flex' : 'none';
+            });
+        }
+
+        /* ====== Recent Played ====== */
+        function trackPlayed(card) {
+            const name = card.dataset.name;
+            let recent = JSON.parse(localStorage.getItem('recentlyPlayed')) || [];
+            recent = recent.filter(n => n !== name);
+            recent.unshift(name);
+            recent = recent.slice(0, 3);
+            localStorage.setItem('recentlyPlayed', JSON.stringify(recent));
+        }
+        function showRecentBadges() {
+            const recent = JSON.parse(localStorage.getItem('recentlyPlayed')) || [];
+            document.querySelectorAll('.card-link').forEach(card => {
+                const existing = card.querySelector('.recent-badge');
+                if (existing) existing.remove();
+                if (recent.includes(card.dataset.name)) {
+                    const badge = document.createElement('span');
+                    badge.className = 'recent-badge';
+                    badge.textContent = '↻ Recent';
+                    card.appendChild(badge);
+                }
+            });
+        }
+
+        /* ====== TROPHY ROOM ====== */
+        function setAchFilter(mode, btn) {
+            achFilterMode = mode;
+            document.querySelectorAll('.ach-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderAchievements();
+            sfx.click();
+        }
         function renderAchievements() {
             let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
             const container = document.getElementById('achievements-container');
             container.innerHTML = '';
-            
+
+            const total = achievementsList.length;
+            const claimedCount = claimedAchievements.length;
+            const readyCount = achievementsList.filter(a => !claimedAchievements.includes(a.id) && a.check(scores)).length;
+            const lockedCount = total - claimedCount - readyCount;
+            const totalRewardClaimed = achievementsList.filter(a => claimedAchievements.includes(a.id)).reduce((sum, a) => sum + a.reward, 0);
+
+            // Stats
+            document.getElementById('trophyStats').innerHTML = `
+                <div class="trophy-stat"><div class="trophy-stat-value">${claimedCount}</div><div class="trophy-stat-label">Claimed</div></div>
+                <div class="trophy-stat" style="border-color:#feca57;"><div class="trophy-stat-value" style="color:#feca57;">${readyCount}</div><div class="trophy-stat-label">Ready ⭐</div></div>
+                <div class="trophy-stat" style="border-color:#666;"><div class="trophy-stat-value" style="color:#888;">${lockedCount}</div><div class="trophy-stat-label">Locked</div></div>
+                <div class="trophy-stat" style="border-color:#1dd1a1;"><div class="trophy-stat-value" style="color:#1dd1a1;">${totalRewardClaimed.toLocaleString()}</div><div class="trophy-stat-label">🎟️ Earned</div></div>
+            `;
+
+            // Progress bar
+            document.getElementById('achProgressBar').style.width = ((claimedCount / total) * 100) + '%';
+            document.getElementById('achProgressText').innerText = `${claimedCount} / ${total} (${Math.floor((claimedCount/total)*100)}%)`;
+
             const renderTier = (tierNumber, tierTitle) => {
-                container.innerHTML += `<div class="tier-header">${tierTitle}</div>`;
-                achievementsList.filter(a => a.tier === tierNumber).forEach(ach => {
+                const tierAch = achievementsList.filter(a => a.tier === tierNumber);
+                const tierClaimed = tierAch.filter(a => claimedAchievements.includes(a.id)).length;
+                
+                // Determine which to show after filter
+                const visible = tierAch.filter(ach => {
+                    const claimed = claimedAchievements.includes(ach.id);
+                    const unlocked = ach.check(scores) && !claimed;
+                    if (achFilterMode === 'ready') return unlocked;
+                    if (achFilterMode === 'locked') return !unlocked && !claimed;
+                    if (achFilterMode === 'claimed') return claimed;
+                    return true;
+                });
+                if (visible.length === 0) return;
+
+                container.innerHTML += `<div class="tier-header"><span>${tierTitle}</span><span class="tier-count">${tierClaimed}/${tierAch.length}</span></div>`;
+                visible.forEach(ach => {
                     let isClaimed = claimedAchievements.includes(ach.id);
                     let isUnlocked = ach.check(scores);
                     let cardClass = 'ach-card';
-                    let btnHTML = `<div style="color: #666; font-weight: bold;">Locked</div>`;
-                    
+                    let btnHTML = `<div style="color: #666; font-weight: bold; padding: 8px 14px;">🔒 Locked</div>`;
                     if (isClaimed) {
                         cardClass += ' claimed';
-                        btnHTML = `<button class="btn-claimed">Claimed ✔</button>`;
+                        btnHTML = `<button class="btn-claimed">✔ Claimed</button>`;
                     } else if (isUnlocked) {
                         cardClass += ' unlocked';
                         btnHTML = `<button class="btn-claim" onmouseenter="sfx.hover()" onclick="claimReward('${ach.id}', ${ach.reward})">Claim +${ach.reward} 🎟️</button>`;
+                    } else {
+                        cardClass += ' locked';
                     }
-                    
                     container.innerHTML += `
                         <div class="${cardClass}">
-                            <div class="ach-icon">${ach.icon}</div>
+                            <div class="ach-icon-wrap"><div class="ach-icon">${ach.icon}</div></div>
                             <div class="ach-info">
                                 <h3 class="ach-title">${ach.title}</h3>
                                 <p class="ach-desc">${ach.desc}</p>
-                                <div class="ach-reward">Reward: ${ach.reward} 🎟️</div>
+                                <div class="ach-reward">Reward: ${ach.reward.toLocaleString()} 🎟️</div>
                             </div>
                             <div>${btnHTML}</div>
-                        </div>
-                    `;
+                        </div>`;
                 });
             };
-            
             renderTier(1, "Tier 1: Core Missions");
             renderTier(2, "Tier 2: Elite Challenges");
+
+            if (container.innerHTML === '') {
+                container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#666;">No trophies match this filter.</div>`;
+            }
         }
-        
         function claimReward(achId, rewardAmount) {
-            sfx.win(); 
+            sfx.win();
             let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
             currentTokens += rewardAmount;
+            addLifetimeXp(rewardAmount);
             localStorage.setItem('megaplexTokens', currentTokens);
-            
             claimedAchievements.push(achId);
             localStorage.setItem('claimedAchievements', JSON.stringify(claimedAchievements));
-            
             document.getElementById('tokenBalance').innerText = currentTokens;
-            renderAchievements(); 
+            document.getElementById('miniTokenBalance').innerText = currentTokens;
+            document.getElementById('tokenDisplayBox').classList.add('pop');
+            setTimeout(() => document.getElementById('tokenDisplayBox').classList.remove('pop'), 500);
+            const ach = achievementsList.find(a => a.id === achId);
+            toast(`Trophy: ${ach.title}! +${rewardAmount} 🎟️`, 'success', ach.icon);
+            renderAchievements();
+            renderHubAvatar();
         }
-        // --- CENTRALIZED MASTER LEADERBOARD ENGINE ---
+
+        /* ====== LEADERBOARD ====== */
         const gameConfigs = [
             { key: 'glitch_score', title: '💥 Glitch Brawler', unit: ' Pts', reverse: false, default: 0 },
             { key: 'glitch_strikers', title: '⚔️ Glitch Strikers', unit: ' Pts', reverse: false, default: 0 },
@@ -702,72 +1289,128 @@
             let gsData = JSON.parse(localStorage.getItem('glitchStrikersScores')) || { neon: 0, void: 0, mainframe: 0 };
             currentScores.glitch_strikers = Math.max(gsData.neon || 0, gsData.void || 0, gsData.mainframe || 0); 
             localStorage.setItem('arcadeScores', JSON.stringify(currentScores));
-            calculateTokens(); 
-            renderHubAvatar(); 
-            
+            calculateTokens();
+            renderHubAvatar();
             let currentUser = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
             let masterLB = JSON.parse(localStorage.getItem('MegaplexMasterLB')) || {};
-            let lbContainer = document.getElementById('master-leaderboards-container');
-            if(lbContainer) lbContainer.innerHTML = ''; 
-            
             gameConfigs.forEach(game => {
                 let myScore = currentScores[game.key];
                 if (myScore === undefined) myScore = game.default;
-                
                 let globalLB = masterLB[game.key] || [];
-                
                 let legacyLB = JSON.parse(localStorage.getItem(`masterLB_${game.key}`));
-                if (legacyLB && globalLB.length === 0) {
-                    globalLB = legacyLB;
-                }
-                
+                if (legacyLB && globalLB.length === 0) globalLB = legacyLB;
                 if (myScore !== game.default) {
                     globalLB = globalLB.filter(entry => entry.user !== currentUser);
                     globalLB.push({ user: currentUser, score: myScore });
                 }
-                
-                if (game.reverse) {
-                    globalLB.sort((a, b) => a.score - b.score);
-                } else {
-                    globalLB.sort((a, b) => b.score - a.score);
-                }
-                globalLB = globalLB.slice(0, 3);
-                
-                masterLB[game.key] = globalLB;
-                
-                if(lbContainer) {
-                    let displayScore = myScore === game.default ? '---' : myScore + game.unit;
-                    
-                    let html = `
-                    <div class="score-row" style="flex-direction: column; align-items: stretch; margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <span class="game-title-lb" style="font-weight:bold; font-size: 1.1em;">${game.title} (Your Best)</span> 
-                            <span class="score-val" style="color: #fff; font-size: 1.1em;">${displayScore}</span>
-                        </div>
-                        <div style="font-size: 0.9em; color: #a4b0be; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #ff9f43;">
-                            <div style="color: #ff9f43; font-size: 0.8em; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px;">Device Top 3:</div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                                <span>🥇 1st: <span style="color:#fff; font-weight:bold;">${globalLB[0] ? globalLB[0].user : '---'}</span></span> 
-                                <span style="color:#1dd1a1; font-weight:bold;">${globalLB[0] ? globalLB[0].score + game.unit : '---'}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                                <span>🥈 2nd: <span style="color:#fff; font-weight:bold;">${globalLB[1] ? globalLB[1].user : '---'}</span></span> 
-                                <span style="color:#1dd1a1; font-weight:bold;">${globalLB[1] ? globalLB[1].score + game.unit : '---'}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>🥉 3rd: <span style="color:#fff; font-weight:bold;">${globalLB[2] ? globalLB[2].user : '---'}</span></span> 
-                                <span style="color:#1dd1a1; font-weight:bold;">${globalLB[2] ? globalLB[2].score + game.unit : '---'}</span>
-                            </div>
-                        </div>
-                    </div>`;
-                    
-                    lbContainer.innerHTML += html;
-                }
+                if (game.reverse) globalLB.sort((a, b) => a.score - b.score);
+                else globalLB.sort((a, b) => b.score - a.score);
+                masterLB[game.key] = globalLB.slice(0, 10); // store more for ranking
             });
-            
             localStorage.setItem('MegaplexMasterLB', JSON.stringify(masterLB));
         }
-        // --- Save System ---
+        function renderLeaderboard() {
+            const container = document.getElementById('master-leaderboards-container');
+            const summaryEl = document.getElementById('lbSummary');
+            if (!container) return;
+            container.innerHTML = '';
+            const currentUser = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
+            const currentScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+            const masterLB = JSON.parse(localStorage.getItem('MegaplexMasterLB')) || {};
+
+            const search = (document.getElementById('lbSearch')?.value || '').toLowerCase();
+            const sort = document.getElementById('lbSort')?.value || 'default';
+
+            // Calculate stats
+            let totalGold = 0, totalRanked = 0, gamesPlayed = 0;
+            gameConfigs.forEach(game => {
+                const lb = (masterLB[game.key] || []).slice(0, 3);
+                if (lb[0] && lb[0].user === currentUser) totalGold++;
+                if (lb.some(e => e.user === currentUser)) totalRanked++;
+                const my = currentScores[game.key];
+                if (my !== undefined && my !== game.default) gamesPlayed++;
+            });
+
+            summaryEl.innerHTML = `
+                <div class="lb-stat"><div class="lb-stat-value">${gamesPlayed}/${gameConfigs.length}</div><div class="lb-stat-label">Games Played</div></div>
+                <div class="lb-stat" style="border-color:#feca57;"><div class="lb-stat-value" style="color:#feca57;">${totalGold} 🥇</div><div class="lb-stat-label">Gold Medals</div></div>
+                <div class="lb-stat" style="border-color:#00d2d3;"><div class="lb-stat-value" style="color:#00d2d3;">${totalRanked}</div><div class="lb-stat-label">Top 3 Rankings</div></div>
+            `;
+
+            // Filter & sort
+            let games = [...gameConfigs];
+            if (search) games = games.filter(g => g.title.toLowerCase().includes(search));
+            if (sort === 'ranked') {
+                games.sort((a, b) => {
+                    const aR = (masterLB[a.key] || []).findIndex(e => e.user === currentUser);
+                    const bR = (masterLB[b.key] || []).findIndex(e => e.user === currentUser);
+                    const aV = aR === -1 ? 999 : aR;
+                    const bV = bR === -1 ? 999 : bR;
+                    return aV - bV;
+                });
+            } else if (sort === 'unranked') {
+                games.sort((a, b) => {
+                    const aR = (masterLB[a.key] || []).findIndex(e => e.user === currentUser);
+                    const bR = (masterLB[b.key] || []).findIndex(e => e.user === currentUser);
+                    return (aR === -1 ? 0 : 1) - (bR === -1 ? 0 : 1);
+                });
+            } else if (sort === 'alpha') {
+                games.sort((a, b) => a.title.localeCompare(b.title));
+            }
+
+            if (games.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:40px; color:#666;">No games match your search.</div>`;
+                return;
+            }
+
+            games.forEach(game => {
+                const lb = (masterLB[game.key] || []).slice(0, 3);
+                let myScore = currentScores[game.key];
+                if (myScore === undefined) myScore = game.default;
+                const myRankIdx = (masterLB[game.key] || []).findIndex(e => e.user === currentUser);
+                const myRank = myRankIdx === -1 ? null : myRankIdx + 1;
+                const displayScore = myScore === game.default ? '---' : myScore + game.unit;
+                
+                let rankBadge = '';
+                if (myRank === 1) rankBadge = `<span class="lb-my-rank-badge" style="background:#feca57;">🥇 #1</span>`;
+                else if (myRank === 2) rankBadge = `<span class="lb-my-rank-badge" style="background:#c8d6e5;">🥈 #2</span>`;
+                else if (myRank === 3) rankBadge = `<span class="lb-my-rank-badge" style="background:#cd7f32; color:#fff;">🥉 #3</span>`;
+                else if (myRank) rankBadge = `<span class="lb-my-rank-badge" style="background:#444; color:#fff;">#${myRank}</span>`;
+
+                const podiumHTML = ['gold', 'silver', 'bronze'].map((cls, i) => {
+                    const entry = lb[i];
+                    const medal = ['🥇','🥈','🥉'][i];
+                    if (!entry) {
+                        return `<div class="lb-podium-slot ${cls}">
+                            <div class="lb-podium-medal">${medal}</div>
+                            <div class="lb-podium-name lb-empty">---</div>
+                            <div class="lb-podium-score lb-empty">---</div>
+                        </div>`;
+                    }
+                    const isMe = entry.user === currentUser;
+                    return `<div class="lb-podium-slot ${cls}${isMe ? ' is-me' : ''}">
+                        <div class="lb-podium-medal">${medal}</div>
+                        <div class="lb-podium-name${isMe ? ' is-me-text' : ''}">${entry.user}${isMe ? ' (YOU)' : ''}</div>
+                        <div class="lb-podium-score">${entry.score}${game.unit}</div>
+                    </div>`;
+                }).join('');
+
+                container.innerHTML += `
+                    <div class="lb-game-card">
+                        <div class="lb-game-header">
+                            <div class="lb-game-title">${game.title}</div>
+                            <div class="lb-my-score">
+                                <span class="lb-my-score-label">Your best:</span>
+                                <span class="lb-my-score-val">${displayScore}</span>
+                                ${rankBadge}
+                            </div>
+                        </div>
+                        <div class="lb-podium">${podiumHTML}</div>
+                    </div>`;
+            });
+        }
+
+        /* ====== Save System ====== */
         function exportSave() {
             const username = localStorage.getItem('megaplexUsername') || 'player';
             const saveData = {
@@ -776,35 +1419,34 @@
                 tttCoins: localStorage.getItem('tttCoins') || 0,
                 tttInventory: JSON.parse(localStorage.getItem('tttInventory')) || {},
                 megaplexTokens: localStorage.getItem('megaplexTokens') || 0,
+                megaplexLifetimeXp: localStorage.getItem('megaplexLifetimeXp') || 0,
                 lastCalculatedScoreValue: localStorage.getItem('lastCalculatedScoreValue') || 0,
                 avatarData: JSON.parse(localStorage.getItem('avatarData')) || {},
                 claimedAchievements: JSON.parse(localStorage.getItem('claimedAchievements')) || [],
                 megaplexUsername: username
             };
-            const dataStr = JSON.stringify(saveData);
-            const blob = new Blob([dataStr], { type: "application/json" });
+            const blob = new Blob([JSON.stringify(saveData)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `megaplex_save_data_${username}.json`; 
+            link.download = `megaplex_save_data_${username}.json`;
             link.click();
             URL.revokeObjectURL(url);
+            toast('Save data exported!', 'success', '💾');
         }
-        
-        // --- Save System ---
         function importSave(event) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
                     if(data.arcadeScores) localStorage.setItem('arcadeScores', JSON.stringify(data.arcadeScores));
-                    if(data.glitchStrikersScores) localStorage.setItem('glitchStrikersScores', JSON.stringify(data.glitchStrikersScores)); // Sync Strikers Highscore
+                    if(data.glitchStrikersScores) localStorage.setItem('glitchStrikersScores', JSON.stringify(data.glitchStrikersScores));
                     if(data.tttCoins) localStorage.setItem('tttCoins', data.tttCoins);
                     if(data.tttInventory) localStorage.setItem('tttInventory', JSON.stringify(data.tttInventory));
                     if(data.megaplexTokens) localStorage.setItem('megaplexTokens', data.megaplexTokens);
+                    if(data.megaplexLifetimeXp) localStorage.setItem('megaplexLifetimeXp', data.megaplexLifetimeXp);
                     if(data.lastCalculatedScoreValue) localStorage.setItem('lastCalculatedScoreValue', data.lastCalculatedScoreValue);
                     if(data.avatarData) localStorage.setItem('avatarData', JSON.stringify(data.avatarData));
                     if(data.megaplexUsername) localStorage.setItem('megaplexUsername', data.megaplexUsername);
@@ -812,33 +1454,28 @@
                         claimedAchievements = data.claimedAchievements;
                         localStorage.setItem('claimedAchievements', JSON.stringify(claimedAchievements));
                     }
-                    
-                    loadScores(); 
-                    alert("Save data loaded successfully! Device Leaderboards updated.");
+                    loadScores();
+                    renderLeaderboard();
+                    toast('Save loaded successfully!', 'success', '✅');
                 } catch (error) {
-                    console.error("Save Import Error:", error);
-                    alert("Error: Something went wrong while loading the save data.");
+                    toast('Failed to load save data.', 'error', '❌');
                 }
                 event.target.value = '';
             };
             reader.readAsText(file);
         }
-        // --- 1. Daily Bonus System ---
+
+        /* ====== Daily Bonus ====== */
         function checkDailyBonus() {
             const lastClaim = localStorage.getItem('megaplexLastDaily');
             const now = new Date().getTime();
             const btn = document.getElementById('dailyBonusBtn');
-            
             if (!lastClaim || now - parseInt(lastClaim) > 86400000) {
                 btn.innerText = "🎁 Daily Claim";
-                btn.style.opacity = "1";
-                btn.style.cursor = "pointer";
-                btn.disabled = false;
+                btn.style.opacity = "1"; btn.style.cursor = "pointer"; btn.disabled = false;
             } else {
                 btn.innerText = "⏳ Claimed";
-                btn.style.opacity = "0.5";
-                btn.style.cursor = "not-allowed";
-                btn.disabled = true;
+                btn.style.opacity = "0.5"; btn.style.cursor = "not-allowed"; btn.disabled = true;
             }
         }
         function claimDailyBonus() {
@@ -846,46 +1483,128 @@
             if (btn.disabled) return;
             sfx.win();
             let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
-            currentTokens += 250; 
-            
+            currentTokens += 250;
+            addLifetimeXp(250);
             localStorage.setItem('megaplexTokens', currentTokens);
             localStorage.setItem('megaplexLastDaily', new Date().getTime());
-            
             document.getElementById('tokenBalance').innerText = currentTokens;
+            document.getElementById('miniTokenBalance').innerText = currentTokens;
+            document.getElementById('tokenDisplayBox').classList.add('pop');
+            setTimeout(() => document.getElementById('tokenDisplayBox').classList.remove('pop'), 500);
+            toast('Daily bonus: +250 🎟️ / +250 XP!', 'success', '🎁');
             checkDailyBonus();
-            
-            btn.innerText = "+250 🎟️!";
-            setTimeout(checkDailyBonus, 2000);
+            renderHubAvatar();
         }
-        // --- 3. Inline Username Editor ---
+
+        /* ====== Username ====== */
         function changeUsername() {
             sfx.click();
             let currentName = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
             let newName = prompt("Enter your new Megaplex ID (Max 12 chars):", currentName);
-            
             if (newName && newName.trim() !== "") {
                 newName = newName.trim().substring(0, 12).toUpperCase();
                 localStorage.setItem('megaplexUsername', newName);
-                document.getElementById('userGreeting').innerHTML = `ID: ${newName} ✏️`;
                 loadScores();
                 sfx.coin();
+                toast(`Welcome, ${newName}!`, 'success', '👤');
             }
         }
-        // --- 🛸 Secret Space Casino Integration Script ---
+
         function enterSpaceCasino(e) {
-            e.preventDefault(); 
-            sfx.start(); 
-            
-            let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
-            console.log(`Hyperdrive active. Transporting ${currentTokens} Tokens to the Space Casino...`);
-            
-            setTimeout(() => {
-                window.location.href = "casino.html";
-            }, 500);
+            e.preventDefault();
+            sfx.start();
+            setTimeout(() => { window.location.href = "casino.html"; }, 500);
         }
-        // Run functions on load
+
+        /* ====== Carousel ====== */
+        const featuredGames = [
+            { icon: "💥", title: "Glitch Brawler", desc: "Corrupt your rivals in the arena! PvP action.", link: "glitch_brawler.html" },
+            { icon: "☄️", title: "Quantum Asteroids", desc: "Blast through the asteroid field!", link: "asteroids.html" },
+            { icon: "🏃‍♂️", title: "Cyber Runner", desc: "Dash through the neon city!", link: "runner.html" },
+            { icon: "🏎️", title: "Vaporwave Racer", desc: "Master the drift, beat your rivals.", link: "racer.html" }
+        ];
+        let carouselIndex = 0, carouselInterval;
+        function renderCarousel() {
+            const slide = document.getElementById('carouselSlide');
+            const game = featuredGames[carouselIndex];
+            slide.style.opacity = 0;
+            setTimeout(() => {
+                slide.innerHTML = `
+                    <div class="carousel-img">${game.icon}</div>
+                    <div class="carousel-info">
+                        <h3>${game.title}</h3>
+                        <p>${game.desc}</p>
+                        <a href="${game.link}" class="play-btn" style="background:#00d2d3; color:#000; margin-top:12px;" onmouseenter="sfx.hover()" onclick="sfx.start()">Play Now ➔</a>
+                    </div>`;
+                slide.style.opacity = 1;
+            }, 200);
+            const dots = document.getElementById('carouselDots');
+            dots.innerHTML = '';
+            featuredGames.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'carousel-dot' + (i === carouselIndex ? ' active' : '');
+                dot.onclick = () => { carouselIndex = i; renderCarousel(); resetCarouselTimer(); };
+                dots.appendChild(dot);
+            });
+        }
+        function carouselPrev() { carouselIndex = (carouselIndex - 1 + featuredGames.length) % featuredGames.length; renderCarousel(); resetCarouselTimer(); }
+        function carouselNext() { carouselIndex = (carouselIndex + 1) % featuredGames.length; renderCarousel(); resetCarouselTimer(); }
+        function startCarouselTimer() { carouselInterval = setInterval(carouselNext, 6000); }
+        function resetCarouselTimer() { clearInterval(carouselInterval); startCarouselTimer(); }
+        renderCarousel();
+        startCarouselTimer();
+        document.getElementById('featuredCarousel').addEventListener('mouseenter', () => clearInterval(carouselInterval));
+        document.getElementById('featuredCarousel').addEventListener('mouseleave', startCarouselTimer);
+
+        /* ====== Theme ====== */
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('megaplexTheme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+            toast('Theme switched', 'info', '🎨');
+        }
+        if(localStorage.getItem('megaplexTheme') === 'light') document.body.classList.add('light-mode');
+
+        /* ====== Shortcuts ====== */
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                if (e.key === 'Escape') e.target.blur();
+                return;
+            }
+            if (e.key === 'Escape') closeLevelModal();
+            if (e.key === '/') { e.preventDefault(); document.getElementById('searchBar').focus(); }
+            if (e.key === 'm' || e.key === 'M') toggleSound();
+            if (e.key >= '1' && e.key <= '7') {
+                const idx = parseInt(e.key) - 1;
+                const btns = document.querySelectorAll('.tab-btn');
+                if (btns[idx]) btns[idx].click();
+            }
+        });
+
+        /* ====== Konami ====== */
+        const konami = [38,38,40,40,37,39,37,39,66,65];
+        let konamiPos = 0;
+        document.addEventListener('keydown', function(e){
+            if(e.keyCode === konami[konamiPos]) {
+                konamiPos++;
+                if(konamiPos === konami.length) {
+                    let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+                    currentTokens += 1337;
+                    addLifetimeXp(1337);
+                    localStorage.setItem('megaplexTokens', currentTokens);
+                    document.getElementById('tokenBalance').innerText = currentTokens;
+                    document.getElementById('miniTokenBalance').innerText = currentTokens;
+                    toast('KONAMI CODE! +1337 🎟️ / XP unlocked!', 'success', '🎮');
+                    sfx.win();
+                    renderHubAvatar();
+                    konamiPos = 0;
+                }
+            } else { konamiPos = 0; }
+        });
+
+        /* ====== Init ====== */
         loadScores();
         checkDailyBonus();
+        showRecentBadges();
     </script>
 </body>
 </html>
