@@ -3,311 +3,1189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avatar Shop - Megaplex</title>
+    <title>Avatar Shop | The Megaplex</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #100b16, #200f33, #150921); 
-            color: #fff; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; 
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            overflow-x: hidden;
         }
-        header { 
-            padding: 15px 30px; background: rgba(0,0,0,0.8); z-index: 10;
-            border-bottom: 2px solid #feca57; display: flex; justify-content: space-between; align-items: center;
+        body.light-mode {
+            background: linear-gradient(135deg, #f5f6fa, #c8d6e5, #feca57);
+            color: #222;
         }
+
+        /* Starfield */
+        .starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle linear infinite; }
+        @keyframes twinkle { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
+        body.light-mode .star { background: #feca57; }
+
+        /* CRT */
+        .crt-overlay {
+            pointer-events: none; position: fixed; inset: 0; z-index: 100; opacity: 0.6;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 6px 100%;
+            animation: flicker 0.15s infinite;
+        }
+        @keyframes flicker { 0%,100% { opacity: 0.55; } 50% { opacity: 0.65; } }
+
+        /* Header */
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(0,0,0,0.7); padding: 20px 32px;
+            border-bottom: 3px solid #00d2d3; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            position: sticky; top: 0; z-index: 50;
+            backdrop-filter: blur(10px); gap: 20px; flex-wrap: wrap;
+        }
+        body.light-mode .header { background: rgba(255,255,255,0.85) !important; color: #222 !important; }
+        .megaplex-logo {
+            font-family: 'Orbitron', sans-serif; font-size: 2em; color: #00d2d3;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px #00d2d3, 0 0 20px #00d2d3, 0 0 40px #00d2d3;
+            animation: neon-flicker 2.5s infinite alternate; user-select: none;
+        }
+        body.light-mode .megaplex-logo { color: #00d2d3; text-shadow: 0 0 10px #feca57, 0 0 20px #feca57; }
+        @keyframes neon-flicker { 0%,100% { opacity: 1; } 30% { opacity: 0.7; } 50% { opacity: 0.9; } 70% { opacity: 0.85; } }
         .back-btn {
-            background: transparent; border: 2px solid #feca57; color: #feca57; padding: 8px 20px;
-            border-radius: 20px; text-decoration: none; font-weight: bold; transition: 0.3s;
+            background: #00d2d3; color: #000; border-radius: 18px;
+            font-weight: bold; font-size: 1em; padding: 10px 22px;
+            text-decoration: none; box-shadow: 0 0 10px #00d2d3a0;
+            border: none; transition: 0.2s;
         }
-        .back-btn:hover { background: #feca57; color: #000; box-shadow: 0 0 10px #feca57; }
-        
-        .token-display { font-size: 1.5em; font-weight: bold; color: #feca57; }
-        
-        .shop-wrapper {
-            display: flex; flex: 1; padding: 20px; gap: 30px; max-width: 1200px; margin: 0 auto; width: 100%;
-            justify-content: center; flex-wrap: wrap;
+        .back-btn:hover { background: #feca57; }
+        .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .token-display {
+            background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 20px; border: 2px solid #feca57;
+            font-size: 1.2em; font-weight: bold; color: #feca57; box-shadow: 0 0 15px rgba(254, 202, 87, 0.4);
+            transition: transform 0.2s;
+        }
+        .token-display.pop { animation: tokenPop 0.5s; }
+        @keyframes tokenPop { 0%,100%{transform:scale(1);} 50%{transform:scale(1.2);} }
+        .level-display {
+            background: linear-gradient(135deg, #feca57, #ff9f43); color: #000;
+            padding: 8px 16px; border-radius: 18px; font-weight: bold;
+            box-shadow: 0 0 10px rgba(254, 202, 87, 0.5);
         }
 
-        /* --- Avatar Viewer --- */
-        .avatar-panel {
-            width: 350px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 30px;
-            border: 1px solid rgba(254, 202, 87, 0.3); display: flex; flex-direction: column; align-items: center;
+        /* Toast */
+        #toastContainer { position: fixed; top: 90px; right: 20px; z-index: 9000; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            background: rgba(0,0,0,0.95); color: #fff;
+            border-left: 4px solid #00d2d3; padding: 15px 25px; border-radius: 8px; min-width: 250px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            animation: slideIn 0.4s ease, fadeOut 0.4s ease 3.6s forwards;
+            display: flex; align-items: center; gap: 12px;
         }
-        
+        .toast.success { border-color: #1dd1a1; }
+        .toast.error { border-color: #ff4757; }
+        .toast.warning { border-color: #feca57; }
+        .toast.legendary { border-color: #ff9f43; box-shadow: 0 0 30px rgba(255, 159, 67, 0.6); }
+        .toast.mythic { border-color: #f368e0; box-shadow: 0 0 30px rgba(243, 104, 224, 0.6); }
+        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateX(120%); } }
+
+        /* ====== MAIN LAYOUT ====== */
+        .main-content {
+            max-width: 1400px; margin: 0 auto; padding: 30px 20px 60px;
+            display: grid; grid-template-columns: 380px 1fr; gap: 30px;
+            position: relative; z-index: 10;
+        }
+        @media (max-width: 1100px) {
+            .main-content { grid-template-columns: 1fr; }
+        }
+
+        /* ====== AVATAR PREVIEW ====== */
+        .avatar-preview-panel {
+            background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(0, 210, 211, 0.05));
+            border-radius: 18px; box-shadow: 0 0 30px rgba(0, 210, 211, 0.3);
+            padding: 28px 24px; display: flex; flex-direction: column; align-items: center;
+            border: 1px solid rgba(0, 210, 211, 0.3);
+            position: sticky; top: 100px; height: fit-content;
+        }
+        body.light-mode .avatar-preview-panel { background: rgba(255,255,255,0.85) !important; color: #222 !important; }
+        .avatar-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4em; font-weight: bold; color: #feca57;
+            margin-bottom: 5px; text-shadow: 0 0 10px rgba(254, 202, 87, 0.5);
+            letter-spacing: 2px; text-align: center;
+        }
+        .avatar-username { color: #00d2d3; font-weight: bold; margin-bottom: 15px; font-size: 0.95em; letter-spacing: 1px; }
         .avatar-stage {
-            width: 250px; height: 250px; border-radius: 20px; border: 4px solid #fff;
+            width: 280px; height: 280px; border-radius: 20px; border: 4px solid #fff;
             display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
-            background: #2f3640;
-            overflow: hidden; box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
-            transition: background 0.3s;
+            background: #2f3640; overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 18px; transition: background 0.3s;
         }
-
-        /* The Robot Character */
+        .avatar-stage::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), transparent 50%);
+            pointer-events: none; z-index: 4;
+        }
         .bot-head {
-            width: 100px; height: 80px; background: #c8d6e5; border-radius: 15px;
+            width: 110px; height: 90px; background: #c8d6e5; border-radius: 15px;
             position: relative; display: flex; justify-content: center; align-items: center; z-index: 2;
             transition: background 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
         .bot-eyes {
-            width: 60px; height: 30px; background: #000; border-radius: 5px;
+            width: 70px; height: 32px; background: #000; border-radius: 5px;
             display: flex; justify-content: space-around; align-items: center; padding: 0 5px;
         }
-        .eye { width: 15px; height: 15px; background: #00d2d3; border-radius: 50%; box-shadow: 0 0 10px #00d2d3; }
-        
+        .eye { width: 17px; height: 17px; background: #00d2d3; border-radius: 50%; box-shadow: 0 0 10px #00d2d3; animation: eyeBlink 4s infinite; }
+        @keyframes eyeBlink { 0%,95%,100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
         .bot-body {
-            width: 80px; height: 70px; background: #a4b0be; border-radius: 10px;
+            width: 90px; height: 80px; background: #a4b0be; border-radius: 10px;
             margin-top: 5px; position: relative; z-index: 1; transition: background 0.3s;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
+        .bot-hat { position: absolute; top: -50px; left: 50%; transform: translateX(-50%); font-size: 4em; z-index: 3; line-height: 1; }
+        .preview-info {
+            margin-top: 12px; color: #c8d6e5; font-size: 0.9em; text-align: center;
+            background: rgba(0,0,0,0.3); padding: 12px; border-radius: 10px;
+            border: 1px solid rgba(0, 210, 211, 0.2); width: 100%;
+        }
+        .equipped-list {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+            margin-top: 10px; font-size: 0.85em;
+        }
+        .equipped-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 8px; background: rgba(0,0,0,0.4); border-radius: 6px; }
+        .equipped-row strong { color: #feca57; }
+        .preview-actions { display: flex; gap: 8px; margin-top: 12px; width: 100%; }
+        .preview-btn {
+            flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ff4757;
+            background: rgba(255, 71, 87, 0.1); color: #ff4757;
+            font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.85em;
+        }
+        .preview-btn:hover { background: #ff4757; color: #fff; }
+        .preview-btn.random { border-color: #f368e0; background: rgba(243, 104, 224, 0.1); color: #f368e0; }
+        .preview-btn.random:hover { background: #f368e0; color: #000; }
 
-        /* Fixed Hat Positioning */
-        .bot-hat {
-            position: absolute; top: -45px; left: 50%; transform: translateX(-50%);
-            font-size: 3.5em; z-index: 3; transition: 0.3s; line-height: 1;
+        /* ====== SHOP MAIN ====== */
+        .shop-main { display: flex; flex-direction: column; gap: 20px; }
+
+        /* Featured Daily */
+        .featured-deal {
+            background: linear-gradient(135deg, rgba(243, 104, 224, 0.15), rgba(0,0,0,0.6));
+            border: 2px solid #f368e0; border-radius: 16px; padding: 20px;
+            display: flex; align-items: center; gap: 20px; position: relative; overflow: hidden;
+            box-shadow: 0 0 25px rgba(243, 104, 224, 0.3);
+        }
+        .featured-deal::before {
+            content: ''; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(transparent, rgba(243, 104, 224, 0.2), transparent 40%);
+            animation: rotate 6s linear infinite;
+        }
+        @keyframes rotate { to { transform: rotate(360deg); } }
+        .featured-deal > * { position: relative; z-index: 1; }
+        .featured-badge {
+            position: absolute; top: 10px; right: 10px;
+            background: #f368e0; color: #fff; padding: 4px 12px;
+            border-radius: 10px; font-size: 0.75em; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(243, 104, 224, 0.6); z-index: 2;
+        }
+        .featured-icon {
+            width: 80px; height: 80px; border-radius: 14px;
+            background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5em; flex-shrink: 0;
+            border: 2px solid #f368e0;
+        }
+        .featured-info { flex: 1; }
+        .featured-info h3 { margin: 0 0 4px; color: #f368e0; font-family: 'Orbitron', sans-serif; }
+        .featured-info p { margin: 0 0 10px; color: #ccc; font-size: 0.9em; }
+        .featured-prices { display: flex; align-items: center; gap: 10px; }
+        .price-old { color: #888; text-decoration: line-through; font-size: 0.95em; }
+        .price-new { color: #1dd1a1; font-weight: bold; font-size: 1.2em; font-family: monospace; }
+        .featured-buy {
+            background: linear-gradient(135deg, #f368e0, #ff9ff3); color: #000;
+            border: none; padding: 10px 20px; border-radius: 10px;
+            font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.95em;
+        }
+        .featured-buy:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(243, 104, 224, 0.6); }
+        .featured-buy:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Mystery Box */
+        .mystery-box {
+            background: linear-gradient(135deg, rgba(155, 89, 182, 0.15), rgba(0,0,0,0.6));
+            border: 2px solid #9b59b6; border-radius: 16px; padding: 18px;
+            display: flex; align-items: center; gap: 18px;
+            box-shadow: 0 0 20px rgba(155, 89, 182, 0.3);
+        }
+        .mystery-icon { font-size: 3em; animation: mysteryFloat 2s infinite ease-in-out; }
+        @keyframes mysteryFloat { 0%,100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-8px) rotate(5deg); } }
+        .mystery-info { flex: 1; }
+        .mystery-info h3 { margin: 0 0 4px; color: #c39bd3; font-family: 'Orbitron', sans-serif; }
+        .mystery-info p { margin: 0; color: #aaa; font-size: 0.85em; }
+        .mystery-buy {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad); color: #fff;
+            border: none; padding: 12px 24px; border-radius: 10px;
+            font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .mystery-buy:hover { transform: scale(1.05); box-shadow: 0 0 15px rgba(155, 89, 182, 0.6); }
+        .mystery-buy:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Shop tabs/filters */
+        .shop-controls {
+            background: rgba(0,0,0,0.6); border-radius: 14px; padding: 15px;
+            display: flex; flex-direction: column; gap: 12px;
+            border: 1px solid rgba(0, 210, 211, 0.2);
+        }
+        .shop-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+        .shop-tab {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; padding: 8px 16px; border-radius: 20px;
+            cursor: pointer; transition: 0.2s; font-size: 0.9em; font-weight: bold;
+        }
+        .shop-tab:hover { background: rgba(255,255,255,0.15); }
+        .shop-tab.active { background: #00d2d3; color: #000; border-color: #00d2d3; box-shadow: 0 0 10px #00d2d3; }
+        .shop-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .shop-search {
+            flex: 1; min-width: 150px; padding: 8px 14px; border-radius: 8px;
+            background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 210, 211, 0.3);
+            color: #fff; font-size: 0.9em; outline: none;
+        }
+        .shop-search:focus { border-color: #00d2d3; }
+        .shop-select {
+            padding: 8px 12px; border-radius: 8px;
+            background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 210, 211, 0.3);
+            color: #fff; cursor: pointer; font-size: 0.9em;
         }
 
-        /* Username Controls */
-        .username-container {
-            margin-top: 25px; width: 100%; display: flex; flex-direction: column; gap: 10px;
+        /* Category section */
+        .category-section { margin-top: 5px; }
+        .category-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2em; color: #00d2d3; font-weight: bold;
+            margin-bottom: 12px; padding-bottom: 8px;
+            border-bottom: 2px solid rgba(0, 210, 211, 0.3);
+            display: flex; justify-content: space-between; align-items: center;
+            letter-spacing: 2px;
         }
-        .username-input {
-            background: rgba(0,0,0,0.6); border: 2px solid #00d2d3; color: #fff;
-            padding: 12px; border-radius: 8px; font-size: 1.1em; text-align: center;
-            font-family: inherit; font-weight: bold;
-        }
-        .username-input:focus { outline: none; box-shadow: 0 0 10px #00d2d3; }
-        .username-btn {
-            background: #00d2d3; color: #000; border: none; padding: 10px; border-radius: 8px; 
-            font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1.1em;
-        }
-        .username-btn:hover { background: #fff; box-shadow: 0 0 15px #00d2d3; }
+        .category-count { font-size: 0.7em; color: #888; letter-spacing: 1px; }
 
-        /* --- Shop Inventory --- */
-        .inventory-panel {
-            flex: 1; max-width: 650px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 25px;
-            border: 1px solid rgba(254, 202, 87, 0.3); overflow-y: auto; height: 70vh;
+        /* ====== ITEM CARD ====== */
+        .item-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 14px;
         }
-        .inventory-panel h3 { margin: 0 0 15px 0; color: #feca57; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        
-        .shop-item {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
-            padding: 15px; text-align: center; transition: 0.2s; position: relative;
+        .item-card {
+            background: rgba(20, 20, 30, 0.85);
+            border: 2px solid; border-radius: 14px;
+            padding: 12px 10px; text-align: center;
+            position: relative; overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            display: flex; flex-direction: column; gap: 8px;
+            min-height: 220px;
         }
-        .shop-item:hover { background: rgba(255,255,255,0.1); border-color: #feca57; transform: translateY(-3px); }
-        
-        .item-icon { font-size: 2.5em; margin-bottom: 10px; display: inline-block; width: 50px; height: 50px; border-radius: 10px; }
-        .item-name { font-weight: bold; color: #fff; margin-bottom: 5px; }
-        .item-price { color: #feca57; font-weight: bold; margin-bottom: 10px; }
-        .buy-btn {
-            background: #feca57; color: #000; border: none; padding: 8px 15px; font-weight: bold; 
-            border-radius: 8px; cursor: pointer; transition: 0.2s; width: 100%;
+        body.light-mode .item-card { background: rgba(255,255,255,0.9); color: #222; }
+        .item-card:hover { transform: translateY(-4px); }
+
+        /* Rarity */
+        .item-card.r-common { border-color: #95a5a6; box-shadow: 0 0 10px rgba(149, 165, 166, 0.2); }
+        .item-card.r-common:hover { box-shadow: 0 6px 20px rgba(149, 165, 166, 0.5); }
+        .item-card.r-uncommon { border-color: #1dd1a1; box-shadow: 0 0 10px rgba(29, 209, 161, 0.3); }
+        .item-card.r-uncommon:hover { box-shadow: 0 6px 20px rgba(29, 209, 161, 0.6); }
+        .item-card.r-rare { border-color: #3498db; box-shadow: 0 0 12px rgba(52, 152, 219, 0.4); }
+        .item-card.r-rare:hover { box-shadow: 0 6px 25px rgba(52, 152, 219, 0.7); }
+        .item-card.r-epic { border-color: #9b59b6; box-shadow: 0 0 15px rgba(155, 89, 182, 0.5); }
+        .item-card.r-epic:hover { box-shadow: 0 6px 28px rgba(155, 89, 182, 0.8); }
+        .item-card.r-legendary {
+            border-color: #ff9f43; box-shadow: 0 0 18px rgba(255, 159, 67, 0.5);
+            animation: legendGlow 2s infinite alternate;
         }
-        .buy-btn:hover { transform: scale(1.05); }
-        .buy-btn.equipped { background: #1dd1a1; color: #000; }
-        .buy-btn.locked { background: #333; color: #888; cursor: not-allowed; }
-        .buy-btn.locked:hover { transform: none; }
+        @keyframes legendGlow { from { box-shadow: 0 0 15px rgba(255, 159, 67, 0.4); } to { box-shadow: 0 0 30px rgba(255, 159, 67, 0.8); } }
+        .item-card.r-mythic {
+            border: 2px solid transparent;
+            background-clip: padding-box, border-box;
+            background-origin: padding-box, border-box;
+            background-image: linear-gradient(rgba(20,20,30,0.9), rgba(20,20,30,0.9)), 
+                              linear-gradient(135deg, #f368e0, #feca57, #00d2d3, #f368e0);
+            animation: mythicShift 3s linear infinite;
+            box-shadow: 0 0 20px rgba(243, 104, 224, 0.5);
+        }
+        @keyframes mythicShift { to { filter: hue-rotate(360deg); } }
+
+        /* Item preview */
+        .item-preview {
+            width: 80px; height: 80px; margin: 0 auto;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5em;
+            background: rgba(0,0,0,0.4);
+            position: relative; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .item-preview.color-preview { font-size: 0; }
+        .item-preview.color-preview::after {
+            content: ''; position: absolute; inset: 10px;
+            border-radius: 6px;
+        }
+        .item-preview.bg-preview { font-size: 0; }
+
+        /* Rarity badge */
+        .rarity-badge {
+            position: absolute; top: 6px; left: 6px;
+            font-size: 0.6em; padding: 2px 7px; border-radius: 8px;
+            font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+            z-index: 3;
+        }
+        .rarity-badge.r-common { background: #95a5a6; color: #000; }
+        .rarity-badge.r-uncommon { background: #1dd1a1; color: #000; }
+        .rarity-badge.r-rare { background: #3498db; color: #fff; }
+        .rarity-badge.r-epic { background: #9b59b6; color: #fff; }
+        .rarity-badge.r-legendary { background: linear-gradient(135deg, #ff9f43, #feca57); color: #000; }
+        .rarity-badge.r-mythic { background: linear-gradient(135deg, #f368e0, #feca57, #00d2d3); color: #000; }
+
+        /* New / Owned indicators */
+        .item-flag {
+            position: absolute; top: 6px; right: 6px;
+            font-size: 0.6em; padding: 2px 7px; border-radius: 8px;
+            font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+            z-index: 3;
+        }
+        .item-flag.new { background: #ff4757; color: #fff; animation: newPulse 1.5s infinite; }
+        .item-flag.equipped { background: #00d2d3; color: #000; }
+        .item-flag.owned { background: #1dd1a1; color: #000; }
+        @keyframes newPulse { 0%,100% { box-shadow: 0 0 5px #ff4757; } 50% { box-shadow: 0 0 15px #ff4757; } }
+
+        .item-name {
+            font-weight: bold; font-size: 0.95em;
+            color: #fff; margin: 0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        body.light-mode .item-name { color: #222; }
+        .item-lore {
+            font-size: 0.7em; color: #888; font-style: italic;
+            min-height: 26px; line-height: 1.2;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Action button */
+        .item-action {
+            margin-top: auto; padding: 7px;
+            border-radius: 8px; border: none;
+            font-weight: bold; cursor: pointer; transition: 0.2s;
+            font-size: 0.85em;
+        }
+        .item-action.buy { background: #feca57; color: #000; }
+        .item-action.buy:hover { transform: scale(1.05); box-shadow: 0 0 10px rgba(254, 202, 87, 0.6); }
+        .item-action.buy:disabled { background: #555; color: #888; cursor: not-allowed; transform: none; box-shadow: none; }
+        .item-action.equip { background: rgba(0, 210, 211, 0.2); color: #00d2d3; border: 1px solid #00d2d3; }
+        .item-action.equip:hover { background: #00d2d3; color: #000; }
+        .item-action.equipped { background: rgba(0, 210, 211, 0.1); color: #00d2d3; border: 1px solid #00d2d3; cursor: default; }
+        .item-action.locked { background: #333; color: #888; cursor: not-allowed; }
+        .item-action.unlock-ach { background: linear-gradient(135deg, #f368e0, #ff9ff3); color: #000; cursor: not-allowed; font-size: 0.75em; }
+
+        /* Locked overlay */
+        .item-card.locked .item-preview { filter: grayscale(80%) brightness(0.4); }
+        .item-card.locked .item-name { color: #777; }
+        .lock-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.65);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 2; gap: 6px; pointer-events: none; padding: 10px;
+        }
+        .lock-icon { font-size: 2.5em; opacity: 0.7; }
+        .lock-text { color: #ff9f43; font-weight: bold; font-size: 0.85em; text-align: center; text-shadow: 0 0 8px rgba(255, 159, 67, 0.6); }
+
+        /* Price */
+        .item-price {
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+            color: #feca57; font-weight: bold; font-size: 0.95em;
+            background: rgba(254, 202, 87, 0.1); padding: 4px 8px;
+            border-radius: 6px; border: 1px solid rgba(254, 202, 87, 0.3);
+        }
+        .item-price.cant-afford { color: #ff4757; border-color: rgba(255, 71, 87, 0.3); background: rgba(255, 71, 87, 0.1); }
+
+        /* ====== MODAL ====== */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            display: none; align-items: center; justify-content: center;
+            z-index: 8000; backdrop-filter: blur(8px);
+        }
+        .modal-overlay.show { display: flex; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal {
+            background: linear-gradient(135deg, #1a1a2e, #0f2027);
+            border: 2px solid #00d2d3; border-radius: 16px;
+            padding: 30px; max-width: 480px; width: 90%;
+            box-shadow: 0 0 40px rgba(0, 210, 211, 0.4);
+            position: relative; text-align: center;
+        }
+        .modal h2 { margin: 0 0 10px; color: #00d2d3; font-family: 'Orbitron', sans-serif; }
+        .modal-item-preview {
+            width: 120px; height: 120px; margin: 20px auto;
+            border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            font-size: 4em; background: rgba(0,0,0,0.5);
+            border: 2px solid #feca57;
+        }
+        .modal-desc { color: #ccc; line-height: 1.6; margin: 15px 0; }
+        .modal-price { color: #feca57; font-size: 1.5em; font-weight: bold; margin: 10px 0; }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        .modal-btn {
+            padding: 10px 22px; border-radius: 10px; font-weight: bold;
+            border: none; cursor: pointer; transition: 0.2s; font-size: 1em;
+        }
+        .modal-btn.confirm { background: #1dd1a1; color: #000; }
+        .modal-btn.confirm:hover { background: #10ac84; transform: scale(1.05); }
+        .modal-btn.cancel { background: #444; color: #fff; }
+        .modal-btn.cancel:hover { background: #555; }
+
+        /* Mystery box reveal */
+        .reveal-modal { border-color: #f368e0; box-shadow: 0 0 60px rgba(243, 104, 224, 0.6); }
+        .reveal-modal h2 { color: #f368e0; }
+        .reveal-icon-box {
+            width: 150px; height: 150px; margin: 20px auto;
+            border-radius: 16px; display: flex; align-items: center; justify-content: center;
+            font-size: 5em;
+            animation: revealPulse 1.5s infinite alternate;
+        }
+        @keyframes revealPulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+
+        /* Footer */
+        .footer { width: 100%; background: rgba(0,0,0,0.8); color: #c8d6e5; text-align: center; padding: 25px 10px 15px; font-size: 1em; border-top: 2px solid #00d2d3; margin-top: 60px; z-index: 100; position: relative; }
+        body.light-mode .footer { background: rgba(255,255,255,0.85) !important; color: #222 !important; }
+        .footer-links { margin: 10px 0 0; display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; }
+        .footer-links a { color: #00d2d3; text-decoration: none; font-weight: bold; }
+        .footer-links a:hover { color: #feca57; }
+        .theme-toggle-btn { background: #00d2d3; color: #222; border: none; border-radius: 12px; padding: 7px 18px; font-weight: bold; margin-left: 18px; cursor: pointer; }
+        .theme-toggle-btn:hover { background: #feca57; color: #000; }
+
+        @media (max-width: 700px) {
+            .megaplex-logo { font-size: 1.4em; }
+            .header { padding: 15px; }
+            .avatar-preview-panel { position: static; }
+        }
     </style>
 </head>
 <body>
+    <div class="crt-overlay"></div>
+    <div class="starfield" id="starfield"></div>
+    <div id="toastContainer"></div>
 
-    <header>
-        <a href="index.html" class="back-btn">⬅ Back to Hub</a>
-        <h2 style="margin:0; color:#fff;">Avatar Shop</h2>
-        <div class="token-display">🎟️ <span id="tokenUI">0</span></div>
-    </header>
+    <!-- Confirm Purchase Modal -->
+    <div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)closeConfirm()">
+        <div class="modal">
+            <h2>Confirm Purchase</h2>
+            <div class="modal-item-preview" id="confirmPreview"></div>
+            <div id="confirmName" style="font-size:1.2em; font-weight:bold; color:#fff;"></div>
+            <div class="modal-desc" id="confirmDesc"></div>
+            <div class="modal-price">🎟️ <span id="confirmPrice">0</span></div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeConfirm()">Cancel</button>
+                <button class="modal-btn confirm" onclick="confirmPurchase()">Buy It!</button>
+            </div>
+        </div>
+    </div>
 
-    <div class="shop-wrapper">
-        
-        <!-- Left: Avatar Preview -->
-        <div class="avatar-panel">
-            <h3 style="color: #fff; margin-top:0;">Your Cyber-Bot</h3>
-            <div class="avatar-stage" id="stageBG">
-                <div class="bot-head" id="botHead">
-                    <!-- Moved Hat INSIDE head for proper relative positioning -->
-                    <div class="bot-hat" id="botHat"></div>
-                    <div class="bot-eyes">
-                        <div class="eye"></div><div class="eye"></div>
-                    </div>
+    <!-- Mystery Box Reveal Modal -->
+    <div class="modal-overlay" id="revealModal" onclick="if(event.target===this)closeReveal()">
+        <div class="modal reveal-modal">
+            <h2 id="revealTitle">🎁 Mystery Loot</h2>
+            <div class="reveal-icon-box" id="revealIcon"></div>
+            <div id="revealRarity" style="font-size:1em; font-weight:bold; margin-bottom:8px;"></div>
+            <div id="revealName" style="font-size:1.4em; font-weight:bold; color:#fff;"></div>
+            <div class="modal-desc" id="revealDesc"></div>
+            <div class="modal-actions">
+                <button class="modal-btn confirm" onclick="closeReveal()">Awesome!</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="header">
+        <a href="index.html" class="back-btn" onclick="sfx.click()">⬅ Back to Hub</a>
+        <div class="megaplex-logo">🛍️ Avatar Shop</div>
+        <div class="header-right">
+            <div class="level-display">⚡ LV.<span id="levelDisplay">1</span></div>
+            <div class="token-display" id="tokenDisplayBox">🎟️ <span id="tokenDisplay">0</span></div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- AVATAR PREVIEW -->
+        <div class="avatar-preview-panel">
+            <div class="avatar-label">YOUR CYBER-BOT</div>
+            <div class="avatar-username" id="avatarUsername">ID: GUEST_BOT</div>
+            <div class="avatar-stage" id="avatarStageBG">
+                <div class="bot-head" id="avatarBotHead">
+                    <div class="bot-hat" id="avatarBotHat"></div>
+                    <div class="bot-eyes"><div class="eye"></div><div class="eye"></div></div>
                 </div>
-                <div class="bot-body" id="botBody"></div>
+                <div class="bot-body" id="avatarBotBody"></div>
             </div>
-
-            <div class="username-container">
-                <input type="text" id="usernameInput" class="username-input" placeholder="Enter ID Name..." maxlength="16">
-                <button class="username-btn" onclick="saveUsername()" id="saveUserBtn">💾 Register ID</button>
+            <div class="preview-info">
+                <div style="color:#feca57; font-weight:bold;">⚙️ EQUIPPED LOADOUT</div>
+                <div class="equipped-list" id="equippedList"></div>
             </div>
-
-            <p style="color: #a4b0be; text-align: center; font-size: 0.9em; margin-top: 20px;">
-                Equip items to customize your look.<br>Your avatar saves automatically!
-            </p>
+            <div class="preview-actions">
+                <button class="preview-btn random" onclick="randomizeAvatar()">🎲 Randomize</button>
+                <button class="preview-btn" onclick="resetAvatar()">↺ Reset</button>
+            </div>
         </div>
 
-        <!-- Right: The Store -->
-        <div class="inventory-panel">
-            <h3>🎨 Chassis Colors</h3>
-            <div class="shop-grid" id="color-shop"></div>
+        <!-- SHOP -->
+        <div class="shop-main">
+            <!-- Featured Daily Deal -->
+            <div class="featured-deal" id="featuredDeal"></div>
 
-            <h3>🎩 Hats & Accessories</h3>
-            <div class="shop-grid" id="hat-shop"></div>
+            <!-- Mystery Box -->
+            <div class="mystery-box">
+                <div class="mystery-icon">📦</div>
+                <div class="mystery-info">
+                    <h3>Mystery Loot Crate</h3>
+                    <p>Random item from any rarity (excludes Mythic). Could be a steal!</p>
+                </div>
+                <button class="mystery-buy" id="mysteryBuyBtn" onclick="buyMysteryBox()">Open • 🎟️ 800</button>
+            </div>
 
-            <h3>🖼️ Backgrounds</h3>
-            <div class="shop-grid" id="bg-shop"></div>
+            <!-- Controls -->
+            <div class="shop-controls">
+                <div class="shop-tabs">
+                    <button class="shop-tab active" data-tab="all" onclick="setTab('all', this)">🛍️ All Items</button>
+                    <button class="shop-tab" data-tab="colors" onclick="setTab('colors', this)">🎨 Chassis</button>
+                    <button class="shop-tab" data-tab="hats" onclick="setTab('hats', this)">🎩 Hats</button>
+                    <button class="shop-tab" data-tab="bgs" onclick="setTab('bgs', this)">🖼️ Backgrounds</button>
+                    <button class="shop-tab" data-tab="owned" onclick="setTab('owned', this)">📦 My Inventory</button>
+                </div>
+                <div class="shop-filters">
+                    <input type="text" class="shop-search" id="shopSearch" placeholder="🔍 Search items..." oninput="renderShop()">
+                    <select class="shop-select" id="rarityFilter" onchange="renderShop()">
+                        <option value="all">All Rarities</option>
+                        <option value="common">Common</option>
+                        <option value="uncommon">Uncommon</option>
+                        <option value="rare">Rare</option>
+                        <option value="epic">Epic</option>
+                        <option value="legendary">Legendary</option>
+                        <option value="mythic">Mythic</option>
+                    </select>
+                    <select class="shop-select" id="sortFilter" onchange="renderShop()">
+                        <option value="rarity">Sort: Rarity ↑</option>
+                        <option value="rarity_desc">Sort: Rarity ↓</option>
+                        <option value="price_asc">Sort: Price ↑</option>
+                        <option value="price_desc">Sort: Price ↓</option>
+                        <option value="level">Sort: Level Required</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Shop Grid -->
+            <div id="shopContainer"></div>
         </div>
+    </div>
 
+    <div class="footer">
+        <div>© 2026 The Megaplex — Created by <a href="https://yourportfolio.com" style="color:#00d2d3;">YourName</a></div>
+        <div class="footer-links">
+            <a href="https://twitter.com/" target="_blank" rel="noopener">Twitter</a>
+            <a href="https://discord.com/" target="_blank" rel="noopener">Discord</a>
+            <a href="mailto:contact@megaplex.com">Contact</a>
+            <button class="theme-toggle-btn" onclick="toggleTheme()">Toggle Theme</button>
+        </div>
     </div>
 
     <script>
-        // --- Data Management ---
-        let tokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
-        document.getElementById('tokenUI').innerText = tokens;
+        /* ================= STARFIELD ================= */
+        function generateStars() {
+            const sf = document.getElementById('starfield');
+            for (let i = 0; i < 70; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 2 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                sf.appendChild(star);
+            }
+        }
+        generateStars();
 
-        // Load Username
-        let savedName = localStorage.getItem('megaplexUsername') || '';
-        document.getElementById('usernameInput').value = savedName;
-
-        // Default Avatar Data
-        let avatarData = JSON.parse(localStorage.getItem('avatarData')) || {
-            unlocked: ['color_default', 'hat_none', 'bg_default'],
-            equipped: { color: 'color_default', hat: 'hat_none', bg: 'bg_default' }
+        /* ================= AUDIO (matched to hub) ================= */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        let soundEnabled = localStorage.getItem('megaplexSound') !== 'false';
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+        document.body.addEventListener('click', initAudio, { once: true });
+        function playTone(freq, type, duration, vol=0.1) {
+            if (!soundEnabled) return;
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+        const sfx = {
+            hover: () => playTone(800, 'sine', 0.05, 0.02),
+            click: () => playTone(400, 'square', 0.1, 0.05),
+            equip: () => { playTone(600, 'sine', 0.08, 0.05); setTimeout(()=>playTone(900, 'sine', 0.15, 0.05), 80); },
+            buy: () => { playTone(800, 'square', 0.1, 0.05); setTimeout(()=>playTone(1200, 'square', 0.15, 0.05), 100); setTimeout(()=>playTone(1600, 'sine', 0.2, 0.04), 200); },
+            error: () => { playTone(200, 'sawtooth', 0.2, 0.06); },
+            mystery: () => { playTone(400, 'sine', 0.1, 0.05); setTimeout(()=>playTone(600, 'sine', 0.1, 0.05), 100); setTimeout(()=>playTone(800, 'sine', 0.1, 0.05), 200); setTimeout(()=>playTone(1200, 'square', 0.3, 0.06), 350); }
         };
 
-        // --- Expanded Database of Items ---
+        /* ================= TOAST ================= */
+        function toast(msg, type='info', icon='✨') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = `<span style="font-size:1.5em;">${icon}</span><span>${msg}</span>`;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        }
+
+        /* ================= LEVEL HELPERS ================= */
+        function getLifetimeXp() { return parseInt(localStorage.getItem('megaplexLifetimeXp')) || 0; }
+        function getLevel() {
+            const xp = getLifetimeXp();
+            let lvl = 1;
+            while ((lvl+1) * (lvl+1) * 100 <= xp) lvl++;
+            return lvl;
+        }
+        function addLifetimeXp(amount) { localStorage.setItem('megaplexLifetimeXp', getLifetimeXp() + amount); }
+
+        /* ================= SHOP DATABASE ================= */
+        // Rarity tiers: common, uncommon, rare, epic, legendary, mythic
+        // Each item: { id, name, lore, rarity, price, level (required), achReq (optional achievement requirement), defaultItem }
+
         const shopDatabase = {
             colors: [
-                { id: 'color_default', name: 'Standard Grey', price: 0, hex: '#c8d6e5', bodyHex: '#a4b0be' },
-                { id: 'color_red', name: 'Crimson Fury', price: 100, hex: '#ff4757', bodyHex: '#c0392b' },
-                { id: 'color_gold', name: 'Golden Plating', price: 250, hex: '#feca57', bodyHex: '#f39c12' },
-                { id: 'color_pink', name: 'Neon Pink', price: 350, hex: '#ff9ff3', bodyHex: '#f368e0' },
-                { id: 'color_green', name: 'Toxic Slime', price: 400, hex: '#1dd1a1', bodyHex: '#10ac84' },
-                { id: 'color_cyber', name: 'Cyber Blue', price: 500, hex: '#00d2d3', bodyHex: '#0984e3' },
-                { id: 'color_ghost', name: 'Ghost White', price: 800, hex: '#f5f6fa', bodyHex: '#dcdde1' },
-                { id: 'color_void', name: 'Void Black', price: 1000, hex: '#2f3640', bodyHex: '#1e272e' }
+                // Common - free / cheap
+                { id: 'color_default', hex: '#c8d6e5', bodyHex: '#a4b0be', name: 'Standard Issue', lore: 'Factory default chassis paint.', rarity: 'common', price: 0, level: 1, defaultItem: true },
+                { id: 'color_red', hex: '#ff4757', bodyHex: '#c0392b', name: 'Crimson Coat', lore: 'A bold rebel red.', rarity: 'common', price: 150, level: 1 },
+                { id: 'color_green', hex: '#1dd1a1', bodyHex: '#10ac84', name: 'Emerald Plating', lore: 'For the stealthy operative.', rarity: 'common', price: 150, level: 1 },
+                // Uncommon
+                { id: 'color_pink', hex: '#ff9ff3', bodyHex: '#f368e0', name: 'Bubblegum Bot', lore: 'Sweet on the outside, deadly inside.', rarity: 'uncommon', price: 600, level: 2 },
+                { id: 'color_gold', hex: '#feca57', bodyHex: '#f39c12', name: 'Gilded Frame', lore: 'Solid 24-karat finish. Heavy.', rarity: 'uncommon', price: 800, level: 3 },
+                { id: 'color_ghost', hex: '#f5f6fa', bodyHex: '#dcdde1', name: 'Spectral White', lore: 'Did you see something move?', rarity: 'uncommon', price: 700, level: 3 },
+                // Rare
+                { id: 'color_cyber', hex: '#00d2d3', bodyHex: '#0984e3', name: 'Megaplex Cyan', lore: 'Official Megaplex corporate uniform.', rarity: 'rare', price: 2500, level: 5 },
+                { id: 'color_void', hex: '#2f3640', bodyHex: '#1e272e', name: 'Void Walker', lore: 'Forged in the deepest sectors.', rarity: 'rare', price: 3000, level: 6 },
+                { id: 'color_blood', hex: '#8e0e00', bodyHex: '#3d0000', name: 'Bloodmoon', lore: 'Stained with the data of a thousand fallen bots.', rarity: 'rare', price: 3500, level: 7 },
+                // Epic
+                { id: 'color_neon', hex: '#39ff14', bodyHex: '#0aff0a', name: 'Toxic Glow', lore: 'Warning: chassis emits radioactive style.', rarity: 'epic', price: 7500, level: 10 },
+                { id: 'color_royal', hex: '#6c5ce7', bodyHex: '#341f97', name: 'Royal Purple', lore: 'Reserved for the elite of the elite.', rarity: 'epic', price: 8500, level: 11 },
+                // Legendary
+                { id: 'color_chrome', hex: '#bdc3c7', bodyHex: '#7f8c8d', name: 'Chrome Reflector', lore: 'So shiny it blinds your enemies before you hit them.', rarity: 'legendary', price: 18000, level: 15 },
+                { id: 'color_inferno', hex: '#ff3838', bodyHex: '#ff9f1a', name: 'Inferno Core', lore: 'Powered by a contained singularity.', rarity: 'legendary', price: 22000, level: 17 },
+                // Mythic
+                { id: 'color_omega', hex: '#000', bodyHex: '#ff0040', name: 'OMEGA Protocol', lore: 'Earned only by those who slain the Omega Boss.', rarity: 'mythic', price: 0, level: 1, achReq: 'ach_glitch_2' },
+                { id: 'color_godcore', hex: '#ffd700', bodyHex: '#ff8a00', name: 'GOD-CORE Plating', lore: 'Mythical armor of the Cyber God. Few will ever wear this.', rarity: 'mythic', price: 75000, level: 20 }
             ],
             hats: [
-                { id: 'hat_none', name: 'No Hat', price: 0, icon: '' },
-                { id: 'hat_cap', name: 'Baseball Cap', price: 150, icon: '🧢' },
-                { id: 'hat_headphones', name: 'Headphones', price: 300, icon: '🎧' },
-                { id: 'hat_cowboy', name: 'Space Cowboy', price: 450, icon: '🤠' },
-                { id: 'hat_ninja', name: 'Stealth Bandana', price: 550, icon: '🥷' },
-                { id: 'hat_pirate', name: 'Pirate Captain', price: 650, icon: '🏴‍☠️' },
-                { id: 'hat_vr', name: 'VR Goggles', price: 750, icon: '🥽' },
-                { id: 'hat_crown', name: 'Royal Crown', price: 800, icon: '👑' },
-                { id: 'hat_halo', name: 'Cyber Halo', price: 1000, icon: '👼' },
-                { id: 'hat_alien', name: 'Alien Symbiote', price: 1500, icon: '👾' }
+                { id: 'hat_none', icon: '', name: 'No Hat', lore: 'Rocking the bare metal look.', rarity: 'common', price: 0, level: 1, defaultItem: true },
+                { id: 'hat_cap', icon: '🧢', name: 'Backwards Cap', lore: 'Classic skater vibes.', rarity: 'common', price: 100, level: 1 },
+                { id: 'hat_party', icon: '🥳', name: 'Party Mode', lore: 'It\'s always celebration time.', rarity: 'common', price: 200, level: 1 },
+                { id: 'hat_headphones', icon: '🎧', name: 'Studio Cans', lore: 'For the lo-fi cyberpunk grinder.', rarity: 'uncommon', price: 500, level: 2 },
+                { id: 'hat_cowboy', icon: '🤠', name: 'Cyber Stetson', lore: 'There\'s a new sheriff in the Megaplex.', rarity: 'uncommon', price: 700, level: 3 },
+                { id: 'hat_vr', icon: '🥽', name: 'VR Goggles', lore: 'Reality? Never heard of her.', rarity: 'uncommon', price: 800, level: 4 },
+                { id: 'hat_ninja', icon: '🥷', name: 'Ninja Mask', lore: 'You did not see this hat.', rarity: 'rare', price: 2000, level: 5 },
+                { id: 'hat_pirate', icon: '🏴‍☠️', name: 'Skull Banner', lore: 'Yo ho ho and a bottle of motor oil.', rarity: 'rare', price: 2200, level: 5 },
+                { id: 'hat_alien', icon: '👾', name: 'Xeno Companion', lore: 'It just sort of... showed up. We\'re friends now.', rarity: 'rare', price: 2800, level: 6 },
+                { id: 'hat_wizard', icon: '🧙', name: 'Wizard Hat', lore: 'Code is just spells with extra steps.', rarity: 'epic', price: 6000, level: 9 },
+                { id: 'hat_robot', icon: '🤖', name: 'Mini-Bot', lore: 'A tiny version of you riding on top. Adorable. Deadly.', rarity: 'epic', price: 7000, level: 10 },
+                { id: 'hat_fire', icon: '🔥', name: 'Burning Plume', lore: 'Your CPU runs hot. Real hot.', rarity: 'epic', price: 8000, level: 11 },
+                { id: 'hat_dragon', icon: '🐉', name: 'Dragon Crest', lore: 'Whispered to grant power over digital flames.', rarity: 'legendary', price: 16000, level: 14 },
+                { id: 'hat_crown', icon: '👑', name: 'Royal Crown', lore: 'For the rulers of the arcade.', rarity: 'legendary', price: 20000, level: 15 },
+                { id: 'hat_halo', icon: '👼', name: 'Sacred Halo', lore: 'You have ascended.', rarity: 'legendary', price: 24000, level: 17 },
+                { id: 'hat_trophy', icon: '🏆', name: 'Champion\'s Wreath', lore: 'Awarded to those who claimed every trophy.', rarity: 'mythic', price: 0, level: 1, achReq: 'ach_collector' },
+                { id: 'hat_unicorn', icon: '🦄', name: 'Mythic Horn', lore: 'A creature of pure energy. None know its origin.', rarity: 'mythic', price: 60000, level: 18 },
+                { id: 'hat_galaxy', icon: '🌌', name: 'Cosmic Mind', lore: 'Your brain contains a swirling galaxy.', rarity: 'mythic', price: 100000, level: 20 }
             ],
             bgs: [
-                { id: 'bg_default', name: 'Hangar Bay', price: 0, css: '#2f3640' },
-                { id: 'bg_matrix', name: 'The Mainframe', price: 400, css: 'repeating-linear-gradient(0deg, #000, #000 10px, #052c11 10px, #052c11 20px)' },
-                { id: 'bg_sunset', name: 'Vaporwave', price: 600, css: 'linear-gradient(180deg, #2c3e50, #e74c3c, #f1c40f)' },
-                { id: 'bg_synth', name: 'Synth Grid', price: 800, css: 'linear-gradient(0deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)' },
-                { id: 'bg_lava', name: 'Lava Pit', price: 1000, css: 'radial-gradient(circle at bottom, #eb4d4b, #130f40)' },
-                { id: 'bg_galaxy', name: 'Deep Space', price: 1200, css: 'radial-gradient(circle at center, #341f97, #000)' }
+                { id: 'bg_default', css: '#2f3640', name: 'Storage Locker', lore: 'A simple grey backdrop. Unassuming.', rarity: 'common', price: 0, level: 1, defaultItem: true },
+                { id: 'bg_neon', css: 'linear-gradient(135deg, #ff006e, #8338ec)', name: 'Neon Alley', lore: 'The back streets of Sector 5.', rarity: 'common', price: 200, level: 1 },
+                { id: 'bg_matrix', css: 'repeating-linear-gradient(0deg, #000, #000 10px, #052c11 10px, #052c11 20px)', name: 'The Matrix', lore: 'Wake up, Bot.', rarity: 'uncommon', price: 600, level: 2 },
+                { id: 'bg_sunset', css: 'linear-gradient(180deg, #2c3e50, #e74c3c, #f1c40f)', name: 'Synth Sunset', lore: 'Drive into the horizon.', rarity: 'uncommon', price: 700, level: 3 },
+                { id: 'bg_ocean', css: 'linear-gradient(180deg, #003973, #003973, #006d77, #83c5be)', name: 'Deep Net', lore: 'Where the firewalls don\'t reach.', rarity: 'rare', price: 2200, level: 5 },
+                { id: 'bg_synth', css: 'linear-gradient(0deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)', name: 'Vaporwave', lore: 'Aesthetic to the maximum.', rarity: 'rare', price: 2800, level: 6 },
+                { id: 'bg_lava', css: 'radial-gradient(circle at bottom, #eb4d4b, #130f40)', name: 'Lava Forge', lore: 'Where the toughest bots are tempered.', rarity: 'epic', price: 7500, level: 10 },
+                { id: 'bg_aurora', css: 'linear-gradient(135deg, #00d2d3, #54a0ff, #5f27cd, #ff006e)', name: 'Cyber Aurora', lore: 'The northern lights of the Megaplex.', rarity: 'epic', price: 8500, level: 11 },
+                { id: 'bg_galaxy', css: 'radial-gradient(circle at center, #341f97, #000)', name: 'Galactic Void', lore: 'Stare into the abyss.', rarity: 'legendary', price: 18000, level: 14 },
+                { id: 'bg_glitch', css: 'repeating-linear-gradient(45deg, #ff00ff, #ff00ff 8px, #00ffff 8px, #00ffff 16px, #000 16px, #000 24px)', name: 'Reality Glitch', lore: 'Reserved for those who broke the simulation.', rarity: 'legendary', price: 25000, level: 16 },
+                { id: 'bg_holo', css: 'linear-gradient(135deg, #f368e0, #feca57, #00d2d3, #6c5ce7)', name: 'Holographic Plane', lore: 'A shimmering rainbow of pure data.', rarity: 'mythic', price: 80000, level: 19 }
             ]
         };
 
-        // --- Username Logic ---
-        function saveUsername() {
-            const input = document.getElementById('usernameInput').value.trim();
-            const btn = document.getElementById('saveUserBtn');
-            
-            if(input) {
-                localStorage.setItem('megaplexUsername', input);
-                btn.innerText = "✔ Saved!";
-                btn.style.background = "#1dd1a1";
-                setTimeout(() => {
-                    btn.innerText = "💾 Register ID";
-                    btn.style.background = "#00d2d3";
-                }, 2000);
+        /* ================= INVENTORY ================= */
+        function getInventory() {
+            let inv = JSON.parse(localStorage.getItem('avatarInventory'));
+            if (!inv) {
+                // Auto-grant default items
+                inv = { colors: [], hats: [], bgs: [] };
+                shopDatabase.colors.filter(i => i.defaultItem).forEach(i => inv.colors.push(i.id));
+                shopDatabase.hats.filter(i => i.defaultItem).forEach(i => inv.hats.push(i.id));
+                shopDatabase.bgs.filter(i => i.defaultItem).forEach(i => inv.bgs.push(i.id));
+                localStorage.setItem('avatarInventory', JSON.stringify(inv));
             }
-        }
-
-        // --- Render UI ---
-        function renderShop() {
-            renderCategory('colors', 'color-shop');
-            renderCategory('hats', 'hat-shop');
-            renderCategory('bgs', 'bg-shop');
-            renderAvatar();
-        }
-
-        function renderCategory(categoryKey, containerId) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            
-            shopDatabase[categoryKey].forEach(item => {
-                const isUnlocked = avatarData.unlocked.includes(item.id);
-                const isEquipped = Object.values(avatarData.equipped).includes(item.id);
-                const canAfford = tokens >= item.price;
-                
-                let btnHTML = '';
-                if (isEquipped) {
-                    btnHTML = `<button class="buy-btn equipped">Equipped ✔</button>`;
-                } else if (isUnlocked) {
-                    btnHTML = `<button class="buy-btn" onclick="equipItem('${categoryKey}', '${item.id}')">Equip</button>`;
-                } else if (canAfford) {
-                    btnHTML = `<button class="buy-btn" onclick="buyItem('${item.id}', ${item.price})">Buy (${item.price} 🎟️)</button>`;
-                } else {
-                    btnHTML = `<button class="buy-btn locked">Locked (${item.price} 🎟️)</button>`;
-                }
-
-                // Render the icon correctly based on category
-                let iconHTML = '';
-                if (categoryKey === 'colors') {
-                    iconHTML = `<div class="item-icon" style="background: ${item.hex}; border: 2px solid ${item.bodyHex};"></div>`;
-                } else if (categoryKey === 'hats') {
-                    iconHTML = `<div class="item-icon" style="font-size: 1.5em; line-height: 50px;">${item.icon || '❌'}</div>`;
-                } else if (categoryKey === 'bgs') {
-                    iconHTML = `<div class="item-icon" style="background: ${item.css}; border: 2px solid #fff;"></div>`;
-                }
-
-                const div = document.createElement('div');
-                div.className = 'shop-item';
-                div.innerHTML = `
-                    ${iconHTML}
-                    <div class="item-name">${item.name}</div>
-                    ${btnHTML}
-                `;
-                container.appendChild(div);
+            // Ensure default items always present
+            ['colors','hats','bgs'].forEach(cat => {
+                shopDatabase[cat].filter(i => i.defaultItem).forEach(i => {
+                    if (!inv[cat].includes(i.id)) inv[cat].push(i.id);
+                });
             });
+            return inv;
         }
+        function saveInventory(inv) { localStorage.setItem('avatarInventory', JSON.stringify(inv)); }
 
-        // --- Render Avatar Graphics ---
-        function renderAvatar() {
-            const curColor = shopDatabase.colors.find(c => c.id === avatarData.equipped.color);
-            const curHat = shopDatabase.hats.find(h => h.id === avatarData.equipped.hat);
-            const curBg = shopDatabase.bgs.find(b => b.id === avatarData.equipped.bg);
-
-            document.getElementById('botHead').style.background = curColor.hex;
-            document.getElementById('botBody').style.background = curColor.bodyHex;
-            document.getElementById('botHat').innerText = curHat.icon;
-            document.getElementById('stageBG').style.background = curBg.css;
-        }
-
-        // --- Logic ---
-        function buyItem(id, price) {
-            if (tokens >= price) {
-                tokens -= price;
-                avatarData.unlocked.push(id);
-                
-                // Save
-                localStorage.setItem('megaplexTokens', tokens);
-                localStorage.setItem('avatarData', JSON.stringify(avatarData));
-                
-                document.getElementById('tokenUI').innerText = tokens;
-                renderShop();
+        function getAvatarData() {
+            let avatarData = JSON.parse(localStorage.getItem('avatarData'));
+            if (!avatarData || !avatarData.equipped) {
+                avatarData = { equipped: { color: 'color_default', hat: 'hat_none', bg: 'bg_default' } };
             }
+            return avatarData;
+        }
+        function saveAvatarData(data) { localStorage.setItem('avatarData', JSON.stringify(data)); }
+
+        function getTokens() { return parseInt(localStorage.getItem('megaplexTokens')) || 0; }
+        function setTokens(amt) {
+            localStorage.setItem('megaplexTokens', amt);
+            document.getElementById('tokenDisplay').innerText = amt;
+            const box = document.getElementById('tokenDisplayBox');
+            box.classList.add('pop');
+            setTimeout(() => box.classList.remove('pop'), 500);
         }
 
-        function equipItem(categoryKey, id) {
-            const slotMap = { 'colors': 'color', 'hats': 'hat', 'bgs': 'bg' };
-            const slot = slotMap[categoryKey];
-            
-            avatarData.equipped[slot] = id;
-            localStorage.setItem('avatarData', JSON.stringify(avatarData));
+        /* ================= RENDER AVATAR ================= */
+        function renderAvatar() {
+            const a = getAvatarData();
+            const c = shopDatabase.colors.find(x => x.id === a.equipped.color) || shopDatabase.colors[0];
+            const h = shopDatabase.hats.find(x => x.id === a.equipped.hat) || shopDatabase.hats[0];
+            const b = shopDatabase.bgs.find(x => x.id === a.equipped.bg) || shopDatabase.bgs[0];
+            document.getElementById('avatarBotHead').style.background = c.hex;
+            document.getElementById('avatarBotBody').style.background = c.bodyHex;
+            document.getElementById('avatarBotHat').innerText = h.icon;
+            document.getElementById('avatarStageBG').style.background = b.css;
+            document.getElementById('equippedList').innerHTML = `
+                <div class="equipped-row"><strong>🎨</strong> ${c.name}</div>
+                <div class="equipped-row"><strong>🎩</strong> ${h.name}</div>
+                <div class="equipped-row" style="grid-column:1/-1;"><strong>🖼️</strong> ${b.name}</div>
+            `;
+        }
+
+        function renderHeader() {
+            document.getElementById('tokenDisplay').innerText = getTokens();
+            document.getElementById('levelDisplay').innerText = getLevel();
+            document.getElementById('avatarUsername').innerText = 'ID: ' + (localStorage.getItem('megaplexUsername') || 'GUEST_BOT');
+        }
+
+        /* ================= AVATAR ACTIONS ================= */
+        function randomizeAvatar() {
+            sfx.click();
+            const inv = getInventory();
+            const a = getAvatarData();
+            const ownedColors = shopDatabase.colors.filter(c => inv.colors.includes(c.id));
+            const ownedHats = shopDatabase.hats.filter(h => inv.hats.includes(h.id));
+            const ownedBgs = shopDatabase.bgs.filter(b => inv.bgs.includes(b.id));
+            a.equipped.color = ownedColors[Math.floor(Math.random()*ownedColors.length)].id;
+            a.equipped.hat = ownedHats[Math.floor(Math.random()*ownedHats.length)].id;
+            a.equipped.bg = ownedBgs[Math.floor(Math.random()*ownedBgs.length)].id;
+            saveAvatarData(a);
+            renderAvatar();
+            renderShop();
+            toast('Random loadout applied!', 'success', '🎲');
+        }
+        function resetAvatar() {
+            sfx.click();
+            const a = getAvatarData();
+            a.equipped = { color: 'color_default', hat: 'hat_none', bg: 'bg_default' };
+            saveAvatarData(a);
+            renderAvatar();
+            renderShop();
+            toast('Reset to defaults', 'info', '↺');
+        }
+
+        /* ================= SHOP RENDERING ================= */
+        const RARITY_ORDER = { common:1, uncommon:2, rare:3, epic:4, legendary:5, mythic:6 };
+        const RARITY_LABEL = { common:'COMMON', uncommon:'UNCOMMON', rare:'RARE', epic:'EPIC', legendary:'LEGENDARY', mythic:'MYTHIC' };
+        let activeTab = 'all';
+        let seenItems = JSON.parse(localStorage.getItem('avatarSeenItems')) || [];
+
+        function setTab(tab, btn) {
+            activeTab = tab;
+            document.querySelectorAll('.shop-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            sfx.click();
             renderShop();
         }
 
-        // Boot
+        function getAllItems() {
+            return [
+                ...shopDatabase.colors.map(i => ({...i, type:'color'})),
+                ...shopDatabase.hats.map(i => ({...i, type:'hat'})),
+                ...shopDatabase.bgs.map(i => ({...i, type:'bg'}))
+            ];
+        }
+
+        function getItemPreviewHTML(item) {
+            if (item.type === 'color') {
+                return `<div class="item-preview color-preview" style="background:${item.bodyHex};"><div style="position:absolute; inset:8px; background:${item.hex}; border-radius:6px;"></div></div>`;
+            } else if (item.type === 'hat') {
+                return `<div class="item-preview">${item.icon || '∅'}</div>`;
+            } else {
+                return `<div class="item-preview bg-preview" style="background:${item.css};"></div>`;
+            }
+        }
+
+        function isOwned(item) {
+            const inv = getInventory();
+            const cat = item.type === 'color' ? 'colors' : item.type === 'hat' ? 'hats' : 'bgs';
+            return inv[cat].includes(item.id);
+        }
+        function isEquipped(item) {
+            const a = getAvatarData();
+            return a.equipped[item.type] === item.id;
+        }
+        function isAchClaimed(achId) {
+            const claimed = JSON.parse(localStorage.getItem('claimedAchievements')) || [];
+            return claimed.includes(achId);
+        }
+
+        function renderShop() {
+            const container = document.getElementById('shopContainer');
+            const search = document.getElementById('shopSearch').value.toLowerCase();
+            const rarityFilter = document.getElementById('rarityFilter').value;
+            const sort = document.getElementById('sortFilter').value;
+
+            let items = getAllItems();
+            if (activeTab === 'colors') items = items.filter(i => i.type === 'color');
+            else if (activeTab === 'hats') items = items.filter(i => i.type === 'hat');
+            else if (activeTab === 'bgs') items = items.filter(i => i.type === 'bg');
+            else if (activeTab === 'owned') items = items.filter(i => isOwned(i));
+
+            if (search) items = items.filter(i => i.name.toLowerCase().includes(search) || (i.lore||'').toLowerCase().includes(search));
+            if (rarityFilter !== 'all') items = items.filter(i => i.rarity === rarityFilter);
+
+            // Sort
+            if (sort === 'rarity') items.sort((a,b) => RARITY_ORDER[a.rarity] - RARITY_ORDER[b.rarity]);
+            else if (sort === 'rarity_desc') items.sort((a,b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity]);
+            else if (sort === 'price_asc') items.sort((a,b) => a.price - b.price);
+            else if (sort === 'price_desc') items.sort((a,b) => b.price - a.price);
+            else if (sort === 'level') items.sort((a,b) => a.level - b.level);
+
+            if (items.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:60px 20px; color:#666; font-style:italic;">No items match your filters.</div>`;
+                return;
+            }
+
+            // Group by type when "all"
+            let html = '';
+            if (activeTab === 'all') {
+                const grouped = {color: [], hat: [], bg: []};
+                items.forEach(i => grouped[i.type].push(i));
+                const titles = { color: '🎨 CHASSIS COLORS', hat: '🎩 HATS & ACCESSORIES', bg: '🖼️ BACKGROUNDS' };
+                ['color','hat','bg'].forEach(type => {
+                    if (grouped[type].length === 0) return;
+                    html += `<div class="category-section">
+                        <div class="category-header"><span>${titles[type]}</span><span class="category-count">${grouped[type].length} ITEMS</span></div>
+                        <div class="item-grid">${grouped[type].map(renderItemCard).join('')}</div>
+                    </div>`;
+                });
+            } else {
+                html = `<div class="category-section"><div class="item-grid">${items.map(renderItemCard).join('')}</div></div>`;
+            }
+            container.innerHTML = html;
+
+            // Mark all rendered as seen
+            items.forEach(i => { if (!seenItems.includes(i.id)) seenItems.push(i.id); });
+            localStorage.setItem('avatarSeenItems', JSON.stringify(seenItems));
+        }
+
+        function renderItemCard(item) {
+            const owned = isOwned(item);
+            const equipped = isEquipped(item);
+            const tokens = getTokens();
+            const lvl = getLevel();
+            const meetsLevel = lvl >= item.level;
+            const achLocked = item.achReq && !isAchClaimed(item.achReq);
+            const isNew = !seenItems.includes(item.id) && !owned;
+
+            let actionHTML = '';
+            let lockOverlay = '';
+            let cardClass = `item-card r-${item.rarity}`;
+
+            if (achLocked) {
+                cardClass += ' locked';
+                lockOverlay = `<div class="lock-overlay"><div class="lock-icon">🏆</div><div class="lock-text">Trophy Required</div></div>`;
+                actionHTML = `<button class="item-action unlock-ach" disabled>🏆 Achievement Locked</button>`;
+            } else if (!meetsLevel && !owned) {
+                cardClass += ' locked';
+                lockOverlay = `<div class="lock-overlay"><div class="lock-icon">🔒</div><div class="lock-text">Requires Level ${item.level}</div></div>`;
+                actionHTML = `<button class="item-action locked" disabled>🔒 Level ${item.level}</button>`;
+            } else if (equipped) {
+                actionHTML = `<button class="item-action equipped" disabled>✓ Equipped</button>`;
+            } else if (owned) {
+                actionHTML = `<button class="item-action equip" onmouseenter="sfx.hover()" onclick='equipItem("${item.type}","${item.id}")'>Equip</button>`;
+            } else {
+                const canAfford = tokens >= item.price;
+                const priceClass = canAfford ? '' : 'cant-afford';
+                actionHTML = `
+                    <div class="item-price ${priceClass}">🎟️ ${item.price.toLocaleString()}</div>
+                    <button class="item-action buy" ${canAfford ? '' : 'disabled'} onmouseenter="sfx.hover()" onclick='openConfirm("${item.type}","${item.id}")'>${canAfford ? 'Purchase' : 'Need More 🎟️'}</button>
+                `;
+            }
+
+            const flag = equipped ? `<span class="item-flag equipped">EQUIPPED</span>`
+                       : owned ? `<span class="item-flag owned">OWNED</span>`
+                       : isNew ? `<span class="item-flag new">NEW</span>`
+                       : '';
+
+            return `
+                <div class="${cardClass}">
+                    <span class="rarity-badge r-${item.rarity}">${RARITY_LABEL[item.rarity]}</span>
+                    ${flag}
+                    ${getItemPreviewHTML(item)}
+                    ${lockOverlay}
+                    <div class="item-name" title="${item.name}">${item.name}</div>
+                    <div class="item-lore" title="${item.lore}">${item.lore}</div>
+                    ${actionHTML}
+                </div>
+            `;
+        }
+
+        /* ================= EQUIP / BUY ================= */
+        function equipItem(type, id) {
+            sfx.equip();
+            const a = getAvatarData();
+            a.equipped[type] = id;
+            saveAvatarData(a);
+            renderAvatar();
+            renderShop();
+            const item = getAllItems().find(i => i.id === id && i.type === type);
+            toast(`Equipped: ${item.name}`, 'success', '✓');
+        }
+
+        let pendingPurchase = null;
+        function openConfirm(type, id) {
+            const item = getAllItems().find(i => i.id === id && i.type === type);
+            if (!item) return;
+            sfx.click();
+            pendingPurchase = item;
+            document.getElementById('confirmPreview').innerHTML = getItemPreviewHTML(item).replace('class="item-preview', 'class="item-preview" style="width:100%; height:100%; font-size:3em;"');
+            // Cleaner: rebuild preview content
+            if (item.type === 'color') {
+                document.getElementById('confirmPreview').innerHTML = `<div style="width:80px; height:80px; border-radius:10px; background:${item.bodyHex}; position:relative;"><div style="position:absolute; inset:10px; background:${item.hex}; border-radius:6px;"></div></div>`;
+            } else if (item.type === 'hat') {
+                document.getElementById('confirmPreview').innerText = item.icon || '∅';
+            } else {
+                document.getElementById('confirmPreview').innerHTML = `<div style="width:90px; height:90px; border-radius:10px; background:${item.css};"></div>`;
+            }
+            document.getElementById('confirmName').innerText = item.name;
+            document.getElementById('confirmDesc').innerHTML = `<em>"${item.lore}"</em><br><span style="color:${rarityColor(item.rarity)}; font-weight:bold; margin-top:8px; display:inline-block;">${RARITY_LABEL[item.rarity]}</span>`;
+            document.getElementById('confirmPrice').innerText = item.price.toLocaleString();
+            document.getElementById('confirmModal').classList.add('show');
+        }
+        function closeConfirm() {
+            document.getElementById('confirmModal').classList.remove('show');
+            pendingPurchase = null;
+        }
+        function rarityColor(r) {
+            return { common:'#95a5a6', uncommon:'#1dd1a1', rare:'#3498db', epic:'#9b59b6', legendary:'#ff9f43', mythic:'#f368e0' }[r];
+        }
+        function confirmPurchase() {
+            if (!pendingPurchase) return;
+            const item = pendingPurchase;
+            const tokens = getTokens();
+            if (tokens < item.price) {
+                toast('Not enough tokens!', 'error', '❌');
+                sfx.error();
+                closeConfirm();
+                return;
+            }
+            setTokens(tokens - item.price);
+            const inv = getInventory();
+            const cat = item.type === 'color' ? 'colors' : item.type === 'hat' ? 'hats' : 'bgs';
+            inv[cat].push(item.id);
+            saveInventory(inv);
+            sfx.buy();
+            const isFancy = ['legendary','mythic'].includes(item.rarity);
+            toast(`Purchased: ${item.name}!`, isFancy ? item.rarity : 'success', isFancy ? '⭐' : '🛍️');
+            // Auto-equip
+            const a = getAvatarData();
+            a.equipped[item.type] = item.id;
+            saveAvatarData(a);
+            renderAvatar();
+            renderShop();
+            closeConfirm();
+        }
+
+        /* ================= MYSTERY BOX ================= */
+        const MYSTERY_PRICE = 800;
+        function buyMysteryBox() {
+            const tokens = getTokens();
+            if (tokens < MYSTERY_PRICE) {
+                toast('Not enough tokens for mystery crate!', 'error', '❌');
+                sfx.error();
+                return;
+            }
+            // Pool: any item except mythic and except already owned
+            const inv = getInventory();
+            const pool = getAllItems().filter(i => 
+                i.rarity !== 'mythic' &&
+                !i.achReq &&
+                !inv[i.type === 'color' ? 'colors' : i.type === 'hat' ? 'hats' : 'bgs'].includes(i.id) &&
+                getLevel() >= Math.max(1, i.level - 3) // can roll items up to 3 levels above
+            );
+            if (pool.length === 0) {
+                toast('You already own everything available! Nothing to roll.', 'warning', '🎁');
+                return;
+            }
+            // Weighted by rarity (rarer = less likely)
+            const weights = { common: 50, uncommon: 30, rare: 14, epic: 5, legendary: 1 };
+            const weighted = [];
+            pool.forEach(i => {
+                const w = weights[i.rarity] || 1;
+                for (let n=0; n<w; n++) weighted.push(i);
+            });
+            const won = weighted[Math.floor(Math.random() * weighted.length)];
+            setTokens(tokens - MYSTERY_PRICE);
+            // Add to inventory
+            const cat = won.type === 'color' ? 'colors' : won.type === 'hat' ? 'hats' : 'bgs';
+            inv[cat].push(won.id);
+            saveInventory(inv);
+            sfx.mystery();
+            // Show reveal
+            document.getElementById('revealIcon').style.background = `radial-gradient(circle, ${rarityColor(won.rarity)}55, transparent 70%)`;
+            if (won.type === 'color') {
+                document.getElementById('revealIcon').innerHTML = `<div style="width:90px; height:90px; border-radius:14px; background:${won.bodyHex}; position:relative;"><div style="position:absolute; inset:12px; background:${won.hex}; border-radius:8px;"></div></div>`;
+            } else if (won.type === 'hat') {
+                document.getElementById('revealIcon').innerText = won.icon || '∅';
+            } else {
+                document.getElementById('revealIcon').innerHTML = `<div style="width:120px; height:120px; border-radius:14px; background:${won.css};"></div>`;
+            }
+            document.getElementById('revealRarity').innerText = RARITY_LABEL[won.rarity];
+            document.getElementById('revealRarity').style.color = rarityColor(won.rarity);
+            document.getElementById('revealName').innerText = won.name;
+            document.getElementById('revealDesc').innerHTML = `<em>"${won.lore}"</em>`;
+            document.getElementById('revealModal').classList.add('show');
+            renderShop();
+        }
+        function closeReveal() {
+            document.getElementById('revealModal').classList.remove('show');
+        }
+
+        /* ================= FEATURED DAILY DEAL ================= */
+        function renderFeaturedDeal() {
+            // Pick a deterministic item per day
+            const day = Math.floor(Date.now() / 86400000);
+            const candidates = getAllItems().filter(i => 
+                !i.defaultItem && i.price > 0 && i.rarity !== 'mythic' && !i.achReq
+            );
+            const item = candidates[day % candidates.length];
+            const discount = 0.3; // 30% off
+            const newPrice = Math.floor(item.price * (1 - discount));
+            const tokens = getTokens();
+            const lvl = getLevel();
+            const meetsLevel = lvl >= item.level;
+            const owned = isOwned(item);
+
+            let buyBtn = '';
+            if (owned) {
+                buyBtn = `<button class="featured-buy" disabled>Already Owned ✓</button>`;
+            } else if (!meetsLevel) {
+                buyBtn = `<button class="featured-buy" disabled>🔒 Requires LV.${item.level}</button>`;
+            } else if (tokens < newPrice) {
+                buyBtn = `<button class="featured-buy" disabled>Need More 🎟️</button>`;
+            } else {
+                buyBtn = `<button class="featured-buy" onclick='buyDailyDeal("${item.type}","${item.id}",${newPrice})'>Snatch It! 💸</button>`;
+            }
+
+            const previewHTML = item.type === 'color'
+                ? `<div style="width:60px; height:60px; border-radius:8px; background:${item.bodyHex}; position:relative;"><div style="position:absolute; inset:8px; background:${item.hex}; border-radius:4px;"></div></div>`
+                : item.type === 'hat' ? item.icon
+                : `<div style="width:60px; height:60px; border-radius:8px; background:${item.css};"></div>`;
+
+            document.getElementById('featuredDeal').innerHTML = `
+                <span class="featured-badge">⭐ Daily Deal • -30%</span>
+                <div class="featured-icon">${previewHTML}</div>
+                <div class="featured-info">
+                    <h3>${item.name} <span style="font-size:0.7em; color:${rarityColor(item.rarity)};">[${RARITY_LABEL[item.rarity]}]</span></h3>
+                    <p><em>"${item.lore}"</em></p>
+                    <div class="featured-prices">
+                        <span class="price-old">🎟️ ${item.price.toLocaleString()}</span>
+                        <span class="price-new">🎟️ ${newPrice.toLocaleString()}</span>
+                    </div>
+                </div>
+                ${buyBtn}
+            `;
+        }
+        function buyDailyDeal(type, id, price) {
+            const item = getAllItems().find(i => i.id === id && i.type === type);
+            if (!item) return;
+            const tokens = getTokens();
+            if (tokens < price) { toast('Not enough!', 'error', '❌'); sfx.error(); return; }
+            setTokens(tokens - price);
+            const inv = getInventory();
+            const cat = type === 'color' ? 'colors' : type === 'hat' ? 'hats' : 'bgs';
+            inv[cat].push(id);
+            saveInventory(inv);
+            const a = getAvatarData();
+            a.equipped[type] = id;
+            saveAvatarData(a);
+            sfx.buy();
+            toast(`Daily Deal claimed: ${item.name}!`, 'success', '⭐');
+            renderAvatar();
+            renderShop();
+            renderFeaturedDeal();
+        }
+
+        function refreshMysteryBtn() {
+            const btn = document.getElementById('mysteryBuyBtn');
+            const tokens = getTokens();
+            if (tokens < MYSTERY_PRICE) {
+                btn.disabled = true;
+                btn.innerText = `Need 🎟️ ${MYSTERY_PRICE}`;
+            } else {
+                btn.disabled = false;
+                btn.innerText = `Open • 🎟️ ${MYSTERY_PRICE}`;
+            }
+        }
+
+        /* ================= THEME ================= */
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('megaplexTheme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        }
+        if(localStorage.getItem('megaplexTheme') === 'light') document.body.classList.add('light-mode');
+
+        /* ================= SHORTCUTS ================= */
+        document.addEventListener('keydown', e => {
+            if (e.target.tagName === 'INPUT') {
+                if (e.key === 'Escape') e.target.blur();
+                return;
+            }
+            if (e.key === 'Escape') { closeConfirm(); closeReveal(); }
+            if (e.key === '/') { e.preventDefault(); document.getElementById('shopSearch').focus(); }
+            if (e.key === 'r' || e.key === 'R') randomizeAvatar();
+        });
+
+        /* ================= INIT ================= */
+        // Hook into setTokens to refresh mystery btn / featured
+        const origSetTokens = setTokens;
+        setTokens = function(amt) {
+            origSetTokens(amt);
+            refreshMysteryBtn();
+            renderFeaturedDeal();
+        };
+
+        renderHeader();
+        renderAvatar();
         renderShop();
+        renderFeaturedDeal();
+        refreshMysteryBtn();
     </script>
 </body>
 </html>
