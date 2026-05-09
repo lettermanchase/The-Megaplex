@@ -5,20 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clicker Frenzy - Arcade</title>
     <style>
-        /* Theme matched to the Hub */
+        * { box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #100b16, #200f33, #150921); 
+            background: #0a0518;
             color: #fff; margin: 0; padding: 0; min-height: 100vh;
             display: flex; flex-direction: column; overflow-x: hidden;
             user-select: none;
+            position: relative;
         }
+        
+        /* Animated cosmic background */
+        #cosmic-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; pointer-events: none;
+            background: radial-gradient(ellipse at top, #200f33 0%, #100b16 40%, #050310 100%);
+        }
+        #cosmic-bg {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1; pointer-events: none;
+    background: 
+        radial-gradient(2px 2px at 20% 30%, #fff, transparent 3px),
+        radial-gradient(1px 1px at 60% 70%, #fff, transparent 2px),
+        radial-gradient(1.5px 1.5px at 80% 20%, #ff9f43, transparent 3px),
+        radial-gradient(1px 1px at 30% 80%, #48dbfb, transparent 2px),
+        radial-gradient(2px 2px at 90% 50%, #fff, transparent 3px),
+        radial-gradient(1px 1px at 10% 60%, #9b59b6, transparent 2px),
+        radial-gradient(ellipse at top, #200f33 0%, #100b16 40%, #050310 100%);
+    background-size: 100% 100%;
+}
 
-        /* Navigation Bar */
+        /* Header */
         header { 
-            padding: 15px 30px; background: rgba(0,0,0,0.8); 
+            padding: 14px 30px; background: rgba(0,0,0,0.85); 
             border-bottom: 2px solid #ff9f43; display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 4px 15px rgba(255, 159, 67, 0.2); position: relative;
+            z-index: 50;
+        }
+        header h2 {
+            margin: 0; color: #fff; font-size: 1.5em;
+            text-shadow: 0 0 10px rgba(255,159,67,0.6); letter-spacing: 2px;
         }
         .back-btn {
             background: transparent; border: 2px solid #ff9f43; color: #ff9f43; padding: 8px 20px;
@@ -26,369 +52,1153 @@
         }
         .back-btn:hover { background: #ff9f43; color: #000; box-shadow: 0 0 10px #ff9f43; }
         
-        .header-controls { display: flex; gap: 15px; align-items: center; }
-        .sound-btn {
+        .header-controls { display: flex; gap: 10px; align-items: center; }
+        .icon-btn {
             background: rgba(0,0,0,0.8); border: 2px solid #ff9f43; color: #ff9f43;
-            font-size: 1.5em; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            font-size: 1.3em; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
             transition: 0.3s; display: flex; align-items: center; justify-content: center;
+            font-family: inherit; padding: 0;
         }
-        .sound-btn:hover { background: #ff9f43; color: #000; box-shadow: 0 0 15px rgba(255, 159, 67, 0.6); }
-        .sound-btn.muted { border-color: #ff4757; color: #ff4757; }
-        .sound-btn.muted:hover { background: #ff4757; color: #000; box-shadow: 0 0 15px rgba(255, 71, 87, 0.6); }
+        .icon-btn:hover { background: #ff9f43; color: #000; box-shadow: 0 0 15px rgba(255, 159, 67, 0.6); }
+        .icon-btn.muted { border-color: #ff4757; color: #ff4757; }
+        .icon-btn.muted:hover { background: #ff4757; color: #000; }
+        .icon-btn.danger { border-color: #ff4757; color: #ff4757; }
+        .icon-btn.danger:hover { background: #ff4757; color: #000; }
 
-        /* Game Layout Split */
+        /* Game Layout */
         .game-container {
-            display: flex; flex: 1; padding: 20px; gap: 20px; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box;
+            display: flex; flex: 1; padding: 20px; gap: 20px; max-width: 1400px; 
+            margin: 0 auto; width: 100%;
         }
 
-        /* Left Side: Click Area */
+        /* Left: Click Area */
         .click-area {
-            flex: 1; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
-            overflow: hidden; min-height: 450px;
+            flex: 1; 
+            background: rgba(255,255,255,0.02); 
+            border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            position: relative; overflow: hidden; min-height: 500px;
+            box-shadow: inset 0 0 60px rgba(255,159,67,0.05);
         }
         
-        .score-display { font-size: 4.5em; font-weight: bold; color: #ff9f43; text-shadow: 0 0 20px rgba(255, 159, 67, 0.5); margin-bottom: 5px; transition: transform 0.1s;}
-        .score-display.bump { transform: scale(1.1); color: #fff; text-shadow: 0 0 30px #ff9f43; }
-        .cps-display { font-size: 1.2em; color: #a4b0be; margin-bottom: 40px; }
+        .score-display { 
+            font-size: 4em; font-weight: bold; color: #ff9f43; 
+            text-shadow: 0 0 25px rgba(255, 159, 67, 0.6); 
+            margin-bottom: 0; transition: transform 0.1s;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 1px;
+        }
+        .score-display.bump { transform: scale(1.08); color: #fff; text-shadow: 0 0 35px #ff9f43; }
+        .score-label {
+            font-size: 0.85em; color: #888; letter-spacing: 3px; text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .cps-display { 
+            font-size: 1.1em; color: #a4b0be; margin-bottom: 30px;
+            background: rgba(0,0,0,0.4); padding: 8px 20px; border-radius: 20px;
+            border: 1px solid rgba(72,219,251,0.2);
+        }
+        .cps-display b { color: #48dbfb; font-weight: bold; }
 
-        /* The Neon Orb */
+        /* Combo display */
+        .combo-display {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            font-size: 1.5em; font-weight: bold; opacity: 0; transition: opacity 0.3s;
+            text-shadow: 0 0 15px currentColor; pointer-events: none;
+        }
+        .combo-display.active { opacity: 1; }
+
+        /* Stats panel */
+        .stats-panel {
+            position: absolute; top: 15px; right: 15px;
+            background: rgba(0,0,0,0.5); padding: 10px 15px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1); font-size: 0.85em;
+            color: #a4b0be; min-width: 160px;
+        }
+        .stats-panel div { margin: 3px 0; }
+        .stats-panel b { color: #fff; }
+
+        /* The Orb */
+        .orb-container {
+            position: relative; display: flex; align-items: center; justify-content: center;
+            margin: 20px 0;
+        }
+        .orb-aura {
+            position: absolute; width: 320px; height: 320px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,159,67,0.3), transparent 70%);
+            animation: pulse 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.15); opacity: 1; }
+        }
         .click-target {
             width: 220px; height: 220px; border-radius: 50%; 
             background: radial-gradient(circle at 30% 30%, #ffc048, #ff3f34);
-            box-shadow: 0 0 50px rgba(255, 63, 52, 0.6), inset -20px -20px 40px rgba(0,0,0,0.4), inset 10px 10px 20px rgba(255,255,255,0.6);
-            cursor: pointer; transition: transform 0.05s ease, filter 0.1s; position: relative; z-index: 10;
+            box-shadow: 
+                0 0 60px rgba(255, 63, 52, 0.7), 
+                inset -20px -20px 50px rgba(0,0,0,0.4), 
+                inset 15px 15px 25px rgba(255,255,255,0.6);
+            cursor: pointer; 
+            transition: transform 0.08s ease, filter 0.1s; 
+            position: relative; z-index: 10;
             -webkit-user-drag: none;
         }
-        .click-target:active { transform: scale(0.85); box-shadow: 0 0 80px rgba(255, 255, 255, 0.8); filter: brightness(1.3); }
-
-        /* Floating Text Animation */
-        .float-text {
-            position: absolute; color: #fff; font-weight: bold; font-size: 1.8em; text-shadow: 0 2px 5px #000;
-            pointer-events: none; animation: floatUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; z-index: 20;
+        .click-target:hover { filter: brightness(1.1); }
+        .click-target:active { transform: scale(0.85) !important; box-shadow: 0 0 100px rgba(255, 255, 255, 0.9); filter: brightness(1.4); }
+        
+        /* Orb tier styles - changes appearance based on score */
+        .orb-tier-2 { background: radial-gradient(circle at 30% 30%, #48dbfb, #0984e3) !important; box-shadow: 0 0 60px rgba(9,132,227,0.7), inset -20px -20px 50px rgba(0,0,0,0.4), inset 15px 15px 25px rgba(255,255,255,0.6) !important; }
+        .orb-tier-3 { background: radial-gradient(circle at 30% 30%, #c8a2ff, #9b59b6) !important; box-shadow: 0 0 60px rgba(155,89,182,0.7), inset -20px -20px 50px rgba(0,0,0,0.4), inset 15px 15px 25px rgba(255,255,255,0.6) !important; }
+        .orb-tier-4 { background: radial-gradient(circle at 30% 30%, #ff9ff3, #ee5a6f) !important; box-shadow: 0 0 60px rgba(238,90,111,0.7), inset -20px -20px 50px rgba(0,0,0,0.4), inset 15px 15px 25px rgba(255,255,255,0.6) !important; }
+        .orb-tier-5 { 
+            background: radial-gradient(circle at 30% 30%, #fff, #ffd700) !important; 
+            box-shadow: 0 0 80px rgba(255,215,0,0.9), inset -20px -20px 50px rgba(0,0,0,0.4), inset 15px 15px 25px rgba(255,255,255,0.8) !important;
+            animation: orbFloat 4s ease-in-out infinite, rainbow 3s linear infinite !important;
         }
+        @keyframes rainbow {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(180deg); }
+        }
+
+        /* Floating Text */
+        .float-text {
+            position: absolute; color: #fff; font-weight: bold; font-size: 1.6em; 
+            text-shadow: 0 2px 8px #000, 0 0 12px currentColor;
+            pointer-events: none; animation: floatUp 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
+            z-index: 20;
+        }
+        .float-text.crit { font-size: 2.4em; color: #ffd700 !important; }
         @keyframes floatUp {
             0% { opacity: 1; transform: translateY(0) scale(0.8); }
-            50% { transform: translateY(-40px) scale(1.2); }
-            100% { opacity: 0; transform: translateY(-80px) scale(1); }
+            30% { transform: translateY(-30px) scale(1.3); }
+            100% { opacity: 0; transform: translateY(-90px) scale(1); }
         }
 
-        /* Shockwave Ripple Effect */
+        /* Particle burst */
+        .particle {
+            position: absolute; width: 6px; height: 6px; border-radius: 50%;
+            pointer-events: none; z-index: 15;
+        }
+
+        /* Ripple */
         .ripple {
             position: absolute; border: 4px solid rgba(255, 159, 67, 0.8); border-radius: 50%;
-            pointer-events: none; animation: rippleAnim 0.4s ease-out forwards; z-index: 5;
+            pointer-events: none; animation: rippleAnim 0.5s ease-out forwards; z-index: 5;
             transform: translate(-50%, -50%);
         }
         @keyframes rippleAnim {
             0% { width: 0px; height: 0px; opacity: 1; border-width: 10px; }
-            100% { width: 250px; height: 250px; opacity: 0; border-width: 1px; }
+            100% { width: 280px; height: 280px; opacity: 0; border-width: 1px; }
         }
 
-        /* Right Side: Shop Area */
-        .shop-area {
-            width: 380px; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 20px;
-            border: 1px solid rgba(255, 159, 67, 0.2); display: flex; flex-direction: column;
-            max-height: calc(100vh - 120px);
+        /* Golden cookie */
+        .golden-cookie {
+            position: absolute; width: 60px; height: 60px;
+            background: radial-gradient(circle at 30% 30%, #fff7d6, #ffd700, #b8860b);
+            border-radius: 50%; cursor: pointer; z-index: 25;
+            box-shadow: 0 0 40px rgba(255,215,0,0.9), inset -10px -10px 20px rgba(0,0,0,0.3);
+            animation: goldenSpin 2s linear infinite, goldenPulse 0.8s ease-in-out infinite;
         }
-        .shop-area h2 { margin-top: 0; color: #48dbfb; text-align: center; border-bottom: 1px solid #333; padding-bottom: 10px;}
+        @keyframes goldenSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes goldenPulse {
+            0%, 100% { box-shadow: 0 0 40px rgba(255,215,0,0.9), inset -10px -10px 20px rgba(0,0,0,0.3); }
+            50% { box-shadow: 0 0 70px rgba(255,215,0,1), inset -10px -10px 20px rgba(0,0,0,0.3); }
+        }
+
+        /* Progress bar to milestone */
+        .milestone-bar {
+            width: 80%; max-width: 400px; height: 8px;
+            background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;
+            margin-top: 5px; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .milestone-fill {
+            height: 100%; background: linear-gradient(90deg, #ff9f43, #ffd700);
+            transition: width 0.5s; box-shadow: 0 0 10px rgba(255,159,67,0.6);
+        }
+        .milestone-text {
+            font-size: 0.75em; color: #888; margin-top: 6px;
+        }
+
+        /* Right: Shop Area */
+        .shop-area {
+            width: 420px; background: rgba(0,0,0,0.6); border-radius: 20px; padding: 18px;
+            border: 1px solid rgba(255, 159, 67, 0.3); display: flex; flex-direction: column;
+            max-height: calc(100vh - 120px);
+            box-shadow: 0 0 30px rgba(255,159,67,0.1);
+        }
+        .shop-area h2 { 
+            margin: 0 0 10px 0; color: #48dbfb; text-align: center; 
+            border-bottom: 1px solid #333; padding-bottom: 10px;
+            text-shadow: 0 0 10px rgba(72,219,251,0.5);
+        }
+
+        /* Shop tabs */
+        .shop-tabs {
+            display: flex; gap: 5px; margin-bottom: 10px;
+        }
+        .shop-tab {
+            flex: 1; padding: 8px; background: rgba(0,0,0,0.4); 
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+            color: #888; text-align: center; cursor: pointer; font-weight: bold;
+            font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px;
+            transition: 0.2s;
+        }
+        .shop-tab:hover { color: #fff; border-color: #ff9f43; }
+        .shop-tab.active { background: rgba(255,159,67,0.2); color: #ff9f43; border-color: #ff9f43; }
+
+        /* Buy multiplier buttons */
+        .buy-mult-row {
+            display: flex; gap: 5px; margin-bottom: 10px;
+        }
+        .buy-mult-btn {
+            flex: 1; padding: 6px; background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+            color: #888; cursor: pointer; font-weight: bold; font-size: 0.8em;
+            transition: 0.2s; font-family: inherit;
+        }
+        .buy-mult-btn:hover { color: #fff; }
+        .buy-mult-btn.active { background: rgba(72,219,251,0.2); color: #48dbfb; border-color: #48dbfb; }
         
-        .shop-list { flex: 1; overflow-y: auto; padding-right: 10px; }
+        .shop-list { flex: 1; overflow-y: auto; padding-right: 8px; }
         .shop-list::-webkit-scrollbar { width: 8px; }
+        .shop-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
         .shop-list::-webkit-scrollbar-thumb { background: #ff9f43; border-radius: 4px; }
 
-        /* Shop Items */
         .upgrade-card {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-            padding: 15px; margin-bottom: 12px; cursor: pointer; transition: 0.2s;
-            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; 
+            transition: 0.2s; display: flex; justify-content: space-between; align-items: center;
+            position: relative; overflow: hidden;
         }
-        .upgrade-card:hover { background: rgba(255,255,255,0.1); border-color: #ff9f43; transform: translateX(-5px); }
-        .upgrade-card:active { transform: scale(0.96); }
-        .upgrade-card.disabled { opacity: 0.4; cursor: not-allowed; border-color: transparent; transform: none; filter: grayscale(100%); }
+        .upgrade-card::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+            background: var(--accent, #ff9f43); opacity: 0.6;
+        }
+        .upgrade-card:hover { background: rgba(255,255,255,0.1); border-color: var(--accent, #ff9f43); transform: translateX(-3px); }
+        .upgrade-card:active { transform: scale(0.97); }
+        .upgrade-card.disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(70%); }
+        .upgrade-card.disabled:hover { transform: none; background: rgba(255,255,255,0.05); }
+        .upgrade-card.affordable {
+            border-color: var(--accent, #ff9f43);
+            box-shadow: 0 0 15px rgba(255,159,67,0.2);
+        }
         
-        .upg-info h3 { margin: 0 0 4px 0; font-size: 1.1em; color: #fff; }
-        .upg-info p { margin: 0; font-size: 0.85em; color: #a4b0be; }
-        .upg-cost { font-weight: bold; color: #ff9f43; font-size: 1.1em; margin-top: 4px; }
-        .upg-count { font-size: 1.8em; font-weight: bold; color: rgba(72, 219, 251, 0.3); text-align: right; min-width: 40px; }
+        .upg-icon {
+            font-size: 1.8em; margin-right: 12px; min-width: 40px; text-align: center;
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+        .upg-info { flex: 1; }
+        .upg-info h3 { margin: 0 0 3px 0; font-size: 1em; color: #fff; }
+        .upg-info p { margin: 0 0 4px 0; font-size: 0.78em; color: #a4b0be; }
+        .upg-cost { font-weight: bold; color: #ff9f43; font-size: 0.95em; }
+        .upg-cost.affordable { color: #2ecc71; }
+        .upg-count { 
+            font-size: 1.6em; font-weight: bold; color: rgba(72, 219, 251, 0.5); 
+            text-align: right; min-width: 40px;
+        }
 
-        /* Responsive Layout for smaller screens */
-        @media (max-width: 850px) {
-            .game-container { flex-direction: column; height: auto; }
+        /* Achievement notification */
+        .achievement-popup {
+            position: fixed; top: 80px; right: 20px; z-index: 1000;
+            background: linear-gradient(135deg, #ff9f43, #ffd700);
+            color: #000; padding: 15px 25px; border-radius: 12px;
+            font-weight: bold; box-shadow: 0 5px 30px rgba(255,159,67,0.8);
+            transform: translateX(450px); transition: transform 0.5s cubic-bezier(0.2,0.8,0.2,1);
+            display: flex; align-items: center; gap: 12px;
+            max-width: 320px;
+        }
+        .achievement-popup.show { transform: translateX(0); }
+        .achievement-popup .icon { font-size: 2em; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 500;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: linear-gradient(135deg, #1a1028, #0f0820);
+            border: 2px solid #ff9f43; border-radius: 20px;
+            padding: 30px; max-width: 500px; width: 90%;
+            box-shadow: 0 0 50px rgba(255,159,67,0.4);
+            text-align: center; max-height: 80vh; overflow-y: auto;
+        }
+        .modal h2 { color: #ff9f43; margin-top: 0; text-shadow: 0 0 15px rgba(255,159,67,0.6); }
+        .modal-btn {
+            background: #ff9f43; color: #000; padding: 12px 30px; border-radius: 25px;
+            border: none; font-weight: bold; font-size: 1.1em; cursor: pointer;
+            margin: 5px; transition: 0.2s; font-family: inherit;
+        }
+        .modal-btn:hover { background: #ffd700; transform: scale(1.05); }
+        .modal-btn.secondary { background: transparent; color: #aaa; border: 2px solid #555; }
+        .modal-btn.secondary:hover { color: #fff; border-color: #fff; background: rgba(255,255,255,0.1); }
+        .modal-btn.danger { background: #ff4757; }
+
+        /* Achievements grid */
+        .ach-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 8px; margin-top: 15px;
+        }
+        .ach-cell {
+            aspect-ratio: 1; background: rgba(255,255,255,0.05); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8em; cursor: help; position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: 0.2s;
+        }
+        .ach-cell.unlocked { background: linear-gradient(135deg, rgba(255,159,67,0.3), rgba(255,215,0,0.2)); border-color: #ff9f43; }
+        .ach-cell.locked { filter: grayscale(100%) brightness(0.4); }
+        .ach-cell:hover { transform: scale(1.1); z-index: 10; }
+        .ach-cell .tip {
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: #000; color: #fff; padding: 6px 10px; border-radius: 6px;
+            font-size: 0.6em; white-space: nowrap; opacity: 0; pointer-events: none;
+            transition: 0.2s; margin-bottom: 5px; z-index: 100;
+        }
+        .ach-cell:hover .tip { opacity: 1; }
+
+        @media (max-width: 900px) {
+            .game-container { flex-direction: column; }
             .shop-area { width: 100%; max-height: 500px; }
-            .click-area { padding: 40px 0; }
+            .stats-panel { position: static; margin: 10px; }
         }
     </style>
 </head>
 <body>
+    <div id="cosmic-bg"></div>
 
     <header>
         <a href="index.html" class="back-btn" onclick="sfx.click()">⬅ Back to Hub</a>
-        <h2 style="margin:0; color:#fff;">Clicker Frenzy</h2>
+        <h2>🌟 Clicker Frenzy</h2>
         <div class="header-controls">
-            <button id="soundToggleBtn" class="sound-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+            <button class="icon-btn" onclick="openAchievements()" title="Achievements">🏆</button>
+            <button class="icon-btn" onclick="openPrestige()" title="Prestige">⭐</button>
+            <button class="icon-btn danger" onclick="confirmReset()" title="Reset Save">🗑️</button>
+            <button id="soundToggleBtn" class="icon-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
         </div>
     </header>
 
     <div class="game-container">
         
-        <!-- Left: Clicking Game -->
         <div class="click-area" id="clickArea">
-            <div class="score-display" id="scoreDisplay">0</div>
-            <div class="cps-display">Per Second: <span id="cpsDisplay" style="color: #48dbfb; font-weight: bold;">0</span></div>
+            <div class="combo-display" id="comboDisplay"></div>
+            <div class="stats-panel" id="statsPanel">
+                <div>Total Clicks: <b id="totalClicks">0</b></div>
+                <div>Lifetime: <b id="lifetimeScore">0</b></div>
+                <div>Prestige: <b id="prestigeLevel">0</b></div>
+                <div>Multiplier: <b id="prestigeMult">×1.00</b></div>
+            </div>
             
-            <div class="click-target" id="orb"></div>
+            <div class="score-label">Cosmic Energy</div>
+            <div class="score-display" id="scoreDisplay">0</div>
+            <div class="cps-display">⚡ <b id="cpsDisplay">0</b>/sec</div>
+            
+            <div class="orb-container">
+                <div class="orb-aura"></div>
+                <div class="click-target" id="orb"></div>
+            </div>
+
+            <div class="milestone-bar">
+                <div class="milestone-fill" id="milestoneFill" style="width:0%"></div>
+            </div>
+            <div class="milestone-text" id="milestoneText">0 / 100 to next milestone</div>
         </div>
 
-        <!-- Right: Shop Upgrades (Dynamically Generated) -->
         <div class="shop-area">
-            <h2>Neon Shop</h2>
-            <div class="shop-list" id="shopList">
-                <!-- Injected via JS -->
+            <h2>⚡ Cosmic Shop</h2>
+            <div class="shop-tabs">
+                <div class="shop-tab active" data-tab="click" onclick="switchTab('click')">CLICK</div>
+                <div class="shop-tab" data-tab="idle" onclick="switchTab('idle')">IDLE</div>
             </div>
-            <div style="margin-top: 15px; font-size: 0.8em; color: #a4b0be; text-align: center;">
-                Progress automatically saves to the Arcade Hub!
+            <div class="buy-mult-row">
+                <button class="buy-mult-btn active" data-mult="1" onclick="setBuyMult(1)">×1</button>
+                <button class="buy-mult-btn" data-mult="10" onclick="setBuyMult(10)">×10</button>
+                <button class="buy-mult-btn" data-mult="100" onclick="setBuyMult(100)">×100</button>
+                <button class="buy-mult-btn" data-mult="-1" onclick="setBuyMult(-1)">MAX</button>
+            </div>
+            <div class="shop-list" id="shopList"></div>
+            <div style="margin-top: 10px; font-size: 0.75em; color: #666; text-align: center;">
+                💾 Auto-saves locally • Offline progress active
             </div>
         </div>
+    </div>
 
+    <!-- Achievements Modal -->
+    <div class="modal-overlay" id="achModal">
+        <div class="modal">
+            <h2>🏆 Achievements</h2>
+            <p style="color:#aaa;">Earn permanent bonuses by reaching milestones!</p>
+            <div class="ach-grid" id="achGrid"></div>
+            <button class="modal-btn secondary" onclick="closeAchievements()">Close</button>
+        </div>
+    </div>
+
+    <!-- Prestige Modal -->
+    <div class="modal-overlay" id="prestigeModal">
+        <div class="modal">
+            <h2>⭐ Prestige Ascension</h2>
+            <p>Reset everything for permanent <b style="color:#ffd700">Cosmic Shards</b> that boost all production!</p>
+            <p>Shards gained: <b id="shardsGain" style="color:#ffd700; font-size:1.5em;">0</b></p>
+            <p style="font-size:0.9em; color:#aaa;">Each shard gives <b style="color:#48dbfb">+5%</b> to all click and idle production permanently.</p>
+            <p style="font-size:0.85em; color:#888;">Requires 1M total energy earned per shard.</p>
+            <button class="modal-btn" id="prestigeBtn" onclick="doPrestige()">ASCEND</button>
+            <button class="modal-btn secondary" onclick="closePrestige()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Welcome Back Modal -->
+    <div class="modal-overlay" id="welcomeModal">
+        <div class="modal">
+            <h2>👋 Welcome Back!</h2>
+            <p style="font-size:1.2em;">While you were gone (<b id="awayTime"></b>):</p>
+            <p style="font-size:2em; color:#ffd700; text-shadow:0 0 15px #ffd700;">+<b id="offlineEarnings">0</b></p>
+            <p style="font-size:0.9em; color:#aaa;">Your cosmic generators kept working!</p>
+            <button class="modal-btn" onclick="closeWelcome()">COLLECT</button>
+        </div>
+    </div>
+
+    <!-- Reset Confirmation -->
+    <div class="modal-overlay" id="resetModal">
+        <div class="modal">
+            <h2 style="color:#ff4757;">⚠️ Reset Save?</h2>
+            <p>This will <b style="color:#ff4757">permanently delete</b> all progress including upgrades, achievements, and prestige!</p>
+            <p style="color:#aaa;">Are you absolutely sure?</p>
+            <button class="modal-btn danger" onclick="hardReset()">YES, DELETE EVERYTHING</button>
+            <button class="modal-btn secondary" onclick="closeReset()">Cancel</button>
+        </div>
     </div>
 
     <script>
-        // --- 🎵 CUSTOM RETRO SOUND ENGINE 🎵 ---
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx;
-        let soundEnabled = localStorage.getItem('megaplexSound') !== 'false';
+    // ============================================================
+    // 🎵 AUDIO ENGINE
+    // ============================================================
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+    let soundEnabled = localStorage.getItem('megaplexSound') !== 'false';
 
-        function initAudio() {
-            if (!audioCtx) audioCtx = new AudioContext();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
 
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            localStorage.setItem('megaplexSound', soundEnabled);
-            updateSoundIcon();
-            if (soundEnabled) { initAudio(); sfx.buy(); }
-        }
-
-        function updateSoundIcon() {
-            const btn = document.getElementById('soundToggleBtn');
-            if (soundEnabled) { btn.innerText = '🔊'; btn.classList.remove('muted'); } 
-            else { btn.innerText = '🔇'; btn.classList.add('muted'); }
-        }
-
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        localStorage.setItem('megaplexSound', soundEnabled);
         updateSoundIcon();
-        document.body.addEventListener('click', initAudio, { once: true });
+        if (soundEnabled) { initAudio(); sfx.buy(); }
+    }
 
-        function playTone(freq, type, duration, vol=0.1, time) {
-            if (!soundEnabled || !audioCtx) return;
-            let t = time !== undefined ? time : audioCtx.currentTime;
-            
+    function updateSoundIcon() {
+        const btn = document.getElementById('soundToggleBtn');
+        if (soundEnabled) { btn.innerText = '🔊'; btn.classList.remove('muted'); } 
+        else { btn.innerText = '🔇'; btn.classList.add('muted'); }
+    }
+    updateSoundIcon();
+    document.body.addEventListener('click', initAudio, { once: true });
+
+    function playTone(freq, type, duration, vol=0.1, slideFreq=null) {
+        if (!soundEnabled || !audioCtx) return;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        if (slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, t + duration);
+        gain.gain.setValueAtTime(vol, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + duration);
+    }
+
+    const sfx = {
+        click: () => playTone(400, 'square', 0.08, 0.04),
+        orb: (combo=1) => {
+            if(!soundEnabled || !audioCtx) return;
+            const t = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, t);
-            gain.gain.setValueAtTime(vol, t);
-            gain.gain.setTargetAtTime(0.0001, t + duration, 0.05);
+            osc.type = 'square';
+            const startFreq = 600 + Math.min(combo, 30) * 30 + (Math.random() * 100);
+            osc.frequency.setValueAtTime(startFreq, t);
+            osc.frequency.exponentialRampToValueAtTime(150, t + 0.08);
+            gain.gain.setValueAtTime(0.12, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
             osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(t); osc.stop(t + duration + 0.1);
+            osc.start(t); osc.stop(t + 0.1);
+        },
+        crit: () => {
+            playTone(1200, 'square', 0.1, 0.08, 2400);
+            setTimeout(() => playTone(1800, 'sine', 0.15, 0.06), 60);
+        },
+        buy: () => { 
+            playTone(600, 'square', 0.1, 0.05); 
+            setTimeout(()=>playTone(900, 'square', 0.2, 0.05), 100); 
+        },
+        error: () => playTone(150, 'sawtooth', 0.2, 0.08),
+        achievement: () => {
+            playTone(523, 'sine', 0.15, 0.08);
+            setTimeout(()=>playTone(659, 'sine', 0.15, 0.08), 100);
+            setTimeout(()=>playTone(784, 'sine', 0.3, 0.08), 200);
+        },
+        golden: () => {
+            playTone(800, 'sine', 0.1, 0.1, 1600);
+            setTimeout(()=>playTone(1200, 'sine', 0.2, 0.08, 2400), 80);
+            setTimeout(()=>playTone(1600, 'sine', 0.3, 0.06), 160);
+        },
+        prestige: () => {
+            playTone(220, 'sine', 0.4, 0.1, 880);
+            setTimeout(()=>playTone(440, 'sine', 0.4, 0.1, 1760), 200);
+            setTimeout(()=>playTone(880, 'sine', 0.6, 0.1, 3520), 400);
         }
+    };
 
-        // Extremely Satisfying Sound Effects for Clicker
-        const sfx = {
-            click: () => playTone(400, 'square', 0.1, 0.05),
-            orb: () => {
-                if(!soundEnabled || !audioCtx) return;
-                let t = audioCtx.currentTime;
-                let osc = audioCtx.createOscillator();
-                let gain = audioCtx.createGain();
-                
-                osc.type = 'square';
-                let startFreq = 800 + (Math.random() * 200); 
-                osc.frequency.setValueAtTime(startFreq, t);
-                osc.frequency.exponentialRampToValueAtTime(100, t + 0.1); 
-                
-                gain.gain.setValueAtTime(0.15, t);
-                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
-                
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(t); osc.stop(t + 0.1);
-            },
-            buy: () => { 
-                playTone(600, 'square', 0.1, 0.05); 
-                setTimeout(()=>playTone(900, 'square', 0.2, 0.05), 100); 
-            },
-            error: () => { playTone(150, 'sawtooth', 0.2, 0.1); }
-        };
+    // ============================================================
+    // 💾 SAVE SYSTEM (THE BIG FIX)
+    // ============================================================
+    const SAVE_KEY = 'clickerFrenzy_save_v2';
 
-        // --- Game State Variables ---
-        let score = 0;
-        let clickPower = 1;
-        let cps = 0; 
+    let gameState = {
+        score: 0,
+        lifetimeScore: 0,
+        totalClicks: 0,
+        prestigeLevel: 0,
+        prestigeShards: 0,
+        upgrades: {},
+        achievements: [],
+        lastSaved: Date.now()
+    };
+
+    // Upgrades definition
+    const upgrades = {
+        cursor:    { name: "Neon Cursor",       icon: "👆", desc: "+1 per click",      type: "click", power: 1,     baseCost: 15,        costMult: 1.15, accent: '#ff9f43' },
+        plasma:    { name: "Plasma Clicker",    icon: "⚡", desc: "+10 per click",     type: "click", power: 10,    baseCost: 250,       costMult: 1.15, accent: '#48dbfb' },
+        matter:    { name: "Dark Matter Mouse", icon: "🌑", desc: "+100 per click",    type: "click", power: 100,   baseCost: 5000,      costMult: 1.18, accent: '#9b59b6' },
+        nebula:    { name: "Nebula Touch",      icon: "🌌", desc: "+1.2K per click",   type: "click", power: 1200,  baseCost: 80000,     costMult: 1.20, accent: '#ff6b6b' },
+        celestial: { name: "Celestial Hand",    icon: "✨", desc: "+15K per click",    type: "click", power: 15000, baseCost: 1500000,   costMult: 1.22, accent: '#ffd700' },
         
-        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || { clicker: 0, reaction: 9999, ttt: 0, math: 0, memory: 999, guesser: 0, snake: 0, platformer: 0 };
-        let lifetimeClicks = globalScores.clicker || 0; 
+        auto:      { name: "Auto-Clicker",      icon: "🖱️", desc: "+1 /sec",           type: "idle",  power: 1,      baseCost: 50,        costMult: 1.15, accent: '#ff9f43' },
+        reactor:   { name: "Neon Reactor",      icon: "⚛️", desc: "+15 /sec",          type: "idle",  power: 15,     baseCost: 1000,      costMult: 1.15, accent: '#48dbfb' },
+        quantum:   { name: "Quantum Server",    icon: "💻", desc: "+150 /sec",         type: "idle",  power: 150,    baseCost: 15000,     costMult: 1.16, accent: '#9b59b6' },
+        ai:        { name: "AI Overlord",       icon: "🤖", desc: "+1K /sec",          type: "idle",  power: 1000,   baseCost: 250000,    costMult: 1.18, accent: '#ff6b6b' },
+        forge:     { name: "Galactic Forge",    icon: "🔥", desc: "+10K /sec",         type: "idle",  power: 10000,  baseCost: 4000000,   costMult: 1.20, accent: '#ff4757' },
+        singularity:{ name: "Singularity",      icon: "🕳️", desc: "+150K /sec",        type: "idle",  power: 150000, baseCost: 75000000,  costMult: 1.22, accent: '#ffd700' }
+    };
 
-        // --- Expanded Upgrades Database ---
-        const upgrades = {
-            cursor:  { id: 'cursor', name: "Neon Cursor", desc: "+1 Points per Click", type: "click", power: 1, baseCost: 15, costMult: 1.5, count: 0 },
-            plasma:  { id: 'plasma', name: "Plasma Clicker", desc: "+10 Points per Click", type: "click", power: 10, baseCost: 500, costMult: 1.6, count: 0 },
-            matter:  { id: 'matter', name: "Dark Matter Mouse", desc: "+100 Points per Click", type: "click", power: 100, baseCost: 7500, costMult: 1.7, count: 0 },
-            auto:    { id: 'auto', name: "Auto-Clicker", desc: "+1 Points per Second", type: "idle", power: 1, baseCost: 50, costMult: 1.5, count: 0 },
-            reactor: { id: 'reactor', name: "Neon Reactor", desc: "+15 Points per Second", type: "idle", power: 15, baseCost: 1000, costMult: 1.5, count: 0 },
-            quantum: { id: 'quantum', name: "Quantum Server", desc: "+150 Points per Second", type: "idle", power: 150, baseCost: 15000, costMult: 1.6, count: 0 },
-            ai:      { id: 'ai', name: "AI Overlord", desc: "+1,000 Points per Second", type: "idle", power: 1000, baseCost: 250000, costMult: 1.8, count: 0 }
-        };
+    // Initialize upgrade counts
+    for (let key in upgrades) {
+        gameState.upgrades[key] = 0;
+    }
 
-        // --- Core Clicking Logic ---
-        const orb = document.getElementById('orb');
-        const clickArea = document.getElementById('clickArea');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const shopList = document.getElementById('shopList');
+    // Achievements definition
+    const achievements = [
+        { id: 'first_click',  name: 'First Spark',         icon: '👆', desc: 'Click the orb once',                    check: s => s.totalClicks >= 1 },
+        { id: 'click_100',    name: 'Click Apprentice',    icon: '🎯', desc: 'Click 100 times',                       check: s => s.totalClicks >= 100 },
+        { id: 'click_1k',     name: 'Click Master',        icon: '🎖️', desc: 'Click 1,000 times',                     check: s => s.totalClicks >= 1000 },
+        { id: 'click_10k',    name: 'Click Legend',        icon: '👑', desc: 'Click 10,000 times',                    check: s => s.totalClicks >= 10000 },
+        { id: 'energy_1k',    name: 'Power Surge',         icon: '⚡', desc: 'Earn 1K total energy',                  check: s => s.lifetimeScore >= 1000 },
+        { id: 'energy_100k',  name: 'Energized',           icon: '💫', desc: 'Earn 100K total energy',                check: s => s.lifetimeScore >= 100000 },
+        { id: 'energy_1m',    name: 'Cosmic Reservoir',    icon: '🌟', desc: 'Earn 1M total energy',                  check: s => s.lifetimeScore >= 1000000 },
+        { id: 'energy_1b',    name: 'Universe Tapper',     icon: '🌠', desc: 'Earn 1B total energy',                  check: s => s.lifetimeScore >= 1000000000 },
+        { id: 'auto_10',      name: 'Lazy Genius',         icon: '😴', desc: '10 Auto-Clickers',                      check: s => s.upgrades.auto >= 10 },
+        { id: 'reactor_10',   name: 'Reactor Core',        icon: '☢️', desc: '10 Neon Reactors',                      check: s => s.upgrades.reactor >= 10 },
+        { id: 'quantum_10',   name: 'Quantum Realm',       icon: '🔬', desc: '10 Quantum Servers',                    check: s => s.upgrades.quantum >= 10 },
+        { id: 'cps_1k',       name: 'Idle Powerhouse',     icon: '🔋', desc: 'Reach 1K /sec',                         check: s => calcCps() >= 1000 },
+        { id: 'cps_100k',     name: 'Industrial Scale',    icon: '🏭', desc: 'Reach 100K /sec',                       check: s => calcCps() >= 100000 },
+        { id: 'golden_1',     name: 'Lucky Strike',        icon: '🍀', desc: 'Click a golden cookie',                 check: s => s.goldenClicked >= 1 },
+        { id: 'prestige_1',   name: 'Ascended',            icon: '⭐', desc: 'Prestige once',                         check: s => s.prestigeLevel >= 1 }
+    ];
 
-        orb.addEventListener('mousedown', (e) => {
-            sfx.orb(); 
-            
-            score += clickPower;
-            lifetimeClicks += clickPower;
-            saveProgress();
+    function saveGame() {
+        gameState.lastSaved = Date.now();
+        try {
+            localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+            // Also sync with arcade scores for hub leaderboard
+            const arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+            arcadeScores.clicker = Math.floor(gameState.lifetimeScore);
+            localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
+        } catch(e) {
+            console.error('Save failed:', e);
+        }
+    }
 
-            updateUI();
-            
-            createFloatingText(e.clientX, e.clientY, `+${clickPower}`);
-            createRipple(e.clientX, e.clientY);
-            
+    function loadGame() {
+        const saved = localStorage.getItem(SAVE_KEY);
+        if (!saved) return false;
+        
+        try {
+            const loaded = JSON.parse(saved);
+            // Merge to handle new fields gracefully
+            gameState = { ...gameState, ...loaded };
+            // Ensure all upgrade keys exist (in case new ones added)
+            for (let key in upgrades) {
+                if (typeof gameState.upgrades[key] !== 'number') gameState.upgrades[key] = 0;
+            }
+            if (!Array.isArray(gameState.achievements)) gameState.achievements = [];
+            if (typeof gameState.goldenClicked !== 'number') gameState.goldenClicked = 0;
+            return true;
+        } catch(e) {
+            console.error('Load failed:', e);
+            return false;
+        }
+    }
+
+    function calculateOfflineEarnings() {
+        const now = Date.now();
+        const elapsed = (now - gameState.lastSaved) / 1000; // seconds
+        if (elapsed < 10) return { earnings: 0, time: 0 }; // ignore short reloads
+        
+        const cappedSeconds = Math.min(elapsed, 8 * 60 * 60); // cap at 8 hours
+        const cps = calcCps();
+        const earnings = Math.floor(cps * cappedSeconds * 0.5); // 50% efficiency offline
+        return { earnings, time: cappedSeconds };
+    }
+
+    function formatTime(seconds) {
+        if (seconds < 60) return `${Math.floor(seconds)}s`;
+        if (seconds < 3600) return `${Math.floor(seconds/60)}m ${Math.floor(seconds%60)}s`;
+        return `${Math.floor(seconds/3600)}h ${Math.floor((seconds%3600)/60)}m`;
+    }
+
+    // ============================================================
+    // 🔢 NUMBER FORMATTING
+    // ============================================================
+    function formatNum(n) {
+        n = Math.floor(n);
+        if (n < 1000) return n.toString();
+        const units = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+        const tier = Math.floor(Math.log10(n) / 3);
+        const scaled = n / Math.pow(1000, tier);
+        return scaled.toFixed(scaled < 10 ? 2 : (scaled < 100 ? 1 : 0)) + units[tier];
+    }
+
+    // ============================================================
+    // 🎮 GAME LOGIC
+    // ============================================================
+    let comboCount = 0;
+    let comboTimer = 0;
+    let buyMult = 1;
+    let currentTab = 'click';
+    let displayScore = 0; // smoothly animated
+
+    function getPrestigeMult() {
+        return 1 + (gameState.prestigeShards * 0.05);
+    }
+
+    function calcClickPower() {
+        let power = 1;
+        for (let key in upgrades) {
+            if (upgrades[key].type === 'click') {
+                power += gameState.upgrades[key] * upgrades[key].power;
+            }
+        }
+        return power * getPrestigeMult();
+    }
+
+    function calcCps() {
+        let cps = 0;
+        for (let key in upgrades) {
+            if (upgrades[key].type === 'idle') {
+                cps += gameState.upgrades[key] * upgrades[key].power;
+            }
+        }
+        return cps * getPrestigeMult();
+    }
+
+    function getCost(key, count = null) {
+        const upg = upgrades[key];
+        const owned = count !== null ? count : gameState.upgrades[key];
+        return Math.floor(upg.baseCost * Math.pow(upg.costMult, owned));
+    }
+
+    // Calculate cost for buying N at once
+    function getBulkCost(key, n) {
+        const upg = upgrades[key];
+        const owned = gameState.upgrades[key];
+        // Geometric sum: baseCost * mult^owned * (mult^n - 1) / (mult - 1)
+        const r = upg.costMult;
+        return Math.floor(upg.baseCost * Math.pow(r, owned) * (Math.pow(r, n) - 1) / (r - 1));
+    }
+
+    // Calculate max affordable
+    function getMaxAffordable(key) {
+        const upg = upgrades[key];
+        const owned = gameState.upgrades[key];
+        const r = upg.costMult;
+        const startCost = upg.baseCost * Math.pow(r, owned);
+        if (gameState.score < startCost) return 0;
+        // n = log( (score * (r-1) / startCost) + 1 ) / log(r)
+        const n = Math.floor(Math.log(gameState.score * (r - 1) / startCost + 1) / Math.log(r));
+        return Math.max(0, n);
+    }
+
+    // ============================================================
+    // 🖱️ CLICK HANDLING
+    // ============================================================
+    const orb = document.getElementById('orb');
+    const clickArea = document.getElementById('clickArea');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const shopList = document.getElementById('shopList');
+    const comboDisplay = document.getElementById('comboDisplay');
+
+    orb.addEventListener('mousedown', (e) => {
+        const power = calcClickPower();
+        // Critical hit chance
+        const isCrit = Math.random() < 0.05;
+        const finalPower = isCrit ? power * 10 : power;
+        
+        gameState.score += finalPower;
+        gameState.lifetimeScore += finalPower;
+        gameState.totalClicks++;
+        
+        // Combo
+        comboCount++;
+        comboTimer = 60; // ticks
+        updateCombo();
+        
+        if (isCrit) {
+            sfx.crit();
+            createFloatingText(e.clientX, e.clientY, `CRIT! +${formatNum(finalPower)}`, true);
+            createParticleBurst(e.clientX, e.clientY, '#ffd700', 20);
             scoreDisplay.classList.add('bump');
-            setTimeout(() => scoreDisplay.classList.remove('bump'), 50);
-        });
-
-        function createFloatingText(x, y, text) {
-            const floatEl = document.createElement('div');
-            floatEl.className = 'float-text';
-            floatEl.innerText = text;
-            
-            const offsetX = (Math.random() - 0.5) * 60;
-            const offsetY = (Math.random() - 0.5) * 60;
-            
-            const rect = clickArea.getBoundingClientRect();
-            floatEl.style.left = `${x - rect.left + offsetX}px`;
-            floatEl.style.top = `${y - rect.top + offsetY}px`;
-            
-            if(clickPower >= 100) floatEl.style.color = '#9b59b6'; 
-            else if(clickPower >= 10) floatEl.style.color = '#48dbfb'; 
-            
-            clickArea.appendChild(floatEl);
-            setTimeout(() => floatEl.remove(), 800);
+        } else {
+            sfx.orb(comboCount);
+            createFloatingText(e.clientX, e.clientY, `+${formatNum(finalPower)}`);
+            createParticleBurst(e.clientX, e.clientY, getOrbColor(), 8);
         }
-
-        function createRipple(x, y) {
-            const ripple = document.createElement('div');
-            ripple.className = 'ripple';
-            const rect = clickArea.getBoundingClientRect();
-            ripple.style.left = `${x - rect.left}px`;
-            ripple.style.top = `${y - rect.top}px`;
-            clickArea.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 400);
-        }
-
-        // --- Dynamic Shop System ---
-        function getCost(key) {
-            const upg = upgrades[key];
-            return Math.floor(upg.baseCost * Math.pow(upg.costMult, upg.count));
-        }
-
-        function buildShop() {
-            shopList.innerHTML = '';
-            for (let key in upgrades) {
-                const upg = upgrades[key];
-                
-                const card = document.createElement('div');
-                card.className = 'upgrade-card disabled'; 
-                card.id = `card-${key}`;
-                card.onclick = () => buyUpgrade(key);
-                
-                card.innerHTML = `
-                    <div class="upg-info">
-                        <h3>${upg.name}</h3>
-                        <p>${upg.desc}</p>
-                        <div class="upg-cost">Cost: <span id="cost-${key}">0</span></div>
-                    </div>
-                    <div class="upg-count" id="count-${key}">0</div>
-                `;
-                
-                shopList.appendChild(card);
-            }
-            updateUI(); 
-        }
-
-        function buyUpgrade(key) {
-            const cost = getCost(key);
-            if (score >= cost) {
-                sfx.buy();
-                score -= cost;
-                upgrades[key].count++;
-                
-                recalculateStats();
-                updateUI();
-            } else {
-                sfx.error();
-            }
-        }
-
-        function recalculateStats() {
-            clickPower = 1 + (upgrades.cursor.count * upgrades.cursor.power) 
-                           + (upgrades.plasma.count * upgrades.plasma.power) 
-                           + (upgrades.matter.count * upgrades.matter.power);
-                           
-            cps = (upgrades.auto.count * upgrades.auto.power) 
-                + (upgrades.reactor.count * upgrades.reactor.power)
-                + (upgrades.quantum.count * upgrades.quantum.power)
-                + (upgrades.ai.count * upgrades.ai.power);
-        }
-
-        // --- Game Loop (Idle Mechanics) ---
-        setInterval(() => {
-            if (cps > 0) {
-                score += cps;
-                lifetimeClicks += cps;
-                saveProgress();
-                updateUI();
-            }
-        }, 1000); 
-
-        function saveProgress() {
-            globalScores.clicker = lifetimeClicks;
-            localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
-        }
-
-        // --- UI Updates ---
-        function updateUI() {
-            scoreDisplay.innerText = Math.floor(score).toLocaleString();
-            document.getElementById('cpsDisplay').innerText = cps.toLocaleString();
-
-            for (let key in upgrades) {
-                const cost = getCost(key);
-                const card = document.getElementById(`card-${key}`);
-                const costEl = document.getElementById(`cost-${key}`);
-                const countEl = document.getElementById(`count-${key}`);
-                
-                costEl.innerText = cost.toLocaleString();
-                countEl.innerText = upgrades[key].count;
-
-                if (score < cost) {
-                    card.classList.add('disabled');
-                    costEl.style.color = '#ff4757'; 
-                } else {
-                    card.classList.remove('disabled');
-                    costEl.style.color = '#2ecc71'; 
-                }
-            }
-        }
-
-        // Boot Sequence
-        buildShop();
-        recalculateStats();
+        
+        createRipple(e.clientX, e.clientY);
+        scoreDisplay.classList.add('bump');
+        setTimeout(() => scoreDisplay.classList.remove('bump'), 80);
+        
+        checkAchievements();
         updateUI();
+    });
 
+    function getOrbColor() {
+        const tier = getOrbTier();
+        const colors = ['#ff9f43', '#48dbfb', '#9b59b6', '#ee5a6f', '#ffd700'];
+        return colors[tier - 1] || '#ff9f43';
+    }
+
+    function getOrbTier() {
+        const s = gameState.lifetimeScore;
+        if (s >= 100000000) return 5;
+        if (s >= 1000000) return 4;
+        if (s >= 50000) return 3;
+        if (s >= 1000) return 2;
+        return 1;
+    }
+
+    function updateOrbAppearance() {
+        const tier = getOrbTier();
+        orb.className = 'click-target';
+        if (tier > 1) orb.classList.add(`orb-tier-${tier}`);
+    }
+
+    function updateCombo() {
+        if (comboCount > 1) {
+            comboDisplay.innerText = `${comboCount}× COMBO`;
+            comboDisplay.classList.add('active');
+            const color = comboCount >= 30 ? '#ffd700' : (comboCount >= 15 ? '#ff4757' : (comboCount >= 5 ? '#48dbfb' : '#fff'));
+            comboDisplay.style.color = color;
+        } else {
+            comboDisplay.classList.remove('active');
+        }
+    }
+
+    function createFloatingText(x, y, text, isCrit = false) {
+        const el = document.createElement('div');
+        el.className = 'float-text' + (isCrit ? ' crit' : '');
+        el.innerText = text;
+        const offsetX = (Math.random() - 0.5) * 60;
+        const rect = clickArea.getBoundingClientRect();
+        el.style.left = `${x - rect.left + offsetX}px`;
+        el.style.top = `${y - rect.top}px`;
+        if (!isCrit) {
+            const power = calcClickPower();
+            if (power >= 100000) el.style.color = '#ff6b6b';
+            else if (power >= 1000) el.style.color = '#9b59b6';
+            else if (power >= 100) el.style.color = '#48dbfb';
+        }
+        clickArea.appendChild(el);
+        setTimeout(() => el.remove(), 900);
+    }
+
+    function createParticleBurst(x, y, color, count) {
+        const rect = clickArea.getBoundingClientRect();
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.background = color;
+            p.style.boxShadow = `0 0 8px ${color}`;
+            p.style.left = `${x - rect.left}px`;
+            p.style.top = `${y - rect.top}px`;
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 80 + 40;
+            const dx = Math.cos(angle) * speed;
+            const dy = Math.sin(angle) * speed;
+            p.animate([
+                { transform: 'translate(0,0)', opacity: 1 },
+                { transform: `translate(${dx}px, ${dy}px)`, opacity: 0 }
+            ], { duration: 600 + Math.random() * 200, easing: 'cubic-bezier(0.2,0.8,0.2,1)' });
+            clickArea.appendChild(p);
+            setTimeout(() => p.remove(), 900);
+        }
+    }
+
+    function createRipple(x, y) {
+        const ripple = document.createElement('div');
+        ripple.className = 'ripple';
+        const rect = clickArea.getBoundingClientRect();
+        ripple.style.left = `${x - rect.left}px`;
+        ripple.style.top = `${y - rect.top}px`;
+        ripple.style.borderColor = getOrbColor();
+        clickArea.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 500);
+    }
+
+    // ============================================================
+    // 🍪 GOLDEN COOKIES
+    // ============================================================
+    let goldenSpawnTimer = 0;
+    function maybeSpawnGolden() {
+        goldenSpawnTimer++;
+        // Spawn roughly every 60-180 seconds
+        if (goldenSpawnTimer < 60) return;
+        if (Math.random() < 0.005) {
+            spawnGoldenCookie();
+            goldenSpawnTimer = 0;
+        }
+    }
+
+    function spawnGoldenCookie() {
+        const golden = document.createElement('div');
+        golden.className = 'golden-cookie';
+        const rect = clickArea.getBoundingClientRect();
+        const x = Math.random() * (rect.width - 80) + 20;
+        const y = Math.random() * (rect.height - 80) + 20;
+        golden.style.left = `${x}px`;
+        golden.style.top = `${y}px`;
+        clickArea.appendChild(golden);
+        
+        let despawnTimer = setTimeout(() => golden.remove(), 12000);
+        
+        golden.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            clearTimeout(despawnTimer);
+            const cps = calcCps();
+            // Golden cookie gives 30 sec of CPS or 15× current click, whichever is higher
+            const bonus = Math.max(cps * 30, calcClickPower() * 15, 100);
+            gameState.score += bonus;
+            gameState.lifetimeScore += bonus;
+            gameState.goldenClicked = (gameState.goldenClicked || 0) + 1;
+            sfx.golden();
+            createFloatingText(e.clientX, e.clientY, `GOLDEN! +${formatNum(bonus)}`, true);
+            createParticleBurst(e.clientX, e.clientY, '#ffd700', 30);
+            golden.remove();
+            checkAchievements();
+            updateUI();
+        });
+    }
+
+    // ============================================================
+    // 🛒 SHOP
+    // ============================================================
+    function buildShop() {
+        shopList.innerHTML = '';
+        for (let key in upgrades) {
+            const upg = upgrades[key];
+            if (upg.type !== currentTab) continue;
+            
+            const card = document.createElement('div');
+            card.className = 'upgrade-card disabled';
+            card.id = `card-${key}`;
+            card.style.setProperty('--accent', upg.accent);
+            card.onclick = () => buyUpgrade(key);
+            
+            card.innerHTML = `
+                <div class="upg-icon" style="color:${upg.accent}">${upg.icon}</div>
+                <div class="upg-info">
+                    <h3>${upg.name}</h3>
+                    <p>${upg.desc}</p>
+                    <div class="upg-cost">💎 <span id="cost-${key}">0</span></div>
+                </div>
+                <div class="upg-count" id="count-${key}">0</div>
+            `;
+            shopList.appendChild(card);
+        }
+        updateUI();
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.shop-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+        buildShop();
+        sfx.click();
+    }
+
+    function setBuyMult(m) {
+        buyMult = m;
+        document.querySelectorAll('.buy-mult-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.mult) === m));
+        sfx.click();
+        updateUI();
+    }
+
+    function buyUpgrade(key) {
+        let n = buyMult;
+        if (n === -1) n = getMaxAffordable(key);
+        if (n < 1) { sfx.error(); return; }
+        
+        const cost = getBulkCost(key, n);
+        if (gameState.score >= cost) {
+            sfx.buy();
+            gameState.score -= cost;
+            gameState.upgrades[key] += n;
+            updateUI();
+            checkAchievements();
+            saveGame();
+        } else {
+            sfx.error();
+        }
+    }
+
+    // ============================================================
+    // 🏆 ACHIEVEMENTS
+    // ============================================================
+    function checkAchievements() {
+        achievements.forEach(ach => {
+            if (!gameState.achievements.includes(ach.id) && ach.check(gameState)) {
+                gameState.achievements.push(ach.id);
+                showAchievementPopup(ach);
+            }
+        });
+    }
+
+    function showAchievementPopup(ach) {
+        sfx.achievement();
+        const popup = document.createElement('div');
+        popup.className = 'achievement-popup';
+        popup.innerHTML = `
+            <div class="icon">${ach.icon}</div>
+            <div>
+                <div style="font-size:0.8em; opacity:0.7;">ACHIEVEMENT UNLOCKED</div>
+                <div style="font-size:1.1em;">${ach.name}</div>
+                <div style="font-size:0.8em; opacity:0.8;">${ach.desc}</div>
+            </div>
+        `;
+        document.body.appendChild(popup);
+        setTimeout(() => popup.classList.add('show'), 50);
+        setTimeout(() => {
+            popup.classList.remove('show');
+            setTimeout(() => popup.remove(), 600);
+        }, 4000);
+    }
+
+    function openAchievements() {
+        sfx.click();
+        const grid = document.getElementById('achGrid');
+        grid.innerHTML = '';
+        achievements.forEach(ach => {
+            const unlocked = gameState.achievements.includes(ach.id);
+            const cell = document.createElement('div');
+            cell.className = 'ach-cell ' + (unlocked ? 'unlocked' : 'locked');
+            cell.innerHTML = `${ach.icon}<div class="tip"><b>${ach.name}</b><br>${ach.desc}</div>`;
+            grid.appendChild(cell);
+        });
+        document.getElementById('achModal').classList.add('show');
+    }
+    function closeAchievements() {
+        sfx.click();
+        document.getElementById('achModal').classList.remove('show');
+    }
+
+    // ============================================================
+    // ⭐ PRESTIGE
+    // ============================================================
+    function calcShardsAvailable() {
+        return Math.floor(Math.sqrt(gameState.lifetimeScore / 1000000));
+    }
+
+    function openPrestige() {
+        sfx.click();
+        const shards = calcShardsAvailable();
+        document.getElementById('shardsGain').innerText = shards;
+        const btn = document.getElementById('prestigeBtn');
+        if (shards < 1) {
+            btn.disabled = true;
+            btn.style.opacity = '0.4';
+            btn.style.cursor = 'not-allowed';
+            btn.innerText = `Need 1M energy (have ${formatNum(gameState.lifetimeScore)})`;
+        } else {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.innerText = `ASCEND for ${shards} shards`;
+        }
+        document.getElementById('prestigeModal').classList.add('show');
+    }
+    function closePrestige() {
+        sfx.click();
+        document.getElementById('prestigeModal').classList.remove('show');
+    }
+    function doPrestige() {
+        const shards = calcShardsAvailable();
+        if (shards < 1) return;
+        sfx.prestige();
+        gameState.prestigeShards += shards;
+        gameState.prestigeLevel++;
+        gameState.score = 0;
+        gameState.lifetimeScore = 0;
+        gameState.totalClicks = 0;
+        for (let key in upgrades) gameState.upgrades[key] = 0;
+        // Keep achievements!
+        saveGame();
+        closePrestige();
+        checkAchievements();
+        updateUI();
+        // Big visual effect
+        for (let i = 0; i < 50; i++) {
+            setTimeout(() => {
+                const rect = clickArea.getBoundingClientRect();
+                createParticleBurst(rect.left + rect.width/2, rect.top + rect.height/2, '#ffd700', 5);
+            }, i * 30);
+        }
+    }
+
+    // ============================================================
+    // 🗑️ HARD RESET
+    // ============================================================
+    function confirmReset() {
+        sfx.click();
+        document.getElementById('resetModal').classList.add('show');
+    }
+    function closeReset() {
+        sfx.click();
+        document.getElementById('resetModal').classList.remove('show');
+    }
+    function hardReset() {
+        localStorage.removeItem(SAVE_KEY);
+        location.reload();
+    }
+
+    // ============================================================
+    // 👋 WELCOME BACK
+    // ============================================================
+    function closeWelcome() {
+        sfx.click();
+        document.getElementById('welcomeModal').classList.remove('show');
+    }
+
+    // ============================================================
+    // 🔄 GAME LOOPS
+    // ============================================================
+    // Main tick: 10 fps for production
+    setInterval(() => {
+        const cps = calcCps();
+        if (cps > 0) {
+            const earned = cps / 10;
+            gameState.score += earned;
+            gameState.lifetimeScore += earned;
+        }
+        // Combo decay
+        if (comboTimer > 0) {
+            comboTimer--;
+            if (comboTimer === 0) {
+                comboCount = 0;
+                updateCombo();
+            }
+        }
+        maybeSpawnGolden();
+        updateUI();
+    }, 100);
+
+    // Auto-save every 5 seconds
+    setInterval(saveGame, 5000);
+
+    // Save on page hide / unload
+    window.addEventListener('beforeunload', saveGame);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) saveGame();
+    });
+
+    // ============================================================
+    // 🎨 UI UPDATES
+    // ============================================================
+    function updateUI() {
+        // Smoothly animate score
+        displayScore += (gameState.score - displayScore) * 0.3;
+        scoreDisplay.innerText = formatNum(displayScore);
+        document.getElementById('cpsDisplay').innerText = formatNum(calcCps());
+        document.getElementById('totalClicks').innerText = formatNum(gameState.totalClicks);
+        document.getElementById('lifetimeScore').innerText = formatNum(gameState.lifetimeScore);
+        document.getElementById('prestigeLevel').innerText = gameState.prestigeLevel;
+        document.getElementById('prestigeMult').innerText = '×' + getPrestigeMult().toFixed(2);
+        
+        // Milestone bar
+        const milestones = [100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 1e10, 1e12];
+        const next = milestones.find(m => m > gameState.lifetimeScore) || milestones[milestones.length-1];
+        const prev = milestones[milestones.indexOf(next) - 1] || 0;
+        const pct = ((gameState.lifetimeScore - prev) / (next - prev)) * 100;
+        document.getElementById('milestoneFill').style.width = Math.min(100, pct) + '%';
+        document.getElementById('milestoneText').innerText = `${formatNum(gameState.lifetimeScore)} / ${formatNum(next)} to next milestone`;
+
+        updateOrbAppearance();
+
+        // Update shop
+        for (let key in upgrades) {
+            const upg = upgrades[key];
+            if (upg.type !== currentTab) continue;
+            const card = document.getElementById(`card-${key}`);
+            if (!card) continue;
+            
+            let n = buyMult;
+            if (n === -1) n = Math.max(1, getMaxAffordable(key));
+            const cost = getBulkCost(key, n);
+            const costEl = document.getElementById(`cost-${key}`);
+            const countEl = document.getElementById(`count-${key}`);
+            
+            const labelN = (buyMult === -1) ? `MAX(${n})` : `×${n}`;
+            costEl.innerText = `${formatNum(cost)} ${buyMult !== 1 ? `(${labelN})` : ''}`;
+            countEl.innerText = gameState.upgrades[key];
+            
+            if (gameState.score < cost) {
+                card.classList.add('disabled');
+                card.classList.remove('affordable');
+                costEl.classList.remove('affordable');
+            } else {
+                card.classList.remove('disabled');
+                card.classList.add('affordable');
+                costEl.classList.add('affordable');
+            }
+        }
+    }
+
+    // ============================================================
+    // 🚀 BOOT
+    // ============================================================
+    const loaded = loadGame();
+    if (loaded) {
+        // Calculate offline progress
+        const { earnings, time } = calculateOfflineEarnings();
+        if (earnings > 0 && time > 30) {
+            gameState.score += earnings;
+            gameState.lifetimeScore += earnings;
+            document.getElementById('offlineEarnings').innerText = formatNum(earnings);
+            document.getElementById('awayTime').innerText = formatTime(time);
+            document.getElementById('welcomeModal').classList.add('show');
+        }
+    }
+    displayScore = gameState.score;
+    buildShop();
+    updateUI();
+    checkAchievements();
     </script>
 </body>
 </html>
