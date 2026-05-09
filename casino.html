@@ -259,17 +259,17 @@ h1{font-size:1.4em;letter-spacing:2px;}
 
 <div id="poker" class="game-container">
 <h2>PULSAR POKER</h2>
-<div class="subtitle">Jacks or Better video poker. House edge ~5%.</div>
+<div class="subtitle">Jacks or Better video poker. House edge ~8%.</div>
 <div class="paytable-poker">
-<div class="lbl">Royal Flush</div><div class="pay big">800×</div>
-<div class="lbl">Straight Flush</div><div class="pay">50×</div>
-<div class="lbl">Four of a Kind</div><div class="pay">25×</div>
-<div class="lbl">Full House</div><div class="pay">9×</div>
-<div class="lbl">Flush</div><div class="pay">6×</div>
-<div class="lbl">Straight</div><div class="pay">4×</div>
-<div class="lbl">Three of a Kind</div><div class="pay">3×</div>
-<div class="lbl">Two Pair</div><div class="pay">2×</div>
-<div class="lbl">Jacks or Better</div><div class="pay">1×</div>
+<div class="lbl">Royal Flush</div><div class="pay big">250×</div>
+<div class="lbl">Straight Flush</div><div class="pay">40×</div>
+<div class="lbl">Four of a Kind</div><div class="pay">15×</div>
+<div class="lbl">Full House</div><div class="pay">7×</div>
+<div class="lbl">Flush</div><div class="pay">5×</div>
+<div class="lbl">Straight</div><div class="pay">3×</div>
+<div class="lbl">Three of a Kind</div><div class="pay">2×</div>
+<div class="lbl">Two Pair</div><div class="pay">1×</div>
+<div class="lbl">Jacks or Better</div><div class="pay">0.5×</div>
 </div>
 <div class="card-table" id="vpCards" style="min-height:120px;"></div>
 <div class="bet-area" id="vpBetArea">
@@ -476,7 +476,12 @@ const VALUES=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 function buildDeck(){
 const d=[];
 for(const s of SUITS)for(const v of VALUES)d.push({suit:s,val:v,isRed:s==='♥'||s==='♦'});
-return d.sort(()=>Math.random()-.5);
+// Fisher-Yates shuffle (uniformly random, unlike .sort(Math.random()))
+for(let i=d.length-1;i>0;i--){
+const j=Math.floor(Math.random()*(i+1));
+[d[i],d[j]]=[d[j],d[i]];
+}
+return d;
 }
 function makeCard(card,hidden=false){
 const el=document.createElement('div');
@@ -604,22 +609,22 @@ const three=Object.values(counts).includes(3);
 const four=Object.values(counts).includes(4);
 let highPair=false;['J','Q','K','A'].forEach(f=>{if(counts[f]>=2)highPair=true;});
 let mult=0,msg='No win.';
-if(isFlush&&isStraight&&vals.includes(14)&&vals.includes(13)){mult=800;msg='ROYAL FLUSH! 👑';}
-else if(isFlush&&isStraight){mult=50;msg='STRAIGHT FLUSH!';}
-else if(four){mult=25;msg='FOUR OF A KIND!';}
-else if(three&&pairs===1){mult=9;msg='FULL HOUSE!';}
-else if(isFlush){mult=6;msg='FLUSH!';}
-else if(isStraight){mult=4;msg='STRAIGHT!';}
-else if(three){mult=3;msg='THREE OF A KIND!';}
-else if(pairs===2){mult=2;msg='TWO PAIR!';}
-else if(highPair){mult=1;msg='JACKS OR BETTER!';}
+if(isFlush&&isStraight&&vals.includes(14)&&vals.includes(13)){mult=250;msg='ROYAL FLUSH! 👑';}
+else if(isFlush&&isStraight){mult=40;msg='STRAIGHT FLUSH!';}
+else if(four){mult=15;msg='FOUR OF A KIND!';}
+else if(three&&pairs===1){mult=7;msg='FULL HOUSE!';}
+else if(isFlush){mult=5;msg='FLUSH!';}
+else if(isStraight){mult=3;msg='STRAIGHT!';}
+else if(three){mult=2;msg='THREE OF A KIND!';}
+else if(pairs===2){mult=1;msg='TWO PAIR!';}
+else if(highPair){mult=0.5;msg='JACKS OR BETTER!';}
 const m=document.getElementById('vpMsg');
 if(mult>0){
-const win=vpBet*mult;
-updateTokens(win,true);
-m.innerText=`${msg} +${win} 🎟️`;
-m.style.color=mult>=50?'#feca57':'#00ffff';
-mult>=25?sfx.bigwin():sfx.win();
+const win=Math.floor(vpBet*mult);
+if(win>0)updateTokens(win,true);
+m.innerText=`${msg} ${win>0?'+'+win+' 🎟️':'(rounded to 0)'}`;
+m.style.color=mult>=40?'#feca57':'#00ffff';
+mult>=15?sfx.bigwin():sfx.win();
 } else {m.innerText=msg;m.style.color='#ff0055';sfx.lose();}
 }
 </script>
