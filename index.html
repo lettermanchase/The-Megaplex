@@ -2038,66 +2038,89 @@ body.auth-resolved #miniLevel {
             location.reload();
         }
 
-        /* ====== INIT — wait for cloud OR 2-second fallback ====== */
-        let hubInitComplete = false;
-        const HUB_CLOUD_TIMEOUT_MS = 2000;
+        /* ====== INIT — proper auth-aware initialization ====== */
+let hubInitComplete = false;
+const HUB_SAFETY_TIMEOUT_MS = 8000; // Generous fallback for very slow networks
 
-        function performHubInit(reason) {
-            console.log('[Megaplex Hub] Init triggered by:', reason);
-            document.body.classList.add('auth-resolved');
-            updateHeaderAuthUI();
-            const user = window.MegaplexCloud ? window.MegaplexCloud.currentFbUser : null;
+function performHubInit(reason) {
+    if (hubInitComplete) {
+        console.log('[Megaplex Hub] Init skipped (already complete), reason:', reason);
+        // Still re-render in case auth state changed (e.g., login/logout)
+        updateHeaderAuthUI();
+        renderHubAvatar();
+        return;
+    }
+    
+    console.log('[Megaplex Hub] Init triggered by:', reason);
+    document.body.classList.add('auth-resolved');
+    updateHeaderAuthUI();
+    
+    const user = window.MegaplexCloud ? window.MegaplexCloud.currentFbUser : null;
+    const isGuest = window.MegaplexCloud && window.MegaplexCloud.isGuestMode;
+    const hasStoredSession = localStorage.getItem('megaplexUsername') !== null;
 
-            if (user) {
-                document.getElementById('guestBanner').classList.remove('show');
-                document.getElementById('logoutBtn').style.display = 'inline-block';
-                hideLoadingOverlay();
-                hideLoginModal();
-                loadScores();
-                renderHubAvatar();
-                checkDailyBonus();
-                showRecentBadges();
-                if (!hubInitComplete) {
-                    toast(`Welcome, ${localStorage.getItem('megaplexUsername')}!`, 'success', '✅');
-                }
-            } else if (window.MegaplexCloud && window.MegaplexCloud.isGuestMode) {
-                document.getElementById('logoutBtn').style.display = 'none';
-                document.getElementById('guestBanner').classList.add('show');
-                hideLoginModal();
-                loadScores();
-                renderHubAvatar();
-                checkDailyBonus();
-                showRecentBadges();
-            } else {
-                document.getElementById('logoutBtn').style.display = 'none';
-                // Render whatever we have locally so the avatar is visible even before login
-                loadScores();
-                renderHubAvatar();
-                checkDailyBonus();
-                showRecentBadges();
-                if (reason === '2-second-timeout') {
-                    showLoginModal();
-                }
-            }
-            hubInitComplete = true;
+    if (user) {
+        // ✅ Logged in via Firebase
+        document.getElementById('guestBanner').classList.remove('show');
+        document.getElementById('logoutBtn').style.display = 'inline-block';
+        hideLoadingOverlay();
+        hideLoginModal();
+        loadScores();
+        renderHubAvatar();
+        checkDailyBonus();
+        showRecentBadges();
+        toast(`Welcome, ${localStorage.getItem('megaplexUsername')}!`, 'success', '✅');
+    } else if (isGuest) {
+        // 👤 Explicitly chose guest mode
+        document.getElementById('logoutBtn').style.display = 'none';
+        document.getElementById('guestBanner').classList.add('show');
+        hideLoginModal();
+        loadScores();
+        renderHubAvatar();
+        checkDailyBonus();
+        showRecentBadges();
+    } else {
+        // 🔒 Not logged in and not a guest → show login
+        document.getElementById('logoutBtn').style.display = 'none';
+        loadScores();
+        renderHubAvatar();
+        checkDailyBonus();
+        showRecentBadges();
+        
+        // Only show login modal if there's NO stored session 
+        // (avoids flashing modal during Firebase reconnect)
+        if (!hasStoredSession) {
+            showLoginModal();
+        } else {
+            // We have a stored username but Firebase says no user.
+            // This means session expired — show login but don't toast.
+            console.log('[Megaplex] Stored session found but no Firebase user — login required');
+            showLoginModal();
         }
+    }
+    hubInitComplete = true;
+}
 
-        /* ====== AUTH-READY HANDLER (always re-renders avatar when cloud loads) ====== */
-        window.addEventListener('megaplex-auth-ready', async (e) => {
-            performHubInit('cloud-ready');
-        });
+/* ====== USE THE PROPER onReady HOOK ====== */
+// This fires EXACTLY once when Firebase finishes its initial auth check.
+// No race conditions, no flashing modal.
+if (window.MegaplexCloud && typeof window.MegaplexCloud.onReady === 'function') {
+    window.MegaplexCloud.onReady((user) => {
+        performHubInit(user ? 'auth-ready-with-user' : 'auth-ready-no-user');
+    });
+} else {
+    // Fallback if MegaplexCloud somehow isn't loaded
+    console.error('[Megaplex] MegaplexCloud not available!');
+    setTimeout(() => performHubInit('emergency-fallback'), 500);
+}
 
-        // If module already finished loading before this listener attached, fire init manually
-        if (window.MegaplexCloud && window.MegaplexCloud.isReady) {
-            performHubInit('module-already-ready');
-        }
-
-        // 2-second hard timeout fallback — render local data even if cloud never connects
-        setTimeout(() => {
-            if (!hubInitComplete) {
-                performHubInit('2-second-timeout');
-            }
-        }, HUB_CLOUD_TIMEOUT_MS);
+// Long safety timeout — only fires if Firebase completely hangs
+setTimeout(() => {
+    if (!hubInitComplete) {
+        console.warn('[Megaplex] Safety timeout fired — Firebase may be down');
+        performHubInit('safety-timeout');
+    }
+}, HUB_SAFETY_TIMEOUT_MS);
 
         /* ====== HEADER AUTH BUTTON ====== */
         function handleHeaderAuth() {
