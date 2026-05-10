@@ -1,6 +1,6 @@
 /* ====== MEGAPLEX SHARED FIREBASE MODULE (v2.1 — registry-based) ====== */
 const firebaseConfig = {
-    apiKey: "AIzaSyBkJro28vgvfYLxt-MIhyNHXL2sEoDp9pQ",
+    apiKey: process.env.REACT_APP_FIREBASE_KEY,
     authDomain: "the-megaplex.firebaseapp.com",
     projectId: "the-megaplex",
     storageBucket: "the-megaplex.firebasestorage.app",
