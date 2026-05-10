@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quick Math - Arcade</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         /* Shared Theme */
         body { 
@@ -97,6 +98,12 @@
         .shake { animation: shake 0.3s ease-in-out; border-color: #ff4757 !important; }
         .correct-flash { border-color: #1dd1a1 !important; background: rgba(29,209,161,0.1); }
     </style>
+	
+	<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
 </head>
 <body>
 
@@ -163,8 +170,21 @@
 
     <script>
         // --- Hub Data Load ---
-        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || { clicker: 0, reaction: 9999, math: 0, ttt: 0 };
-        document.getElementById('highScoreDisplay').innerText = globalScores.math || 0;
+        // --- Hub Data Load ---
+let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || { clicker: 0, reaction: 9999, math: 0, ttt: 0 };
+document.getElementById('highScoreDisplay').innerText = globalScores.math || 0;
+
+// Refresh high score once Firebase has loaded the user's cloud data
+if (window.MegaplexCloud) {
+    window.MegaplexCloud.onReady(function() {
+        const cloudScores = JSON.parse(localStorage.getItem('arcadeScores'));
+        if (cloudScores) {
+            globalScores = cloudScores;
+            document.getElementById('highScoreDisplay').innerText = globalScores.math || 0;
+            console.log('[QuickMath] Cloud high score loaded:', globalScores.math);
+        }
+    });
+}
 
         // --- Game State ---
         let score = 0;
@@ -324,13 +344,20 @@
             isPlaying = false;
             clearInterval(timerInterval);
             
-            // Save Score
-            if (score > (globalScores.math || 0)) {
-                globalScores.math = score;
-                localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
-                document.getElementById('highScoreDisplay').innerText = score;
-                document.getElementById('highScoreDisplay').style.color = '#1dd1a1';
-            }
+                // Save Score
+    if (score > (globalScores.math || 0)) {
+        globalScores.math = score;
+        localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
+        document.getElementById('highScoreDisplay').innerText = score;
+        document.getElementById('highScoreDisplay').style.color = '#1dd1a1';
+
+        // 🆕 Push to cloud
+        if (window.MegaplexCloud && window.MegaplexCloud.isReady) {
+            window.MegaplexCloud.saveToCloud()
+                .then(() => console.log('[QuickMath] ☁️ High score synced:', score))
+                .catch(e => console.error('[QuickMath] Cloud sync failed:', e));
+        }
+    }
 
             // Show Game Over Overlay
             const overlay = document.getElementById('startOverlay');

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tic-Tac-Toe: Overdrive</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         /* Shared Theme */
         body { 
@@ -91,6 +92,12 @@
         .btn-restart:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(243, 104, 224, 0.6); }
 
     </style>
+	
+	<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
 </head>
 <body>
 
@@ -159,51 +166,77 @@
     </div>
 
     <script>
-        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || { clicker: 0, reaction: 9999, math: 0, ttt: 0 };
+        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
         let coins = parseInt(localStorage.getItem('tttCoins')) || 0;
         let inventory = JSON.parse(localStorage.getItem('tttInventory')) || { eraser: 0, steal: 0 };
-
+        
+        // Ensure inventory has both keys (in case old save missing one)
+        if (typeof inventory.eraser !== 'number') inventory.eraser = 0;
+        if (typeof inventory.steal !== 'number') inventory.steal = 0;
+    
         document.getElementById('totalWins').innerText = globalScores.ttt || 0;
-
+    
         let board = ['', '', '', '', '', '', '', '', ''];
         let gameActive = true;
         let activePowerup = null;
-
+    
         const winConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
             [0, 3, 6], [1, 4, 7], [2, 5, 8],
             [0, 4, 8], [2, 4, 6]            
         ];
-
+    
         const gridElement = document.getElementById('grid');
         const statusMsg = document.getElementById('statusMsg');
         const restartBtn = document.getElementById('restartBtn');
         const coinUI = document.getElementById('coinUI');
         const helpText = document.getElementById('powerupHelp');
-
+    
+        // ☁️ Cloud save helper — safe to call even if cloud isn't ready
+        function saveToCloud() {
+            if (window.MegaplexCloud && window.MegaplexCloud.saveToCloud) {
+                window.MegaplexCloud.saveToCloud();
+            }
+        }
+    
+        // 🔄 Reload from localStorage when cloud finishes loading data
+        if (window.MegaplexCloud) {
+            window.MegaplexCloud.onReady(() => {
+                globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+                coins = parseInt(localStorage.getItem('tttCoins')) || 0;
+                inventory = JSON.parse(localStorage.getItem('tttInventory')) || { eraser: 0, steal: 0 };
+                if (typeof inventory.eraser !== 'number') inventory.eraser = 0;
+                if (typeof inventory.steal !== 'number') inventory.steal = 0;
+                document.getElementById('totalWins').innerText = globalScores.ttt || 0;
+                updateShopUI();
+                console.log('[TTT] Cloud data loaded');
+            });
+        }
+    
         function updateShopUI() {
-            coinUI.innerText = coins;
+            coinUI.innerText = coins || 0;
             document.getElementById('buy-eraser').disabled = coins < 30;
             document.getElementById('buy-steal').disabled = coins < 50;
             
-            document.getElementById('count-eraser').innerText = inventory.eraser;
-            document.getElementById('count-steal').innerText = inventory.steal;
+            document.getElementById('count-eraser').innerText = inventory.eraser || 0;
+            document.getElementById('count-steal').innerText = inventory.steal || 0;
             
             localStorage.setItem('tttCoins', coins);
             localStorage.setItem('tttInventory', JSON.stringify(inventory));
         }
-
+    
         function buyItem(item, cost) {
             if (coins >= cost) {
                 coins -= cost;
                 inventory[item]++;
                 updateShopUI();
+                saveToCloud(); // ☁️ Sync purchase
             }
         }
-
+    
         function togglePowerup(type) {
             if (!gameActive || inventory[type] <= 0) return;
-
+    
             if (activePowerup === type) {
                 activePowerup = null;
                 document.getElementById(`inv-${type}`).classList.remove('active');
@@ -211,7 +244,7 @@
                 helpText.style.display = 'none';
                 return;
             }
-
+    
             activePowerup = type;
             document.getElementById('inv-eraser').classList.remove('active');
             document.getElementById('inv-steal').classList.remove('active');
@@ -220,7 +253,7 @@
             gridElement.className = `ttt-grid targeting-${type}`;
             helpText.style.display = 'block';
         }
-
+    
         function consumePowerup() {
             inventory[activePowerup]--;
             activePowerup = null;
@@ -229,8 +262,9 @@
             gridElement.className = 'ttt-grid';
             helpText.style.display = 'none';
             updateShopUI();
+            saveToCloud(); // ☁️ Sync powerup use
         }
-
+    
         function initGame() {
             board = ['', '', '', '', '', '', '', '', ''];
             gameActive = true;
@@ -246,7 +280,7 @@
             renderBoard();
             updateShopUI();
         }
-
+    
         function renderBoard() {
             gridElement.innerHTML = '';
             board.forEach((cell, index) => {
@@ -260,18 +294,17 @@
                     cellDiv.innerText = 'O';
                     cellDiv.classList.add('o-mark');
                 }
-
+    
                 cellDiv.addEventListener('click', () => handleCellClick(index));
                 gridElement.appendChild(cellDiv);
             });
         }
-
+    
         function handleCellClick(index) {
             if (!gameActive) return;
-
-            // Powerup Logic Fixes
+    
             if (activePowerup) {
-                let usedPowerup = activePowerup; // Store it before consuming
+                let usedPowerup = activePowerup;
                 if (board[index] === 'O') {
                     if (usedPowerup === 'eraser') {
                         board[index] = ''; 
@@ -284,7 +317,6 @@
                     renderBoard();
                     
                     if (!checkWin()) {
-                        // If we stole a piece, we placed an X, so it's the CPU's turn!
                         if (usedPowerup === 'steal') {
                             statusMsg.innerText = "CPU Thinking...";
                             gameActive = false; 
@@ -294,43 +326,39 @@
                 }
                 return;
             }
-
+    
             if (board[index] !== '') return;
-
+    
             board[index] = 'X';
             renderBoard();
-
+    
             if (!checkWin()) {
                 statusMsg.innerText = "CPU Thinking...";
-                gameActive = false; // Lock player input
+                gameActive = false;
                 setTimeout(cpuTurn, 600);
             }
         }
-
+    
         function cpuTurn() {
-            // BUG FIX: Removed the early return that was locking the CPU out!
-            
             let emptyCells = board.map((val, idx) => val === '' ? idx : null).filter(val => val !== null);
             if (emptyCells.length === 0) return;
-
+    
             let moveIndex = -1;
-
             moveIndex = findBestMove('O');
             if (moveIndex === -1) moveIndex = findBestMove('X');
-
             if (moveIndex === -1) {
                 moveIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
             }
-
+    
             board[moveIndex] = 'O';
             renderBoard();
             
             if (!checkWin()) {
                 statusMsg.innerText = "Your Turn (X)";
-                gameActive = true; // Unlock player input
+                gameActive = true;
             }
         }
-
+    
         function findBestMove(player) {
             for (let condition of winConditions) {
                 let [a, b, c] = condition;
@@ -340,11 +368,11 @@
             }
             return -1;
         }
-
+    
         function checkWin() {
             let roundWon = false;
             let winner = null;
-
+    
             for (let i = 0; i < winConditions.length; i++) {
                 const [a, b, c] = winConditions[i];
                 if (board[a] && board[a] === board[b] && board[a] === board[c]) {
@@ -353,7 +381,7 @@
                     break;
                 }
             }
-
+    
             if (roundWon) {
                 gameActive = false;
                 restartBtn.style.display = "block";
@@ -365,16 +393,17 @@
                     
                     globalScores.ttt = (globalScores.ttt || 0) + 1;
                     localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
-                    document.getElementById('totalWins').innerText = globalScores.ttt;
-
+                    document.getElementById('totalWins').innerText = globalScores.ttt || 0;
+    
                 } else {
                     statusMsg.innerText = "CPU WINS! 💀";
                     statusMsg.style.color = "#ff4757";
                 }
                 updateShopUI();
+                saveToCloud(); // ☁️ Sync after every match
                 return true;
             }
-
+    
             if (!board.includes('')) {
                 statusMsg.innerText = "DRAW! +5 Coins 🪙";
                 statusMsg.style.color = "#feca57";
@@ -382,14 +411,14 @@
                 gameActive = false;
                 restartBtn.style.display = "block";
                 updateShopUI();
+                saveToCloud(); // ☁️ Sync after draw too
                 return true;
             }
-
+    
             return false;
         }
-
+    
         initGame();
-
     </script>
 </body>
 </html>

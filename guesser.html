@@ -192,6 +192,11 @@
         }
         .mute-btn:hover { color: #fff; border-color: #fff; }
     </style>
+	<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
 </head>
 <body>
 
@@ -294,22 +299,36 @@
             } catch(e) { return 0; }
         }
         function saveBestScore(val) {
-            const data = { guesser: val, checksum: simpleHash(SECRET_SALT + val) };
-            localStorage.setItem('arcadeScores_v2', JSON.stringify(data));
-        }
+    const data = { guesser: val, checksum: simpleHash(SECRET_SALT + val) };
+    localStorage.setItem('arcadeScores_v2', JSON.stringify(data));
+
+    // 🆕 Push to cloud
+    if (window.MegaplexCloud && window.MegaplexCloud.isReady) {
+        window.MegaplexCloud.saveToCloud()
+            .then(() => console.log('[CodeBreaker] ☁️ High score synced to cloud:', val))
+            .catch(e => console.error('[CodeBreaker] Cloud sync failed:', e));
+    }
+}
         function loadAchievements() {
             try {
                 return JSON.parse(localStorage.getItem('cb_achievements') || '[]');
             } catch(e) { return []; }
         }
         function saveAchievement(name) {
-            const list = loadAchievements();
-            if (!list.includes(name)) {
-                list.push(name);
-                localStorage.setItem('cb_achievements', JSON.stringify(list));
-                showAchievement(name);
-            }
+    const list = loadAchievements();
+    if (!list.includes(name)) {
+        list.push(name);
+        localStorage.setItem('cb_achievements', JSON.stringify(list));
+        showAchievement(name);
+
+        // 🆕 Sync achievements to cloud
+        if (window.MegaplexCloud && window.MegaplexCloud.isReady) {
+            window.MegaplexCloud.saveToCloud()
+                .then(() => console.log('[CodeBreaker] ☁️ Achievement synced:', name))
+                .catch(e => console.error('[CodeBreaker] Cloud sync failed:', e));
         }
+    }
+}
 
         // ---------- Game State (private to closure) ----------
         let difficulty = 'easy';
@@ -345,6 +364,17 @@
 
         document.getElementById('bestScoreUI').innerText = bestScore;
         muteBtn.innerText = isMuted ? '🔇' : '🔊';
+        // Refresh best score from cloud once Firebase is ready
+if (window.MegaplexCloud) {
+    window.MegaplexCloud.onReady(function() {
+        const cloudBest = loadBestScore();  // re-reads now-populated localStorage
+        if (cloudBest > bestScore) {
+            bestScore = cloudBest;
+            document.getElementById('bestScoreUI').innerText = bestScore;
+            console.log('[CodeBreaker] Loaded cloud high score:', bestScore);
+        }
+    });
+}
 
         // ---------- Sound Engine (Web Audio - no files needed) ----------
         let audioCtx = null;
@@ -734,12 +764,22 @@
                 saveAchievement('Pure Skill (Hard, No Powerups)');
             }
 
-            if (score > bestScore) {
-                bestScore = score;
-                saveBestScore(score);
-                document.getElementById('bestScoreUI').innerText = score;
-                saveAchievement('New High Score!');
-            }
+            const currentBest = loadBestScore();
+if (score > currentBest) {
+    bestScore = score;
+    saveBestScore(score);
+    document.getElementById('bestScoreUI').innerText = score;
+    saveAchievement('New High Score!');
+
+    // 🆕 Push to the SHARED arcadeScores under key 'guesser' (matches index leaderboard)
+    if (window.MegaplexCloud && window.MegaplexCloud.recordScore) {
+        window.MegaplexCloud.recordScore('guesser', score, true)
+            .then(isNew => {
+                if (isNew) console.log('[CodeBreaker] 🏆 Leaderboard updated:', score);
+            })
+            .catch(e => console.error('[CodeBreaker] Leaderboard sync failed:', e));
+    }
+}
 
             const bonusText = noPowerupBonus > 0 ? '<br>+100 No-Powerup Bonus!' : '';
             showEndScreen("Code Broken!", "#1dd1a1", 

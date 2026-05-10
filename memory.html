@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Matrix - Arcade</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         /* Shared Theme */
         body { 
@@ -119,6 +120,12 @@
         .btn-start:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(155, 89, 182, 0.6); }
 
     </style>
+	
+	<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
 </head>
 <body>
 
@@ -175,6 +182,15 @@
         // --- Hub Data Load ---
         let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || { clicker: 0, reaction: 9999, math: 0, memory: 999, ttt: 0 };
         document.getElementById('bestMoves').innerText = globalScores.memory === 999 ? '---' : globalScores.memory;
+        // 🆕 Refresh from cloud once Firebase is ready
+if (window.MegaplexCloud) {
+    window.MegaplexCloud.onReady(function() {
+        globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || globalScores;
+        const m = globalScores.memory;
+        document.getElementById('bestMoves').innerText = (m === undefined || m === 999) ? '---' : m;
+        console.log('[Memory] Cloud best loaded:', m);
+    });
+}
 
         // --- Game State ---
         const allEmojis = ['👾','🚀','🪐','🛸','⭐','🌙','🔥','⚡','💎','🔮'];
@@ -380,12 +396,26 @@
             // Update Global High Score (Fewest Moves is better)
             // We only save the score if it's the absolute best across ALL difficulties to keep it simple,
             // or you could separate them later. For now, lower moves = better.
-            if (moves < globalScores.memory || globalScores.memory === 999) {
-                globalScores.memory = moves;
-                localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
-                document.getElementById('bestMoves').innerText = moves;
-                document.getElementById('recordMsg').style.display = 'block';
-            }
+            // Re-read in case cloud updated it during play
+const freshScores = JSON.parse(localStorage.getItem('arcadeScores')) || globalScores;
+const currentBest = (freshScores.memory === undefined || freshScores.memory === 999) ? Infinity : freshScores.memory;
+
+if (moves < currentBest) {
+    globalScores = freshScores;
+    globalScores.memory = moves;
+    localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
+    document.getElementById('bestMoves').innerText = moves;
+    document.getElementById('recordMsg').style.display = 'block';
+
+    // 🆕 Sync to cloud leaderboard (lower is better, so higherIsBetter = false)
+    if (window.MegaplexCloud && window.MegaplexCloud.recordScore) {
+        window.MegaplexCloud.recordScore('memory', moves, false)
+            .then(isNew => {
+                if (isNew) console.log('[Memory] 🏆 Leaderboard updated:', moves);
+            })
+            .catch(e => console.error('[Memory] Cloud sync failed:', e));
+    }
+}
 
             setTimeout(() => {
                 document.getElementById('winOverlay').classList.add('active');

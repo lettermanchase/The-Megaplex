@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Breach: Overhauled - FPS</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, sans-serif; 
@@ -105,6 +106,12 @@
         .btn-start { background: #ff4757; color: #fff; border: none; padding: 14px 36px; font-size: 1.3em; font-weight: bold; border-radius: 30px; cursor: pointer; margin-top: 18px; text-transform: uppercase;}
         .btn-start:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,71,87,0.6); }
     </style>
+	
+	<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
 </head>
 <body>
     <header>
@@ -275,6 +282,18 @@ document.addEventListener("visibilitychange", () => {
 
 let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || { fps: 0 };
 document.getElementById('bestScoreUI').innerText = globalScores.fps || 0;
+
+// Refresh highscore once Firebase has loaded the user's cloud data
+if (window.MegaplexCloud) {
+    window.MegaplexCloud.onReady(function() {
+        let cloudScores = JSON.parse(localStorage.getItem('arcadeScores'));
+        if (cloudScores) {
+            globalScores = cloudScores;
+            document.getElementById('bestScoreUI').innerText = globalScores.fps || 0;
+            console.log('[FPS] Highscore loaded from cloud:', globalScores.fps);
+        }
+    });
+}
 
 // ============================================================
 // CORE
@@ -1537,10 +1556,17 @@ function winGame() {
     let finalScore = 5000 + timeBonus + accBonus;
     
     if (finalScore > (globalScores.fps || 0)) {
-        globalScores.fps = finalScore;
-        localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
-        document.getElementById('bestScoreUI').innerText = finalScore;
+    globalScores.fps = finalScore;
+    localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
+    document.getElementById('bestScoreUI').innerText = finalScore;
+
+    // Push new high score to the cloud
+    if (window.MegaplexCloud && window.MegaplexCloud.isReady) {
+        window.MegaplexCloud.saveToCloud()
+            .then(() => console.log('[FPS] Highscore synced to cloud:', finalScore))
+            .catch(err => console.error('[FPS] Cloud sync failed:', err));
     }
+}
     const overlay = document.getElementById('overlay');
     document.getElementById('overlayTitle').innerText = "SYSTEM PURGED";
     document.getElementById('overlayTitle').style.color = "#1dd1a1";

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clicker Frenzy - Arcade</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         * { box-sizing: border-box; }
         body { 
@@ -370,6 +371,12 @@
             .stats-panel { position: static; margin: 10px; }
         }
     </style>
+	
+	<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
 </head>
 <body>
     <div id="cosmic-bg"></div>
@@ -616,17 +623,27 @@
     ];
 
     function saveGame() {
-        gameState.lastSaved = Date.now();
-        try {
-            localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
-            // Also sync with arcade scores for hub leaderboard
-            const arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-            arcadeScores.clicker = Math.floor(gameState.lifetimeScore);
-            localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
-        } catch(e) {
-            console.error('Save failed:', e);
+    gameState.lastSaved = Date.now();
+    try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+        const arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+        arcadeScores.clicker = Math.floor(gameState.lifetimeScore);
+        localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
+
+        // 🆕 Sync to cloud (debounced — auto-save runs every 5s but only push to cloud occasionally)
+        if (window.MegaplexCloud && window.MegaplexCloud.isReady && !window._clickerCloudPending) {
+            window._clickerCloudPending = true;
+            setTimeout(() => {
+                window.MegaplexCloud.saveToCloud()
+                    .then(() => console.log('[Clicker] ☁️ Synced to cloud'))
+                    .catch(e => console.error('[Clicker] Cloud sync failed:', e))
+                    .finally(() => { window._clickerCloudPending = false; });
+            }, 100);
         }
+    } catch(e) {
+        console.error('Save failed:', e);
     }
+}
 
     function loadGame() {
         const saved = localStorage.getItem(SAVE_KEY);
@@ -1140,10 +1157,10 @@
         document.getElementById('lifetimeScore').innerText = formatNum(gameState.lifetimeScore);
         document.getElementById('prestigeLevel').innerText = gameState.prestigeLevel;
         document.getElementById('prestigeMult').innerText = '×' + getPrestigeMult().toFixed(2);
-        
+
         // Milestone bar
         const milestones = [100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 1e10, 1e12];
-        const next = milestones.find(m => m > gameState.lifetimeScore) || milestones[milestones.length-1];
+        const next = milestones.find(m => m > gameState.lifetimeScore) || milestones[milestones.length - 1];
         const prev = milestones[milestones.indexOf(next) - 1] || 0;
         const pct = ((gameState.lifetimeScore - prev) / (next - prev)) * 100;
         document.getElementById('milestoneFill').style.width = Math.min(100, pct) + '%';
@@ -1151,23 +1168,23 @@
 
         updateOrbAppearance();
 
-        // Update shop
+        // Update shop cards
         for (let key in upgrades) {
             const upg = upgrades[key];
             if (upg.type !== currentTab) continue;
             const card = document.getElementById(`card-${key}`);
             if (!card) continue;
-            
+
             let n = buyMult;
             if (n === -1) n = Math.max(1, getMaxAffordable(key));
             const cost = getBulkCost(key, n);
             const costEl = document.getElementById(`cost-${key}`);
             const countEl = document.getElementById(`count-${key}`);
-            
+
             const labelN = (buyMult === -1) ? `MAX(${n})` : `×${n}`;
             costEl.innerText = `${formatNum(cost)} ${buyMult !== 1 ? `(${labelN})` : ''}`;
             countEl.innerText = gameState.upgrades[key];
-            
+
             if (gameState.score < cost) {
                 card.classList.add('disabled');
                 card.classList.remove('affordable');
@@ -1183,22 +1200,32 @@
     // ============================================================
     // 🚀 BOOT
     // ============================================================
-    const loaded = loadGame();
-    if (loaded) {
-        // Calculate offline progress
-        const { earnings, time } = calculateOfflineEarnings();
-        if (earnings > 0 && time > 30) {
-            gameState.score += earnings;
-            gameState.lifetimeScore += earnings;
-            document.getElementById('offlineEarnings').innerText = formatNum(earnings);
-            document.getElementById('awayTime').innerText = formatTime(time);
-            document.getElementById('welcomeModal').classList.add('show');
+    function bootGame() {
+        const loaded = loadGame();
+        if (loaded) {
+            const { earnings, time } = calculateOfflineEarnings();
+            if (earnings > 0 && time > 30) {
+                gameState.score += earnings;
+                gameState.lifetimeScore += earnings;
+                document.getElementById('offlineEarnings').innerText = formatNum(earnings);
+                document.getElementById('awayTime').innerText = formatTime(time);
+                document.getElementById('welcomeModal').classList.add('show');
+            }
         }
+        displayScore = gameState.score;
+        buildShop();
+        updateUI();
+        checkAchievements();
     }
-    displayScore = gameState.score;
-    buildShop();
-    updateUI();
-    checkAchievements();
-    </script>
+
+    // Wait for Firebase to populate localStorage before booting
+    if (window.MegaplexCloud) {
+        window.MegaplexCloud.onReady(function() {
+            bootGame();
+        });
+    } else {
+        bootGame();
+    }
+</script>
 </body>
 </html>

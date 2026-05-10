@@ -137,6 +137,11 @@ kbd{background:#222;padding:2px 5px;border-radius:3px;color:#feca57;font-family:
 .movelist b{color:#00d2d3;display:inline-block;min-width:140px;}
 </style>
 
+<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
 </head>
 <body>
 <header>
@@ -340,15 +345,32 @@ document.getElementById('ui-tokens').innerText=currentTokens;
 function getArcadeScores(){return JSON.parse(localStorage.getItem('arcadeScores'))||{};}
 function saveArcadeScores(s){localStorage.setItem('arcadeScores',JSON.stringify(s));}
 function recordHubScore(scoreToAdd){
-var s=getArcadeScores();
-s.glitch_score=Math.max(s.glitch_score||0,scoreToAdd);
-saveArcadeScores(s);
+    var s=getArcadeScores();
+    s.glitch_score=Math.max(s.glitch_score||0,scoreToAdd);
+    saveArcadeScores(s);
+    // CRITICAL: push to cloud immediately
+    if(window.MegaplexCloud) window.MegaplexCloud.saveToCloud();
 }
 function bumpStat(key,by){
-by=by||1;
-var s=getArcadeScores();
-s[key]=(s[key]||0)+by;
-saveArcadeScores(s);
+    by=by||1;
+    var s=getArcadeScores();
+    s[key]=(s[key]||0)+by;
+    saveArcadeScores(s);
+    if(window.MegaplexCloud) window.MegaplexCloud.saveToCloud();
+}
+function awardTokens(amount){
+    if(amount<=0)return;
+    currentTokens+=amount;
+    localStorage.setItem('megaplexTokens',currentTokens);
+    addLifetimeXp(amount);
+    document.getElementById('ui-tokens').innerText=currentTokens;
+    if(window.MegaplexCloud) window.MegaplexCloud.saveToCloud();
+}
+function spendTokens(amount){
+    currentTokens=Math.max(0,currentTokens-amount);
+    localStorage.setItem('megaplexTokens',currentTokens);
+    document.getElementById('ui-tokens').innerText=currentTokens;
+    if(window.MegaplexCloud) window.MegaplexCloud.saveToCloud();
 }
 
 // Avatar

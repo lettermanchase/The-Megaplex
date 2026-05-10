@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Megaplex</title>
-	<link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
@@ -49,45 +49,87 @@
         .boot-bar { width: 300px; height: 8px; background: #111; border: 1px solid #00d2d3; margin-top: 20px; overflow: hidden; }
         .boot-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #00d2d3, #feca57); transition: width 0.1s linear; }
 
-        /* ====== HEADER ====== */
-        header { 
-            text-align: center; padding: 30px; background: rgba(0,0,0,0.7); 
-            border-bottom: 3px solid #00d2d3; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            position: sticky; top: 0; z-index: 50;
-            min-height: 280px;
-            display: flex; flex-direction: column; justify-content: center;
-            backdrop-filter: blur(10px);
-            transition: min-height 0.4s ease, padding 0.4s ease;
+        /* HEADER — smooth, jitter-free */
+header { 
+    position: sticky; top: 0; z-index: 50;
+    height: 280px;
+    background: rgba(0,0,0,0.7);
+    border-bottom: 3px solid #00d2d3;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    transition: height 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.4s ease;
+    will-change: height;
+    contain: layout paint;
+}
+header.scrolled { 
+    height: 64px; 
+    box-shadow: 0 4px 20px rgba(0, 210, 211, 0.3); 
+}
+body.light-mode header { background: rgba(255,255,255,0.85) !important; color: #222 !important; }
+
+        .header-expanded {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 30px;
+            transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center center;
+            will-change: opacity, transform;
         }
-        header.scrolled { min-height: 70px; padding: 12px 30px; }
-        body.light-mode header { background: rgba(255,255,255,0.85) !important; color: #222 !important; }
+        header.scrolled .header-expanded {
+            opacity: 0;
+            transform: scale(0.85) translateY(-30px);
+            pointer-events: none;
+        }
+
+        .header-mini {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 30px;
+            opacity: 0;
+            transform: translateY(-15px);
+            pointer-events: none;
+            transition: opacity 0.3s ease 0.1s, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0.1s;
+            will-change: opacity, transform;
+        }
+        header.scrolled .header-mini {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
 
         .megaplex-logo {
             font-family: 'Orbitron', sans-serif;
             font-size: 3.5em; color: #00d2d3; letter-spacing: 4px;
             text-shadow: 0 0 10px #00d2d3, 0 0 20px #00d2d3, 0 0 40px #00d2d3, 0 0 80px #00d2d3;
             animation: neon-flicker 2.5s infinite alternate; user-select: none;
-            transition: font-size 0.4s ease;
+            margin: 0;
         }
-        header.scrolled .megaplex-logo { font-size: 1.8em; }
         body.light-mode .megaplex-logo { color: #00d2d3; text-shadow: 0 0 10px #feca57, 0 0 20px #feca57; }
         @keyframes neon-flicker {
             0%,100% { opacity: 1; } 10%{opacity:.8;} 20%{opacity:1;} 30%{opacity:.7;}
             40%{opacity:1;} 50%{opacity:.9;} 60%{opacity:1;} 70%{opacity:.85;} 80%{opacity:1;} 90%{opacity:.95;}
         }
-        .subtitle { color: #c8d6e5; font-size: 1.2em; margin-top: 10px; transition: opacity 0.3s, max-height 0.4s, margin 0.4s; max-height: 30px; overflow: hidden; }
+        .subtitle { color: #c8d6e5; font-size: 1.2em; margin-top: 10px; }
         body.light-mode .subtitle { color: #222; }
-        header.scrolled .subtitle { opacity: 0; max-height: 0; margin-top: 0; }
-
-        .header-side {
-    transition: opacity 0.25s ease, transform 0.4s ease, visibility 0.25s ease;
-    visibility: visible;
+		
+		/* Hide username/token placeholders until auth resolves */
+.user-greeting,
+.mini-pill,
+#tokenBalance,
+#miniTokenBalance,
+#playerLevel,
+#miniLevel { 
+    visibility: hidden; 
 }
-header.scrolled .header-side {
-    opacity: 0;
-    transform: translateY(-20px);
-    pointer-events: none;
-    visibility: hidden;
+body.auth-resolved .user-greeting,
+body.auth-resolved .mini-pill,
+body.auth-resolved #tokenBalance,
+body.auth-resolved #miniTokenBalance,
+body.auth-resolved #playerLevel,
+body.auth-resolved #miniLevel { 
+    visibility: visible; 
 }
 
         .user-greeting {
@@ -126,25 +168,21 @@ header.scrolled .header-side {
         .sound-btn:hover { background: #48dbfb; color: #000; box-shadow: 0 0 15px rgba(72, 219, 251, 0.6); }
         .sound-btn.muted { border-color: #ff4757; color: #ff4757; }
 
-        .mini-controls {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    display: flex; gap: 10px; align-items: center; z-index: 11;
-    opacity: 0; pointer-events: none; visibility: hidden;
-    transition: opacity 0.4s ease 0.1s, visibility 0.4s ease 0.1s;
-}
-.mini-controls.mini-left { left: 30px; }
-.mini-controls.mini-right { right: 30px; }
-header.scrolled .mini-controls {
-    opacity: 1; pointer-events: all; visibility: visible;
-}
-header.scrolled .mini-controls {
-    opacity: 1; pointer-events: all; visibility: visible;
-}
-        .mini-token {
-            background: rgba(254, 202, 87, 0.15); border: 1px solid #feca57;
-            padding: 6px 14px; border-radius: 15px; color: #feca57; font-weight: bold;
+        .mini-left, .mini-right { display: flex; gap: 10px; align-items: center; }
+        .mini-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3em; color: #00d2d3; letter-spacing: 2px;
+            text-shadow: 0 0 8px #00d2d3; cursor: pointer; user-select: none;
         }
-        .mini-controls .sound-btn { width: 32px; height: 32px; font-size: 0.9em; }
+        .mini-pill {
+            background: rgba(0,0,0,0.5); border: 1px solid #00d2d3;
+            padding: 6px 14px; border-radius: 15px; color: #00d2d3; font-weight: bold;
+            font-size: 0.9em; cursor: pointer; transition: background 0.2s, transform 0.2s;
+        }
+        .mini-pill:hover { background: rgba(0, 210, 211, 0.2); transform: translateY(-1px); }
+        .mini-pill.gold { border-color: #feca57; color: #feca57; }
+        .mini-pill.gold:hover { background: rgba(254, 202, 87, 0.15); }
+        .header-mini .sound-btn { width: 34px; height: 34px; font-size: 0.95em; }
 
         .hub-profile {
             position: absolute; top: 15px; left: 30px;
@@ -288,7 +326,7 @@ header.scrolled .mini-controls {
         }
         .play-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
 
-        /* Panel View base */
+        /* Panel View */
         .panel-view { position: relative; z-index: 10; display: none; max-width: 1100px; margin: 0 auto 60px; padding: 30px; background: rgba(0,0,0,0.85); border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #leaderboard-view { border: 1px solid #ff9f43; }
         #achievements-view { border: 1px solid #f368e0; }
@@ -432,6 +470,14 @@ header.scrolled .mini-controls {
         .lb-podium-score { color: #1dd1a1; font-weight: bold; font-family: monospace; font-size: 0.9em; margin-top: 4px; }
         .lb-empty { color: #555; font-style: italic; }
 
+        .lb-status-banner {
+            background: rgba(0, 210, 211, 0.1); border: 1px solid rgba(0, 210, 211, 0.4);
+            border-radius: 8px; padding: 10px 15px; margin-bottom: 15px;
+            text-align: center; color: #00d2d3; font-size: 0.9em;
+        }
+        .lb-status-banner.loading { color: #feca57; border-color: rgba(254, 202, 87, 0.4); background: rgba(254, 202, 87, 0.1); }
+        .lb-status-banner.offline { color: #ff4757; border-color: rgba(255, 71, 87, 0.4); background: rgba(255, 71, 87, 0.1); }
+
         .save-system { display: flex; justify-content: center; gap: 15px; margin-top: 30px; border-top: 1px solid #444; padding-top: 20px; flex-wrap: wrap; }
 
         /* LEVEL MODAL */
@@ -470,6 +516,99 @@ header.scrolled .mini-controls {
         .modal-xp-text { text-align: center; color: #ccc; font-size: 0.95em; }
         .modal-info-list { margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.4); border-radius: 10px; font-size: 0.9em; line-height: 1.7; color: #ccc; }
         .modal-info-list strong { color: #feca57; }
+
+        /* LOGIN MODAL */
+        #loginModal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 8500; backdrop-filter: blur(10px);
+        }
+        #loginModal.hide { display: none; }
+        .login-box {
+            background: linear-gradient(135deg, #0f2027, #203a43);
+            border: 2px solid #00d2d3; border-radius: 18px;
+            padding: 35px 30px; max-width: 420px; width: 90%;
+            box-shadow: 0 0 50px rgba(0, 210, 211, 0.5);
+            position: relative; overflow: hidden;
+        }
+        .login-box::before {
+            content: ''; position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(transparent, rgba(0, 210, 211, 0.15), transparent 30%);
+            animation: rotate 6s linear infinite;
+        }
+        .login-box > * { position: relative; z-index: 1; }
+        .login-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2em; color: #00d2d3; text-align: center;
+            text-shadow: 0 0 15px #00d2d3; letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+        .login-subtitle {
+            text-align: center; color: #c8d6e5; font-size: 0.9em;
+            margin-bottom: 25px; letter-spacing: 1px;
+        }
+        .login-input {
+            width: 100%; padding: 12px 16px; margin-bottom: 12px;
+            background: rgba(0,0,0,0.6); color: #fff;
+            border: 1px solid rgba(0, 210, 211, 0.4); border-radius: 8px;
+            font-family: 'Segoe UI', sans-serif; font-size: 1em; outline: none;
+            transition: 0.3s; box-sizing: border-box;
+        }
+        .login-input:focus { border-color: #00d2d3; box-shadow: 0 0 12px rgba(0, 210, 211, 0.4); }
+        .login-input:disabled { opacity: 0.5; cursor: not-allowed; }
+        .login-btn {
+            width: 100%; padding: 12px; margin-top: 5px;
+            background: linear-gradient(135deg, #00d2d3, #0984e3);
+            color: #000; font-weight: bold; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 1em; transition: 0.2s;
+            font-family: 'Orbitron', sans-serif; letter-spacing: 1px;
+        }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0, 210, 211, 0.5); }
+        .login-btn.signup { background: linear-gradient(135deg, #feca57, #ff9f43); }
+        .login-btn.guest { background: rgba(255,255,255,0.1); color: #c8d6e5; border: 1px solid #c8d6e5; }
+        .login-btn.guest:hover { background: rgba(255,255,255,0.2); }
+        .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+        .login-divider {
+            text-align: center; color: #555; margin: 18px 0 12px;
+            font-size: 0.85em; letter-spacing: 2px;
+        }
+        .login-msg { text-align: center; color: #ff6b6b; font-size: 0.9em; min-height: 20px; margin-top: 10px; }
+        .login-msg.success { color: #1dd1a1; }
+
+        .login-loading-overlay {
+            position: absolute; inset: 0;
+            background: rgba(15, 32, 39, 0.92);
+            backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center;
+            border-radius: 18px; z-index: 5;
+            flex-direction: column; gap: 18px;
+        }
+        .login-loading-overlay.show { display: flex; animation: fadeIn 0.2s; }
+        .big-spinner {
+            width: 60px; height: 60px;
+            border: 4px solid rgba(0, 210, 211, 0.2);
+            border-top-color: #00d2d3; border-radius: 50%;
+            animation: spin 1s linear infinite;
+            box-shadow: 0 0 25px rgba(0, 210, 211, 0.5);
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            color: #00d2d3; font-family: 'Orbitron', sans-serif;
+            font-size: 0.95em; letter-spacing: 3px;
+            text-shadow: 0 0 10px #00d2d3; text-align: center;
+            animation: bootPulse 1.5s infinite alternate;
+        }
+
+        .guest-banner {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            background: rgba(254, 202, 87, 0.95); color: #000;
+            padding: 8px 18px; border-radius: 20px; font-size: 0.85em;
+            font-weight: bold; z-index: 1000; cursor: pointer;
+            box-shadow: 0 5px 20px rgba(254, 202, 87, 0.4);
+            display: none;
+        }
+        .guest-banner.show { display: block; animation: slideIn 0.4s; }
 
         /* Hidden UFO */
         .hidden-ufo {
@@ -535,23 +674,72 @@ header.scrolled .mini-controls {
 
         /* Mobile */
         @media (max-width: 900px) {
-            header { min-height: auto; padding: 20px 10px; }
+            header { height: auto; min-height: 320px; padding: 0; }
+            header.scrolled { height: 60px; }
+            .header-expanded { position: relative; padding: 20px 10px; }
             .hub-profile { position: static; transform: scale(0.4); margin: -50px auto -60px; }
             .avatar-shop-btn { position: static; margin: 0 auto 15px; display: block; width: fit-content; }
             .user-greeting { position: static; justify-content: center; margin: 10px 0; }
             .header-controls { position: static; align-items: center; margin-top: 15px; }
-            .mini-controls, .mini-controls.mini-left, .mini-controls.mini-right {
-    position: static; transform: none; margin-top: 10px;
-    left: auto; right: auto; }
             .megaplex-logo { font-size: 2.2em; }
             .grid-container { padding: 20px 15px 60px; gap: 15px; }
             .carousel-slide { flex-direction: column; text-align: center; gap: 15px; padding: 20px; }
             .ach-grid { grid-template-columns: 1fr; }
             .lb-podium { grid-template-columns: 1fr; }
+            .header-mini { padding: 0 12px; }
+            .mini-logo { font-size: 1em; letter-spacing: 1px; }
+            .mini-pill { padding: 4px 8px; font-size: 0.75em; }
+            .header-mini .sound-btn { width: 30px; height: 30px; }
         }
+        .auth-btn {
+    background: linear-gradient(135deg, #00d2d3, #0984e3);
+    color: #000; border: none; padding: 8px 16px;
+    border-radius: 12px; cursor: pointer; font-weight: bold;
+    font-size: 0.9em; transition: 0.2s;
+    font-family: 'Segoe UI', sans-serif;
+}
+.auth-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 210, 211, 0.5); }
+.auth-btn.logout { background: linear-gradient(135deg, #ff4757, #c0392b); color: #fff; }
+.auth-btn.logout:hover { box-shadow: 0 5px 15px rgba(255, 71, 87, 0.5); }
+.mini-pill.auth-pill { 
+    background: rgba(0, 210, 211, 0.15); 
+    border-color: #00d2d3; color: #00d2d3; 
+}
+.mini-pill.auth-pill.logout { 
+    background: rgba(255, 71, 87, 0.15); 
+    border-color: #ff4757; color: #ff4757; 
+}
     </style>
+
+    <!-- Firebase SDKs + Shared Megaplex Module -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="megaplex-firebase.js"></script>
 </head>
 <body>
+
+    <!-- LOGIN MODAL -->
+    <div id="loginModal" class="hide">
+        <div class="login-box">
+            <div class="login-logo">🏙️ MEGAPLEX</div>
+            <div class="login-subtitle">// ACCESS TERMINAL //</div>
+            <input type="text" id="loginUsername" class="login-input" placeholder="Username (3-12 chars)" maxlength="12" autocomplete="username">
+            <input type="password" id="loginPassword" class="login-input" placeholder="Password (6+ chars)" autocomplete="current-password">
+            <button class="login-btn" id="btnLogin" onclick="doLogin()">🔓 LOG IN</button>
+            <button class="login-btn signup" id="btnSignup" onclick="doSignup()" style="margin-top:8px;">✨ CREATE ACCOUNT</button>
+            <div class="login-divider">─── OR ───</div>
+            <button class="login-btn guest" id="btnGuest" onclick="doGuest()">👤 PLAY AS GUEST (no save)</button>
+            <div class="login-msg" id="loginMsg"></div>
+            <div class="login-loading-overlay" id="loginLoadingOverlay">
+                <div class="big-spinner"></div>
+                <div class="loading-text" id="loadingText">CONNECTING...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="guestBanner" class="guest-banner" onclick="showLoginModal()">⚠️ GUEST MODE — Click here to log in & save your progress</div>
+
     <div id="bootScreen">
         <div class="boot-logo">🏙️ MEGAPLEX</div>
         <div class="boot-text" id="bootText"></div>
@@ -561,7 +749,6 @@ header.scrolled .mini-controls {
     <div class="starfield" id="starfield"></div>
     <div id="toastContainer"></div>
 
-    <!-- Level Info Modal -->
     <div class="modal-overlay" id="levelModal" onclick="if(event.target===this)closeLevelModal()">
         <div class="modal">
             <button class="modal-close" onclick="closeLevelModal()">×</button>
@@ -585,46 +772,50 @@ header.scrolled .mini-controls {
     </div>
 
     <header id="mainHeader">
-        <a href="avatar.html" class="hub-profile header-side" title="Avatar Shop" onmouseenter="sfx.hover()" onclick="sfx.start()">
-            <div class="avatar-stage" id="hubStageBG">
-                <div class="bot-head" id="hubBotHead">
-                    <div class="bot-hat" id="hubBotHat"></div>
-                    <div class="bot-eyes"><div class="eye"></div><div class="eye"></div></div>
+        <div class="header-expanded">
+            <a href="avatar.html" class="hub-profile" title="Avatar Shop" onmouseenter="sfx.hover()" onclick="sfx.start()">
+                <div class="avatar-stage" id="hubStageBG">
+                    <div class="bot-head" id="hubBotHead">
+                        <div class="bot-hat" id="hubBotHat"></div>
+                        <div class="bot-eyes"><div class="eye"></div><div class="eye"></div></div>
+                    </div>
+                    <div class="bot-body" id="hubBotBody"></div>
                 </div>
-                <div class="bot-body" id="hubBotBody"></div>
+            </a>
+            <a href="avatar.html" class="play-btn avatar-shop-btn" onmouseenter="sfx.hover()" onclick="sfx.start()">🛍️ Avatar Shop</a>
+            <div class="user-greeting" id="userGreeting" onmouseenter="sfx.hover()">
+                <span onclick="changeUsername()">ID: GUEST_BOT ✏️</span>
+                <span class="player-level" id="playerLevel" onclick="openLevelModal()" title="Click for level details">LV.1</span>
             </div>
-        </a>
-        <a href="avatar.html" class="play-btn avatar-shop-btn header-side" onmouseenter="sfx.hover()" onclick="sfx.start()">🛍️ Avatar Shop</a>
-        <div class="user-greeting header-side" id="userGreeting" onmouseenter="sfx.hover()">
-            <span onclick="changeUsername()">ID: GUEST_BOT ✏️</span>
-            <span class="player-level" id="playerLevel" onclick="openLevelModal()" title="Click for level details">LV.1</span>
-        </div>
-        <div>
-            <div class="megaplex-logo" aria-label="The Megaplex">🏙️ The Megaplex</div>
-            <div class="subtitle">Select a game to open a new terminal!</div>
-        </div>
-        <div class="header-controls header-side">
-            <div class="header-controls-top">
-                <button id="dailyBonusBtn" class="play-btn" style="background: #f368e0; color: #fff; border-radius: 20px; padding: 10px 20px;" onclick="claimDailyBonus()" onmouseenter="sfx.hover()">🎁 Daily Claim</button>
-                <div class="token-display" id="tokenDisplayBox">🎟️ <span id="tokenBalance">0</span></div>
+            <div>
+                <div class="megaplex-logo" aria-label="The Megaplex">🏙️ The Megaplex</div>
+                <div class="subtitle">Select a game to open a new terminal!</div>
             </div>
-            <div class="header-controls-bottom">
-                <button id="soundToggleBtn" class="sound-btn" onclick="toggleSound()" title="Toggle Sound (M)">🔊</button>
-                <button class="play-btn" style="background: #3498db; color: #fff; padding: 8px 15px; font-size: 0.9em; border-radius: 12px 0 0 12px;" onmouseenter="sfx.hover()" onclick="exportSave(); sfx.click();">💾 Export</button>
-                <button class="play-btn" style="background: #9b59b6; color: #fff; padding: 8px 15px; font-size: 0.9em; border-radius: 0 12px 12px 0;" onmouseenter="sfx.hover()" onclick="document.getElementById('importFile').click(); sfx.click();">📂 Load</button>
-                <input type="file" id="importFile" style="display:none" accept=".json" onchange="importSave(event)">
+            <div class="header-controls">
+                <div class="header-controls-top">
+                    <button id="dailyBonusBtn" class="play-btn" style="background: #f368e0; color: #fff; border-radius: 20px; padding: 10px 20px;" onclick="claimDailyBonus()" onmouseenter="sfx.hover()">🎁 Daily Claim</button>
+                    <div class="token-display" id="tokenDisplayBox">🎟️ <span id="tokenBalance">0</span></div>
+                </div>
+                <div class="header-controls-bottom">
+                    <button id="soundToggleBtn" class="sound-btn" onclick="toggleSound()" title="Toggle Sound (M)">🔊</button>
+                    <button id="headerAuthBtn" class="auth-btn" onclick="handleHeaderAuth()" onmouseenter="sfx.hover()">🔓 Log In</button>
+                </div>
             </div>
         </div>
 
-        <div class="mini-controls mini-left">
-            <span class="mini-token" style="border-color:#00d2d3; color:#00d2d3; cursor:pointer;" onclick="changeUsername()" title="Change username">
-                👤 <span id="miniUsername">GUEST_BOT</span>
-            </span>
-        </div>
-        <div class="mini-controls mini-right">
-            <span class="mini-token">🎟️ <span id="miniTokenBalance">0</span></span>
-            <span class="mini-token" style="border-color:#feca57; color:#feca57; cursor:pointer;" onclick="openLevelModal()" title="Level details">⚡ LV.<span id="miniLevel">1</span></span>
-            <button class="sound-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+        <div class="header-mini">
+            <div class="mini-left">
+                <span class="mini-logo" onclick="window.scrollTo({top:0, behavior:'smooth'})">🏙️ MEGAPLEX</span>
+                <span class="mini-pill" onclick="changeUsername()" title="Change username">
+                    👤 <span id="miniUsername">GUEST_BOT</span>
+                </span>
+            </div>
+            <div class="mini-right">
+                <span class="mini-pill gold">🎟️ <span id="miniTokenBalance">0</span></span>
+                <span class="mini-pill gold" onclick="openLevelModal()" title="Level details">⚡ LV.<span id="miniLevel">1</span></span>
+                <span id="miniAuthPill" class="mini-pill auth-pill" onclick="handleHeaderAuth()" title="Log in">🔓 Log In</span>
+                <button class="sound-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+            </div>
         </div>
     </header>
 
@@ -650,11 +841,11 @@ header.scrolled .mini-controls {
         <button class="tab-btn leaderboard-btn" onmouseenter="sfx.hover()" onclick="switchTab('leaderboard', this)">🏆 Leaderboard</button>
     </div>
 
-    <!-- Leaderboard View -->
     <div id="leaderboard-view" class="panel-view">
         <h2 style="text-align: center; color: #ff9f43; font-size: 2.5em; margin: 0 0 5px; text-shadow: 0 0 15px rgba(255, 159, 67, 0.4); font-family: 'Orbitron', sans-serif;">🏆 Hall of Fame</h2>
-        <p style="text-align: center; color: #aaa; margin-bottom: 25px;">Top 3 scores across all users on this device</p>
+        <p style="text-align: center; color: #aaa; margin-bottom: 25px;">🌐 Global Leaderboard — Top players worldwide</p>
 
+        <div id="lbStatusBanner" class="lb-status-banner loading">⏳ Connecting to global servers...</div>
         <div class="lb-summary" id="lbSummary"></div>
 
         <div class="lb-controls">
@@ -665,6 +856,7 @@ header.scrolled .mini-controls {
                 <option value="unranked">Sort: Unranked First</option>
                 <option value="alpha">Sort: Alphabetical</option>
             </select>
+            <button class="play-btn" style="background:#ff9f43; color:#000; padding:10px 15px;" onclick="refreshLeaderboard()">🔄 Refresh</button>
         </div>
 
         <div id="master-leaderboards-container"></div>
@@ -675,7 +867,6 @@ header.scrolled .mini-controls {
         </div>
     </div>
 
-    <!-- Achievements View -->
     <div id="achievements-view" class="panel-view">
         <h2 style="text-align: center; color: #f368e0; margin: 0 0 5px; font-size: 2.5em; text-shadow: 0 0 15px rgba(243, 104, 224, 0.4); font-family: 'Orbitron', sans-serif;">🎖️ Trophy Room</h2>
         <p style="text-align: center; color: #aaa; margin-bottom: 25px;">Complete milestones to claim massive Token bounties!</p>
@@ -700,7 +891,6 @@ header.scrolled .mini-controls {
         <div class="ach-grid" id="achievements-container"></div>
     </div>
 
-    <!-- Game Grid -->
     <div class="grid-container" id="gameGrid">
         <a href="glitch_brawler.html" class="card-link glitch" data-category="fighting pvp" data-name="glitch brawler" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
             <div class="card-content">
@@ -842,6 +1032,7 @@ header.scrolled .mini-controls {
             <a href="https://discord.com/" target="_blank" rel="noopener">Discord</a>
             <a href="mailto:contact@megaplex.com">Contact</a>
             <button class="theme-toggle-btn" onclick="toggleTheme()">Toggle Theme</button>
+            <button class="theme-toggle-btn" id="logoutBtn" style="background:#ff4757; color:#fff; display:none;" onclick="logout()">🚪 Logout</button>
         </div>
         <div style="margin-top: 15px; font-size: 0.8em; color: #666;">
             Shortcuts: <kbd>/</kbd> search • <kbd>M</kbd> mute • <kbd>1-7</kbd> tabs • <kbd>↑↑↓↓←→←→BA</kbd>
@@ -849,6 +1040,18 @@ header.scrolled .mini-controls {
     </footer>
 
     <script>
+        /* ====== SHARED MODULE WRAPPERS ====== */
+        let globalLeaderboardCache = {};
+        let leaderboardLastFetch = 0;
+
+        function getCurrentFbUser() { return window.MegaplexCloud.currentFbUser; }
+        function getIsGuestMode() { return window.MegaplexCloud.isGuestMode; }
+        function usernameToEmail(username) {
+            return username.toLowerCase().replace(/[^a-z0-9]/g, '') + '@megaplex.user';
+        }
+        async function saveToCloud() { return window.MegaplexCloud.saveToCloud(); }
+        async function loadFromCloud(uid) { return window.MegaplexCloud.loadFromCloud(uid); }
+
         /* ====== Boot ====== */
         const bootMessages = [
             "> INITIALIZING MEGAPLEX_OS v3.0...",
@@ -904,17 +1107,30 @@ header.scrolled .mini-controls {
             setTimeout(() => t.remove(), 4000);
         }
 
-        /* ====== Header Scroll ====== */
-        let scrollTicking = false;
-        window.addEventListener('scroll', () => {
-            if (!scrollTicking) {
-                window.requestAnimationFrame(() => {
-                    document.getElementById('mainHeader').classList.toggle('scrolled', window.scrollY > 80);
-                    scrollTicking = false;
-                });
-                scrollTicking = true;
+        const mainHeader = document.getElementById('mainHeader');
+        const SHOW_AT = 180, HIDE_AT = 40;
+        let headerCollapsed = false, scrollTicking = false, lockUntil = 0;
+
+        function updateHeader() {
+            scrollTicking = false;
+            if (performance.now() < lockUntil) return;
+            const y = window.scrollY;
+            if (!headerCollapsed && y > SHOW_AT) {
+                mainHeader.classList.add('scrolled');
+                headerCollapsed = true;
+                lockUntil = performance.now() + 450;
+            } else if (headerCollapsed && y < HIDE_AT) {
+                mainHeader.classList.remove('scrolled');
+                headerCollapsed = false;
+                lockUntil = performance.now() + 450;
             }
-        });
+        }
+        window.addEventListener('scroll', () => {
+            if (!scrollTicking) { 
+                window.requestAnimationFrame(updateHeader); 
+                scrollTicking = true; 
+            }
+        }, { passive: true });
 
         /* ====== Audio ====== */
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -956,40 +1172,63 @@ header.scrolled .mini-controls {
             win: () => { playTone(400, 'square', 0.1, 0.05); setTimeout(()=>playTone(500, 'square', 0.1, 0.05), 150); setTimeout(()=>playTone(600, 'square', 0.3, 0.05), 300); }
         };
 
-        /* ====== Avatar ====== */
+        /* ====== AVATAR — FULL DATABASE (must match avatar.html exactly) ====== */
         const shopDatabase = {
             colors: [
                 { id: 'color_default', hex: '#c8d6e5', bodyHex: '#a4b0be' },
                 { id: 'color_red', hex: '#ff4757', bodyHex: '#c0392b' },
-                { id: 'color_gold', hex: '#feca57', bodyHex: '#f39c12' },
-                { id: 'color_pink', hex: '#ff9ff3', bodyHex: '#f368e0' },
                 { id: 'color_green', hex: '#1dd1a1', bodyHex: '#10ac84' },
-                { id: 'color_cyber', hex: '#00d2d3', bodyHex: '#0984e3' },
+                { id: 'color_pink', hex: '#ff9ff3', bodyHex: '#f368e0' },
+                { id: 'color_gold', hex: '#feca57', bodyHex: '#f39c12' },
                 { id: 'color_ghost', hex: '#f5f6fa', bodyHex: '#dcdde1' },
-                { id: 'color_void', hex: '#2f3640', bodyHex: '#1e272e' }
+                { id: 'color_cyber', hex: '#00d2d3', bodyHex: '#0984e3' },
+                { id: 'color_void', hex: '#2f3640', bodyHex: '#1e272e' },
+                { id: 'color_blood', hex: '#8e0e00', bodyHex: '#3d0000' },
+                { id: 'color_neon', hex: '#39ff14', bodyHex: '#0aff0a' },
+                { id: 'color_royal', hex: '#6c5ce7', bodyHex: '#341f97' },
+                { id: 'color_chrome', hex: '#bdc3c7', bodyHex: '#7f8c8d' },
+                { id: 'color_inferno', hex: '#ff3838', bodyHex: '#ff9f1a' },
+                { id: 'color_omega', hex: '#000', bodyHex: '#ff0040' },
+                { id: 'color_godcore', hex: '#ffd700', bodyHex: '#ff8a00' }
             ],
             hats: [
-                { id: 'hat_none', icon: '' }, { id: 'hat_cap', icon: '🧢' },
-                { id: 'hat_headphones', icon: '🎧' }, { id: 'hat_cowboy', icon: '🤠' },
-                { id: 'hat_ninja', icon: '🥷' }, { id: 'hat_pirate', icon: '🏴‍☠️' },
-                { id: 'hat_vr', icon: '🥽' }, { id: 'hat_crown', icon: '👑' },
-                { id: 'hat_halo', icon: '👼' }, { id: 'hat_alien', icon: '👾' }
+                { id: 'hat_none', icon: '' },
+                { id: 'hat_cap', icon: '🧢' },
+                { id: 'hat_party', icon: '🥳' },
+                { id: 'hat_headphones', icon: '🎧' },
+                { id: 'hat_cowboy', icon: '🤠' },
+                { id: 'hat_vr', icon: '🥽' },
+                { id: 'hat_ninja', icon: '🥷' },
+                { id: 'hat_pirate', icon: '🏴‍☠️' },
+                { id: 'hat_alien', icon: '👾' },
+                { id: 'hat_wizard', icon: '🧙' },
+                { id: 'hat_robot', icon: '🤖' },
+                { id: 'hat_fire', icon: '🔥' },
+                { id: 'hat_dragon', icon: '🐉' },
+                { id: 'hat_crown', icon: '👑' },
+                { id: 'hat_halo', icon: '👼' },
+                { id: 'hat_trophy', icon: '🏆' },
+                { id: 'hat_unicorn', icon: '🦄' },
+                { id: 'hat_galaxy', icon: '🌌' }
             ],
             bgs: [
                 { id: 'bg_default', css: '#2f3640' },
+                { id: 'bg_neon', css: 'linear-gradient(135deg, #ff006e, #8338ec)' },
                 { id: 'bg_matrix', css: 'repeating-linear-gradient(0deg, #000, #000 10px, #052c11 10px, #052c11 20px)' },
                 { id: 'bg_sunset', css: 'linear-gradient(180deg, #2c3e50, #e74c3c, #f1c40f)' },
+                { id: 'bg_ocean', css: 'linear-gradient(180deg, #003973, #003973, #006d77, #83c5be)' },
                 { id: 'bg_synth', css: 'linear-gradient(0deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)' },
                 { id: 'bg_lava', css: 'radial-gradient(circle at bottom, #eb4d4b, #130f40)' },
-                { id: 'bg_galaxy', css: 'radial-gradient(circle at center, #341f97, #000)' }
+                { id: 'bg_aurora', css: 'linear-gradient(135deg, #00d2d3, #54a0ff, #5f27cd, #ff006e)' },
+                { id: 'bg_galaxy', css: 'radial-gradient(circle at center, #341f97, #000)' },
+                { id: 'bg_glitch', css: 'repeating-linear-gradient(45deg, #ff00ff, #ff00ff 8px, #00ffff 8px, #00ffff 16px, #000 16px, #000 24px)' },
+                { id: 'bg_holo', css: 'linear-gradient(135deg, #f368e0, #feca57, #00d2d3, #6c5ce7)' }
             ]
         };
 
         /* ====== LEVEL SYSTEM ====== */
         const levelTitles = ['Rookie','Initiate','Operator','Hacker','Pro','Veteran','Elite','Master','Legend','Cyber God'];
-        function getLifetimeXp() {
-            return parseInt(localStorage.getItem('megaplexLifetimeXp')) || 0;
-        }
+        function getLifetimeXp() { return parseInt(localStorage.getItem('megaplexLifetimeXp')) || 0; }
         function addLifetimeXp(amount) {
             let xp = getLifetimeXp() + amount;
             localStorage.setItem('megaplexLifetimeXp', xp);
@@ -1005,6 +1244,7 @@ header.scrolled .mini-controls {
             const title = levelTitles[Math.min(lvl-1, levelTitles.length-1)];
             return { level: lvl, xp, currentLvlXp, nextLvlXp, progressXp, neededXp, title };
         }
+
         function renderHubAvatar() {
             let avatarData = JSON.parse(localStorage.getItem('avatarData'));
             if (!avatarData || !avatarData.equipped) {
@@ -1013,14 +1253,18 @@ header.scrolled .mini-controls {
             const curColor = shopDatabase.colors.find(c => c.id === avatarData.equipped.color) || shopDatabase.colors[0];
             const curHat = shopDatabase.hats.find(h => h.id === avatarData.equipped.hat) || shopDatabase.hats[0];
             const curBg = shopDatabase.bgs.find(b => b.id === avatarData.equipped.bg) || shopDatabase.bgs[0];
+            
+            console.log('[Megaplex] Rendering avatar:', avatarData.equipped, '→', curColor.id, curHat.id, curBg.id);
+            
             document.getElementById('hubBotHead').style.background = curColor.hex;
             document.getElementById('hubBotBody').style.background = curColor.bodyHex;
             document.getElementById('hubBotHat').innerText = curHat.icon;
             document.getElementById('hubStageBG').style.background = curBg.css;
             const username = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
             const lvlInfo = getLevelInfo();
+            const lockIcon = getCurrentFbUser() ? '🔒' : '✏️';
             document.getElementById('userGreeting').innerHTML = `
-                <span onclick="changeUsername()" style="cursor:pointer;">ID: ${username} ✏️</span>
+                <span onclick="changeUsername()" style="cursor:pointer;">ID: ${username} ${lockIcon}</span>
                 <span class="player-level" onclick="openLevelModal()" title="Click for level details">LV.${lvlInfo.level}</span>
             `;
             document.getElementById('miniLevel').innerText = lvlInfo.level;
@@ -1039,9 +1283,7 @@ header.scrolled .mini-controls {
             document.getElementById('levelModal').classList.add('show');
             sfx.click();
         }
-        function closeLevelModal() {
-            document.getElementById('levelModal').classList.remove('show');
-        }
+        function closeLevelModal() { document.getElementById('levelModal').classList.remove('show'); }
 
         /* ====== Achievements DB ====== */
         const achievementsList = [
@@ -1050,11 +1292,11 @@ header.scrolled .mini-controls {
             { id: 'ach_tanks_1', tier: 1, icon: '💣', title: 'Tank Cadet', desc: 'Score 1,000 in Plasma Tanks.', reward: 1000, check: (s) => (s.tanks_score || 0) >= 1000 },
             { id: 'ach_tanks_2', tier: 2, icon: '🎖️', title: 'Supreme Commander', desc: 'Score 5,000 in Plasma Tanks.', reward: 3000, check: (s) => (s.tanks_score || 0) >= 5000 },
             { id: 'ach_glitch_1', tier: 1, icon: '🪜', title: 'Ladder Climber', desc: 'Clear all 8 fights of the Arcade Ladder in Glitch Brawler.', reward: 1500, check: (s) => (s.glitch_ladder_clears || 0) >= 1 },
-			{ id: 'ach_glitch_2', tier: 2, icon: '🥊', title: 'Tournament Champion', desc: 'Win the 8-fighter Tournament bracket on Hardcore or higher.', reward: 3000, check: (s) => (s.glitch_tournament_wins || 0) >= 1 },
+            { id: 'ach_glitch_2', tier: 2, icon: '🥊', title: 'Tournament Champion', desc: 'Win the 8-fighter Tournament bracket on Hardcore or higher.', reward: 3000, check: (s) => (s.glitch_tournament_wins || 0) >= 1 },
             { id: 'ach_strikers_1', tier: 1, icon: '⚔️', title: 'Street Brawler', desc: 'Score 2,000 in Glitch Strikers.', reward: 1000, check: (s) => (s.glitch_strikers || 0) >= 2000 },
             { id: 'ach_strikers_2', tier: 2, icon: '🦾', title: 'Megaplex Savior', desc: 'Score 5,000 in Glitch Strikers.', reward: 3000, check: (s) => (s.glitch_strikers || 0) >= 5000 },
             { id: 'ach_cyber_1', tier: 1, icon: '🏃', title: 'Sector 2 Cleared', desc: 'Reach 1,000m in Cyber Runner.', reward: 800, check: (s) => (s.cyberrunner || 0) >= 1000 },
-            { id: 'ach_clicker', tier: 1, icon: '👆', title: 'Clicker God', desc: 'Reach 1,000 clicks.', reward: 500, check: (s) => (s.clicker || 0) >= 1000 },
+            { id: 'ach_clicker', tier: 1, icon: '👆', title: 'Clicker God', desc: 'Reach 5,000 clicks.', reward: 500, check: (s) => (s.clicker || 0) >= 5000 },
             { id: 'ach_reaction', tier: 1, icon: '⚡', title: 'Lightning Reflexes', desc: 'Reaction < 220ms.', reward: 500, check: (s) => (s.reaction || 9999) <= 220 },
             { id: 'ach_math', tier: 1, icon: '🧠', title: 'Human Calculator', desc: 'Math streak of 15.', reward: 600, check: (s) => (s.math || 0) >= 15 },
             { id: 'ach_memory', tier: 1, icon: '👁️', title: 'Photographic Memory', desc: 'Beat Memory in 16 moves.', reward: 600, check: (s) => (s.memory || 999) <= 16 },
@@ -1065,7 +1307,7 @@ header.scrolled .mini-controls {
             { id: 'ach_platformer2_1', tier: 1, icon: '⚡', title: 'System Overloaded', desc: 'Defeat the first boss in Neon Jumper 2.', reward: 1500, check: (s) => (s.nj2_world1_cleared || 0) >= 1 },
             { id: 'ach_fps', tier: 1, icon: '🔫', title: 'System Breacher', desc: 'Score 2,500 in FPS.', reward: 1500, check: (s) => (s.fps || 0) >= 2500 },
             { id: 'ach_cyber_2', tier: 2, icon: '🔥', title: 'System Overdrive', desc: 'Reach 8,000m in Cyber Runner.', reward: 3000, check: (s) => (s.cyberrunner || 0) >= 8000 },
-            { id: 'ach_clicker_2', tier: 2, icon: '🖱️', title: 'Auto-Clicker', desc: 'Reach 5,000 clicks.', reward: 1500, check: (s) => (s.clicker || 0) >= 5000 },
+            { id: 'ach_clicker_2', tier: 2, icon: '🖱️', title: 'Auto-Clicker', desc: 'Reach 1 Million clicks.', reward: 1500, check: (s) => (s.clicker || 0) >= 1000000000 },
             { id: 'ach_reaction_2', tier: 2, icon: '🏎️', title: 'Sonic Speed', desc: 'Reaction < 185ms.', reward: 2000, check: (s) => (s.reaction || 9999) <= 185 },
             { id: 'ach_math_2', tier: 2, icon: '🎓', title: 'Quantum Mind', desc: 'Math streak of 35.', reward: 2000, check: (s) => (s.math || 0) >= 35 },
             { id: 'ach_snake_2', tier: 2, icon: '🐉', title: 'World Eater', desc: 'Snake length of 60.', reward: 2500, check: (s) => (s.snake || 0) >= 60 },
@@ -1119,7 +1361,7 @@ header.scrolled .mini-controls {
             if (target === 'leaderboard') {
                 document.getElementById('leaderboard-view').style.display = 'block';
                 loadScores();
-                renderLeaderboard();
+                fetchGlobalLeaderboard();
             } else if (target === 'achievements') {
                 document.getElementById('achievements-view').style.display = 'block';
                 renderAchievements();
@@ -1155,6 +1397,7 @@ header.scrolled .mini-controls {
             recent.unshift(name);
             recent = recent.slice(0, 3);
             localStorage.setItem('recentlyPlayed', JSON.stringify(recent));
+            saveToCloud();
         }
         function showRecentBadges() {
             const recent = JSON.parse(localStorage.getItem('recentlyPlayed')) || [];
@@ -1202,7 +1445,6 @@ header.scrolled .mini-controls {
             const renderTier = (tierNumber, tierTitle) => {
                 const tierAch = achievementsList.filter(a => a.tier === tierNumber);
                 const tierClaimed = tierAch.filter(a => claimedAchievements.includes(a.id)).length;
-                
                 const visible = tierAch.filter(ach => {
                     const claimed = claimedAchievements.includes(ach.id);
                     const unlocked = ach.check(scores) && !claimed;
@@ -1212,7 +1454,6 @@ header.scrolled .mini-controls {
                     return true;
                 });
                 if (visible.length === 0) return;
-
                 container.innerHTML += `<div class="tier-header"><span>${tierTitle}</span><span class="tier-count">${tierClaimed}/${tierAch.length}</span></div>`;
                 visible.forEach(ach => {
                     let isClaimed = claimedAchievements.includes(ach.id);
@@ -1263,9 +1504,10 @@ header.scrolled .mini-controls {
             toast(`Trophy: ${ach.title}! +${rewardAmount} 🎟️`, 'success', ach.icon);
             renderAchievements();
             renderHubAvatar();
+            saveToCloud();
         }
 
-        /* ====== LEADERBOARD ====== */
+        /* ====== LEADERBOARD CONFIG ====== */
         const gameConfigs = [
             { key: 'glitch_score', title: '💥 Glitch Brawler', unit: ' Pts', reverse: false, default: 0 },
             { key: 'glitch_strikers', title: '⚔️ Glitch Strikers', unit: ' Pts', reverse: false, default: 0 },
@@ -1284,6 +1526,7 @@ header.scrolled .mini-controls {
             { key: 'memory', title: '👁️ Memory Match', unit: ' Moves', reverse: true, default: 999 },
             { key: 'guesser', title: '🔐 Code Breaker', unit: '', reverse: false, default: 0 }
         ];
+
         function loadScores() {
             let currentScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
             let gsData = JSON.parse(localStorage.getItem('glitchStrikersScores')) || { neon: 0, void: 0, mainframe: 0 };
@@ -1291,24 +1534,59 @@ header.scrolled .mini-controls {
             localStorage.setItem('arcadeScores', JSON.stringify(currentScores));
             calculateTokens();
             renderHubAvatar();
-            let currentUser = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
-            let masterLB = JSON.parse(localStorage.getItem('MegaplexMasterLB')) || {};
-            gameConfigs.forEach(game => {
-                let myScore = currentScores[game.key];
-                if (myScore === undefined) myScore = game.default;
-                let globalLB = masterLB[game.key] || [];
-                let legacyLB = JSON.parse(localStorage.getItem(`masterLB_${game.key}`));
-                if (legacyLB && globalLB.length === 0) globalLB = legacyLB;
-                if (myScore !== game.default) {
-                    globalLB = globalLB.filter(entry => entry.user !== currentUser);
-                    globalLB.push({ user: currentUser, score: myScore });
-                }
-                if (game.reverse) globalLB.sort((a, b) => a.score - b.score);
-                else globalLB.sort((a, b) => b.score - a.score);
-                masterLB[game.key] = globalLB.slice(0, 10);
-            });
-            localStorage.setItem('MegaplexMasterLB', JSON.stringify(masterLB));
         }
+
+        /* ====== GLOBAL LEADERBOARD (Firestore) ====== */
+        async function fetchGlobalLeaderboard(force = false) {
+            const now = Date.now();
+            if (!force && now - leaderboardLastFetch < 30000 && Object.keys(globalLeaderboardCache).length > 0) {
+                renderLeaderboard();
+                return;
+            }
+            const banner = document.getElementById('lbStatusBanner');
+            banner.className = 'lb-status-banner loading';
+            banner.innerText = '⏳ Fetching global scores...';
+
+            try {
+                const snapshot = await fbDB.collection('players').get();
+                const allPlayers = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.username && data.saveData) {
+                        allPlayers.push({
+                            username: data.username,
+                            scores: data.saveData.arcadeScores || {}
+                        });
+                    }
+                });
+
+                globalLeaderboardCache = {};
+                gameConfigs.forEach(game => {
+                    const entries = allPlayers
+                        .map(p => ({ user: p.username, score: p.scores[game.key] }))
+                        .filter(e => e.score !== undefined && e.score !== null && e.score !== game.default);
+                    if (game.reverse) entries.sort((a, b) => a.score - b.score);
+                    else entries.sort((a, b) => b.score - a.score);
+                    globalLeaderboardCache[game.key] = entries.slice(0, 10);
+                });
+
+                leaderboardLastFetch = now;
+                banner.className = 'lb-status-banner';
+                banner.innerText = `🌐 Connected — ${allPlayers.length} players ranked worldwide`;
+                renderLeaderboard();
+            } catch (err) {
+                console.error('Leaderboard fetch failed:', err);
+                banner.className = 'lb-status-banner offline';
+                banner.innerText = '⚠️ Could not load global leaderboard. Check connection.';
+                renderLeaderboard();
+            }
+        }
+
+        function refreshLeaderboard() {
+            sfx.click();
+            fetchGlobalLeaderboard(true);
+        }
+
         function renderLeaderboard() {
             const container = document.getElementById('master-leaderboards-container');
             const summaryEl = document.getElementById('lbSummary');
@@ -1316,14 +1594,13 @@ header.scrolled .mini-controls {
             container.innerHTML = '';
             const currentUser = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
             const currentScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-            const masterLB = JSON.parse(localStorage.getItem('MegaplexMasterLB')) || {};
 
             const search = (document.getElementById('lbSearch')?.value || '').toLowerCase();
             const sort = document.getElementById('lbSort')?.value || 'default';
 
             let totalGold = 0, totalRanked = 0, gamesPlayed = 0;
             gameConfigs.forEach(game => {
-                const lb = (masterLB[game.key] || []).slice(0, 3);
+                const lb = (globalLeaderboardCache[game.key] || []).slice(0, 3);
                 if (lb[0] && lb[0].user === currentUser) totalGold++;
                 if (lb.some(e => e.user === currentUser)) totalRanked++;
                 const my = currentScores[game.key];
@@ -1340,16 +1617,16 @@ header.scrolled .mini-controls {
             if (search) games = games.filter(g => g.title.toLowerCase().includes(search));
             if (sort === 'ranked') {
                 games.sort((a, b) => {
-                    const aR = (masterLB[a.key] || []).findIndex(e => e.user === currentUser);
-                    const bR = (masterLB[b.key] || []).findIndex(e => e.user === currentUser);
+                    const aR = (globalLeaderboardCache[a.key] || []).findIndex(e => e.user === currentUser);
+                    const bR = (globalLeaderboardCache[b.key] || []).findIndex(e => e.user === currentUser);
                     const aV = aR === -1 ? 999 : aR;
                     const bV = bR === -1 ? 999 : bR;
                     return aV - bV;
                 });
             } else if (sort === 'unranked') {
                 games.sort((a, b) => {
-                    const aR = (masterLB[a.key] || []).findIndex(e => e.user === currentUser);
-                    const bR = (masterLB[b.key] || []).findIndex(e => e.user === currentUser);
+                    const aR = (globalLeaderboardCache[a.key] || []).findIndex(e => e.user === currentUser);
+                    const bR = (globalLeaderboardCache[b.key] || []).findIndex(e => e.user === currentUser);
                     return (aR === -1 ? 0 : 1) - (bR === -1 ? 0 : 1);
                 });
             } else if (sort === 'alpha') {
@@ -1362,10 +1639,10 @@ header.scrolled .mini-controls {
             }
 
             games.forEach(game => {
-                const lb = (masterLB[game.key] || []).slice(0, 3);
+                const lb = (globalLeaderboardCache[game.key] || []).slice(0, 3);
                 let myScore = currentScores[game.key];
                 if (myScore === undefined) myScore = game.default;
-                const myRankIdx = (masterLB[game.key] || []).findIndex(e => e.user === currentUser);
+                const myRankIdx = (globalLeaderboardCache[game.key] || []).findIndex(e => e.user === currentUser);
                 const myRank = myRankIdx === -1 ? null : myRankIdx + 1;
                 const displayScore = myScore === game.default ? '---' : myScore + game.unit;
                 
@@ -1408,7 +1685,7 @@ header.scrolled .mini-controls {
             });
         }
 
-        /* ====== Save System ====== */
+        /* ====== Save System (Local Export/Import) ====== */
         function exportSave() {
             const username = localStorage.getItem('megaplexUsername') || 'player';
             const saveData = {
@@ -1420,6 +1697,8 @@ header.scrolled .mini-controls {
                 megaplexLifetimeXp: localStorage.getItem('megaplexLifetimeXp') || 0,
                 lastCalculatedScoreValue: localStorage.getItem('lastCalculatedScoreValue') || 0,
                 avatarData: JSON.parse(localStorage.getItem('avatarData')) || {},
+                avatarInventory: JSON.parse(localStorage.getItem('avatarInventory')) || {},
+                avatarSeenItems: JSON.parse(localStorage.getItem('avatarSeenItems')) || [],
                 claimedAchievements: JSON.parse(localStorage.getItem('claimedAchievements')) || [],
                 nj2_times: JSON.parse(localStorage.getItem('nj2_times')) || {},
                 megaplexUsername: username
@@ -1448,14 +1727,16 @@ header.scrolled .mini-controls {
                     if(data.megaplexLifetimeXp) localStorage.setItem('megaplexLifetimeXp', data.megaplexLifetimeXp);
                     if(data.lastCalculatedScoreValue) localStorage.setItem('lastCalculatedScoreValue', data.lastCalculatedScoreValue);
                     if(data.avatarData) localStorage.setItem('avatarData', JSON.stringify(data.avatarData));
-                    if(data.megaplexUsername) localStorage.setItem('megaplexUsername', data.megaplexUsername);
+                    if(data.avatarInventory) localStorage.setItem('avatarInventory', JSON.stringify(data.avatarInventory));
+                    if(data.avatarSeenItems) localStorage.setItem('avatarSeenItems', JSON.stringify(data.avatarSeenItems));
+                    if(data.megaplexUsername && !getCurrentFbUser()) localStorage.setItem('megaplexUsername', data.megaplexUsername);
                     if(data.nj2_times) localStorage.setItem('nj2_times', JSON.stringify(data.nj2_times));
                     if(data.claimedAchievements) {
                         claimedAchievements = data.claimedAchievements;
                         localStorage.setItem('claimedAchievements', JSON.stringify(claimedAchievements));
                     }
                     loadScores();
-                    renderLeaderboard();
+                    saveToCloud();
                     toast('Save loaded successfully!', 'success', '✅');
                 } catch (error) {
                     toast('Failed to load save data.', 'error', '❌');
@@ -1494,15 +1775,24 @@ header.scrolled .mini-controls {
             toast('Daily bonus: +250 🎟️ / +250 XP!', 'success', '🎁');
             checkDailyBonus();
             renderHubAvatar();
+            saveToCloud();
         }
 
-        /* ====== Username ====== */
+        /* ====== Username (LOCKED for logged-in users) ====== */
         function changeUsername() {
             sfx.click();
+            if (getCurrentFbUser()) {
+                toast('Username is locked to your account. Log out to use a different one.', 'warning', '🔒');
+                return;
+            }
             let currentName = localStorage.getItem('megaplexUsername') || 'GUEST_BOT';
-            let newName = prompt("Enter your new Megaplex ID (Max 12 chars):", currentName);
+            let newName = prompt("Enter your guest ID (Max 12 chars, letters/numbers/_ only):", currentName);
             if (newName && newName.trim() !== "") {
                 newName = newName.trim().substring(0, 12).toUpperCase();
+                if (!/^[A-Z0-9_]+$/.test(newName)) {
+                    toast('Letters, numbers, and _ only', 'error', '❌');
+                    return;
+                }
                 localStorage.setItem('megaplexUsername', newName);
                 loadScores();
                 sfx.coin();
@@ -1565,6 +1855,13 @@ header.scrolled .mini-controls {
         }
         if(localStorage.getItem('megaplexTheme') === 'light') document.body.classList.add('light-mode');
 
+        /* ====== Enter key submits login ====== */
+        ['loginUsername', 'loginPassword'].forEach(id => {
+            document.getElementById(id).addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); doLogin(); }
+            });
+        });
+
         /* ====== Shortcuts ====== */
         document.addEventListener('keydown', function(e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
@@ -1597,15 +1894,242 @@ header.scrolled .mini-controls {
                     toast('KONAMI CODE! +1337 🎟️ / XP unlocked!', 'success', '🎮');
                     sfx.win();
                     renderHubAvatar();
+                    saveToCloud();
                     konamiPos = 0;
                 }
             } else { konamiPos = 0; }
         });
 
-        /* ====== Init ====== */
-        loadScores();
-        checkDailyBonus();
-        showRecentBadges();
+        /* ====== LOGIN MODAL HANDLERS ====== */
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.remove('hide');
+            document.getElementById('loginMsg').innerText = '';
+            hideLoadingOverlay();
+        }
+        function hideLoginModal() {
+            document.getElementById('loginModal').classList.add('hide');
+        }
+        function validateLogin() {
+            const u = document.getElementById('loginUsername').value.trim();
+            const p = document.getElementById('loginPassword').value;
+            if (u.length < 3) { showLoginMsg('Username must be 3+ characters'); return null; }
+            if (u.length > 12) { showLoginMsg('Username max 12 characters'); return null; }
+            if (!/^[a-zA-Z0-9_]+$/.test(u)) { showLoginMsg('Letters, numbers, and _ only'); return null; }
+            if (p.length < 6) { showLoginMsg('Password must be 6+ characters'); return null; }
+            return { u, p };
+        }
+        function showLoginMsg(msg, success = false) {
+            const el = document.getElementById('loginMsg');
+            el.innerText = msg;
+            el.className = 'login-msg' + (success ? ' success' : '');
+        }
+        function showLoadingOverlay(text = 'CONNECTING...') {
+            document.getElementById('loadingText').innerText = text;
+            document.getElementById('loginLoadingOverlay').classList.add('show');
+            document.getElementById('btnLogin').disabled = true;
+            document.getElementById('btnSignup').disabled = true;
+            document.getElementById('btnGuest').disabled = true;
+            document.getElementById('loginUsername').disabled = true;
+            document.getElementById('loginPassword').disabled = true;
+        }
+        function hideLoadingOverlay() {
+            document.getElementById('loginLoadingOverlay').classList.remove('show');
+            document.getElementById('btnLogin').disabled = false;
+            document.getElementById('btnSignup').disabled = false;
+            document.getElementById('btnGuest').disabled = false;
+            document.getElementById('loginUsername').disabled = false;
+            document.getElementById('loginPassword').disabled = false;
+        }
+
+        async function isUsernameTaken(username) {
+            const upper = username.toUpperCase();
+            try {
+                const snapshot = await fbDB.collection('players')
+                    .where('username', '==', upper)
+                    .limit(1).get();
+                return !snapshot.empty;
+            } catch (err) {
+                console.error('Username check failed:', err);
+                return false;
+            }
+        }
+
+        async function doSignup() {
+            const v = validateLogin();
+            if (!v) return;
+            sfx.click();
+            showLoadingOverlay('CHECKING USERNAME...');
+            try {
+                const taken = await isUsernameTaken(v.u);
+                if (taken) {
+                    hideLoadingOverlay();
+                    showLoginMsg(`Username "${v.u.toUpperCase()}" is already taken`);
+                    return;
+                }
+                document.getElementById('loadingText').innerText = 'CREATING ACCOUNT...';
+                const cred = await fbAuth.createUserWithEmailAndPassword(usernameToEmail(v.u), v.p);
+                document.getElementById('loadingText').innerText = 'INITIALIZING SAVE...';
+                await fbDB.collection('players').doc(cred.user.uid).set({
+                    username: v.u.toUpperCase(),
+                    createdAt: new Date().toISOString(),
+                    saveData: {
+                        arcadeScores: JSON.parse(localStorage.getItem('arcadeScores')) || {}
+                    }
+                });
+                localStorage.setItem('megaplexUsername', v.u.toUpperCase());
+                showLoginMsg('Account created! Loading...', true);
+                sfx.win();
+            } catch (err) {
+                hideLoadingOverlay();
+                if (err.code === 'auth/email-already-in-use') showLoginMsg('Username already taken');
+                else if (err.code === 'auth/weak-password') showLoginMsg('Password too weak');
+                else if (err.code === 'auth/network-request-failed') showLoginMsg('Network error — check connection');
+                else showLoginMsg(err.message);
+            }
+        }
+
+        async function doLogin() {
+            const v = validateLogin();
+            if (!v) return;
+            sfx.click();
+            showLoadingOverlay('AUTHENTICATING...');
+            try {
+                await fbAuth.signInWithEmailAndPassword(usernameToEmail(v.u), v.p);
+                document.getElementById('loadingText').innerText = 'LOADING SAVE DATA...';
+                showLoginMsg('Welcome back!', true);
+                sfx.coin();
+            } catch (err) {
+                hideLoadingOverlay();
+                if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') showLoginMsg('Wrong username or password');
+                else if (err.code === 'auth/user-not-found') showLoginMsg('No account found — try Sign Up');
+                else if (err.code === 'auth/too-many-requests') showLoginMsg('Too many attempts — wait a moment');
+                else if (err.code === 'auth/network-request-failed') showLoginMsg('Network error — check connection');
+                else showLoginMsg(err.message);
+            }
+        }
+
+        function doGuest() {
+            sfx.click();
+            window.MegaplexCloud.isGuestMode = true;
+            localStorage.setItem('megaplexGuestMode', 'true');
+            if (!localStorage.getItem('megaplexUsername')) {
+                localStorage.setItem('megaplexUsername', 'GUEST_BOT');
+            }
+            hideLoginModal();
+            document.body.classList.add('auth-resolved');
+            document.getElementById('guestBanner').classList.add('show');
+            loadScores();
+            renderHubAvatar();
+            checkDailyBonus();
+            showRecentBadges();
+            updateHeaderAuthUI();
+            toast('Playing as Guest — progress will NOT be saved online', 'warning', '⚠️');
+        }
+
+        async function logout() {
+            if (!confirm('Log out? Your progress will be saved to the cloud first.')) return;
+            sfx.click();
+            await saveToCloud();
+            await fbAuth.signOut();
+            localStorage.removeItem('megaplexGuestMode');
+            ['arcadeScores','glitchStrikersScores','tttCoins','tttInventory','megaplexTokens',
+             'megaplexLifetimeXp','lastCalculatedScoreValue','avatarData','avatarInventory','avatarSeenItems',
+             'claimedAchievements','nj2_times','megaplexUsername','recentlyPlayed','megaplexLastDaily'].forEach(k => localStorage.removeItem(k));
+            location.reload();
+        }
+
+        /* ====== INIT — wait for cloud OR 2-second fallback ====== */
+        let hubInitComplete = false;
+        const HUB_CLOUD_TIMEOUT_MS = 2000;
+
+        function performHubInit(reason) {
+            console.log('[Megaplex Hub] Init triggered by:', reason);
+            document.body.classList.add('auth-resolved');
+            updateHeaderAuthUI();
+            const user = window.MegaplexCloud ? window.MegaplexCloud.currentFbUser : null;
+
+            if (user) {
+                document.getElementById('guestBanner').classList.remove('show');
+                document.getElementById('logoutBtn').style.display = 'inline-block';
+                hideLoadingOverlay();
+                hideLoginModal();
+                loadScores();
+                renderHubAvatar();
+                checkDailyBonus();
+                showRecentBadges();
+                if (!hubInitComplete) {
+                    toast(`Welcome, ${localStorage.getItem('megaplexUsername')}!`, 'success', '✅');
+                }
+            } else if (window.MegaplexCloud && window.MegaplexCloud.isGuestMode) {
+                document.getElementById('logoutBtn').style.display = 'none';
+                document.getElementById('guestBanner').classList.add('show');
+                hideLoginModal();
+                loadScores();
+                renderHubAvatar();
+                checkDailyBonus();
+                showRecentBadges();
+            } else {
+                document.getElementById('logoutBtn').style.display = 'none';
+                // Render whatever we have locally so the avatar is visible even before login
+                loadScores();
+                renderHubAvatar();
+                checkDailyBonus();
+                showRecentBadges();
+                if (reason === '2-second-timeout') {
+                    showLoginModal();
+                }
+            }
+            hubInitComplete = true;
+        }
+
+        /* ====== AUTH-READY HANDLER (always re-renders avatar when cloud loads) ====== */
+        window.addEventListener('megaplex-auth-ready', async (e) => {
+            performHubInit('cloud-ready');
+        });
+
+        // If module already finished loading before this listener attached, fire init manually
+        if (window.MegaplexCloud && window.MegaplexCloud.isReady) {
+            performHubInit('module-already-ready');
+        }
+
+        // 2-second hard timeout fallback — render local data even if cloud never connects
+        setTimeout(() => {
+            if (!hubInitComplete) {
+                performHubInit('2-second-timeout');
+            }
+        }, HUB_CLOUD_TIMEOUT_MS);
+
+        /* ====== HEADER AUTH BUTTON ====== */
+        function handleHeaderAuth() {
+            sfx.click();
+            const user = getCurrentFbUser();
+            if (user) {
+                logout();
+            } else {
+                showLoginModal();
+            }
+        }
+        function updateHeaderAuthUI() {
+            const btn = document.getElementById('headerAuthBtn');
+            const pill = document.getElementById('miniAuthPill');
+            if (!btn || !pill) return;
+            const user = getCurrentFbUser();
+            if (user) {
+                btn.innerText = '🚪 Log Out';
+                btn.classList.add('logout');
+                btn.title = 'Log out';
+                pill.innerText = '🚪 Log Out';
+                pill.classList.add('logout');
+                pill.title = 'Log out';
+            } else {
+                btn.innerText = '🔓 Log In';
+                btn.classList.remove('logout');
+                btn.title = 'Log in / sign up';
+                pill.innerText = '🔓 Log In';
+                pill.classList.remove('logout');
+                pill.title = 'Log in / sign up';
+            }
+        }
     </script>
 </body>
 </html>

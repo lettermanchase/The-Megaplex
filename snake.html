@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake: Cyber-Grid - Arcade</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         * { box-sizing: border-box; }
         body { 
@@ -134,6 +135,12 @@
             .d-down { grid-column: 2; grid-row: 2;} .d-right { grid-column: 3; grid-row: 2;}
         }
     </style>
+	
+	<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
 </head>
 <body>
 
@@ -494,6 +501,8 @@ function gameOver(reason) {
         localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
         document.getElementById('bestScoreUI').textContent = score;
     }
+    // ☁️ Push to cloud immediately
+    if (window.MegaplexCloud) window.MegaplexCloud.saveToCloud();
     
     setTimeout(() => {
         document.getElementById('overlayTitle').textContent = isBest ? '🏆 NEW BEST!' : 'GAME OVER';

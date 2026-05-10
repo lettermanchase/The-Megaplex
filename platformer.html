@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neon Jumper - Arcade</title>
+	<link rel="icon" type="image/png" href="favicon.png">
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -82,6 +83,12 @@
         .lvl-btn.hard:hover { background: #e67e22; color: #000; box-shadow: 0 0 15px rgba(230,126,34,0.5);}
 
     </style>
+	
+	<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
 </head>
 <body>
 
@@ -155,6 +162,14 @@
     </div>
 
     <script>
+        // ===== MEGAPLEX CLOUD INTEGRATION =====
+if (window.MegaplexCloud) {
+    window.MegaplexCloud.registerGameKeys([
+        // arcadeScores is already in the default registry,
+        // listed here for self-documentation.
+        { key: 'arcadeScores', type: 'json' }
+    ]);
+}
         // --- 🎵 RETRO SOUND ENGINE & MUSIC 🎵 ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
@@ -243,10 +258,20 @@
             stop: function() { this.isPlaying = false; clearTimeout(this.timerID); }
         };
 
-        // --- Hub Data ---
-        let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-        let bestDeaths = globalScores.platformer_deaths;
+        // --- Hub Data (refreshed when cloud finishes loading) ---
+let globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+let bestDeaths = globalScores.platformer_deaths;
+document.getElementById('bestScoreUI').innerText = bestDeaths !== undefined ? bestDeaths : '-';
+
+// Refresh from cloud once Firebase finishes loading
+if (window.MegaplexCloud) {
+    window.MegaplexCloud.onReady(function() {
+        globalScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+        bestDeaths = globalScores.platformer_deaths;
         document.getElementById('bestScoreUI').innerText = bestDeaths !== undefined ? bestDeaths : '-';
+        console.log('[NeonJumper] Cloud ready, best deaths:', bestDeaths);
+    });
+}
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -1134,32 +1159,47 @@
         }
 
         function winGame() {
-            // Anti-cheat: Only save high score if they played from Level 1
-            if (startedFromLevelOne) {
-                if (bestDeaths === undefined || deaths < bestDeaths) {
-                    globalScores.platformer_deaths = deaths;
-                    localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
-                    bestDeaths = deaths;
-                    document.getElementById('bestScoreUI').innerText = bestDeaths;
-                }
+    // Anti-cheat: Only save high score if they played from Level 1
+    if (startedFromLevelOne) {
+        // Use cloud helper if available — handles localStorage + cloud + new-best detection
+        // (lower is better for deaths, so pass `false` for higherIsBetter)
+        if (window.MegaplexCloud && window.MegaplexCloud.recordScore) {
+            window.MegaplexCloud.recordScore('platformer_deaths', deaths, false /* lower is better */)
+                .then(isNewBest => {
+                    if (isNewBest) {
+                        bestDeaths = deaths;
+                        document.getElementById('bestScoreUI').innerText = bestDeaths;
+                        console.log('[NeonJumper] 🏆 New best (fewest deaths):', deaths);
+                    }
+                })
+                .catch(e => console.error('[NeonJumper] Cloud sync failed:', e));
+        } else {
+            // Fallback: pure local save
+            if (bestDeaths === undefined || deaths < bestDeaths) {
+                globalScores.platformer_deaths = deaths;
+                localStorage.setItem('arcadeScores', JSON.stringify(globalScores));
+                bestDeaths = deaths;
+                document.getElementById('bestScoreUI').innerText = bestDeaths;
             }
-
-            titleUI.innerText = "SYSTEM HACKED";
-            titleUI.style.color = "#1dd1a1";
-            
-            let resultText = `You beat all ${levels.length} levels!<br><br>Final Death Count: <strong style="color:#ff4757; font-size:1.5em;">${deaths}</strong>`;
-            if (!startedFromLevelOne) {
-                resultText += `<br><br><span style="font-size:0.8em; color:#a4b0be;">(High Score not saved. Must start from Level 1)</span>`;
-            }
-            
-            subUI.innerHTML = resultText;
-            btnStart.innerText = "Play Again";
-            
-            music.stop(); 
-            currentLevel = 0; 
-            overlay.classList.add('active');
-            updateUI();
         }
+    }
+
+    titleUI.innerText = "SYSTEM HACKED";
+    titleUI.style.color = "#1dd1a1";
+
+    let resultText = `You beat all ${levels.length} levels!<br><br>Final Death Count: <strong style="color:#ff4757; font-size:1.5em;">${deaths}</strong>`;
+    if (!startedFromLevelOne) {
+        resultText += `<br><br><span style="font-size:0.8em; color:#a4b0be;">(High Score not saved. Must start from Level 1)</span>`;
+    }
+
+    subUI.innerHTML = resultText;
+    btnStart.innerText = "Play Again";
+
+    music.stop();
+    currentLevel = 0;
+    overlay.classList.add('active');
+    updateUI();
+}   // ← THIS is the proper close of winGame()
 
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) music.stop();

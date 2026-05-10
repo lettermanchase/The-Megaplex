@@ -46,6 +46,12 @@
     .diff-dot { width:6px; height:6px; border-radius:50%; background:#444; }
     .diff-dot.on { background:#ff4757; box-shadow:0 0 4px #ff4757; }
 </style>
+
+<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
 </head>
 <body>
 <header>
@@ -638,6 +644,13 @@ levels.forEach(lv => {
 let currentLevel = 0, lives = 4, score = 0, deaths = 0;
 let isPlaying = false, gameLoopId, levelStartTime = 0, levelTime = 0;
 let bestTimes = JSON.parse(localStorage.getItem('nj2_times')) || {};
+// 🆕 Refresh from cloud once Firebase finishes loading
+if (window.MegaplexCloud) {
+    window.MegaplexCloud.onReady(function() {
+        bestTimes = JSON.parse(localStorage.getItem('nj2_times')) || {};
+        console.log('[NJ2] Cloud best times loaded:', bestTimes);
+    });
+}
 let grid = [], gridCols = 0;
 let particles = [], enemies = [], projectiles = [], movingPlats = [], lasers = [], portals = [];
 let switches = [], gates = [], crumbles = [];
@@ -872,6 +885,12 @@ function gameOver() {
     document.getElementById('primaryBtn').innerText = 'Try Again';
     document.getElementById('primaryBtn').onclick = () => startLevel(0, true);
     document.getElementById('overlay').classList.add('active');
+
+    // Use recordScore so leaderboard gets updated properly
+if (window.MegaplexCloud && window.MegaplexCloud.recordScore) {
+    window.MegaplexCloud.recordScore('nj2_score', score, true)
+        .catch(e => console.error('[NJ2] Cloud sync failed:', e));
+}
 }
 
 function levelComplete() {
@@ -885,20 +904,39 @@ function levelComplete() {
         bestTimes[key] = levelTime;
         localStorage.setItem('nj2_times', JSON.stringify(bestTimes));
     }
+    // ⬆ DO NOT close the function here
 
     score += 1000 + Math.max(0, Math.floor(60 - levelTime) * 50);
     if(bossInLevel) score += 2500;
-    
+
+    // Persist boss-clear flags directly (achievement triggers, not leaderboard scores)
+    if(bossInLevel) {
+        let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+        if(levels[currentLevel].world === 1) scores.nj2_world1_cleared = 1;
+        if(levels[currentLevel].world === 2) scores.nj2_world2_cleared = 1;
+        localStorage.setItem('arcadeScores', JSON.stringify(scores));
+    }
+
+    // Use recordScore for the leaderboard (higher = better)
+    if (window.MegaplexCloud && window.MegaplexCloud.recordScore) {
+        window.MegaplexCloud.recordScore('nj2_score', score, true)
+            .then(isNew => {
+                if (isNew) console.log('[NJ2] 🏆 Leaderboard updated:', score);
+            })
+            .catch(e => console.error('[NJ2] Cloud sync failed:', e));
+    } else if (window.MegaplexCloud) {
+        window.MegaplexCloud.saveToCloud();
+    }
+
     currentLevel++;
 
-    // --- ACHIEVEMENT: FIRST BOSS BEATEN ---
     if (currentLevel === 7) {
         console.log("Achievement Unlocked: Defeated the Sentinel!");
         localStorage.setItem('nj2_boss1_beaten', 'true');
     }
 
     if(currentLevel >= levels.length) { winGame(); return; }
-    
+
     let lvl = levels[currentLevel];
     document.getElementById('mainScreen').style.display = 'flex';
     document.getElementById('levelScreen').style.display = 'none';
@@ -924,12 +962,24 @@ function winGame() {
     document.getElementById('primaryBtn').onclick = () => startLevel(0, true);
     document.getElementById('overlay').classList.add('active');
 
-    let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-    scores.nj2_score = Math.max(scores.nj2_score || 0, score);
-    scores.nj2_completed = 1;
-    localStorage.setItem('arcadeScores', JSON.stringify(scores));
+    // Persist completion + boss flags (achievement triggers)
+let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+scores.nj2_completed = 1;
+scores.nj2_world1_cleared = 1;
+scores.nj2_world2_cleared = 1;
+localStorage.setItem('arcadeScores', JSON.stringify(scores));
 
-    // --- ACHIEVEMENT: GAME BEATEN ---
+// 🆕 Use recordScore for leaderboard, then ensure flags also reach cloud
+if (window.MegaplexCloud && window.MegaplexCloud.recordScore) {
+    window.MegaplexCloud.recordScore('nj2_score', score, true)
+        .then(isNew => {
+            if (isNew) console.log('[NJ2] 🏆 Final leaderboard updated:', score);
+            // Force a second save to ensure the completion flags also push
+            return window.MegaplexCloud.saveToCloud();
+        })
+        .catch(e => console.error('[NJ2] Cloud sync failed:', e));
+}
+
     console.log("Achievement Unlocked: System Conquered!");
 }
 

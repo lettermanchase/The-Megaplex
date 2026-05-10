@@ -205,6 +205,12 @@
     @keyframes toastIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes toastOut { to { opacity: 0; transform: translateY(-20px); } }
 </style>
+
+<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
 </head>
 <body>
 <div id="game-container">
@@ -1698,6 +1704,8 @@ function showGPFinal() {
     }
     document.getElementById('gpContinueBtn').innerText = '🏠 Main Menu';
     document.getElementById('gpContinueBtn').onclick = showMenu;
+    // ☁️ Push GP results to cloud immediately
+    if (window.MegaplexCloud) window.MegaplexCloud.saveToCloud();
 }
 
 function raceOver() {
@@ -1814,6 +1822,8 @@ function raceOver() {
     } else {
         document.getElementById('gpNextBtn').style.display = 'none';
     }
+    // ☁️ Push race results to cloud immediately
+    if (window.MegaplexCloud) window.MegaplexCloud.saveToCloud();
 }
 
 function updateHUD() {
