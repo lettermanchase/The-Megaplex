@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friends — The Megaplex</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* ===== FULL PAGE LOADING SCREEN ===== */
+#friendsLoadingScreen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+    font-family: 'Orbitron', 'Segoe UI', sans-serif;
+    overflow: hidden;
+}
+#friendsLoadingScreen.hide {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Animated starfield backdrop */
+#friendsLoadingScreen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+        radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+        radial-gradient(1px 1px at 60% 70%, #00d2d3, transparent),
+        radial-gradient(2px 2px at 80% 20%, #fff, transparent),
+        radial-gradient(1px 1px at 30% 80%, #feca57, transparent),
+        radial-gradient(2px 2px at 90% 60%, #fff, transparent),
+        radial-gradient(1px 1px at 10% 50%, #00d2d3, transparent);
+    background-size: 200% 200%;
+    animation: starsDrift 20s linear infinite;
+    opacity: 0.6;
+}
+@keyframes starsDrift {
+    from { background-position: 0% 0%; }
+    to   { background-position: 100% 100%; }
+}
+
+/* CRT scanline overlay */
+#friendsLoadingScreen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    animation: scanlineFlicker 0.15s infinite;
+    opacity: 0.5;
+}
+@keyframes scanlineFlicker {
+    0%, 100% { opacity: 0.45; }
+    50%      { opacity: 0.55; }
+}
+
+.loading-logo {
+    font-size: 3em;
+    color: #00d2d3;
+    letter-spacing: 4px;
+    text-shadow: 0 0 10px #00d2d3, 0 0 20px #00d2d3, 0 0 40px #00d2d3;
+    animation: logoPulse 1.8s infinite alternate;
+    z-index: 1;
+    text-align: center;
+}
+@keyframes logoPulse {
+    from { text-shadow: 0 0 10px #00d2d3, 0 0 20px #00d2d3; }
+    to   { text-shadow: 0 0 20px #00d2d3, 0 0 40px #00d2d3, 0 0 80px #00d2d3; }
+}
+
+.full-loading-spinner {
+    width: 80px;
+    height: 80px;
+    border: 5px solid rgba(0, 210, 211, 0.15);
+    border-top-color: #00d2d3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    box-shadow: 0 0 30px rgba(0, 210, 211, 0.6);
+    z-index: 1;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-status {
+    color: #00d2d3;
+    font-size: 1em;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 0 8px #00d2d3;
+    z-index: 1;
+    min-height: 24px;
+    text-align: center;
+    animation: statusPulse 1.5s ease-in-out infinite alternate;
+}
+@keyframes statusPulse {
+    from { opacity: 0.6; }
+    to   { opacity: 1; }
+}
+
+.loading-bar-container {
+    width: 320px;
+    max-width: 80%;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 210, 211, 0.4);
+    border-radius: 3px;
+    overflow: hidden;
+    z-index: 1;
+}
+.loading-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00d2d3, #feca57);
+    box-shadow: 0 0 12px rgba(0, 210, 211, 0.8);
+    transition: width 0.4s ease;
+    border-radius: 3px;
+}
+
+.loading-tip {
+    position: absolute;
+    bottom: 30px;
+    color: #c8d6e5;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.85em;
+    letter-spacing: 1px;
+    opacity: 0.7;
+    z-index: 1;
+    text-align: center;
+    padding: 0 20px;
+}
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #fff; margin: 0; padding: 0; min-height: 100vh;
+            overflow-x: hidden;
+        }
+        body.light-mode {
+            background: linear-gradient(135deg, #f5f6fa, #c8d6e5, #feca57);
+            color: #222;
+        }
+
+        /* ===== Starfield ===== */
+        .starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle linear infinite; }
+        @keyframes twinkle { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
+
+        /* ===== CRT Scanline ===== */
+        body::before {
+            content: " "; display: block; position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 100; background-size: 100% 4px, 6px 100%;
+            pointer-events: none; animation: flicker 0.15s infinite; opacity: 0.6;
+        }
+        @keyframes flicker { 0%,100% { opacity: 0.55; } 50% { opacity: 0.65; } }
+
+        /* ===== Header ===== */
+        header {
+            background: rgba(0,0,0,0.7);
+            border-bottom: 3px solid #00d2d3;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            padding: 18px 30px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 50;
+            flex-wrap: wrap; gap: 12px;
+        }
+        .header-left { display: flex; align-items: center; gap: 18px; }
+        .back-btn {
+            background: rgba(0,0,0,0.5); border: 1px solid #00d2d3; color: #00d2d3;
+            padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold;
+            text-decoration: none; transition: 0.2s; font-size: 0.9em;
+        }
+        .back-btn:hover { background: rgba(0, 210, 211, 0.2); transform: translateX(-3px); }
+        .page-title {
+            font-family: 'Orbitron', sans-serif;
+            color: #00d2d3; font-size: 1.6em; letter-spacing: 3px;
+            text-shadow: 0 0 10px #00d2d3, 0 0 20px #00d2d3;
+            margin: 0;
+        }
+        .header-right { display: flex; gap: 10px; align-items: center; }
+        .pill {
+            background: rgba(0,0,0,0.5); border: 1px solid #00d2d3;
+            color: #00d2d3; padding: 6px 14px; border-radius: 15px;
+            font-weight: bold; font-size: 0.9em;
+        }
+        .pill.gold { border-color: #feca57; color: #feca57; }
+        .pill.pink { border-color: #f368e0; color: #f368e0; }
+
+        /* ===== Main Layout ===== */
+        .friends-container {
+            max-width: 1300px; margin: 30px auto; padding: 0 20px;
+            position: relative; z-index: 10;
+            display: grid; grid-template-columns: 380px 1fr;
+            gap: 25px;
+        }
+        @media (max-width: 900px) {
+            .friends-container { grid-template-columns: 1fr; }
+        }
+
+        /* ===== Sidebar ===== */
+        .sidebar {
+            background: rgba(0,0,0,0.7); border: 1px solid rgba(0, 210, 211, 0.3);
+            border-radius: 16px; padding: 20px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            position: sticky; top: 100px;
+            max-height: calc(100vh - 130px);
+            display: flex; flex-direction: column;
+        }
+        @media (max-width: 900px) {
+            .sidebar { position: static; max-height: none; }
+        }
+
+        .search-section { margin-bottom: 20px; }
+        .search-input {
+            width: 100%; padding: 12px 16px;
+            background: rgba(0,0,0,0.6); color: #fff;
+            border: 1px solid rgba(0, 210, 211, 0.4); border-radius: 10px;
+            font-family: 'Segoe UI', sans-serif; font-size: 0.95em;
+            outline: none; transition: 0.3s;
+        }
+        .search-input:focus {
+            border-color: #00d2d3;
+            box-shadow: 0 0 12px rgba(0, 210, 211, 0.4);
+        }
+
+        .search-results {
+            margin-top: 8px; max-height: 220px; overflow-y: auto;
+            background: rgba(0,0,0,0.5); border-radius: 10px;
+            border: 1px solid rgba(0, 210, 211, 0.2);
+            display: none;
+        }
+        .search-results.show { display: block; }
+        .search-result-item {
+            padding: 10px 14px; cursor: pointer; display: flex;
+            align-items: center; gap: 10px; transition: 0.15s;
+            border-bottom: 1px solid rgba(0, 210, 211, 0.1);
+        }
+        .search-result-item:last-child { border-bottom: none; }
+        .search-result-item:hover { background: rgba(0, 210, 211, 0.15); }
+        .search-result-empty { padding: 14px; text-align: center; color: #888; font-size: 0.9em; font-style: italic; }
+
+        .section-header {
+            color: #00d2d3; font-family: 'Orbitron', sans-serif;
+            font-size: 0.95em; letter-spacing: 2px; text-transform: uppercase;
+            border-bottom: 1px solid rgba(0, 210, 211, 0.3);
+            padding-bottom: 8px; margin: 18px 0 12px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .section-count {
+            background: rgba(0, 210, 211, 0.2); color: #00d2d3;
+            padding: 2px 8px; border-radius: 10px; font-size: 0.85em;
+            border: 1px solid rgba(0, 210, 211, 0.4);
+        }
+        .section-count.pending { background: rgba(255, 71, 87, 0.2); color: #ff4757; border-color: rgba(255, 71, 87, 0.4); }
+
+        .friend-list { overflow-y: auto; flex: 1; padding-right: 4px; }
+        .friend-list::-webkit-scrollbar { width: 6px; }
+        .friend-list::-webkit-scrollbar-thumb { background: rgba(0, 210, 211, 0.5); border-radius: 3px; }
+
+        .friend-card, .pending-card {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px; background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(0, 210, 211, 0.2);
+            border-radius: 10px; margin-bottom: 8px;
+            cursor: pointer; transition: 0.2s;
+            position: relative;
+        }
+        .friend-card:hover {
+            border-color: #00d2d3; transform: translateX(3px);
+            box-shadow: -3px 0 15px rgba(0, 210, 211, 0.3);
+        }
+        .friend-card.active {
+            border-color: #00d2d3;
+            background: rgba(0, 210, 211, 0.15);
+            box-shadow: 0 0 15px rgba(0, 210, 211, 0.4);
+        }
+
+        .pending-card { border-color: rgba(255, 71, 87, 0.3); background: rgba(255, 71, 87, 0.05); }
+        .pending-card:hover { border-color: #ff4757; }
+
+        /* Mini avatar (in friends list) */
+        .mini-avatar {
+            width: 50px; height: 50px; border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; flex-shrink: 0; overflow: hidden;
+            background: #2f3640; border: 2px solid rgba(255,255,255,0.2);
+        }
+        .mini-avatar .mini-head {
+            width: 22px; height: 18px; border-radius: 4px;
+            background: #c8d6e5; position: relative; z-index: 2;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .mini-avatar .mini-eyes {
+            width: 14px; height: 6px; background: #000; border-radius: 2px;
+            display: flex; justify-content: space-around; align-items: center;
+        }
+        .mini-avatar .mini-eye {
+            width: 3px; height: 3px; background: #00d2d3; border-radius: 50%;
+        }
+        .mini-avatar .mini-body {
+            width: 18px; height: 14px; background: #a4b0be;
+            border-radius: 3px; margin-top: 2px;
+        }
+        .mini-avatar .mini-hat {
+            position: absolute; top: 2px; font-size: 0.85em; z-index: 3;
+        }
+
+        .friend-info { flex: 1; min-width: 0; }
+        .friend-name {
+            color: #00d2d3; font-weight: bold; font-size: 0.95em;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .friend-meta { color: #888; font-size: 0.8em; margin-top: 2px; }
+        .friend-prestige-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #f368e0, #6c5ce7);
+            color: #fff; padding: 1px 6px; border-radius: 8px;
+            font-size: 0.75em; font-weight: bold; margin-left: 4px;
+            box-shadow: 0 0 6px rgba(243, 104, 224, 0.5);
+        }
+
+        .friend-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .btn-small {
+            border: none; padding: 5px 10px; border-radius: 6px;
+            font-weight: bold; cursor: pointer; font-size: 0.8em;
+            transition: 0.15s;
+        }
+        .btn-accept { background: #1dd1a1; color: #000; }
+        .btn-accept:hover { background: #10ac84; transform: scale(1.05); }
+        .btn-decline { background: #ff4757; color: #fff; }
+        .btn-decline:hover { background: #c0392b; transform: scale(1.05); }
+
+        .empty-state {
+            text-align: center; padding: 30px 15px;
+            color: #666; font-style: italic; font-size: 0.9em;
+        }
+        .empty-state .empty-icon { font-size: 2em; opacity: 0.5; display: block; margin-bottom: 8px; }
+
+        /* ===== Profile View (right side) ===== */
+        .profile-view {
+            background: rgba(0,0,0,0.7); border: 1px solid rgba(0, 210, 211, 0.3);
+            border-radius: 16px; padding: 30px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            min-height: 600px;
+        }
+
+        .profile-empty {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 500px; text-align: center; color: #666;
+        }
+        .profile-empty .big-icon {
+            font-size: 5em; opacity: 0.3; margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .profile-empty h2 {
+            font-family: 'Orbitron', sans-serif; color: #00d2d3;
+            margin-bottom: 10px;
+        }
+
+        /* Profile Header */
+        .profile-header {
+            display: grid; grid-template-columns: 220px 1fr;
+            gap: 25px; margin-bottom: 25px; align-items: center;
+        }
+        @media (max-width: 700px) {
+            .profile-header { grid-template-columns: 1fr; text-align: center; }
+        }
+
+        .profile-avatar-stage {
+            width: 220px; height: 220px; border-radius: 16px;
+            border: 3px solid #fff;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; background: #2f3640; overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
+            margin: 0 auto;
+        }
+        .profile-avatar-stage.has-prestige {
+            box-shadow:
+                inset 0 0 30px rgba(0,0,0,0.8),
+                0 0 25px rgba(243, 104, 224, 0.7),
+                0 0 50px rgba(108, 92, 231, 0.5),
+                0 10px 30px rgba(0,0,0,0.5);
+            animation: prestigeAuraPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes prestigeAuraPulse {
+            0%, 100% { box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 0 25px rgba(243, 104, 224, 0.7), 0 0 50px rgba(108, 92, 231, 0.5), 0 10px 30px rgba(0,0,0,0.5); }
+            50% { box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 0 40px rgba(243, 104, 224, 1), 0 0 80px rgba(108, 92, 231, 0.8), 0 10px 30px rgba(0,0,0,0.5); }
+        }
+        .bot-head { width: 90px; height: 70px; background: #c8d6e5; border-radius: 13px; position: relative; display: flex; justify-content: center; align-items: center; z-index: 2; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .bot-eyes { width: 50px; height: 25px; background: #000; border-radius: 5px; display: flex; justify-content: space-around; align-items: center; padding: 0 5px; }
+        .eye { width: 12px; height: 12px; background: #00d2d3; border-radius: 50%; box-shadow: 0 0 10px #00d2d3; animation: eyeBlink 4s infinite; }
+        @keyframes eyeBlink { 0%,95%,100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+        .bot-body { width: 70px; height: 60px; background: #a4b0be; border-radius: 9px; margin-top: 5px; position: relative; z-index: 1; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .bot-hat { position: absolute; top: -38px; left: 50%; transform: translateX(-50%); font-size: 3em; z-index: 3; line-height: 1; }
+
+        /* Holographic effects */
+        @keyframes holoShift {
+            0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+            50% { background-position: 100% 50%; filter: hue-rotate(60deg); }
+            100% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+        }
+        .bot-head.holo, .bot-body.holo {
+            background: linear-gradient(135deg, #f368e0, #feca57, #00d2d3, #6c5ce7, #f368e0) !important;
+            background-size: 200% 200% !important;
+            animation: holoShift 5s ease-in-out infinite;
+        }
+        .bot-hat.holo {
+            filter: drop-shadow(0 0 8px #f368e0) drop-shadow(0 0 14px #00d2d3) drop-shadow(0 0 20px #feca57);
+            animation: holoHueRotate 4s linear infinite;
+        }
+        @keyframes holoHueRotate { to { filter: drop-shadow(0 0 8px #f368e0) drop-shadow(0 0 14px #00d2d3) drop-shadow(0 0 20px #feca57) hue-rotate(360deg); } }
+
+        .profile-bg-anim { background-size: 200% 200%; }
+        .profile-bg-anim.bg-anim-holo { animation: holoShift 6s ease-in-out infinite; }
+        .profile-bg-anim.bg-anim-glitch { animation: bgGlitch 2s steps(8) infinite; }
+        .profile-bg-anim.bg-anim-aurora { animation: bgAurora 8s ease-in-out infinite; }
+        @keyframes bgGlitch {
+            0%,100% { background-position: 0% 0%; }
+            25% { background-position: 50% 0%; }
+            50% { background-position: 0% 50%; }
+            75% { background-position: 50% 50%; }
+        }
+        @keyframes bgAurora {
+            0%,100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Nameplate */
+        .profile-nameplate {
+            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+            padding: 3px 10px; border-radius: 10px;
+            font-family: 'Orbitron', sans-serif; font-size: 0.55em; font-weight: 700;
+            letter-spacing: 1px; white-space: nowrap; z-index: 5;
+            text-shadow: 0 0 5px rgba(0,0,0,0.8); color: #fff;
+            border: 1px solid rgba(255,255,255,0.4);
+            background-size: 200% 200%; display: none;
+        }
+        .profile-nameplate.show { display: inline-block; }
+        .profile-nameplate.np-rainbow { background: linear-gradient(90deg, #ff006e, #fb5607, #ffbe0b, #8338ec, #3a86ff, #ff006e); animation: npRainbow 4s linear infinite; }
+        .profile-nameplate.np-fire { background: linear-gradient(90deg, #ff3838, #ff9f1a, #feca57, #ff9f1a, #ff3838); animation: npRainbow 2s linear infinite; box-shadow: 0 0 8px #ff6b00; }
+        .profile-nameplate.np-ice { background: linear-gradient(90deg, #00d2ff, #3a7bd5, #91eae4, #3a7bd5, #00d2ff); animation: npRainbow 3.5s linear infinite; box-shadow: 0 0 8px #00d2ff; }
+        .profile-nameplate.np-void { background: linear-gradient(90deg, #000, #6c5ce7, #000, #f368e0, #000); animation: npRainbow 5s linear infinite; box-shadow: 0 0 10px #6c5ce7; }
+        .profile-nameplate.np-galaxy { background: linear-gradient(90deg, #0f0c29, #302b63, #24243e, #302b63, #0f0c29); animation: npRainbow 7s linear infinite; box-shadow: 0 0 10px #302b63; }
+        .profile-nameplate.np-godcore { background: linear-gradient(90deg, #ffd700, #fff, #ffd700, #ff8a00, #ffd700); animation: npRainbow 2.5s linear infinite; box-shadow: 0 0 12px #ffd700; color: #000; }
+        .profile-nameplate.np-pulse { background: linear-gradient(90deg, #1dd1a1, #10ac84, #1dd1a1); animation: npPulse 1.5s ease-in-out infinite; }
+        @keyframes npRainbow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+        @keyframes npPulse { 0%,100% { box-shadow: 0 0 4px #1dd1a1; } 50% { box-shadow: 0 0 18px #1dd1a1; } }
+
+        /* Aura */
+        .profile-aura-container { position: absolute; inset: 0; pointer-events: none; z-index: 1; display: none; }
+        .profile-aura-container.show { display: block; }
+        .profile-aura-particle {
+            position: absolute; width: 6px; height: 6px; border-radius: 50%;
+            top: 50%; left: 50%; transform-origin: 0 0; opacity: 0;
+        }
+        .aura-fire .profile-aura-particle { background: radial-gradient(circle, #ffeb3b, #ff5722 60%, transparent); box-shadow: 0 0 10px #ff5722; animation: profOrbit 3s linear infinite; }
+        .aura-ice .profile-aura-particle { background: radial-gradient(circle, #fff, #00d2ff 60%, transparent); box-shadow: 0 0 8px #00d2ff; animation: profOrbit 4.5s linear infinite; }
+        .aura-electric .profile-aura-particle { background: radial-gradient(circle, #fff, #feca57 60%, transparent); box-shadow: 0 0 6px #feca57; animation: profOrbit 1.5s linear infinite; }
+        .aura-dark .profile-aura-particle { background: radial-gradient(circle, #6c5ce7, #2d3436 70%, transparent); box-shadow: 0 0 8px #6c5ce7; animation: profOrbit 3.5s linear infinite reverse; }
+        .aura-rainbow .profile-aura-particle { background: conic-gradient(from 0deg, #ff006e, #fb5607, #ffbe0b, #8338ec, #3a86ff, #ff006e); box-shadow: 0 0 8px #fff; animation: profOrbit 4s linear infinite; }
+        .aura-godcore .profile-aura-particle { background: radial-gradient(circle, #fff, #ffd700 50%, #ff8a00 90%, transparent); box-shadow: 0 0 14px #ffd700; width: 8px; height: 8px; animation: profOrbit 2.5s linear infinite; }
+        .aura-leaves .profile-aura-particle { background: radial-gradient(circle, #1dd1a1, #10ac84 60%, transparent); box-shadow: 0 0 6px #1dd1a1; border-radius: 0 100% 0 100%; animation: profOrbit 5s linear infinite; }
+        @keyframes profOrbit {
+            0%   { transform: rotate(0deg) translateX(70px) rotate(0deg); opacity: 0; }
+            10%  { opacity: 1; } 90% { opacity: 1; }
+            100% { transform: rotate(360deg) translateX(70px) rotate(-360deg); opacity: 0; }
+        }
+
+        /* Profile name & info */
+        .profile-info { display: flex; flex-direction: column; gap: 8px; }
+        .profile-username {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2em; color: #00d2d3;
+            text-shadow: 0 0 15px rgba(0, 210, 211, 0.6);
+            margin: 0; letter-spacing: 2px;
+            word-break: break-all;
+        }
+        .profile-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+        .profile-badge {
+            padding: 5px 12px; border-radius: 15px;
+            font-weight: bold; font-size: 0.9em;
+            display: inline-flex; align-items: center; gap: 4px;
+        }
+        .badge-level { background: linear-gradient(135deg, #feca57, #ff9f43); color: #000; box-shadow: 0 0 10px rgba(254, 202, 87, 0.5); }
+        .badge-prestige {
+            background: linear-gradient(135deg, #f368e0, #6c5ce7, #00d2d3);
+            background-size: 200% 200%;
+            color: #fff; box-shadow: 0 0 12px rgba(243, 104, 224, 0.6);
+            animation: prestigeShimmer 3s ease-in-out infinite;
+        }
+        @keyframes prestigeShimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .badge-member { background: rgba(0,0,0,0.5); border: 1px solid #888; color: #aaa; }
+
+        .profile-actions {
+            display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;
+        }
+        .btn-action {
+            padding: 10px 18px; border-radius: 10px;
+            border: none; cursor: pointer; font-weight: bold;
+            font-family: 'Segoe UI', sans-serif; transition: 0.2s;
+            font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-add-friend {
+            background: linear-gradient(135deg, #00d2d3, #0984e3); color: #fff;
+            box-shadow: 0 0 12px rgba(0, 210, 211, 0.4);
+        }
+        .btn-add-friend:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(0, 210, 211, 0.6); }
+        .btn-pending {
+            background: rgba(254, 202, 87, 0.2); color: #feca57;
+            border: 1px solid #feca57; cursor: default;
+        }
+        .btn-friends {
+            background: rgba(29, 209, 161, 0.2); color: #1dd1a1;
+            border: 1px solid #1dd1a1; cursor: default;
+        }
+        .btn-remove {
+            background: rgba(255, 71, 87, 0.15); color: #ff4757;
+            border: 1px solid #ff4757;
+        }
+        .btn-remove:hover { background: rgba(255, 71, 87, 0.3); }
+
+        /* ===== Stat Grid ===== */
+        .stats-section {
+            margin-top: 30px;
+            border-top: 1px solid rgba(0, 210, 211, 0.2);
+            padding-top: 25px;
+        }
+        .stats-section-title {
+            font-family: 'Orbitron', sans-serif; color: #00d2d3;
+            font-size: 1.1em; letter-spacing: 2px; text-transform: uppercase;
+            margin-bottom: 15px; display: flex; align-items: center; gap: 8px;
+        }
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .stat-tile {
+            background: linear-gradient(135deg, rgba(0, 210, 211, 0.1), rgba(0,0,0,0.4));
+            border: 1px solid rgba(0, 210, 211, 0.3);
+            border-radius: 10px; padding: 14px;
+            text-align: center; transition: 0.2s;
+        }
+        .stat-tile:hover {
+            border-color: #00d2d3;
+            box-shadow: 0 0 15px rgba(0, 210, 211, 0.3);
+            transform: translateY(-2px);
+        }
+        .stat-tile.gold { border-color: rgba(254, 202, 87, 0.4); background: linear-gradient(135deg, rgba(254, 202, 87, 0.1), rgba(0,0,0,0.4)); }
+        .stat-tile.gold .stat-tile-value { color: #feca57; }
+        .stat-tile.pink { border-color: rgba(243, 104, 224, 0.4); background: linear-gradient(135deg, rgba(243, 104, 224, 0.1), rgba(0,0,0,0.4)); }
+        .stat-tile.pink .stat-tile-value { color: #f368e0; }
+        .stat-tile.green { border-color: rgba(29, 209, 161, 0.4); background: linear-gradient(135deg, rgba(29, 209, 161, 0.1), rgba(0,0,0,0.4)); }
+        .stat-tile.green .stat-tile-value { color: #1dd1a1; }
+
+        .stat-tile-label {
+            font-size: 0.75em; color: #888; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 6px;
+        }
+        .stat-tile-value {
+            font-family: 'Orbitron', sans-serif; font-size: 1.6em;
+            font-weight: bold; color: #00d2d3;
+            text-shadow: 0 0 10px currentColor;
+        }
+        .stat-tile-sub { font-size: 0.75em; color: #aaa; margin-top: 4px; }
+
+        /* Top scores list */
+        .top-scores-list { display: flex; flex-direction: column; gap: 8px; }
+        .top-score-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.4); padding: 10px 14px;
+            border-radius: 8px; border-left: 3px solid #00d2d3;
+        }
+        .top-score-game { color: #fff; font-weight: bold; }
+        .top-score-value { color: #1dd1a1; font-family: monospace; font-weight: bold; }
+        .top-score-medal { font-size: 1.2em; margin-right: 8px; }
+
+        /* Trophy progress */
+        .trophy-bar-bg {
+            width: 100%; height: 14px; background: #1a1a1a;
+            border-radius: 7px; overflow: hidden; margin-top: 8px;
+            border: 1px solid rgba(243, 104, 224, 0.3);
+        }
+        .trophy-bar-fill {
+            height: 100%; background: linear-gradient(90deg, #f368e0, #feca57);
+            transition: width 0.8s ease; box-shadow: 0 0 10px rgba(243, 104, 224, 0.6);
+        }
+        .trophy-info-row {
+            display: flex; justify-content: space-between;
+            color: #ccc; font-size: 0.9em; margin-top: 6px;
+        }
+
+        /* Loading state */
+        .loading-spinner {
+            width: 50px; height: 50px;
+            border: 4px solid rgba(0, 210, 211, 0.2);
+            border-top-color: #00d2d3;
+            border-radius: 50%; animation: spin 1s linear infinite;
+            margin: 50px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Toast (matches hub) */
+        #toastContainer { position: fixed; top: 20px; right: 20px; z-index: 9000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: rgba(0,0,0,0.95); color: #fff; border-left: 4px solid #00d2d3; padding: 15px 25px; border-radius: 8px; min-width: 250px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); animation: slideIn 0.4s ease, fadeOut 0.4s ease 3.6s forwards; display: flex; align-items: center; gap: 12px; }
+        .toast.success { border-color: #1dd1a1; }
+        .toast.error { border-color: #ff4757; }
+        .toast.warning { border-color: #feca57; }
+        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateX(120%); } }
+
+        .needs-login {
+            text-align: center; padding: 60px 20px; color: #aaa;
+        }
+        .needs-login h2 { color: #00d2d3; font-family: 'Orbitron', sans-serif; }
+        .needs-login a { color: #feca57; }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="megaplex-firebase.js"></script>
+</head>
+<body>
+    <!-- ===== FULL PAGE LOADING SCREEN ===== -->
+    <div id="friendsLoadingScreen">
+        <div class="loading-logo">👥 FRIENDS</div>
+        <div class="full-loading-spinner"></div>
+        <div class="loading-status" id="friendsLoadingStatus">CONNECTING TO MEGAPLEX...</div>
+        <div class="loading-bar-container">
+            <div class="loading-bar-fill" id="friendsLoadingBar"></div>
+        </div>
+        <div class="loading-tip" id="friendsLoadingTip">💡 Tip: Add friends by searching their username</div>
+    </div>
+
+    <div class="starfield" id="starfield"></div>
+    <div id="toastContainer"></div>
+
+    <header>
+        <div class="header-left">
+            <a href="index.html" class="back-btn">← Back to Hub</a>
+            <h1 class="page-title">👥 FRIENDS</h1>
+        </div>
+        <div class="header-right">
+            <span class="pill" id="pillUsername">👤 Loading...</span>
+            <span class="pill gold">⭐ <span id="pillFriendCount">0</span> Friends</span>
+        </div>
+    </header>
+
+    <!-- Main grid: sidebar (friends list + search) | profile view -->
+    <div class="friends-container" id="mainContent">
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar">
+            <div class="search-section">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search players by username..." maxlength="20">
+                <div class="search-results" id="searchResults"></div>
+            </div>
+
+            <div class="section-header">
+                <span>📨 Pending</span>
+                <span class="section-count pending" id="pendingCount">0</span>
+            </div>
+            <div id="pendingList"></div>
+
+            <div class="section-header">
+                <span>⭐ Friends</span>
+                <span class="section-count" id="friendCountSidebar">0</span>
+            </div>
+            <div class="friend-list" id="friendsList"></div>
+        </aside>
+
+        <!-- RIGHT: PROFILE VIEW -->
+        <main class="profile-view" id="profileView">
+            <div class="profile-empty">
+                <div class="big-icon">👥</div>
+                <h2>SELECT A PLAYER</h2>
+                <p>Click a friend on the left or search for a player to view their full stats, achievements, and avatar.</p>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        /* ====== LOADING SCREEN CONTROLLER ====== */
+const loadingTips = [
+    '💡 Tip: Add friends by searching their username',
+    '💡 Tip: Click a friend to view their profile and stats',
+    '💡 Tip: You can have unlimited friends!',
+    '💡 Tip: Friend requests sync across all your devices',
+    '💡 Tip: Prestige rank is shown on every profile card',
+    '💡 Tip: Compare your top scores with your friends'
+];
+
+let loadingProgress = 0;
+let loadingTipInterval = null;
+
+function setLoadingStatus(text, progressPct) {
+    const statusEl = document.getElementById('friendsLoadingStatus');
+    const barEl = document.getElementById('friendsLoadingBar');
+    if (statusEl) statusEl.innerText = text;
+    if (barEl && progressPct !== undefined) {
+        loadingProgress = progressPct;
+        barEl.style.width = progressPct + '%';
+    }
+}
+
+function rotateTips() {
+    const tipEl = document.getElementById('friendsLoadingTip');
+    if (!tipEl) return;
+    let i = 0;
+    loadingTipInterval = setInterval(() => {
+        i = (i + 1) % loadingTips.length;
+        tipEl.style.opacity = '0';
+        setTimeout(() => {
+            tipEl.innerText = loadingTips[i];
+            tipEl.style.opacity = '0.7';
+        }, 300);
+    }, 3000);
+}
+rotateTips();
+
+function hideLoadingScreen() {
+    if (loadingTipInterval) clearInterval(loadingTipInterval);
+    setLoadingStatus('READY', 100);
+    setTimeout(() => {
+        const screen = document.getElementById('friendsLoadingScreen');
+        if (screen) {
+            screen.classList.add('hide');
+            setTimeout(() => screen.remove(), 600);
+        }
+    }, 300);
+}
+
+/* Safety net: force-hide loader after 10 seconds no matter what */
+setTimeout(() => {
+    const screen = document.getElementById('friendsLoadingScreen');
+    if (screen && !screen.classList.contains('hide')) {
+        console.warn('[Friends] Loading screen safety timeout triggered');
+        hideLoadingScreen();
+    }
+}, 10000);
+        /* ====================================================
+           AVATAR DATABASE — MUST match the hub & avatar shop
+           so we can render other players' equipped cosmetics
+           ==================================================== */
+        const shopDatabase = {
+            colors: [
+                { id: 'color_default', hex: '#c8d6e5', bodyHex: '#a4b0be' },
+                { id: 'color_red', hex: '#ff4757', bodyHex: '#c0392b' },
+                { id: 'color_green', hex: '#1dd1a1', bodyHex: '#10ac84' },
+                { id: 'color_pink', hex: '#ff9ff3', bodyHex: '#f368e0' },
+                { id: 'color_gold', hex: '#feca57', bodyHex: '#f39c12' },
+                { id: 'color_ghost', hex: '#f5f6fa', bodyHex: '#dcdde1' },
+                { id: 'color_cyber', hex: '#00d2d3', bodyHex: '#0984e3' },
+                { id: 'color_void', hex: '#2f3640', bodyHex: '#1e272e' },
+                { id: 'color_blood', hex: '#8e0e00', bodyHex: '#3d0000' },
+                { id: 'color_neon', hex: '#39ff14', bodyHex: '#0aff0a' },
+                { id: 'color_royal', hex: '#6c5ce7', bodyHex: '#341f97' },
+                { id: 'color_chrome', hex: '#bdc3c7', bodyHex: '#7f8c8d' },
+                { id: 'color_inferno', hex: '#ff3838', bodyHex: '#ff9f1a' },
+                { id: 'color_omega', hex: '#000', bodyHex: '#ff0040' },
+                { id: 'color_godcore', hex: '#ffd700', bodyHex: '#ff8a00', holo: true }
+            ],
+            hats: [
+                { id: 'hat_none', icon: '' },
+                { id: 'hat_cap', icon: '🧢' }, { id: 'hat_party', icon: '🥳' }, { id: 'hat_headphones', icon: '🎧' },
+                { id: 'hat_cowboy', icon: '🤠' }, { id: 'hat_vr', icon: '🥽' }, { id: 'hat_ninja', icon: '🥷' },
+                { id: 'hat_pirate', icon: '🏴‍☠️' }, { id: 'hat_alien', icon: '👾' }, { id: 'hat_wizard', icon: '🧙' },
+                { id: 'hat_robot', icon: '🤖' }, { id: 'hat_fire', icon: '🔥' }, { id: 'hat_dragon', icon: '🐉' },
+                { id: 'hat_crown', icon: '👑' }, { id: 'hat_halo', icon: '👼' }, { id: 'hat_trophy', icon: '🏆' },
+                { id: 'hat_unicorn', icon: '🦄', holo: true },
+                { id: 'hat_galaxy', icon: '🌌', holo: true }
+            ],
+            bgs: [
+                { id: 'bg_default', css: '#2f3640' },
+                { id: 'bg_neon', css: 'linear-gradient(135deg, #ff006e, #8338ec)' },
+                { id: 'bg_matrix', css: 'repeating-linear-gradient(0deg, #000, #000 10px, #052c11 10px, #052c11 20px)' },
+                { id: 'bg_sunset', css: 'linear-gradient(180deg, #2c3e50, #e74c3c, #f1c40f)' },
+                { id: 'bg_ocean', css: 'linear-gradient(180deg, #003973, #003973, #006d77, #83c5be)' },
+                { id: 'bg_synth', css: 'linear-gradient(0deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%)' },
+                { id: 'bg_lava', css: 'radial-gradient(circle at bottom, #eb4d4b, #130f40)' },
+                { id: 'bg_aurora', css: 'linear-gradient(135deg, #00d2d3, #54a0ff, #5f27cd, #ff006e)', anim: 'aurora' },
+                { id: 'bg_galaxy', css: 'radial-gradient(circle at center, #341f97, #000)' },
+                { id: 'bg_glitch', css: 'repeating-linear-gradient(45deg, #ff00ff, #ff00ff 8px, #00ffff 8px, #00ffff 16px, #000 16px, #000 24px)', anim: 'glitch' },
+                { id: 'bg_holo', css: 'linear-gradient(135deg, #f368e0, #feca57, #00d2d3, #6c5ce7, #f368e0)', anim: 'holo' }
+            ],
+            nameplates: [
+                { id: 'np_pulse',   animClass: 'np-pulse' },
+                { id: 'np_ice',     animClass: 'np-ice' },
+                { id: 'np_fire',    animClass: 'np-fire' },
+                { id: 'np_rainbow', animClass: 'np-rainbow' },
+                { id: 'np_void',    animClass: 'np-void' },
+                { id: 'np_galaxy',  animClass: 'np-galaxy' },
+                { id: 'np_godcore', animClass: 'np-godcore' }
+            ],
+            auras: [
+                { id: 'aura_leaves',   animClass: 'aura-leaves' },
+                { id: 'aura_ice',      animClass: 'aura-ice' },
+                { id: 'aura_fire',     animClass: 'aura-fire' },
+                { id: 'aura_electric', animClass: 'aura-electric' },
+                { id: 'aura_dark',     animClass: 'aura-dark' },
+                { id: 'aura_rainbow',  animClass: 'aura-rainbow' },
+                { id: 'aura_godcore',  animClass: 'aura-godcore' }
+            ]
+        };
+
+        /* ====================================================
+           Game key → friendly title map (for top-scores section)
+           ==================================================== */
+        const gameTitles = {
+            glitch_score: '💥 Glitch Brawler',
+            glitch_strikers: '⚔️ Glitch Strikers',
+            asteroids: '☄️ Quantum Asteroids',
+            tanks_score: '💣 Plasma Tanks',
+            cyberrunner: '🏃‍♂️ Cyber Runner',
+            racer_best_time: '🏎️ Vaporwave Racer',
+            fps: '🔫 System Breach',
+            platformer_deaths: '🏃 Neon Jumper',
+            nj2_score: '⚡ Neon Jumper 2',
+            snake: '🐍 Snake Classic',
+            clicker: '👆 Clicker Frenzy',
+            reaction: '⚡ Reaction Time',
+            ttt: '⭕ Tic-Tac-Toe',
+            math: '🧠 Quick Math',
+            memory: '👁️ Memory Match',
+            guesser: '🔐 Code Breaker'
+        };
+
+        /* ====================================================
+           STATE
+           ==================================================== */
+        let socialState = { friends: [], incoming: [], outgoing: [] };
+        let activeProfileUid = null;
+        let socialUnsubscribe = null;
+        let searchDebounceTimer = null;
+
+        /* ====================================================
+           STARFIELD (cosmetic background)
+           ==================================================== */
+        function generateStars() {
+            const sf = document.getElementById('starfield');
+            for (let i = 0; i < 80; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 2 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                sf.appendChild(star);
+            }
+        }
+        generateStars();
+
+        /* ====================================================
+           TOAST helper
+           ==================================================== */
+        function toast(message, type = 'info', icon = '✨') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = `<span style="font-size:1.5em;">${icon}</span><span>${message}</span>`;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        /* ====================================================
+           AVATAR RENDERER — builds an avatar element from a
+           publicProfile.avatar object (the equipped cosmetics
+           saved by the hub via buildPublicProfile())
+           ==================================================== */
+        function renderAvatarPreview(targetEl, equipped, opts = {}) {
+            const isMini = opts.mini === true;
+            equipped = equipped || {};
+            const cur = {
+                color: equipped.color || 'color_default',
+                hat: equipped.hat || 'hat_none',
+                bg: equipped.bg || 'bg_default',
+                nameplate: equipped.nameplate || null,
+                aura: equipped.aura || null
+            };
+
+            const colorObj = shopDatabase.colors.find(c => c.id === cur.color) || shopDatabase.colors[0];
+            const hatObj   = shopDatabase.hats.find(h => h.id === cur.hat) || shopDatabase.hats[0];
+            const bgObj    = shopDatabase.bgs.find(b => b.id === cur.bg) || shopDatabase.bgs[0];
+
+            // For the MINI version we render a simpler layout
+            if (isMini) {
+                const headStyle = colorObj.holo ? '' : `background:${colorObj.hex};`;
+                const bodyStyle = colorObj.holo ? '' : `background:${colorObj.bodyHex};`;
+                targetEl.style.background = bgObj.css;
+                targetEl.innerHTML = `
+                    ${hatObj.icon ? `<div class="mini-hat ${hatObj.holo ? 'holo' : ''}">${hatObj.icon}</div>` : ''}
+                    <div class="mini-head ${colorObj.holo ? 'holo' : ''}" style="${headStyle}">
+                        <div class="mini-eyes"><div class="mini-eye"></div><div class="mini-eye"></div></div>
+                    </div>
+                    <div class="mini-body ${colorObj.holo ? 'holo' : ''}" style="${bodyStyle}"></div>
+                `;
+                return;
+            }
+
+            // FULL profile-size avatar
+            targetEl.style.background = bgObj.css;
+            targetEl.classList.remove('bg-anim-holo', 'bg-anim-glitch', 'bg-anim-aurora');
+            targetEl.classList.add('profile-bg-anim');
+            if (bgObj.anim) targetEl.classList.add('bg-anim-' + bgObj.anim);
+
+            const headClass = colorObj.holo ? 'bot-head holo' : 'bot-head';
+            const bodyClass = colorObj.holo ? 'bot-body holo' : 'bot-body';
+            const headStyle = colorObj.holo ? '' : `style="background:${colorObj.hex};"`;
+            const bodyStyle = colorObj.holo ? '' : `style="background:${colorObj.bodyHex};"`;
+            const hatClass = hatObj.holo ? 'bot-hat holo' : 'bot-hat';
+
+            // Build aura particles HTML
+            let auraHTML = '';
+            const auraItem = shopDatabase.auras.find(a => a.id === cur.aura);
+            if (auraItem) {
+                let particles = '';
+                const N = 8;
+                for (let i = 0; i < N; i++) {
+                    particles += `<div class="profile-aura-particle" style="animation-delay:${-i * (3 / N)}s"></div>`;
+                }
+                auraHTML = `<div class="profile-aura-container show ${auraItem.animClass}">${particles}</div>`;
+            }
+
+            // Build nameplate HTML
+            let npHTML = '';
+            const npItem = shopDatabase.nameplates.find(n => n.id === cur.nameplate);
+            if (npItem) {
+                const username = (opts.username || 'PLAYER').toUpperCase();
+                npHTML = `<div class="profile-nameplate show ${npItem.animClass}">${escapeHtml(username)}</div>`;
+            }
+
+            targetEl.innerHTML = `
+                ${auraHTML}
+                ${npHTML}
+                <div class="${headClass}" ${headStyle}>
+                    <div class="${hatClass}">${hatObj.icon}</div>
+                    <div class="bot-eyes"><div class="eye"></div><div class="eye"></div></div>
+                </div>
+                <div class="${bodyClass}" ${bodyStyle}></div>
+            `;
+        }
+
+        /* ====================================================
+           SEARCH — debounced, calls Firebase search helper
+           ==================================================== */
+        function setupSearch() {
+            const input = document.getElementById('searchInput');
+            const results = document.getElementById('searchResults');
+
+            input.addEventListener('input', (e) => {
+                clearTimeout(searchDebounceTimer);
+                const term = e.target.value.trim();
+                if (term.length < 2) {
+                    results.classList.remove('show');
+                    return;
+                }
+                searchDebounceTimer = setTimeout(() => doSearch(term), 280);
+            });
+
+            // Hide search dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-section')) results.classList.remove('show');
+            });
+        }
+
+        async function doSearch(term) {
+            const resultsEl = document.getElementById('searchResults');
+            resultsEl.innerHTML = '<div class="search-result-empty">⏳ Searching...</div>';
+            resultsEl.classList.add('show');
+
+            const players = await window.MegaplexCloud.searchPlayers(term, 10);
+            if (!players.length) {
+                resultsEl.innerHTML = '<div class="search-result-empty">No players found</div>';
+                return;
+            }
+
+            resultsEl.innerHTML = players.map(p => {
+                const lvl = p.publicProfile?.level || calcLevelFromXp(p.publicProfile?.lifetimeXp || 0);
+                return `
+                    <div class="search-result-item" data-uid="${p.uid}">
+                        <div class="mini-avatar" data-mini-avatar='${JSON.stringify(p.publicProfile?.avatar || {})}'></div>
+                        <div style="flex:1;">
+                            <div class="friend-name">${escapeHtml(p.username)}</div>
+                            <div class="friend-meta">Lvl ${lvl} · Click to view</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Render each mini avatar & wire click
+            resultsEl.querySelectorAll('.search-result-item').forEach(item => {
+                const miniEl = item.querySelector('.mini-avatar');
+                const data = JSON.parse(miniEl.dataset.miniAvatar || '{}');
+                renderAvatarPreview(miniEl, data, { mini: true });
+                item.addEventListener('click', () => {
+                    openProfile(item.dataset.uid);
+                    resultsEl.classList.remove('show');
+                    document.getElementById('searchInput').value = '';
+                });
+            });
+        }
+
+        /* ====================================================
+           Helper: calculate level from raw lifetime XP
+           (mirrors hub's getLevelInfo formula)
+           ==================================================== */
+        function calcLevelFromXp(xp) {
+            xp = xp || 0;
+            let lvl = 1;
+            while ((lvl + 1) * (lvl + 1) * 100 <= xp) lvl++;
+            return lvl;
+        }
+
+        /* ====================================================
+           SOCIAL STATE — live subscription + render lists
+           ==================================================== */
+        function startSocialSubscription() {
+            if (typeof socialUnsubscribe === 'function') socialUnsubscribe();
+            socialUnsubscribe = window.MegaplexCloud.subscribeToSocial((data) => {
+                socialState = data;
+                renderSidebar();
+                // If a friend is currently being viewed, refresh their card too
+                // (in case they got removed/added)
+                if (activeProfileUid) refreshProfileActions();
+            });
+        }
+
+        function renderSidebar() {
+            // Update top header counters
+            document.getElementById('pillFriendCount').textContent = socialState.friends.length;
+            document.getElementById('friendCountSidebar').textContent = socialState.friends.length;
+            document.getElementById('pendingCount').textContent = socialState.incoming.length;
+
+            // ----- Pending requests -----
+            const pendingList = document.getElementById('pendingList');
+            if (!socialState.incoming.length) {
+                pendingList.innerHTML = '<div class="empty-state" style="padding:15px;">No pending requests</div>';
+            } else {
+                pendingList.innerHTML = '';
+                socialState.incoming.forEach(uid => {
+                    // We need to fetch each requester's profile to show their info
+                    window.MegaplexCloud.getPlayerProfile(uid).then(p => {
+                        if (!p) return;
+                        const lvl = p.publicProfile?.level || calcLevelFromXp(p.publicProfile?.lifetimeXp || 0);
+                        const card = document.createElement('div');
+                        card.className = 'pending-card';
+                        card.innerHTML = `
+                            <div class="mini-avatar"></div>
+                            <div class="friend-info">
+                                <div class="friend-name">${escapeHtml(p.username)}</div>
+                                <div class="friend-meta">Lvl ${lvl} · wants to be friends</div>
+                            </div>
+                            <div class="friend-actions">
+                                <button class="btn-small btn-accept" title="Accept">✓</button>
+                                <button class="btn-small btn-decline" title="Decline">✕</button>
+                            </div>
+                        `;
+                        renderAvatarPreview(card.querySelector('.mini-avatar'), p.publicProfile?.avatar, { mini: true });
+                        // Click name → view profile
+                        card.querySelector('.friend-info').style.cursor = 'pointer';
+                        card.querySelector('.friend-info').addEventListener('click', () => openProfile(uid));
+                        // Accept button
+                        card.querySelector('.btn-accept').addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            const r = await window.MegaplexCloud.acceptFriendRequest(uid);
+                            if (r.success) toast(`You're now friends with ${p.username}!`, 'success', '🎉');
+                            else toast('Failed to accept request', 'error', '❌');
+                        });
+                        // Decline button
+                        card.querySelector('.btn-decline').addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            const r = await window.MegaplexCloud.declineFriendRequest(uid);
+                            if (r.success) toast('Request declined', 'info', '👋');
+                        });
+                        pendingList.appendChild(card);
+                    });
+                });
+            }
+
+            // ----- Friends list -----
+            const friendsList = document.getElementById('friendsList');
+            if (!socialState.friends.length) {
+                friendsList.innerHTML = `
+                    <div class="empty-state">
+                        <span class="empty-icon">😶</span>
+                        No friends yet!<br>Use search above to find players.
+                    </div>
+                `;
+                return;
+            }
+            // Sort by level descending
+            const sorted = [...socialState.friends].sort((a, b) => {
+                const aL = a.publicProfile?.level || 0;
+                const bL = b.publicProfile?.level || 0;
+                return bL - aL;
+            });
+
+            friendsList.innerHTML = '';
+            sorted.forEach(f => {
+                const lvl = f.publicProfile?.level || calcLevelFromXp(f.publicProfile?.lifetimeXp || 0);
+                const prestige = f.publicProfile?.prestigeRank || 0;
+                const card = document.createElement('div');
+                card.className = 'friend-card' + (activeProfileUid === f.uid ? ' active' : '');
+                card.dataset.uid = f.uid;
+                card.innerHTML = `
+                    <div class="mini-avatar"></div>
+                    <div class="friend-info">
+                        <div class="friend-name">${escapeHtml(f.username)}${prestige > 0 ? `<span class="friend-prestige-tag">★${prestige}</span>` : ''}</div>
+                        <div class="friend-meta">Level ${lvl}</div>
+                    </div>
+                `;
+                renderAvatarPreview(card.querySelector('.mini-avatar'), f.publicProfile?.avatar, { mini: true });
+                card.addEventListener('click', () => openProfile(f.uid));
+                friendsList.appendChild(card);
+            });
+        }
+
+        /* ====================================================
+           PROFILE VIEW — open and render a player's full card
+           ==================================================== */
+        async function openProfile(uid) {
+            activeProfileUid = uid;
+
+            // Highlight in sidebar
+            document.querySelectorAll('.friend-card').forEach(c => {
+                c.classList.toggle('active', c.dataset.uid === uid);
+            });
+
+            const view = document.getElementById('profileView');
+            view.innerHTML = '<div class="loading-spinner"></div>';
+
+            const profile = await window.MegaplexCloud.getPlayerProfile(uid);
+            if (!profile) {
+                view.innerHTML = `
+                    <div class="profile-empty">
+                        <div class="big-icon">⚠️</div>
+                        <h2>PLAYER NOT FOUND</h2>
+                        <p>This player's profile could not be loaded.</p>
+                    </div>
+                `;
+                return;
+            }
+            renderProfile(profile);
+        }
+
+        function renderProfile(profile) {
+            const p = profile.publicProfile || {};
+            const username = profile.username;
+            const level = p.level || calcLevelFromXp(p.lifetimeXp || 0);
+            const prestige = p.prestigeRank || 0;
+            const tokens = p.totalTokensEarned || 0;
+            const xp = p.lifetimeXp || 0;
+            const trophies = p.trophiesClaimed || 0;
+            const memberSince = p.memberSince ? new Date(p.memberSince) : null;
+            const lastSeen = p.lastSeen ? new Date(p.lastSeen) : null;
+
+            // Top scores
+            const topScores = p.topScores || {};
+            const scoreEntries = Object.entries(topScores).sort(([, a], [, b]) => b - a).slice(0, 5);
+
+            const view = document.getElementById('profileView');
+            view.innerHTML = `
+                <!-- HEADER: avatar + name + badges + actions -->
+                <div class="profile-header">
+                    <div class="profile-avatar-stage ${prestige > 0 ? 'has-prestige' : ''}" id="profAvatar"></div>
+                    <div class="profile-info">
+                        <h1 class="profile-username">${escapeHtml(username)}</h1>
+                        <div class="profile-badges">
+                            <span class="profile-badge badge-level">⚡ LV.${level}</span>
+                            ${prestige > 0 ? `<span class="profile-badge badge-prestige">★ Prestige ${prestige}</span>` : ''}
+                            ${memberSince ? `<span class="profile-badge badge-member">📅 Joined ${memberSince.toLocaleDateString()}</span>` : ''}
+                        </div>
+                        <div class="profile-actions" id="profActions"></div>
+                        ${lastSeen ? `<div style="color:#666; font-size:0.8em; margin-top:4px;">Last active: ${formatLastSeen(lastSeen)}</div>` : ''}
+                    </div>
+                </div>
+
+                <!-- STATS -->
+                <div class="stats-section">
+                    <div class="stats-section-title">📊 Lifetime Stats</div>
+                    <div class="stats-grid">
+                        <div class="stat-tile gold">
+                            <div class="stat-tile-label">Total Tokens</div>
+                            <div class="stat-tile-value">${tokens.toLocaleString()}</div>
+                            <div class="stat-tile-sub">🎟️ earned</div>
+                        </div>
+                        <div class="stat-tile">
+                            <div class="stat-tile-label">Lifetime XP</div>
+                            <div class="stat-tile-value">${xp.toLocaleString()}</div>
+                            <div class="stat-tile-sub">⚡ Level ${level}</div>
+                        </div>
+                        <div class="stat-tile pink">
+                            <div class="stat-tile-label">Trophies</div>
+                            <div class="stat-tile-value">${trophies}</div>
+                            <div class="stat-tile-sub">🎖️ claimed</div>
+                        </div>
+                        <div class="stat-tile green">
+                            <div class="stat-tile-label">Prestige Rank</div>
+                            <div class="stat-tile-value">★${prestige}</div>
+                            <div class="stat-tile-sub">${prestige > 0 ? `+${prestige * 5}% Token Bonus` : 'Not yet ascended'}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TROPHY PROGRESS -->
+                <div class="stats-section">
+                    <div class="stats-section-title">🎖️ Trophy Progress</div>
+                    <div style="background:rgba(243,104,224,0.08); border:1px solid rgba(243,104,224,0.3); border-radius:10px; padding:14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong style="color:#f368e0;">${trophies} / 30 trophies claimed</strong>
+                            <span style="color:#aaa;">${Math.floor((trophies / 30) * 100)}%</span>
+                        </div>
+                        <div class="trophy-bar-bg">
+                            <div class="trophy-bar-fill" style="width:${Math.min((trophies / 30) * 100, 100)}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TOP SCORES -->
+                <div class="stats-section">
+                    <div class="stats-section-title">🏆 Top Game Scores</div>
+                    ${scoreEntries.length > 0 ? `
+                        <div class="top-scores-list">
+                            ${scoreEntries.map(([gameKey, score], idx) => {
+                                const medal = ['🥇','🥈','🥉','4️⃣','5️⃣'][idx] || '🎮';
+                                const title = gameTitles[gameKey] || gameKey;
+                                return `
+                                    <div class="top-score-row">
+                                        <span><span class="top-score-medal">${medal}</span><span class="top-score-game">${title}</span></span>
+                                        <span class="top-score-value">${score.toLocaleString()}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : `<div class="empty-state">No scores recorded yet.</div>`}
+                </div>
+            `;
+
+            // Render the avatar
+            renderAvatarPreview(document.getElementById('profAvatar'), p.avatar, { username });
+            // Render the action buttons
+            refreshProfileActions();
+        }
+
+        /* ====================================================
+           Action button row — re-renders whenever social state
+           changes so buttons stay in sync (Add/Pending/Friends).
+           ==================================================== */
+        function refreshProfileActions() {
+            const container = document.getElementById('profActions');
+            if (!container) return;
+            const uid = activeProfileUid;
+            if (!uid) return;
+
+            const me = window.MegaplexCloud.currentFbUser;
+            if (!me) { container.innerHTML = ''; return; }
+            if (uid === me.uid) {
+                container.innerHTML = `<span class="btn-action btn-friends">👤 This is YOU</span>`;
+                return;
+            }
+
+            const isFriend     = socialState.friends.some(f => f.uid === uid);
+            const isOutgoing   = socialState.outgoing.includes(uid);
+            const isIncoming   = socialState.incoming.includes(uid);
+
+            let html = '';
+            if (isFriend) {
+                html = `
+                    <span class="btn-action btn-friends">✓ Friends</span>
+                    <button class="btn-action btn-remove" onclick="handleRemoveFriend('${uid}')">✕ Remove Friend</button>
+                `;
+            } else if (isOutgoing) {
+                html = `
+                    <span class="btn-action btn-pending">⏳ Request Sent</span>
+                    <button class="btn-action btn-remove" onclick="handleCancelRequest('${uid}')">Cancel Request</button>
+                `;
+            } else if (isIncoming) {
+                html = `
+                    <button class="btn-action btn-add-friend" onclick="handleAccept('${uid}')">✓ Accept Request</button>
+                    <button class="btn-action btn-remove" onclick="handleDecline('${uid}')">Decline</button>
+                `;
+            } else {
+                html = `<button class="btn-action btn-add-friend" onclick="handleSendRequest('${uid}')">+ Add Friend</button>`;
+            }
+            container.innerHTML = html;
+        }
+
+        /* ====================================================
+           ACTION HANDLERS (exposed to onclick attributes)
+           ==================================================== */
+        window.handleSendRequest = async function(uid) {
+            const r = await window.MegaplexCloud.sendFriendRequest(uid);
+            if (r.success) toast('Friend request sent!', 'success', '📨');
+            else toast('Failed to send request', 'error', '❌');
+        };
+        window.handleAccept = async function(uid) {
+            const r = await window.MegaplexCloud.acceptFriendRequest(uid);
+            if (r.success) toast("You're now friends!", 'success', '🎉');
+        };
+        window.handleDecline = async function(uid) {
+            const r = await window.MegaplexCloud.declineFriendRequest(uid);
+            if (r.success) toast('Request declined', 'info', '👋');
+        };
+        window.handleCancelRequest = async function(uid) {
+            const r = await window.MegaplexCloud.cancelFriendRequest(uid);
+            if (r.success) toast('Request cancelled', 'info', '↩️');
+        };
+        window.handleRemoveFriend = async function(uid) {
+            if (!confirm('Remove this friend?')) return;
+            const r = await window.MegaplexCloud.removeFriend(uid);
+            if (r.success) toast('Friend removed', 'info', '👋');
+        };
+
+        /* ====================================================
+           Format "last seen" timestamp into friendly text
+           ==================================================== */
+        function formatLastSeen(date) {
+            const ms = Date.now() - date.getTime();
+            const mins = Math.floor(ms / 60000);
+            if (mins < 5) return '🟢 Online now';
+            if (mins < 60) return `${mins}m ago`;
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return `${hrs}h ago`;
+            const days = Math.floor(hrs / 24);
+            if (days < 30) return `${days}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        /* ====================================================
+           INIT — wait for auth, then start everything
+           ==================================================== */
+        function showLoginRequired() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="needs-login" style="grid-column:1/-1;">
+                    <h2>🔒 LOGIN REQUIRED</h2>
+                    <p>You need to be logged in to use the friends system.</p>
+                    <p><a href="index.html">← Return to Hub to log in</a></p>
+                </div>
+            `;
+        }
+
+        /* ====================================================
+   INIT — wait for auth, then start everything
+   ==================================================== */
+setLoadingStatus('CONNECTING TO MEGAPLEX...', 15);
+
+window.MegaplexCloud.onReady((user) => {
+    setLoadingStatus('CHECKING LOGIN...', 35);
+
+    if (!user) {
+        setLoadingStatus('LOGIN REQUIRED', 100);
+        showLoginRequired();
+        // Hide loader so the "Login Required" message is visible
+        setTimeout(hideLoadingScreen, 400);
+        return;
+    }
+
+    // Set the username pill
+    setLoadingStatus('LOADING PROFILE...', 55);
+    document.getElementById('pillUsername').textContent = '👤 ' + (localStorage.getItem('megaplexUsername') || 'PLAYER');
+
+    setLoadingStatus('INITIALIZING SEARCH...', 70);
+    setupSearch();
+
+    setLoadingStatus('FETCHING FRIENDS LIST...', 85);
+    startSocialSubscription();
+
+    // Wait one tick so the first social snapshot can render before fading out.
+    // The subscribeToSocial callback fires almost immediately with current data.
+    setTimeout(() => {
+        setLoadingStatus('READY', 100);
+        hideLoadingScreen();
+    }, 600);
+});
+
+        // If the user logs out while on this page, redirect home
+        window.addEventListener('megaplex-auth-changed', (e) => {
+            if (!e.detail.user) {
+                toast('Logged out — returning to hub', 'warning', '🚪');
+                setTimeout(() => window.location.href = 'index.html', 1500);
+            }
+        });
+    </script>
+</body>
+</html>
