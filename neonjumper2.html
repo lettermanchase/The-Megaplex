@@ -886,11 +886,18 @@ function gameOver() {
     document.getElementById('primaryBtn').onclick = () => startLevel(0, true);
     document.getElementById('overlay').classList.add('active');
 
+    // Save score locally so the hub bounty system can see it
+    let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    if (!scores.nj2_score || score > scores.nj2_score) {
+        scores.nj2_score = score;
+        localStorage.setItem('arcadeScores', JSON.stringify(scores));
+    }
+
     // Use recordScore so leaderboard gets updated properly
-if (window.MegaplexCloud && window.MegaplexCloud.recordScore) {
-    window.MegaplexCloud.recordScore('nj2_score', score, true)
-        .catch(e => console.error('[NJ2] Cloud sync failed:', e));
-}
+    if (window.MegaplexCloud && window.MegaplexCloud.recordScore) {
+        window.MegaplexCloud.recordScore('nj2_score', score, true)
+            .catch(e => console.error('[NJ2] Cloud sync failed:', e));
+    }
 }
 
 function levelComplete() {
@@ -909,13 +916,16 @@ function levelComplete() {
     score += 1000 + Math.max(0, Math.floor(60 - levelTime) * 50);
     if(bossInLevel) score += 2500;
 
-    // Persist boss-clear flags directly (achievement triggers, not leaderboard scores)
+    // Persist score + boss-clear flags to local arcadeScores (this is what bounties read!)
+    let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    if (!scores.nj2_score || score > scores.nj2_score) {
+        scores.nj2_score = score;
+    }
     if(bossInLevel) {
-        let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
         if(levels[currentLevel].world === 1) scores.nj2_world1_cleared = 1;
         if(levels[currentLevel].world === 2) scores.nj2_world2_cleared = 1;
-        localStorage.setItem('arcadeScores', JSON.stringify(scores));
     }
+    localStorage.setItem('arcadeScores', JSON.stringify(scores));
 
     // Use recordScore for the leaderboard (higher = better)
     if (window.MegaplexCloud && window.MegaplexCloud.recordScore) {
@@ -962,12 +972,15 @@ function winGame() {
     document.getElementById('primaryBtn').onclick = () => startLevel(0, true);
     document.getElementById('overlay').classList.add('active');
 
-    // Persist completion + boss flags (achievement triggers)
-let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-scores.nj2_completed = 1;
-scores.nj2_world1_cleared = 1;
-scores.nj2_world2_cleared = 1;
-localStorage.setItem('arcadeScores', JSON.stringify(scores));
+        // Persist completion + boss flags + final score (bounty system reads from here)
+        let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    scores.nj2_completed = 1;
+    scores.nj2_world1_cleared = 1;
+    scores.nj2_world2_cleared = 1;
+    if (!scores.nj2_score || score > scores.nj2_score) {
+        scores.nj2_score = score;
+    }
+    localStorage.setItem('arcadeScores', JSON.stringify(scores));
 
 // 🆕 Use recordScore for leaderboard, then ensure flags also reach cloud
 if (window.MegaplexCloud && window.MegaplexCloud.recordScore) {

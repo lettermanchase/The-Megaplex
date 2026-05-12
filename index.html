@@ -805,6 +805,297 @@
     color: #555;
     margin-top: -10px;
 }
+
+/* ===== DAILY STREAK SYSTEM ===== */
+.streak-modal {
+    border-color: #ff6b6b !important;
+    box-shadow: 0 0 40px rgba(255, 107, 107, 0.5) !important;
+    max-width: 600px !important;
+}
+.streak-modal h2 { color: #ff6b6b !important; }
+
+.streak-counter {
+    text-align: center;
+    margin: 15px 0;
+    padding: 18px;
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(254, 202, 87, 0.1));
+    border-radius: 12px;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+.streak-flame {
+    font-size: 3em;
+    line-height: 1;
+    filter: drop-shadow(0 0 12px #ff6b6b);
+    animation: flameFlicker 0.6s ease-in-out infinite alternate;
+}
+@keyframes flameFlicker {
+    from { transform: scale(1) rotate(-2deg); filter: drop-shadow(0 0 8px #ff6b6b); }
+    to   { transform: scale(1.08) rotate(2deg); filter: drop-shadow(0 0 18px #feca57); }
+}
+.streak-number {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3em; font-weight: 900;
+    background: linear-gradient(135deg, #ff6b6b, #feca57);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 5px 0;
+}
+.streak-label { color: #ff9f43; text-transform: uppercase; letter-spacing: 2px; font-size: 0.85em; }
+
+.streak-track { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 20px 0; }
+.streak-day {
+    background: rgba(0,0,0,0.5); border: 2px solid #333;
+    border-radius: 10px; padding: 10px 4px;
+    text-align: center; position: relative; transition: 0.3s; cursor: help;
+}
+.streak-day.completed {
+    border-color: #1dd1a1;
+    background: linear-gradient(135deg, rgba(29,209,161,0.2), rgba(0,0,0,0.4));
+    box-shadow: 0 0 12px rgba(29,209,161,0.4);
+}
+.streak-day.today {
+    border-color: #feca57;
+    background: linear-gradient(135deg, rgba(254,202,87,0.25), rgba(0,0,0,0.4));
+    box-shadow: 0 0 18px rgba(254,202,87,0.6);
+    animation: todayPulse 1.5s ease-in-out infinite alternate;
+}
+@keyframes todayPulse {
+    from { box-shadow: 0 0 12px rgba(254,202,87,0.5); }
+    to   { box-shadow: 0 0 25px rgba(254,202,87,0.9); }
+}
+.streak-day.locked { opacity: 0.5; }
+.streak-day-num { font-family: 'Orbitron', sans-serif; font-size: 0.75em; color: #888; margin-bottom: 4px; }
+.streak-day.completed .streak-day-num { color: #1dd1a1; }
+.streak-day.today .streak-day-num { color: #feca57; }
+.streak-day-icon { font-size: 1.4em; line-height: 1; }
+.streak-day-reward { font-size: 0.7em; color: #aaa; margin-top: 3px; }
+.streak-day.completed .streak-day-reward { color: #1dd1a1; font-weight: bold; }
+
+.streak-unlocks {
+    background: rgba(0,0,0,0.4); border: 1px solid rgba(255, 107, 107, 0.3);
+    border-radius: 10px; padding: 14px; margin-top: 15px;
+}
+.streak-unlocks h4 {
+    margin: 0 0 10px; color: #ff6b6b; text-align: center;
+    font-size: 0.95em; letter-spacing: 1px; text-transform: uppercase;
+}
+.streak-unlock-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 8px; border-radius: 6px; font-size: 0.88em; margin-bottom: 4px;
+}
+.streak-unlock-row.unlocked { background: rgba(29,209,161,0.1); color: #1dd1a1; }
+.streak-unlock-row.locked { color: #888; }
+.streak-unlock-row .unlock-icon { font-size: 1.2em; }
+
+.daily-streak-badge {
+    position: absolute;
+    top: -8px; right: -8px;
+    background: linear-gradient(135deg, #ff6b6b, #feca57);
+    color: #000;
+    font-weight: bold;
+    font-size: 0.75em;
+    padding: 3px 7px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.7);
+    border: 2px solid #0f2027;
+    display: none;
+    align-items: center;
+    gap: 2px;
+}
+.daily-streak-badge.show { display: inline-flex; }
+#dailyBonusWrap { position: relative; display: inline-block; }
+
+/* ===== BOUNTY BOARD ===== */
+.tab-btn.bounty-btn { background: #ff6348; border-color: #ff6348; color: #fff; }
+.tab-btn.bounty-btn.active { background: #ff6348; color: #000; box-shadow: 0 0 15px #ff6348; }
+
+#bounty-view { border: 1px solid #ff6348; }
+
+.bounty-header-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px; margin-bottom: 25px;
+}
+.bounty-stat {
+    background: linear-gradient(135deg, rgba(255, 99, 72, 0.15), rgba(0,0,0,0.5));
+    border: 1px solid rgba(255, 99, 72, 0.4);
+    border-radius: 12px; padding: 15px; text-align: center;
+}
+.bounty-stat-value {
+    font-size: 1.8em; font-weight: bold; color: #ff6348;
+    font-family: 'Orbitron', sans-serif;
+}
+.bounty-stat-label {
+    font-size: 0.85em; color: #aaa; text-transform: uppercase;
+    letter-spacing: 1px; margin-top: 5px;
+}
+
+.bounty-refresh-timer {
+    background: rgba(255, 99, 72, 0.1); border: 1px solid rgba(255, 99, 72, 0.4);
+    border-radius: 8px; padding: 10px 15px; margin-bottom: 20px;
+    text-align: center; color: #ff6348; font-size: 0.9em; font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+}
+
+.bounty-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 15px;
+}
+
+.bounty-card {
+    background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(255, 99, 72, 0.05));
+    border: 2px solid #444; border-radius: 14px;
+    padding: 18px; position: relative; transition: 0.3s;
+    display: flex; flex-direction: column; gap: 12px;
+}
+.bounty-card.easy       { border-color: #1dd1a1; }
+.bounty-card.medium     { border-color: #feca57; }
+.bounty-card.hard       { border-color: #ff6348; }
+.bounty-card.legendary  { border-color: #f368e0; box-shadow: 0 0 20px rgba(243, 104, 224, 0.3); }
+.bounty-card.legendary::before {
+    content: ''; position: absolute; inset: 0; border-radius: 14px;
+    background: linear-gradient(135deg, transparent, rgba(243, 104, 224, 0.1), transparent);
+    pointer-events: none; animation: legendaryShimmer 3s ease-in-out infinite;
+}
+@keyframes legendaryShimmer {
+    0%,100% { opacity: 0.3; } 50% { opacity: 1; }
+}
+
+.bounty-card.active   { border-color: #00d2d3; box-shadow: 0 0 18px rgba(0,210,211,0.5); }
+.bounty-card.completed { opacity: 0.5; filter: grayscale(80%); }
+.bounty-card.failed    { opacity: 0.4; filter: grayscale(100%); border-color: #555; }
+
+.bounty-card-header {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+}
+.bounty-icon-box {
+    width: 50px; height: 50px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8em; flex-shrink: 0;
+    background: rgba(255, 99, 72, 0.15);
+}
+.bounty-card.easy      .bounty-icon-box { background: rgba(29, 209, 161, 0.2); }
+.bounty-card.medium    .bounty-icon-box { background: rgba(254, 202, 87, 0.2); }
+.bounty-card.legendary .bounty-icon-box { background: rgba(243, 104, 224, 0.25); }
+
+.bounty-difficulty-badge {
+    font-size: 0.7em; font-weight: bold; padding: 3px 10px;
+    border-radius: 10px; text-transform: uppercase; letter-spacing: 1px;
+    flex-shrink: 0;
+}
+.bounty-difficulty-badge.easy      { background: #1dd1a1; color: #000; }
+.bounty-difficulty-badge.medium    { background: #feca57; color: #000; }
+.bounty-difficulty-badge.hard      { background: #ff6348; color: #fff; }
+.bounty-difficulty-badge.legendary { background: linear-gradient(135deg, #f368e0, #6c5ce7); color: #fff; }
+
+.bounty-title { margin: 0; color: #fff; font-size: 1.1em; flex: 1; }
+.bounty-desc { color: #c8d6e5; font-size: 0.88em; line-height: 1.4; margin: 0; }
+
+.bounty-rewards-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.4); border-radius: 8px;
+    border: 1px dashed rgba(255,99,72,0.3);
+}
+.bounty-cost { color: #ff6b6b; font-weight: bold; }
+.bounty-arrow { color: #888; font-size: 1.2em; }
+.bounty-reward { color: #1dd1a1; font-weight: bold; font-size: 1.05em; }
+.bounty-reward .reward-prestige { color: #f368e0; margin-left: 4px; }
+
+.bounty-progress-wrap {
+    background: #1a1a1a; height: 10px; border-radius: 5px;
+    overflow: hidden; border: 1px solid rgba(0, 210, 211, 0.3);
+}
+.bounty-progress-fill {
+    height: 100%; background: linear-gradient(90deg, #00d2d3, #1dd1a1);
+    transition: width 0.6s ease; box-shadow: 0 0 10px rgba(0, 210, 211, 0.6);
+}
+.bounty-progress-text {
+    text-align: center; color: #00d2d3; font-size: 0.8em; margin-top: 4px;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.bounty-timer {
+    text-align: center; color: #feca57; font-size: 0.85em;
+    font-family: 'Orbitron', sans-serif; letter-spacing: 1px;
+}
+.bounty-timer.urgent { color: #ff4757; animation: urgentPulse 1s ease-in-out infinite alternate; }
+@keyframes urgentPulse {
+    from { opacity: 0.7; } to { opacity: 1; text-shadow: 0 0 10px #ff4757; }
+}
+
+.btn-accept-bounty {
+    background: linear-gradient(135deg, #ff6348, #ff4757);
+    color: #fff; border: none; padding: 10px;
+    font-weight: bold; border-radius: 8px; cursor: pointer;
+    transition: 0.2s; font-size: 0.95em; width: 100%;
+    font-family: 'Segoe UI', sans-serif;
+}
+.btn-accept-bounty:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 99, 72, 0.5);
+}
+.btn-accept-bounty:disabled {
+    background: #444; color: #888; cursor: not-allowed;
+}
+.btn-claim-bounty {
+    background: linear-gradient(135deg, #1dd1a1, #10ac84);
+    color: #fff; border: none; padding: 10px;
+    font-weight: bold; border-radius: 8px; cursor: pointer;
+    transition: 0.2s; font-size: 0.95em; width: 100%;
+    animation: claimReady 1.5s ease-in-out infinite alternate;
+}
+@keyframes claimReady {
+    from { box-shadow: 0 0 10px rgba(29, 209, 161, 0.5); }
+    to   { box-shadow: 0 0 25px rgba(29, 209, 161, 1); }
+}
+.btn-claim-bounty:hover {
+    transform: translateY(-2px);
+}
+
+.bounty-status-pill {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 0.75em; font-weight: bold; text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.bounty-status-pill.completed { background: #1dd1a1; color: #000; }
+.bounty-status-pill.failed    { background: #ff4757; color: #fff; }
+
+.bounty-empty {
+    grid-column: 1/-1; text-align: center; padding: 40px;
+    color: #666; font-style: italic;
+}
+
+/* Notification badge for ready-to-claim bounties */
+.tab-btn.bounty-btn .bounty-tab-badge {
+    background: #1dd1a1; color: #000;
+    padding: 2px 8px; border-radius: 10px;
+    font-size: 0.7em; margin-left: 6px;
+    animation: claimReady 1.5s ease-in-out infinite alternate;
+}
+/* Claimed-today state — fully visible but visually "done" */
+.bounty-card.claimed-today {
+    background: linear-gradient(135deg, rgba(0,0,0,0.7), rgba(29, 209, 161, 0.05));
+    border-color: #1dd1a1 !important;
+    position: relative;
+    overflow: hidden;
+}
+.bounty-card.claimed-today::after {
+    content: '✓';
+    position: absolute;
+    top: 50%; right: -30px;
+    transform: translateY(-50%) rotate(15deg);
+    font-size: 8em;
+    color: rgba(29, 209, 161, 0.15);
+    font-weight: bold;
+    pointer-events: none;
+}
+.bounty-card.claimed-today .btn-accept-bounty:disabled {
+    background: rgba(29, 209, 161, 0.2);
+    color: #1dd1a1;
+    border: 1px dashed #1dd1a1;
+    cursor: not-allowed;
+}
+
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -914,6 +1205,38 @@
         </div>
     </div>
 
+    <!-- DAILY STREAK MODAL -->
+    <div class="modal-overlay" id="dailyModal" onclick="if(event.target===this)closeDailyModal()">
+        <div class="modal streak-modal">
+            <button class="modal-close" onclick="closeDailyModal()">×</button>
+            <h2>🔥 Daily Login Streak</h2>
+
+            <div class="streak-counter">
+                <div class="streak-flame">🔥</div>
+                <div class="streak-number" id="streakNumber">0</div>
+                <div class="streak-label">Day Streak</div>
+            </div>
+
+            <div class="streak-track" id="streakTrack"></div>
+
+            <div style="text-align:center; color:#aaa; font-size:0.85em; margin-top:5px;">
+                ⏰ Streak resets if you skip a day. Complete 7 days to claim a 
+                <strong style="color:#feca57;">Mega Reward</strong> & restart the cycle!
+            </div>
+
+            <div class="streak-unlocks">
+                <h4>🏆 Permanent Streak Milestones</h4>
+                <div id="streakMilestoneList"></div>
+            </div>
+
+            <button id="claimDailyBtn" class="btn-prestige" 
+                style="background: linear-gradient(135deg, #ff6b6b, #feca57); margin-top:18px;"
+                onclick="claimDailyBonus()">
+                🎁 CLAIM TODAY'S REWARD
+            </button>
+        </div>
+    </div>
+
     <header id="mainHeader">
         <div class="header-expanded">
             <a href="avatar.html" class="hub-profile" title="Avatar Shop" onmouseenter="sfx.hover()" onclick="sfx.start()">
@@ -942,7 +1265,14 @@
             </div>
             <div class="header-controls">
                 <div class="header-controls-top">
-                    <button id="dailyBonusBtn" class="play-btn" style="background: #f368e0; color: #fff; border-radius: 20px; padding: 10px 20px;" onclick="claimDailyBonus()" onmouseenter="sfx.hover()">🎁 Daily Claim</button>
+                    <div id="dailyBonusWrap">
+                        <button id="dailyBonusBtn" class="play-btn" 
+                            style="background: #f368e0; color: #fff; border-radius: 20px; padding: 10px 20px;" 
+                            onclick="openDailyModal()" onmouseenter="sfx.hover()">
+                            🎁 Daily Claim
+                        </button>
+                        <span class="daily-streak-badge" id="dailyStreakBadge">🔥 <span id="dailyStreakNum">0</span></span>
+                    </div>
                     <div class="token-display" id="tokenDisplayBox">🎟️ <span id="tokenBalance">0</span></div>
                     <div class="prestige-token-display" id="prestigeTokenDisplay" style="display:none;" onclick="openPrestigeModal()" title="Prestige Tokens — click for details">✨ <span id="prestigeTokenBalance">0</span></div>
                 </div>
@@ -974,6 +1304,8 @@
         </div>
     </header>
 
+    
+
     <div class="featured-carousel" id="featuredCarousel">
         <button class="carousel-nav left" onclick="carouselPrev()">←</button>
         <div class="carousel-slide" id="carouselSlide"></div>
@@ -993,7 +1325,8 @@
         <button class="tab-btn" onmouseenter="sfx.hover()" onclick="switchTab('fighting', this)">Fighting</button>
         <button class="tab-btn" onmouseenter="sfx.hover()" onclick="switchTab('pvp', this)">PvP</button>
         <button class="tab-btn achievements-btn" onmouseenter="sfx.hover()" onclick="switchTab('achievements', this)">🎖️ Trophy Room</button>
-        <button class="tab-btn leaderboard-btn" onmouseenter="sfx.hover()" onclick="switchTab('leaderboard', this)">🏆 Leaderboard</button>
+        <button class="tab-btn bounty-btn" onmouseenter="sfx.hover()" onclick="switchTab('bounty', this)">🎯 Bounty Board <span id="bountyTabBadge"></span></button>
+<button class="tab-btn leaderboard-btn" onmouseenter="sfx.hover()" onclick="switchTab('leaderboard', this)">🏆 Leaderboard</button>
     </div>
 
     <!-- Leaderboard / Achievement / Game Grid views — UNCHANGED from your original -->
@@ -1037,6 +1370,18 @@
             <button class="ach-filter-btn" data-filter="claimed" onclick="setAchFilter('claimed', this)">✓ Claimed</button>
         </div>
         <div class="ach-grid" id="achievements-container"></div>
+    </div>
+
+    <!-- BOUNTY BOARD VIEW -->
+    <div id="bounty-view" class="panel-view">
+        <h2 style="text-align: center; color: #ff6348; margin: 0 0 5px; font-size: 2.5em; text-shadow: 0 0 15px rgba(255, 99, 72, 0.4); font-family: 'Orbitron', sans-serif;">🎯 Bounty Board</h2>
+        <p style="text-align: center; color: #aaa; margin-bottom: 20px;">Pay tokens to accept a contract — complete it for massive rewards!</p>
+        
+        <div class="bounty-refresh-timer" id="bountyRefreshTimer">⏰ New bounties in: --:--:--</div>
+        
+        <div class="bounty-header-stats" id="bountyHeaderStats"></div>
+        
+        <div class="bounty-grid" id="bountyContainer"></div>
     </div>
 
     <div class="grid-container" id="gameGrid">
@@ -1111,7 +1456,7 @@
     <a href="#" id="secret-casino-btn" class="hidden-ufo" onmouseenter="sfx.hover()" onclick="enterSpaceCasino(event)" title="???">🛸</a>
 
     <footer>
-        <div>© 2026 The Megaplex — Created by <a href="https://yourportfolio.com" style="color:#00d2d3;">Cheese</a></div>
+        <div>© 2026 The Megaplex — Created by <a href="cheese.html" style="color:#00d2d3;">Cheese</a></div>
         <div class="footer-links">
             <a href="https://twitter.com/" target="_blank" rel="noopener">Twitter</a>
             <a href="https://discord.com/" target="_blank" rel="noopener">Discord</a>
@@ -1138,7 +1483,7 @@
         async function loadFromCloud(uid) { return window.MegaplexCloud.loadFromCloud(uid); }
 
         /* ====== PRESTIGE SYSTEM (NEW) ====== */
-        const PRESTIGE_UNLOCK_LEVEL = 10;       // Min level required to prestige
+        const PRESTIGE_UNLOCK_LEVEL = 20;       // Min level required to prestige
         const PRESTIGE_MAX_RANK = 50;           // Soft cap
         const PRESTIGE_TOKEN_BONUS_PCT = 5;     // % token bonus per prestige rank
 
@@ -1425,8 +1770,11 @@
         const levelTitles = ['Rookie','Initiate','Operator','Hacker','Pro','Veteran','Elite','Master','Legend','Cyber God'];
         function getLifetimeXp() { return parseInt(localStorage.getItem('megaplexLifetimeXp')) || 0; }
         function addLifetimeXp(amount) {
-            // Apply prestige multiplier so prestiged players level up slightly faster too
-            const boosted = Math.floor(amount * getPrestigeMultiplier());
+            // Apply prestige multiplier
+            let multiplier = getPrestigeMultiplier();
+            // Apply 7-day streak XP boost perk (+10%)
+            if (typeof hasPerk === 'function' && hasPerk('xp_boost_10')) multiplier += 0.10;
+            const boosted = Math.floor(amount * multiplier);
             let xp = getLifetimeXp() + boosted;
             localStorage.setItem('megaplexLifetimeXp', xp);
         }
@@ -1592,60 +1940,81 @@
         let claimedAchievements = JSON.parse(localStorage.getItem('claimedAchievements')) || [];
         let achFilterMode = 'all';
 
-        /* ====== Tokens (now respects prestige multiplier) ====== */
-        function calculateTokens() {
-            let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-            let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
-            let lastCalculatedValue = parseInt(localStorage.getItem('lastCalculatedScoreValue')) || 0;
-            let scoreValue = Math.floor(
-                ((scores.glitch_score || 0) / 10) + ((scores.glitch_strikers || 0) / 10) +
-                ((scores.clicker || 0) / 50) + ((scores.ttt || 0) * 20) + 
-                ((scores.math || 0) * 10) + ((scores.snake || 0) * 5) + 
-                ((scores.guesser || 0) / 10) + ((scores.platformer || 0) / 20) +
-                ((scores.fps || 0) / 25) + ((scores.cyberrunner || 0) / 20) +
-                ((scores.tanks_score || 0) / 15) + ((scores.asteroids || 0) / 15) +
-                ((scores.nj2_score || 0) / 10)
-            );
-            if (scoreValue > lastCalculatedValue) {
-                let earnedRaw = scoreValue - lastCalculatedValue;
-                // Apply prestige multiplier to token earnings
-                let earned = Math.floor(earnedRaw * getPrestigeMultiplier());
-                currentTokens += earned;
-                addLifetimeXp(earnedRaw); // XP is based on raw (multiplier applied inside addLifetimeXp)
-                localStorage.setItem('megaplexTokens', currentTokens);
-                localStorage.setItem('lastCalculatedScoreValue', scoreValue);
-                if (earned > 0) {
-                    const bonusText = getPrestigeRank() > 0 ? ` (★${getPrestigeRank()} bonus!)` : '';
-                    toast(`+${earned} Tokens${bonusText} / +${earned} XP earned!`, 'success', '🎟️');
-                }
-            }
-            document.getElementById('tokenBalance').innerText = currentTokens;
-            document.getElementById('miniTokenBalance').innerText = currentTokens;
+        /* ====== Tokens (REBALANCED + respects prestige multiplier) ====== */
+function calculateTokens() {
+    let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+    let lastCalculatedValue = parseInt(localStorage.getItem('lastCalculatedScoreValue')) || 0;
+
+    // REBALANCED: Token conversion rates have been tightened across the board
+    // to slow down economy inflation. Skill-based games still reward more
+    // than passive games like clicker.
+    let scoreValue = Math.floor(
+        ((scores.glitch_score    || 0) / 15)  + // was /10
+        ((scores.glitch_strikers || 0) / 15)  + // was /10
+        ((scores.clicker         || 0) / 200) + // was /50 (clicker was way too easy)
+        ((scores.ttt             || 0) * 10)  + // was *20
+        ((scores.math            || 0) * 8)   + // was *10
+        ((scores.snake           || 0) * 4)   + // was *5
+        ((scores.guesser         || 0) / 15)  + // was /10
+        ((scores.platformer      || 0) / 30)  + // was /20
+        ((scores.fps             || 0) / 35)  + // was /25
+        ((scores.cyberrunner     || 0) / 30)  + // was /20
+        ((scores.tanks_score     || 0) / 20)  + // was /15
+        ((scores.asteroids       || 0) / 20)  + // was /15
+        ((scores.nj2_score       || 0) / 15)    // was /10
+    );
+
+    if (scoreValue > lastCalculatedValue) {
+        let earnedRaw = scoreValue - lastCalculatedValue;
+        // Apply prestige multiplier to actual token earnings
+        let earned = Math.floor(earnedRaw * getPrestigeMultiplier());
+        currentTokens += earned;
+        // addLifetimeXp internally applies the prestige multiplier — pass RAW value
+        addLifetimeXp(earnedRaw);
+        localStorage.setItem('megaplexTokens', currentTokens);
+        localStorage.setItem('lastCalculatedScoreValue', scoreValue);
+        if (earned > 0) {
+            const bonusText = getPrestigeRank() > 0 ? ` (★${getPrestigeRank()} bonus!)` : '';
+            toast(`+${earned} Tokens${bonusText} / +${earned} XP earned!`, 'success', '🎟️');
         }
+    }
+    document.getElementById('tokenBalance').innerText = currentTokens;
+    document.getElementById('miniTokenBalance').innerText = currentTokens;
+}
 
         /* ====== Tabs / Search / Recent (unchanged) ====== */
         function switchTab(target, btn) {
-            sfx.click();
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            if (btn) btn.classList.add('active');
-            document.getElementById('gameGrid').style.display = 'none';
-            document.getElementById('leaderboard-view').style.display = 'none';
-            document.getElementById('achievements-view').style.display = 'none';
-            if (target === 'leaderboard') {
-                document.getElementById('leaderboard-view').style.display = 'block';
-                loadScores();
-                fetchGlobalLeaderboard();
-            } else if (target === 'achievements') {
-                document.getElementById('achievements-view').style.display = 'block';
-                renderAchievements();
-            } else {
-                document.getElementById('gameGrid').style.display = 'grid';
-                document.querySelectorAll('.card-link').forEach(card => {
-                    if (target === 'all' || card.dataset.category.includes(target)) card.style.display = 'flex';
-                    else card.style.display = 'none';
-                });
-            }
-        }
+    sfx.click();
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.getElementById('gameGrid').style.display = 'none';
+    document.getElementById('leaderboard-view').style.display = 'none';
+    document.getElementById('achievements-view').style.display = 'none';
+    document.getElementById('bounty-view').style.display = 'none';
+    
+    // Stop bounty timer when leaving the tab
+    stopBountyTimer();
+    
+    if (target === 'leaderboard') {
+        document.getElementById('leaderboard-view').style.display = 'block';
+        loadScores();
+        fetchGlobalLeaderboard();
+    } else if (target === 'achievements') {
+        document.getElementById('achievements-view').style.display = 'block';
+        renderAchievements();
+    } else if (target === 'bounty') {
+        document.getElementById('bounty-view').style.display = 'block';
+        renderBountyView();
+        startBountyTimer();
+    } else {
+        document.getElementById('gameGrid').style.display = 'grid';
+        document.querySelectorAll('.card-link').forEach(card => {
+            if (target === 'all' || card.dataset.category.includes(target)) card.style.display = 'flex';
+            else card.style.display = 'none';
+        });
+    }
+}
         function filterBySearch() {
             const q = document.getElementById('searchBar').value.toLowerCase().trim();
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1793,13 +2162,29 @@
             { key: 'guesser', title: '🔐 Code Breaker', unit: '', reverse: false, default: 0 }
         ];
         function loadScores() {
-            let currentScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-            let gsData = JSON.parse(localStorage.getItem('glitchStrikersScores')) || { neon: 0, void: 0, mainframe: 0 };
-            currentScores.glitch_strikers = Math.max(gsData.neon || 0, gsData.void || 0, gsData.mainframe || 0); 
-            localStorage.setItem('arcadeScores', JSON.stringify(currentScores));
-            calculateTokens();
-            renderHubAvatar();
+    let currentScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    let gsData = JSON.parse(localStorage.getItem('glitchStrikersScores')) || { neon: 0, void: 0, mainframe: 0 };
+    currentScores.glitch_strikers = Math.max(gsData.neon || 0, gsData.void || 0, gsData.mainframe || 0); 
+    
+    // === BOUNTY SESSION TRACKING ===
+    // If any score changed since last check, that's a fresh game result.
+    // Record it as a session score so bounties can detect "played after accept".
+    const lastKnown = JSON.parse(localStorage.getItem('megaplexLastKnownScores')) || {};
+    Object.keys(currentScores).forEach(key => {
+        const cur = currentScores[key];
+        const last = lastKnown[key];
+        if (cur !== undefined && cur !== last) {
+            recordSessionScore(key, cur);
         }
+    });
+    localStorage.setItem('megaplexLastKnownScores', JSON.stringify(currentScores));
+    // === END BOUNTY SESSION TRACKING ===
+    
+    localStorage.setItem('arcadeScores', JSON.stringify(currentScores));
+    calculateTokens();
+    renderHubAvatar();
+    if (typeof updateBountyTabBadge === 'function') updateBountyTabBadge();
+}
         async function fetchGlobalLeaderboard(force = false) {
             const now = Date.now();
             if (!force && now - leaderboardLastFetch < 30000 && Object.keys(globalLeaderboardCache).length > 0) {
@@ -1984,49 +2369,222 @@
         }
 
         /* ====== Daily Bonus (unchanged) ====== */
-        function checkDailyBonus() {
+                /* ====== DAILY STREAK SYSTEM (NEW) ====== */
+                const DAILY_CYCLE_REWARDS = [
+            { day: 1, tokens: 200,  icon: '🎟️', label: '200 Tokens' },
+            { day: 2, tokens: 300,  icon: '🎟️', label: '300 Tokens' },
+            { day: 3, tokens: 500,  icon: '💰', label: '500 Tokens' },
+            { day: 4, tokens: 750,  icon: '💎', label: '750 Tokens' },
+            { day: 5, tokens: 1000, icon: '💠', label: '1,000 Tokens' },
+            { day: 6, tokens: 1500, icon: '🏆', label: '1,500 Tokens' },
+            { day: 7, tokens: 3000, icon: '🎰', label: 'MEGA: 3,000 + Perk!' }
+        ];
+
+        // PERMANENT streak milestones — unique unlocks NOT in avatar.html
+        const STREAK_MILESTONES = [
+            { days: 3,   id: 'milestone_3',   icon: '🔓', title: 'Daily Devotee',     desc: 'Profile Title: "Daily Devotee"' },
+            { days: 7,   id: 'milestone_7',   icon: '⚡', title: 'XP Booster Perk',   desc: 'Permanent +10% XP gain', perk: 'xp_boost_10' },
+            { days: 14,  id: 'milestone_14',  icon: '🔥', title: 'Flame Aura',        desc: 'Animated flame trail behind your username', perk: 'flame_username' },
+            { days: 30,  id: 'milestone_30',  icon: '💎', title: 'Diamond Status',    desc: 'Diamond border + 2x daily token rewards', perk: 'diamond_status' },
+            { days: 60,  id: 'milestone_60',  icon: '👑', title: 'Megaplex Royalty',  desc: 'Royal crown 👑 next to your name on leaderboards', perk: 'royalty_crown' },
+            { days: 100, id: 'milestone_100', icon: '🌟', title: 'Centurion Legacy',  desc: 'Prismatic name + 50 ✨ Prestige Tokens granted', perk: 'centurion_name' },
+            { days: 365, id: 'milestone_365', icon: '🏛️', title: 'Eternal Legend',   desc: 'Hall of Fame placement + custom legendary title', perk: 'eternal_legend' }
+        ];
+
+        function getStreak()           { return parseInt(localStorage.getItem('megaplexStreak'))   || 0; }
+        function getCycleDay()         { return parseInt(localStorage.getItem('megaplexCycleDay')) || 0; }
+        function getStreakUnlocks()    { return JSON.parse(localStorage.getItem('megaplexStreakUnlocks')) || []; }
+        function getActivePerks()      { return JSON.parse(localStorage.getItem('megaplexActivePerks'))   || []; }
+        function setStreak(n)          { localStorage.setItem('megaplexStreak', n); }
+        function setCycleDay(n)        { localStorage.setItem('megaplexCycleDay', n); }
+        function setStreakUnlocks(arr) { localStorage.setItem('megaplexStreakUnlocks', JSON.stringify(arr)); }
+        function setActivePerks(arr)   { localStorage.setItem('megaplexActivePerks', JSON.stringify(arr)); }
+        function hasPerk(perkId)       { return getActivePerks().includes(perkId); }
+
+        // Reset streak if more than 48 hours have passed since last claim
+        function checkStreakValidity() {
             const lastClaim = localStorage.getItem('megaplexLastDaily');
-            const now = new Date().getTime();
+            if (!lastClaim) return false;
+            const hoursSince = (Date.now() - parseInt(lastClaim)) / 3600000;
+            if (hoursSince > 48) {
+                setStreak(0); setCycleDay(0);
+                return true;
+            }
+            return false;
+        }
+
+        function canClaimDaily() {
+            const lastClaim = localStorage.getItem('megaplexLastDaily');
+            if (!lastClaim) return true;
+            return (Date.now() - parseInt(lastClaim)) > 86400000;
+        }
+
+        function checkDailyBonus() {
+            checkStreakValidity();
             const btn = document.getElementById('dailyBonusBtn');
-            if (!lastClaim || now - parseInt(lastClaim) > 86400000) {
-                btn.innerText = "🎁 Daily Claim";
-                btn.style.opacity = "1"; btn.style.cursor = "pointer"; btn.disabled = false;
+            const badge = document.getElementById('dailyStreakBadge');
+            const streak = getStreak();
+            if (streak > 0) {
+                badge.classList.add('show');
+                document.getElementById('dailyStreakNum').innerText = streak;
             } else {
-                btn.innerText = "⏳ Claimed";
-                btn.style.opacity = "0.5"; btn.style.cursor = "not-allowed"; btn.disabled = true;
+                badge.classList.remove('show');
+            }
+            if (canClaimDaily()) {
+                btn.innerText = "🎁 Daily Claim";
+                btn.style.opacity = "1";
+            } else {
+                btn.innerText = "⏳ Streak Active";
+                btn.style.opacity = "0.7";
+            }
+            btn.style.cursor = "pointer";
+        }
+
+        function openDailyModal() {
+            sfx.click();
+            renderDailyModal();
+            document.getElementById('dailyModal').classList.add('show');
+        }
+        function closeDailyModal() {
+            document.getElementById('dailyModal').classList.remove('show');
+        }
+
+        function renderDailyModal() {
+            checkStreakValidity();
+            const streak = getStreak();
+            const cycleDay = getCycleDay();
+            const claimable = canClaimDaily();
+            const unlocks = getStreakUnlocks();
+
+            document.getElementById('streakNumber').innerText = streak;
+
+            const track = document.getElementById('streakTrack');
+            track.innerHTML = '';
+            DAILY_CYCLE_REWARDS.forEach((day, idx) => {
+                const dayNum = idx + 1;
+                let cls = 'streak-day';
+                if (dayNum <= cycleDay) cls += ' completed';
+                else if (dayNum === cycleDay + 1 && claimable) cls += ' today';
+                else cls += ' locked';
+                track.innerHTML += `
+                    <div class="${cls}" title="${day.label}">
+                        <div class="streak-day-num">DAY ${dayNum}</div>
+                        <div class="streak-day-icon">${day.icon}</div>
+                        <div class="streak-day-reward">${day.tokens >= 1000 ? (day.tokens/1000)+'k' : day.tokens}</div>
+                    </div>`;
+            });
+
+            const list = document.getElementById('streakMilestoneList');
+            list.innerHTML = '';
+            STREAK_MILESTONES.forEach(m => {
+                const isUnlocked = unlocks.includes(m.id);
+                const cls = isUnlocked ? 'unlocked' : 'locked';
+                const checkmark = isUnlocked ? '✓' : `${m.days}d`;
+                list.innerHTML += `
+                    <div class="streak-unlock-row ${cls}">
+                        <span><span class="unlock-icon">${m.icon}</span> <strong>${m.title}</strong> — ${m.desc}</span>
+                        <span style="font-weight:bold;">${checkmark}</span>
+                    </div>`;
+            });
+
+            const claimBtn = document.getElementById('claimDailyBtn');
+            if (claimable) {
+                const nextDay = cycleDay + 1;
+                const reward = DAILY_CYCLE_REWARDS[Math.min(nextDay - 1, 6)];
+                claimBtn.disabled = false;
+                claimBtn.innerText = `🎁 CLAIM DAY ${nextDay} — ${reward.label}`;
+                claimBtn.style.opacity = '1';
+            } else {
+                const last = parseInt(localStorage.getItem('megaplexLastDaily'));
+                const hoursLeft = Math.ceil((86400000 - (Date.now() - last)) / 3600000);
+                claimBtn.disabled = true;
+                claimBtn.innerText = `⏳ NEXT CLAIM IN ~${hoursLeft}H`;
+                claimBtn.style.opacity = '0.5';
             }
         }
+
         async function claimDailyBonus() {
-            const btn = document.getElementById('dailyBonusBtn');
-            if (btn.disabled) return;
-            btn.disabled = true;
-            btn.innerText = "⏳ Verifying...";
+            if (!canClaimDaily()) {
+                toast('Already claimed today — come back tomorrow!', 'warning', '⏳');
+                return;
+            }
+            const claimBtn = document.getElementById('claimDailyBtn');
+            claimBtn.disabled = true;
+            claimBtn.innerText = "⏳ Verifying...";
+
             const result = await window.MegaplexCloud.tryClaimDaily();
             if (!result.success) {
                 if (result.reason === 'cooldown') {
                     const hoursLeft = Math.ceil(result.remainingMs / 3600000);
-                    toast(`Already claimed today! Come back in ${hoursLeft}h`, 'warning', '⏳');
+                    toast(`Already claimed! Come back in ${hoursLeft}h`, 'warning', '⏳');
                 } else {
                     toast('Network error — try again', 'error', '⚠️');
                 }
-                checkDailyBonus(); return;
+                renderDailyModal();
+                return;
             }
-            sfx.win();
+
+            let cycleDay = getCycleDay();
+            let streak = getStreak();
+            cycleDay++;
+            streak++;
+
+            const reward = DAILY_CYCLE_REWARDS[Math.min(cycleDay - 1, 6)];
+            let baseReward = reward.tokens;
+            if (hasPerk('diamond_status')) baseReward *= 2;
+
+            const finalReward = Math.floor(baseReward * getPrestigeMultiplier());
+
             let currentTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
-            const baseReward = 250;
-            const reward = Math.floor(baseReward * getPrestigeMultiplier());
-            currentTokens += reward;
+            currentTokens += finalReward;
             addLifetimeXp(baseReward);
             localStorage.setItem('megaplexTokens', currentTokens);
             document.getElementById('tokenBalance').innerText = currentTokens;
             document.getElementById('miniTokenBalance').innerText = currentTokens;
             document.getElementById('tokenDisplayBox').classList.add('pop');
             setTimeout(() => document.getElementById('tokenDisplayBox').classList.remove('pop'), 500);
-            const bonusText = getPrestigeRank() > 0 ? ` (★${getPrestigeRank()})` : '';
-            toast(`Daily bonus: +${reward} 🎟️${bonusText} / +${reward} XP!`, 'success', '🎁');
+
+            if (cycleDay >= 7) {
+                cycleDay = 0;
+                toast(`🎰 7-DAY CYCLE COMPLETE! +${finalReward} 🎟️`, 'success', '🏆');
+            } else {
+                toast(`Day ${cycleDay} reward: +${finalReward} 🎟️ (Streak: ${streak} 🔥)`, 'success', '🎁');
+            }
+
+            setCycleDay(cycleDay);
+            setStreak(streak);
+            checkMilestoneUnlocks(streak);
+
+            sfx.win();
+            renderDailyModal();
             checkDailyBonus();
             renderHubAvatar();
             saveToCloud();
+        }
+
+        function checkMilestoneUnlocks(streak) {
+            let unlocks = getStreakUnlocks();
+            let perks = getActivePerks();
+            let newUnlocks = false;
+            STREAK_MILESTONES.forEach(m => {
+                if (streak >= m.days && !unlocks.includes(m.id)) {
+                    unlocks.push(m.id);
+                    if (m.perk) perks.push(m.perk);
+                    newUnlocks = true;
+                    if (m.id === 'milestone_100') {
+                        setPrestigeTokens(getPrestigeTokens() + 50);
+                        updatePrestigeUI();
+                    }
+                    setTimeout(() => {
+                        toast(`🏆 STREAK MILESTONE: ${m.title}!`, 'prestige', m.icon);
+                        sfx.win();
+                    }, 800);
+                }
+            });
+            if (newUnlocks) {
+                setStreakUnlocks(unlocks);
+                setActivePerks(perks);
+            }
         }
 
         /* ====== Username (unchanged) ====== */
@@ -2115,13 +2673,38 @@
                 if (e.key === 'Escape') e.target.blur();
                 return;
             }
-            if (e.key === 'Escape') { closeLevelModal(); closePrestigeModal(); }
+            if (e.key === 'Escape') { closeLevelModal(); closePrestigeModal(); closeDailyModal(); }
             if (e.key === '/') { e.preventDefault(); document.getElementById('searchBar').focus(); }
             if (e.key === 'm' || e.key === 'M') toggleSound();
-            if (e.key >= '1' && e.key <= '7') {
+            if (e.key >= '1' && e.key <= '8') {
                 const idx = parseInt(e.key) - 1;
                 const btns = document.querySelectorAll('.tab-btn');
                 if (btns[idx]) btns[idx].click();
+            }
+        });
+
+                        // Refresh bounty view & badge when window regains focus (returning from a game)
+        window.addEventListener('focus', () => {
+            loadScores();
+            const bountyView = document.getElementById('bounty-view');
+            if (bountyView && bountyView.style.display === 'block') {
+                renderBountyView();
+            }
+            if (typeof updateBountyTabBadge === 'function') updateBountyTabBadge();
+            // Pull cloud tokens in case a wager paid out while we were away
+            if (typeof syncTokensFromCloud === 'function') syncTokensFromCloud();
+        });
+
+        // Also handle tab visibility changes (mobile/tab-switch)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                loadScores();
+                const bountyView = document.getElementById('bounty-view');
+                if (bountyView && bountyView.style.display === 'block') {
+                    renderBountyView();
+                }
+                if (typeof updateBountyTabBadge === 'function') updateBountyTabBadge();
+                if (typeof syncTokensFromCloud === 'function') syncTokensFromCloud();
             }
         });
 
@@ -2190,10 +2773,22 @@
                 document.getElementById('loadingText').innerText = 'CREATING ACCOUNT...';
                 const cred = await fbAuth.createUserWithEmailAndPassword(usernameToEmail(v.u), v.p);
                 document.getElementById('loadingText').innerText = 'INITIALIZING SAVE...';
+                
+                // 🧹 WIPE all local data so the new account starts FRESH 
+                // (prevents prestige/tokens/etc from a previous account leaking in)
+                [
+                    'arcadeScores','glitchStrikersScores','tttCoins','tttInventory','megaplexTokens',
+                    'megaplexLifetimeXp','megaplexPrestigeRank','megaplexPrestigeTokens',
+                    'lastCalculatedScoreValue','avatarData','avatarInventory','avatarSeenItems',
+                    'claimedAchievements','nj2_times','recentlyPlayed','megaplexLastDaily',
+                    'megaplexStreak','megaplexCycleDay','megaplexStreakUnlocks','megaplexActivePerks',
+                    'megaplexBounties','megaplexSessionScores','megaplexLastKnownScores'
+                ].forEach(k => localStorage.removeItem(k));
+                
                 await fbDB.collection('players').doc(cred.user.uid).set({
                     username: v.u.toUpperCase(),
                     createdAt: new Date().toISOString(),
-                    saveData: { arcadeScores: JSON.parse(localStorage.getItem('arcadeScores')) || {} }
+                    saveData: { arcadeScores: {} }  // truly empty save
                 });
                 localStorage.setItem('megaplexUsername', v.u.toUpperCase());
                 showLoginMsg('Account created! Loading...', true);
@@ -2207,16 +2802,27 @@
             }
         }
         async function doLogin() {
-            const v = validateLogin();
-            if (!v) return;
-            sfx.click();
-            showLoadingOverlay('AUTHENTICATING...');
-            try {
-                await fbAuth.signInWithEmailAndPassword(usernameToEmail(v.u), v.p);
-                document.getElementById('loadingText').innerText = 'LOADING SAVE DATA...';
-                showLoginMsg('Welcome back!', true);
-                sfx.coin();
-            } catch (err) {
+    const v = validateLogin();
+    if (!v) return;
+    sfx.click();
+    showLoadingOverlay('AUTHENTICATING...');
+    try {
+        // 🧹 WIPE all local data BEFORE login so cloud data isn't merged with leftovers
+        // from a different account on this same browser
+        [
+            'arcadeScores','glitchStrikersScores','tttCoins','tttInventory','megaplexTokens',
+            'megaplexLifetimeXp','megaplexPrestigeRank','megaplexPrestigeTokens',
+            'lastCalculatedScoreValue','avatarData','avatarInventory','avatarSeenItems',
+            'claimedAchievements','nj2_times','recentlyPlayed','megaplexLastDaily',
+            'megaplexStreak','megaplexCycleDay','megaplexStreakUnlocks','megaplexActivePerks',
+            'megaplexBounties','megaplexSessionScores','megaplexLastKnownScores'
+        ].forEach(k => localStorage.removeItem(k));
+        
+        await fbAuth.signInWithEmailAndPassword(usernameToEmail(v.u), v.p);
+        document.getElementById('loadingText').innerText = 'LOADING SAVE DATA...';
+        showLoginMsg('Welcome back!', true);
+        sfx.coin();
+    } catch (err) {
                 hideLoadingOverlay();
                 if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') showLoginMsg('Wrong username or password');
                 else if (err.code === 'auth/user-not-found') showLoginMsg('No account found — try Sign Up');
@@ -2241,34 +2847,43 @@
             toast('Playing as Guest — progress will NOT be saved online', 'warning', '⚠️');
         }
         async function logout() {
-            if (!confirm('Log out? Your progress will be saved to the cloud first.')) return;
-            sfx.click();
-            await saveToCloud();
-            await fbAuth.signOut();
-            localStorage.removeItem('megaplexGuestMode');
-            ['arcadeScores','glitchStrikersScores','tttCoins','tttInventory','megaplexTokens',
-             'megaplexLifetimeXp',
-             'lastCalculatedScoreValue','avatarData','avatarInventory','avatarSeenItems',
-             'claimedAchievements','nj2_times','megaplexUsername','recentlyPlayed','megaplexLastDaily'].forEach(k => localStorage.removeItem(k));
-            location.reload();
-        }
+    if (!confirm('Log out? Your progress will be saved to the cloud first.')) return;
+    sfx.click();
+    await saveToCloud();
+    await fbAuth.signOut();
+    localStorage.removeItem('megaplexGuestMode');
+    [
+        'arcadeScores','glitchStrikersScores','tttCoins','tttInventory','megaplexTokens',
+        'megaplexLifetimeXp','megaplexPrestigeRank','megaplexPrestigeTokens',
+        'lastCalculatedScoreValue','avatarData','avatarInventory','avatarSeenItems',
+        'claimedAchievements','nj2_times','megaplexUsername','recentlyPlayed','megaplexLastDaily',
+        'megaplexStreak','megaplexCycleDay','megaplexStreakUnlocks','megaplexActivePerks',
+        'megaplexBounties','megaplexSessionScores','megaplexLastKnownScores'
+    ].forEach(k => localStorage.removeItem(k));
+    location.reload();
+}
 
-        function refreshUIAfterAuthChange() {
-            const user = window.MegaplexCloud.currentFbUser;
-            updateHeaderAuthUI();
-            if (user) {
-                hideLoadingOverlay();
-                hideLoginModal();
-                document.getElementById('guestBanner').classList.remove('show');
-                document.getElementById('logoutBtn').style.display = 'inline-block';
-                loadScores();
-                renderHubAvatar();
-                showRecentBadges();
-                window.MegaplexCloud.syncDailyClaimFromCloud().then(() => checkDailyBonus());
-                if (hubInitComplete) {
-                    toast(`Welcome, ${localStorage.getItem('megaplexUsername')}!`, 'success', '✅');
-                }
-            } else {
+function refreshUIAfterAuthChange() {
+    const user = window.MegaplexCloud.currentFbUser;
+    updateHeaderAuthUI();
+    if (user) {
+        hideLoadingOverlay();
+        hideLoginModal();
+        document.getElementById('guestBanner').classList.remove('show');
+        document.getElementById('logoutBtn').style.display = 'inline-block';
+        
+        // 🔄 Force-refresh all UI from whatever cloud just loaded
+        // (in case cloud had no values, defaults to 0)
+        const tokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+        document.getElementById('tokenBalance').innerText = tokens;
+        document.getElementById('miniTokenBalance').innerText = tokens;
+        
+        loadScores();
+        renderHubAvatar();
+        updatePrestigeUI();
+        showRecentBadges();
+        window.MegaplexCloud.syncDailyClaimFromCloud().then(() => checkDailyBonus());
+    } else {
                 document.getElementById('logoutBtn').style.display = 'none';
                 renderHubAvatar();
             }
@@ -2297,6 +2912,9 @@
                 renderHubAvatar();
                 window.MegaplexCloud.syncDailyClaimFromCloud().then(() => checkDailyBonus());
                 showRecentBadges();
+                refreshBountiesIfNeeded();
+                updateBountyTabBadge();
+                startWagerHubSubscription();
                 toast(`Welcome back, ${localStorage.getItem('megaplexUsername')}!`, 'success', '✅');
             } else if (isGuest) {
                 document.getElementById('logoutBtn').style.display = 'none';
@@ -2306,6 +2924,7 @@
                 renderHubAvatar();
                 checkDailyBonus();
                 showRecentBadges();
+                toast(`Welcome, ${localStorage.getItem('megaplexUsername') || 'GUEST'}!`, 'info', '👋');
             } else {
                 document.getElementById('logoutBtn').style.display = 'none';
                 loadScores();
@@ -2348,6 +2967,10 @@
                 /* ====== FRIENDS SYSTEM — HEADER BUTTON & LIVE BADGE (NEW) ====== */
                 let friendsUnsubscribe = null;
         let friendsLastIncomingCount = 0;
+        let wagerHubUnsubscribe = null;
+        let wagerHubLastInviteCount = 0;
+        let wagerHubLastClaimableCount = 0;
+        let wagerNotifCount = 0; // invites + claimable wagers (combined into the friends badge)
 
         /**
          * Navigates to the dedicated friends page.
@@ -2373,22 +2996,24 @@
          * Updates BOTH notification badges (expanded + mini headers) with the
          * incoming friend request count. Hides them when count is zero.
          */
-        function updateFriendsBadge(incomingCount, friendCount) {
+         function updateFriendsBadge(incomingCount, friendCount) {
+            // Combined notification count = friend requests + wager invites + claimable wagers
+            const totalNotifs = (incomingCount || 0) + wagerNotifCount;
+
             const badges = [
                 document.getElementById('friendsNotifBadge'),
                 document.getElementById('miniFriendsNotifBadge')
             ];
             badges.forEach(badge => {
                 if (!badge) return;
-                if (incomingCount > 0) {
-                    badge.textContent = incomingCount > 99 ? '99+' : incomingCount;
+                if (totalNotifs > 0) {
+                    badge.textContent = totalNotifs > 99 ? '99+' : totalNotifs;
                     badge.classList.remove('hidden');
                 } else {
                     badge.classList.add('hidden');
                 }
             });
 
-            // Update friend count in the mini pill
             const friendsCountEl = document.getElementById('miniFriendsCount');
             if (friendsCountEl) friendsCountEl.textContent = friendCount;
         }
@@ -2397,8 +3022,7 @@
          * Subscribes to live changes to the user's social state.
          * Called when a user logs in. Cleans up any previous subscription.
          */
-        function startFriendsSubscription() {
-            // Clean up old subscription (e.g. on re-login as different user)
+         function startFriendsSubscription() {
             if (typeof friendsUnsubscribe === 'function') {
                 friendsUnsubscribe();
                 friendsUnsubscribe = null;
@@ -2409,8 +3033,6 @@
             if (!user || !window.MegaplexCloud.subscribeToSocial) return;
 
             friendsUnsubscribe = window.MegaplexCloud.subscribeToSocial((data) => {
-                // Toast the user when a NEW friend request arrives
-                // (skip the very first callback, which is the initial state)
                 if (
                     friendsLastIncomingCount > 0 &&
                     data.incoming.length > friendsLastIncomingCount
@@ -2435,11 +3057,107 @@
             updateFriendsBadge(0, 0);
         }
 
+                /**
+         * Subscribes to live wager updates from the hub so the
+         * Friends button badge can show pending invites/claimable winnings.
+         */
+         function startWagerHubSubscription() {
+            if (typeof wagerHubUnsubscribe === 'function') {
+                wagerHubUnsubscribe();
+                wagerHubUnsubscribe = null;
+            }
+            wagerHubLastInviteCount = 0;
+            wagerHubLastClaimableCount = 0;
+
+            const user = getCurrentFbUser();
+            if (!user || !window.MegaplexCloud.subscribeToWagers) return;
+
+            // Auto-resolve any expired wagers on hub load
+            window.MegaplexCloud.checkExpiredWagers();
+
+            wagerHubUnsubscribe = window.MegaplexCloud.subscribeToWagers((wagers) => {
+                const myUid = user.uid;
+                // Wager invites where I'm the opponent and status is pending
+                const invites = wagers.filter(w => w.status === 'pending' && w.opponent.uid === myUid);
+                // Resolved wagers I haven't claimed yet (and have a payout coming)
+                const claimable = wagers.filter(w => {
+                    if (!['completed', 'tied'].includes(w.status)) return false;
+                    const isChallenger = w.challenger.uid === myUid;
+                    const side = isChallenger ? 'challenger' : 'opponent';
+                    if (w[side].claimed === true) return false;
+                    const payout = isChallenger ? (w.challengerPayout || 0) : (w.opponentPayout || 0);
+                    return payout > 0;
+                });
+
+                // Toast on NEW invite (skip first callback)
+                if (wagerHubLastInviteCount > 0 && invites.length > wagerHubLastInviteCount) {
+                    sfx.coin();
+                    toast('You received a new wager challenge!', 'info', '⚔️');
+                }
+                // Toast on NEW claimable winnings
+                if (wagerHubLastClaimableCount > 0 && claimable.length > wagerHubLastClaimableCount) {
+                    sfx.win();
+                    toast('A wager resolved — go claim your winnings!', 'success', '🏆');
+                }
+
+                wagerHubLastInviteCount = invites.length;
+                wagerHubLastClaimableCount = claimable.length;
+                wagerNotifCount = invites.length + claimable.length;
+
+                // Refresh the badge using current friend-request count
+                updateFriendsBadge(friendsLastIncomingCount, document.getElementById('miniFriendsCount')?.textContent || 0);
+
+                // Sync token balance from cloud (in case a wager just paid out)
+                if (claimable.length > 0 || wagers.some(w => w.status === 'declined' || w.status === 'cancelled')) {
+                    syncTokensFromCloud();
+                }
+            });
+        }
+
+        function stopWagerHubSubscription() {
+            if (typeof wagerHubUnsubscribe === 'function') {
+                wagerHubUnsubscribe();
+                wagerHubUnsubscribe = null;
+            }
+            wagerHubLastInviteCount = 0;
+            wagerHubLastClaimableCount = 0;
+            wagerNotifCount = 0;
+        }
+
+        /**
+         * Pulls the latest token balance from cloud — used after wager
+         * payouts/refunds happen so the hub display stays accurate.
+         */
+        async function syncTokensFromCloud() {
+            const user = getCurrentFbUser();
+            if (!user) return;
+            try {
+                const doc = await fbDB.collection('players').doc(user.uid).get();
+                const cloudTokens = parseInt(doc.data()?.saveData?.megaplexTokens || 0);
+                const localTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+                if (cloudTokens !== localTokens) {
+                    localStorage.setItem('megaplexTokens', String(cloudTokens));
+                    document.getElementById('tokenBalance').innerText = cloudTokens;
+                    document.getElementById('miniTokenBalance').innerText = cloudTokens;
+                    document.getElementById('tokenDisplayBox').classList.add('pop');
+                    setTimeout(() => document.getElementById('tokenDisplayBox').classList.remove('pop'), 500);
+                    console.log('[Megaplex] Token balance synced from cloud:', cloudTokens);
+                }
+            } catch (err) {
+                console.warn('[Megaplex] syncTokensFromCloud failed:', err);
+            }
+        }
+
         // Hook into your existing auth-changed event so the subscription
         // starts/stops automatically on login/logout.
         window.addEventListener('megaplex-auth-changed', (e) => {
-            if (e.detail.user) startFriendsSubscription();
-            else stopFriendsSubscription();
+            if (e.detail.user) {
+                startFriendsSubscription();
+                startWagerHubSubscription();
+            } else {
+                stopFriendsSubscription();
+                stopWagerHubSubscription();
+            }
         });
 
         /* ====== HUB LOADING SCREEN — shown on every page load until auth resolves ====== */
@@ -2498,6 +3216,577 @@ setTimeout(() => {
         hideHubLoading();
     }
 }, 10000);
+
+/* ====== BOUNTY BOARD SYSTEM ====== */
+
+// === SESSION SCORE TRACKING (NEW) ===
+// Tracks the BEST score achieved in any single session for each game key.
+// This resets when a bounty is accepted, so the player must play AFTER acceptance.
+function getSessionScore(key) {
+    const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+    return sessions[key];
+}
+
+function recordSessionScore(key, value) {
+    const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+    if (key === 'reaction' || key === 'memory') {
+        // Lower is better
+        if (sessions[key] === undefined || value < sessions[key]) sessions[key] = value;
+    } else {
+        // Higher is better
+        if (sessions[key] === undefined || value > sessions[key]) sessions[key] = value;
+    }
+    localStorage.setItem('megaplexSessionScores', JSON.stringify(sessions));
+}
+
+// Bounty templates — all targets are now MUCH harder and use DELTA tracking
+// type: 'gain' (must improve by X from when accepted) | 'lower_new' (must beat current best)
+const BOUNTY_TEMPLATES = [
+    // ===== EASY (cheap entry, modest reward) =====
+    { id: 'b_clicker_easy', difficulty: 'easy', icon: '👆', title: 'Click Sprint',
+      desc: 'Earn 8,000 NEW clicks in Clicker Frenzy.',
+      trackKey: 'clicker', type: 'gain', target: 8000,
+      cost: 200, reward: 800, gameLink: 'clicker.html' },
+    
+    { id: 'b_snake_easy', difficulty: 'easy', icon: '🐍', title: 'Snake Growth',
+      desc: 'Set a NEW Snake length record of at least 25.',
+      trackKey: 'snake', type: 'beat', target: 25,
+      cost: 250, reward: 900, gameLink: 'snake.html' },
+    
+    { id: 'b_math_easy', difficulty: 'easy', icon: '🧠', title: 'Mental Math',
+      desc: 'Set a NEW Math streak record of at least 15.',
+      trackKey: 'math', type: 'beat', target: 15,
+      cost: 250, reward: 900, gameLink: 'math.html' },
+    
+    { id: 'b_reaction_easy', difficulty: 'easy', icon: '⚡', title: 'Sharp Reflexes',
+      desc: 'Set a NEW reaction time record under 240ms.',
+      trackKey: 'reaction', type: 'beat_lower', target: 240,
+      cost: 300, reward: 1100, gameLink: 'reaction.html' },
+
+    // ===== MEDIUM (moderate cost, big reward) =====
+    { id: 'b_asteroids_med', difficulty: 'medium', icon: '☄️', title: 'Asteroid Onslaught',
+      desc: 'Earn 1,500 NEW points in Quantum Asteroids.',
+      trackKey: 'asteroids', type: 'gain', target: 1500,
+      cost: 800, reward: 3000, gameLink: 'asteroids.html' },
+    
+    { id: 'b_runner_med', difficulty: 'medium', icon: '🏃‍♂️', title: 'Endurance Run',
+      desc: 'Beat your Cyber Runner distance by 2,500m.',
+      trackKey: 'cyberrunner', type: 'gain', target: 2500,
+      cost: 700, reward: 2700, gameLink: 'runner.html' },
+    
+    { id: 'b_tanks_med', difficulty: 'medium', icon: '💣', title: 'Tank Warfare',
+      desc: 'Earn 2,000 NEW points in Plasma Tanks.',
+      trackKey: 'tanks_score', type: 'gain', target: 2000,
+      cost: 800, reward: 3200, gameLink: 'tanks.html' },
+    
+    { id: 'b_guesser_med', difficulty: 'medium', icon: '🔐', title: 'Master Hacker',
+      desc: 'Set a NEW Code Breaker record of at least 1,200.',
+      trackKey: 'guesser', type: 'beat', target: 1200,
+      cost: 700, reward: 2500, gameLink: 'guesser.html' },
+    
+    { id: 'b_memory_med', difficulty: 'medium', icon: '👁️', title: 'Photographic Memory',
+      desc: 'Set a NEW Memory Match record of 14 moves or fewer.',
+      trackKey: 'memory', type: 'beat_lower', target: 14,
+      cost: 800, reward: 3000, gameLink: 'memory.html' },
+    
+    { id: 'b_ttt_med', difficulty: 'medium', icon: '⭕', title: 'Strategist',
+      desc: 'Win 5 NEW Tic-Tac-Toe matches.',
+      trackKey: 'ttt', type: 'gain', target: 5,
+      cost: 600, reward: 2400, gameLink: 'tictactoe.html' },
+
+    // ===== HARD (high cost, huge reward) =====
+    { id: 'b_fps_hard', difficulty: 'hard', icon: '🔫', title: 'Special Forces',
+      desc: 'Earn 3,000 NEW points in System Breach FPS.',
+      trackKey: 'fps', type: 'gain', target: 3000,
+      cost: 2000, reward: 7500, gameLink: 'fps.html' },
+    
+    { id: 'b_glitch_hard', difficulty: 'hard', icon: '💥', title: 'Brawler Legend',
+      desc: 'Earn 3,000 NEW points in Glitch Brawler.',
+      trackKey: 'glitch_score', type: 'gain', target: 3000,
+      cost: 1800, reward: 7000, gameLink: 'glitch_brawler.html' },
+    
+    { id: 'b_strikers_hard', difficulty: 'hard', icon: '⚔️', title: 'Megaplex Defender',
+      desc: 'Earn 3,000 NEW points in Glitch Strikers.',
+      trackKey: 'glitch_strikers', type: 'gain', target: 3000,
+      cost: 1900, reward: 7500, gameLink: 'glitch_strikers.html' },
+    
+    { id: 'b_runner_hard', difficulty: 'hard', icon: '🏙️', title: 'Marathon Master',
+      desc: 'Beat your Cyber Runner distance by 5,000m.',
+      trackKey: 'cyberrunner', type: 'gain', target: 5000,
+      cost: 2000, reward: 8000, gameLink: 'runner.html' },
+    
+    { id: 'b_snake_hard', difficulty: 'hard', icon: '🐉', title: 'World Eater',
+      desc: 'Set a NEW Snake length record of at least 55.',
+      trackKey: 'snake', type: 'beat', target: 55,
+      cost: 1700, reward: 6500, gameLink: 'snake.html' },
+    
+    { id: 'b_clicker_hard', difficulty: 'hard', icon: '⚙️', title: 'Click Industrial',
+      desc: 'Earn 30,000 NEW clicks in Clicker Frenzy.',
+      trackKey: 'clicker', type: 'gain', target: 30000,
+      cost: 1800, reward: 7000, gameLink: 'clicker.html' },
+
+    // ===== LEGENDARY (extreme cost, includes Prestige Token) =====
+    { id: 'b_nj2_legend', difficulty: 'legendary', icon: '⚡', title: 'System Annihilator',
+      desc: 'Earn 5,000 NEW points in Neon Jumper 2.',
+      trackKey: 'nj2_score', type: 'gain', target: 5000,
+      cost: 5000, reward: 20000, prestigeReward: 1, gameLink: 'neonjumper2.html' },
+    
+    { id: 'b_reaction_legend', difficulty: 'legendary', icon: '🌟', title: 'Faster Than Light',
+      desc: 'Set a NEW reaction time record under 180ms.',
+      trackKey: 'reaction', type: 'beat_lower', target: 180,
+      cost: 4500, reward: 17000, prestigeReward: 1, gameLink: 'reaction.html' },
+    
+    { id: 'b_clicker_legend', difficulty: 'legendary', icon: '🖱️', title: 'Click Apocalypse',
+      desc: 'Earn 150,000 NEW clicks in Clicker Frenzy.',
+      trackKey: 'clicker', type: 'gain', target: 150000,
+      cost: 6000, reward: 22000, prestigeReward: 1, gameLink: 'clicker.html' },
+    
+    { id: 'b_fps_legend', difficulty: 'legendary', icon: '💀', title: 'Untouchable Operative',
+      desc: 'Earn 7,000 NEW points in System Breach FPS.',
+      trackKey: 'fps', type: 'gain', target: 7000,
+      cost: 5500, reward: 21000, prestigeReward: 1, gameLink: 'fps.html' },
+    
+    { id: 'b_memory_legend', difficulty: 'legendary', icon: '🔮', title: 'Mind Reader',
+      desc: 'Set a NEW Memory Match record of 10 moves or fewer.',
+      trackKey: 'memory', type: 'beat_lower', target: 10,
+      cost: 5000, reward: 18000, prestigeReward: 1, gameLink: 'memory.html' }
+];
+
+const BOUNTY_REFRESH_MS = 86400000; // 24 hours
+const BOUNTY_TIME_LIMIT_MS = 86400000; // 24 hours to complete after accepting
+const BOUNTIES_PER_DAY = 6;
+let bountyTimerInterval = null;
+
+// ===== Storage =====
+function getBounties() {
+    return JSON.parse(localStorage.getItem('megaplexBounties')) || {
+        active: [],     // currently accepted bounties
+        completed: [],  // claimed bounty IDs (for stats)
+        available: [],  // today's offered bounties (snapshot)
+        lastRefresh: 0
+    };
+}
+function setBounties(b) { localStorage.setItem('megaplexBounties', JSON.stringify(b)); }
+
+function refreshBountiesIfNeeded() {
+    const data = getBounties();
+    const now = Date.now();
+    const needsRefresh = !data.lastRefresh || (now - data.lastRefresh > BOUNTY_REFRESH_MS);
+
+    if (needsRefresh) {
+        // Failed bounties → completed log with 'failed' status
+        data.active = data.active.filter(b => {
+            if (b.expiresAt < now) {
+                data.completed.push({ ...b, status: 'failed', completedAt: now });
+                return false;
+            }
+            return true;
+        });
+
+        // Pick fresh random bounty pool
+        const easy   = BOUNTY_TEMPLATES.filter(b => b.difficulty === 'easy');
+        const medium = BOUNTY_TEMPLATES.filter(b => b.difficulty === 'medium');
+        const hard   = BOUNTY_TEMPLATES.filter(b => b.difficulty === 'hard');
+        const legend = BOUNTY_TEMPLATES.filter(b => b.difficulty === 'legendary');
+
+        const pickRandom = (arr, n) => {
+            const shuffled = [...arr].sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, n);
+        };
+
+        // 2 easy + 2 medium + 1 hard + 1 legendary = 6 bounties
+        data.available = [
+            ...pickRandom(easy, 2),
+            ...pickRandom(medium, 2),
+            ...pickRandom(hard, 1),
+            ...pickRandom(legend, 1)
+        ];
+
+        // RESET the "claimed today" list when bounties refresh
+        data.claimedToday = [];
+        data.lastRefresh = now;
+        setBounties(data);
+        saveToCloud();
+    }
+}
+
+// ===== Get current value for a tracked stat =====
+function getTrackKeyValue(key) {
+    const scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    if (key === 'reaction' || key === 'memory') {
+        // For "lower is better" — default high if no score yet
+        return scores[key] !== undefined ? scores[key] : 99999;
+    }
+    return scores[key] || 0;
+}
+
+// Check if bounty is completed — uses SESSION score (post-acceptance), not all-time high
+function isBountyCompleted(bounty) {
+    if (bounty.startValue === undefined || bounty.startValue === null) return false;
+    
+    // Use the SESSION score — only games played AFTER accepting count
+    const sessionScore = getSessionScore(bounty.trackKey);
+    if (sessionScore === undefined) return false;
+    
+    if (bounty.type === 'gain') {
+        return sessionScore >= bounty.target;
+    }
+    if (bounty.type === 'beat') {
+        return sessionScore >= bounty.target;
+    }
+    if (bounty.type === 'beat_lower') {
+        return sessionScore <= bounty.target;
+    }
+    
+    console.warn('[Bounty] Unknown/legacy bounty type rejected:', bounty.type, bounty.title);
+    return false;
+}
+
+// Calculate progress (0-100) — based on SESSION score post-acceptance
+function getBountyProgress(bounty) {
+    const sessionScore = getSessionScore(bounty.trackKey);
+    if (sessionScore === undefined) return 0;
+    
+    if (bounty.type === 'gain' || bounty.type === 'beat') {
+        return Math.min(100, Math.floor((sessionScore / bounty.target) * 100));
+    }
+    if (bounty.type === 'beat_lower') {
+        if (sessionScore <= bounty.target) return 100;
+        if (bounty.startValue === undefined || bounty.startValue >= 99999) {
+            // No baseline — show 0 until they hit target
+            return 0;
+        }
+        const range = bounty.startValue - bounty.target;
+        const improved = bounty.startValue - sessionScore;
+        return Math.max(0, Math.min(99, Math.floor((improved / range) * 100)));
+    }
+    return 0;
+}
+
+function acceptBounty(bountyId) {
+    sfx.click();
+    const data = getBounties();
+    const template = data.available.find(b => b.id === bountyId);
+    if (!template) { toast('Bounty no longer available', 'error', '❌'); return; }
+
+    // Already accepted?
+    if (data.active.some(b => b.id === bountyId)) {
+        toast('You already accepted this bounty!', 'warning', '⚠️');
+        return;
+    }
+    
+    // Already completed today?
+    if (data.claimedToday && data.claimedToday.includes(bountyId)) {
+        toast('You already claimed this bounty today!', 'warning', '✅');
+        return;
+    }
+
+    // Check tokens
+    let tokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+    if (tokens < template.cost) {
+        toast(`Need ${template.cost - tokens} more tokens!`, 'error', '💸');
+        return;
+    }
+
+        // Snapshot current value at the moment of acceptance
+    // This is THE critical line that prevents instant-claiming old scores
+    const startValue = getTrackKeyValue(template.trackKey);
+    
+    // === BOUNTY SESSION RESET (NEW) ===
+    // Clear any session score for this game so the bounty only counts
+    // games played AFTER acceptance — even if all-time best is already higher.
+    const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+    delete sessions[template.trackKey];
+    localStorage.setItem('megaplexSessionScores', JSON.stringify(sessions));
+    // === END SESSION RESET ===
+    
+    // For "beat_lower" — if they've never played, default to 99999 so any improvement counts
+    // For "beat" — start tracks current best so they MUST improve
+
+    // Confirm with starting value visible
+    let startInfo = '';
+    if (template.type === 'gain') {
+        startInfo = `\n📊 Your current: ${startValue}\n🎯 Need to reach: ${startValue + template.target}`;
+    } else if (template.type === 'beat') {
+        const needed = Math.max(template.target, startValue + 1);
+        startInfo = `\n📊 Your best: ${startValue}\n🎯 Need to reach: ${needed} (must be a NEW record)`;
+    } else if (template.type === 'beat_lower') {
+        const displayBest = startValue >= 99999 ? 'Never played' : startValue + 'ms';
+        startInfo = `\n📊 Your best: ${displayBest}\n🎯 Need: ≤${template.target} (must be a NEW record)`;
+    }
+
+    if (!confirm(`Accept bounty: "${template.title}"?\n\n💸 COST: ${template.cost} 🎟️\n🏆 REWARD: ${template.reward} 🎟️${template.prestigeReward ? ` + ${template.prestigeReward} ✨` : ''}\n⏰ TIME LIMIT: 24 hours${startInfo}\n\nProceed?`)) {
+        return;
+    }
+
+    // Deduct tokens
+    tokens -= template.cost;
+    localStorage.setItem('megaplexTokens', tokens);
+    document.getElementById('tokenBalance').innerText = tokens;
+    document.getElementById('miniTokenBalance').innerText = tokens;
+
+    // Add to active with snapshot
+    const now = Date.now();
+    data.active.push({
+        ...template,
+        acceptedAt: now,
+        expiresAt: now + BOUNTY_TIME_LIMIT_MS,
+        startValue: startValue
+    });
+    setBounties(data);
+
+    sfx.coin();
+    toast(`Bounty accepted! Improve from ${startValue} to win.`, 'success', '🎯');
+    renderBountyView();
+    saveToCloud();
+}
+
+function claimBounty(bountyId) {
+    sfx.win();
+    const data = getBounties();
+    const idx = data.active.findIndex(b => b.id === bountyId);
+    if (idx === -1) return;
+
+    const bounty = data.active[idx];
+    if (!isBountyCompleted(bounty)) {
+        toast('Bounty not yet completed!', 'warning', '⚠️');
+        return;
+    }
+
+    // Award tokens with prestige multiplier
+    let tokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+    const finalReward = Math.floor(bounty.reward * getPrestigeMultiplier());
+    tokens += finalReward;
+    addLifetimeXp(bounty.reward);
+    localStorage.setItem('megaplexTokens', tokens);
+    document.getElementById('tokenBalance').innerText = tokens;
+    document.getElementById('miniTokenBalance').innerText = tokens;
+    document.getElementById('tokenDisplayBox').classList.add('pop');
+    setTimeout(() => document.getElementById('tokenDisplayBox').classList.remove('pop'), 500);
+
+    // Award prestige tokens if applicable
+    if (bounty.prestigeReward) {
+        setPrestigeTokens(getPrestigeTokens() + bounty.prestigeReward);
+        updatePrestigeUI();
+        toast(`+${bounty.prestigeReward} ✨ Prestige Token!`, 'prestige', '✨');
+    }
+
+    // Move to completed log
+    data.completed.push({ ...bounty, status: 'completed', completedAt: Date.now() });
+    data.active.splice(idx, 1);
+    
+    // Track today's claimed bounties (so they show as crossed-out)
+    if (!data.claimedToday) data.claimedToday = [];
+    data.claimedToday.push(bountyId);
+    
+    setBounties(data);
+
+    setTimeout(() => {
+        toast(`Bounty claimed! +${finalReward} 🎟️`, 'success', '🏆');
+    }, 200);
+
+    renderBountyView();
+    renderHubAvatar();
+    saveToCloud();
+}
+
+// ===== Format remaining time =====
+function formatTime(ms) {
+    if (ms <= 0) return '00:00:00';
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// ===== Render bounty view =====
+function renderBountyView() {
+    refreshBountiesIfNeeded();
+    const data = getBounties();
+    const container = document.getElementById('bountyContainer');
+    if (!container) return;
+
+    // Header stats
+    const totalCompleted = data.completed.filter(b => b.status === 'completed').length;
+    const totalFailed    = data.completed.filter(b => b.status === 'failed').length;
+    const totalEarned    = data.completed
+        .filter(b => b.status === 'completed')
+        .reduce((sum, b) => sum + b.reward, 0);
+    const activeCount    = data.active.length;
+
+    document.getElementById('bountyHeaderStats').innerHTML = `
+        <div class="bounty-stat"><div class="bounty-stat-value">${activeCount}</div><div class="bounty-stat-label">Active</div></div>
+        <div class="bounty-stat" style="border-color:#1dd1a1;"><div class="bounty-stat-value" style="color:#1dd1a1;">${totalCompleted}</div><div class="bounty-stat-label">Completed</div></div>
+        <div class="bounty-stat" style="border-color:#ff4757;"><div class="bounty-stat-value" style="color:#ff4757;">${totalFailed}</div><div class="bounty-stat-label">Failed</div></div>
+        <div class="bounty-stat" style="border-color:#feca57;"><div class="bounty-stat-value" style="color:#feca57;">${totalEarned.toLocaleString()}</div><div class="bounty-stat-label">🎟️ Earned</div></div>
+    `;
+
+    container.innerHTML = '';
+
+    // Render active bounties first
+    data.active.forEach(b => container.innerHTML += renderBountyCard(b, 'active'));
+    // Then available bounties
+    data.available.forEach(b => {
+        const isAccepted = data.active.some(a => a.id === b.id);
+        if (!isAccepted) container.innerHTML += renderBountyCard(b, 'available');
+    });
+
+    if (container.innerHTML === '') {
+        container.innerHTML = `<div class="bounty-empty">No bounties available — check back soon!</div>`;
+    }
+
+    updateBountyTabBadge();
+}
+
+function renderBountyCard(bounty, mode) {
+    const tokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+    const canAfford = tokens >= bounty.cost;
+    const data = getBounties();
+    const alreadyClaimedToday = data.claimedToday && data.claimedToday.includes(bounty.id);
+
+    const prestigeRewardText = bounty.prestigeReward
+        ? ` <span class="reward-prestige">+${bounty.prestigeReward}✨</span>`
+        : '';
+
+    if (mode === 'active') {
+        const completed = isBountyCompleted(bounty);
+        const progress = getBountyProgress(bounty);
+        const current = getTrackKeyValue(bounty.trackKey);
+        const remainingMs = bounty.expiresAt - Date.now();
+        const urgent = remainingMs < 3600000;
+
+                        // Progress text now uses SESSION score (post-acceptance only)
+        const sessionScore = getSessionScore(bounty.trackKey);
+        let progText = '';
+        if (sessionScore === undefined) {
+            progText = `▶ Play a game to start tracking!`;
+        } else if (bounty.type === 'gain' || bounty.type === 'beat') {
+            progText = `Best this bounty: ${sessionScore.toLocaleString()} / ${bounty.target.toLocaleString()}`;
+        } else if (bounty.type === 'beat_lower') {
+            progText = `Best this bounty: ${sessionScore}ms (need ≤${bounty.target}ms)`;
+        }
+
+        const buttonHTML = completed
+            ? `<button class="btn-claim-bounty" onclick="claimBounty('${bounty.id}')">🏆 CLAIM REWARD</button>`
+            : `<a href="${bounty.gameLink}" class="btn-accept-bounty" onclick="trackPlayed(this); sfx.start();" style="text-align:center; text-decoration:none; display:block;">▶ PLAY GAME</a>`;
+
+        return `
+            <div class="bounty-card ${bounty.difficulty} active">
+                <div class="bounty-card-header">
+                    <div class="bounty-icon-box">${bounty.icon}</div>
+                    <div style="flex:1;">
+                        <h3 class="bounty-title">${bounty.title}</h3>
+                        <span class="bounty-difficulty-badge ${bounty.difficulty}">${bounty.difficulty}</span>
+                    </div>
+                </div>
+                <p class="bounty-desc">${bounty.desc}</p>
+                <div class="bounty-progress-wrap">
+                    <div class="bounty-progress-fill" style="width:${progress}%"></div>
+                </div>
+                <div class="bounty-progress-text">${progText} (${progress}%)</div>
+                <div class="bounty-timer ${urgent ? 'urgent' : ''}" data-expires="${bounty.expiresAt}">
+                    ⏰ ${formatTime(remainingMs)} remaining
+                </div>
+                <div class="bounty-rewards-row">
+                    <span class="bounty-cost">PAID: ${bounty.cost}🎟️</span>
+                    <span class="bounty-arrow">→</span>
+                    <span class="bounty-reward">${bounty.reward}🎟️${prestigeRewardText}</span>
+                </div>
+                ${buttonHTML}
+            </div>`;
+    }
+
+    // ===== Available bounties =====
+    
+    // If already claimed today — show as crossed out
+    if (alreadyClaimedToday) {
+        return `
+            <div class="bounty-card ${bounty.difficulty} claimed-today">
+                <div class="bounty-card-header">
+                    <div class="bounty-icon-box">${bounty.icon}</div>
+                    <div style="flex:1;">
+                        <h3 class="bounty-title" style="text-decoration: line-through; opacity: 0.6;">${bounty.title}</h3>
+                        <span class="bounty-status-pill completed">✓ Claimed Today</span>
+                    </div>
+                </div>
+                <p class="bounty-desc" style="text-decoration: line-through; opacity: 0.5;">${bounty.desc}</p>
+                <div class="bounty-rewards-row" style="opacity:0.5;">
+                    <span class="bounty-cost">${bounty.cost}🎟️</span>
+                    <span class="bounty-arrow">→</span>
+                    <span class="bounty-reward">${bounty.reward}🎟️${prestigeRewardText}</span>
+                </div>
+                <button class="btn-accept-bounty" disabled>✓ ALREADY CLAIMED — RESETS WITH NEW BOUNTIES</button>
+            </div>`;
+    }
+
+    // Normal available
+    return `
+        <div class="bounty-card ${bounty.difficulty}">
+            <div class="bounty-card-header">
+                <div class="bounty-icon-box">${bounty.icon}</div>
+                <div style="flex:1;">
+                    <h3 class="bounty-title">${bounty.title}</h3>
+                    <span class="bounty-difficulty-badge ${bounty.difficulty}">${bounty.difficulty}</span>
+                </div>
+            </div>
+            <p class="bounty-desc">${bounty.desc}</p>
+            <div class="bounty-rewards-row">
+                <span class="bounty-cost">${bounty.cost}🎟️</span>
+                <span class="bounty-arrow">→</span>
+                <span class="bounty-reward">${bounty.reward}🎟️${prestigeRewardText}</span>
+            </div>
+            <button class="btn-accept-bounty" onclick="acceptBounty('${bounty.id}')" ${canAfford ? '' : 'disabled'}>
+                ${canAfford ? `🎯 ACCEPT (${bounty.cost} 🎟️)` : `🔒 NEED ${bounty.cost - tokens} MORE 🎟️`}
+            </button>
+        </div>`;
+}
+
+// ===== Update tab badge for completed bounties ready to claim =====
+function updateBountyTabBadge() {
+    const badge = document.getElementById('bountyTabBadge');
+    if (!badge) return;
+    const data = getBounties();
+    const readyCount = data.active.filter(b => isBountyCompleted(b)).length;
+    if (readyCount > 0) {
+        badge.innerHTML = `<span class="bounty-tab-badge">${readyCount}</span>`;
+    } else {
+        badge.innerHTML = '';
+    }
+}
+
+// ===== Live timer ticking =====
+function startBountyTimer() {
+    if (bountyTimerInterval) clearInterval(bountyTimerInterval);
+    bountyTimerInterval = setInterval(() => {
+        // Update refresh countdown
+        const data = getBounties();
+        const refreshMs = (data.lastRefresh + BOUNTY_REFRESH_MS) - Date.now();
+        const refreshEl = document.getElementById('bountyRefreshTimer');
+        if (refreshEl) {
+            refreshEl.innerText = `⏰ New bounties in: ${formatTime(refreshMs)}`;
+        }
+        // Update active bounty timers in DOM
+        document.querySelectorAll('.bounty-timer[data-expires]').forEach(el => {
+            const expiresAt = parseInt(el.dataset.expires);
+            const remaining = expiresAt - Date.now();
+            el.innerText = `⏰ ${formatTime(remaining)} remaining`;
+            if (remaining < 3600000) el.classList.add('urgent');
+            // Auto-fail when expired
+            if (remaining <= 0) {
+                refreshBountiesIfNeeded(); // will move to failed
+                renderBountyView();
+            }
+        });
+        // If refresh time hits, re-render
+        if (refreshMs <= 0) {
+            refreshBountiesIfNeeded();
+            renderBountyView();
+        }
+    }, 1000);
+}
+function stopBountyTimer() {
+    if (bountyTimerInterval) { clearInterval(bountyTimerInterval); bountyTimerInterval = null; }
+}
     </script>
 </body>
 </html>

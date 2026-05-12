@@ -38,20 +38,37 @@ window.MegaplexCloud.registeredGameKeys = [
     { key: 'tttInventory',              type: 'json'   },
     { key: 'megaplexTokens',            type: 'string' },
     { key: 'megaplexLifetimeXp',        type: 'string' },
-    { key: 'megaplexPrestigeRank',      type: 'string' },   // ← ADD THIS
-    { key: 'megaplexPrestigeTokens',    type: 'string' },   // ← ADD THIS
-    { key: 'megaplexMemberSince',       type: 'string' },   // ← BONUS: also missing
+    { key: 'megaplexPrestigeRank',      type: 'string' },
+    { key: 'megaplexPrestigeTokens',    type: 'string' },
+    { key: 'megaplexMemberSince',       type: 'string' },
     { key: 'lastCalculatedScoreValue',  type: 'string' },
     { key: 'avatarData',                type: 'json'   },
     { key: 'avatarInventory',           type: 'json'   },
     { key: 'avatarSeenItems',           type: 'json'   },
     { key: 'claimedAchievements',       type: 'json'   },
 
+    // Add inside registeredGameKeys array
+    { key: 'megaplexBounties',          type: 'json'   },
+    { key: 'megaplexBountyDay',         type: 'string' },
+    
+    // ----- 🎯 Wager System keys -----
+    { key: 'megaplexSessionScores',     type: 'json'   },   // session score tracker (shared with bounties)
+    { key: 'megaplexLastKnownScores',   type: 'json'   },   // for detecting score changes
+    { key: 'megaplexWagerStats',        type: 'json'   },   // local W/L stats cache
+
+    // ----- 🔥 NEW: Daily Streak System keys -----
+    { key: 'megaplexStreak',            type: 'string' },   // current streak count
+    { key: 'megaplexCycleDay',          type: 'string' },   // 0-6 within the 7-day cycle
+    { key: 'megaplexStreakUnlocks',     type: 'json'   },   // array of unlocked milestone IDs
+    { key: 'megaplexActivePerks',       type: 'json'   },   // array of active perk IDs
+
     // ----- Per-game keys -----
     { key: 'nj2_times',                 type: 'json'   },
     { key: 'clickerFrenzy_save_v2',     type: 'json'   },
     { key: 'arcadeScores_v2',           type: 'json'   },
-    { key: 'cb_achievements',           type: 'json'   }
+    { key: 'cb_achievements',           type: 'json'   },
+    
+    
 ];
 
 window.MegaplexCloud.registerGameKeys = function(keysArray) {
@@ -275,14 +292,34 @@ window.MegaplexCloud.loadFromCloud = async function(uid) {
             }
         }
 
+                        // 🔒 ACCOUNT ISOLATION FIX
         window.MegaplexCloud.registeredGameKeys.forEach(({ key, type }) => {
-            if (s[key] === undefined || s[key] === null) return;
-            if (type === 'json') {
-                localStorage.setItem(key, JSON.stringify(s[key]));
+            if (s[key] !== undefined && s[key] !== null) {
+                if (type === 'json') {
+                    localStorage.setItem(key, JSON.stringify(s[key]));
+                } else {
+                    localStorage.setItem(key, s[key]);
+                }
             } else {
-                localStorage.setItem(key, s[key]);
+                localStorage.removeItem(key);
             }
         });
+
+        // Also clear non-registered account-specific keys so they don't leak
+        ['recentlyPlayed', 'megaplexLastDaily'].forEach(key => {
+            if (s[key] !== undefined && s[key] !== null) {
+                if (typeof s[key] === 'object') {
+                    localStorage.setItem(key, JSON.stringify(s[key]));
+                } else {
+                    localStorage.setItem(key, s[key]);
+                }
+            } else {
+                localStorage.removeItem(key);
+            }
+        });
+
+        console.log('[Megaplex] ✅ Cloud load OK for', data.username);
+        return true;
 
         console.log('[Megaplex] ✅ Cloud load OK for', data.username);
         return true;
@@ -601,6 +638,526 @@ window.MegaplexCloud.subscribeToSocial = function(callback) {
 };
 
 // ============================================================
+// ⚔️ WAGER SYSTEM — Friend-vs-Friend Token Battles
+// ============================================================
+
+// ---- Wager-compatible games registry ----
+// scoreType: 'higher' = bigger number wins | 'lower' = smaller number wins
+window.MegaplexCloud.WAGER_GAMES = [
+    { key: 'snake',            title: '🐍 Snake Classic',     scoreType: 'higher', link: 'snake.html' },
+    { key: 'clicker',          title: '👆 Clicker Frenzy',    scoreType: 'higher', link: 'clicker.html' },
+    { key: 'math',             title: '🧠 Quick Math',        scoreType: 'higher', link: 'math.html' },
+    { key: 'guesser',          title: '🔐 Code Breaker',      scoreType: 'higher', link: 'guesser.html' },
+    { key: 'asteroids',        title: '☄️ Quantum Asteroids', scoreType: 'higher', link: 'asteroids.html' },
+    { key: 'tanks_score',      title: '💣 Plasma Tanks',      scoreType: 'higher', link: 'tanks.html' },
+    { key: 'fps',              title: '🔫 System Breach',     scoreType: 'higher', link: 'fps.html' },
+    { key: 'cyberrunner',      title: '🏃‍♂️ Cyber Runner',      scoreType: 'higher', link: 'runner.html' },
+    { key: 'nj2_score',        title: '⚡ Neon Jumper 2',     scoreType: 'higher', link: 'neonjumper2.html' },
+    { key: 'glitch_score',     title: '💥 Glitch Brawler',    scoreType: 'higher', link: 'glitch_brawler.html' },
+    { key: 'glitch_strikers',  title: '⚔️ Glitch Strikers',   scoreType: 'higher', link: 'glitch_strikers.html' },
+    { key: 'ttt',              title: '⭕ Tic-Tac-Toe',       scoreType: 'higher', link: 'tictactoe.html' },
+    { key: 'reaction',         title: '⚡ Reaction Tester',   scoreType: 'lower',  link: 'reaction.html' },
+    { key: 'memory',           title: '👁️ Memory Match',      scoreType: 'lower',  link: 'memory.html' },
+    { key: 'platformer_deaths',title: '🏃 Neon Jumper',       scoreType: 'lower',  link: 'platformer.html' },
+    { key: 'racer_best_time',  title: '🏎️ Vaporwave Racer',   scoreType: 'lower',  link: 'racer.html' }
+];
+
+// ---- Wager amount tiers (in tokens) ----
+window.MegaplexCloud.WAGER_AMOUNTS = [
+    100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 10000000, 100000000
+];
+
+// ---- House cut configuration ----
+window.MegaplexCloud.WAGER_HOUSE_CUT_WIN = 0.10;  // 10% taken from pot when there's a winner
+window.MegaplexCloud.WAGER_HOUSE_CUT_TIE = 0.05;  // 5% per side on tie/expire-no-play
+
+// ---- Wager duration ----
+window.MegaplexCloud.WAGER_DURATION_MS = 86400000; // 24 hours after BOTH accept
+
+// ---- Helper: lookup game info ----
+window.MegaplexCloud.getWagerGameInfo = function(gameKey) {
+    return window.MegaplexCloud.WAGER_GAMES.find(g => g.key === gameKey) || null;
+};
+
+// ---- Helper: format token amount nicely ----
+window.MegaplexCloud.formatTokenAmount = function(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(n % 1000000 === 0 ? 0 : 1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k';
+    return n.toString();
+};
+
+/**
+ * Send a wager challenge to a friend.
+ * Atomically deducts the challenger's tokens (escrow) and creates the wager doc.
+ */
+window.MegaplexCloud.sendWagerChallenge = async function(opponentUid, gameKey, amount) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false, reason: 'not_logged_in' };
+    if (u.uid === opponentUid) return { success: false, reason: 'self' };
+
+    const gameInfo = window.MegaplexCloud.getWagerGameInfo(gameKey);
+    if (!gameInfo) return { success: false, reason: 'invalid_game' };
+    if (!window.MegaplexCloud.WAGER_AMOUNTS.includes(amount)) {
+        return { success: false, reason: 'invalid_amount' };
+    }
+
+    // Validate friendship + opponent existence
+    const myDocRef = fbDB.collection('players').doc(u.uid);
+    const oppDocRef = fbDB.collection('players').doc(opponentUid);
+
+    try {
+        // Use a transaction to atomically check + deduct tokens + create wager
+        const wagerRef = fbDB.collection('wagers').doc();
+        await fbDB.runTransaction(async (tx) => {
+            const myDoc = await tx.get(myDocRef);
+            const oppDoc = await tx.get(oppDocRef);
+            if (!myDoc.exists) throw new Error('your_doc_missing');
+            if (!oppDoc.exists) throw new Error('opponent_missing');
+
+            const myData = myDoc.data();
+            const oppData = oppDoc.data();
+
+            // Must be friends
+            const myFriends = myData.friends || [];
+            if (!myFriends.includes(opponentUid)) throw new Error('not_friends');
+
+            // Check token balance (read from saveData since that's where it lives)
+            const myTokens = parseInt((myData.saveData && myData.saveData.megaplexTokens) || 0);
+            if (myTokens < amount) throw new Error('insufficient_tokens');
+
+            // Deduct tokens from challenger
+            const newBalance = myTokens - amount;
+            tx.set(myDocRef, {
+                saveData: { megaplexTokens: String(newBalance) }
+            }, { merge: true });
+
+            // Create the wager doc
+            const now = Date.now();
+            tx.set(wagerRef, {
+                challenger: {
+                    uid: u.uid,
+                    username: myData.username,
+                    avatar: (myData.publicProfile && myData.publicProfile.avatar) || {},
+                    score: null,
+                    submittedAt: null,
+                    claimed: false
+                },
+                opponent: {
+                    uid: opponentUid,
+                    username: oppData.username,
+                    avatar: (oppData.publicProfile && oppData.publicProfile.avatar) || {},
+                    score: null,
+                    submittedAt: null,
+                    claimed: false
+                },
+                game: {
+                    key: gameInfo.key,
+                    title: gameInfo.title,
+                    scoreType: gameInfo.scoreType,
+                    link: gameInfo.link
+                },
+                amount: amount,
+                pot: amount * 2,
+                status: 'pending',
+                winner: null,
+                createdAt: now,
+                acceptedAt: null,
+                expiresAt: null,
+                completedAt: null
+            });
+        });
+
+        // Sync local token balance with cloud (we just deducted)
+        const myFresh = await myDocRef.get();
+        const newTokens = parseInt(myFresh.data().saveData.megaplexTokens) || 0;
+        localStorage.setItem('megaplexTokens', String(newTokens));
+
+        console.log('[Megaplex] ⚔️ Wager challenge sent — escrowed', amount, 'tokens');
+        return { success: true, wagerId: wagerRef.id, newTokens };
+    } catch (err) {
+        console.error('[Megaplex] sendWagerChallenge failed:', err);
+        return { success: false, reason: err.message || 'error' };
+    }
+};
+
+/**
+ * Accept an incoming wager challenge.
+ * Atomically deducts opponent's tokens & flips status to 'active'.
+ */
+window.MegaplexCloud.acceptWager = async function(wagerId) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false, reason: 'not_logged_in' };
+
+    const wagerRef = fbDB.collection('wagers').doc(wagerId);
+    const myDocRef = fbDB.collection('players').doc(u.uid);
+
+    try {
+        await fbDB.runTransaction(async (tx) => {
+            const wagerDoc = await tx.get(wagerRef);
+            const myDoc = await tx.get(myDocRef);
+            if (!wagerDoc.exists) throw new Error('wager_missing');
+            if (!myDoc.exists) throw new Error('your_doc_missing');
+
+            const w = wagerDoc.data();
+            if (w.opponent.uid !== u.uid) throw new Error('not_your_wager');
+            if (w.status !== 'pending') throw new Error('already_resolved');
+
+            const myTokens = parseInt((myDoc.data().saveData && myDoc.data().saveData.megaplexTokens) || 0);
+            if (myTokens < w.amount) throw new Error('insufficient_tokens');
+
+            // Deduct opponent tokens
+            tx.set(myDocRef, {
+                saveData: { megaplexTokens: String(myTokens - w.amount) }
+            }, { merge: true });
+
+            // Activate the wager
+            const now = Date.now();
+            tx.update(wagerRef, {
+                status: 'active',
+                acceptedAt: now,
+                expiresAt: now + window.MegaplexCloud.WAGER_DURATION_MS
+            });
+        });
+
+        // Sync local tokens
+        const myFresh = await myDocRef.get();
+        const newTokens = parseInt(myFresh.data().saveData.megaplexTokens) || 0;
+        localStorage.setItem('megaplexTokens', String(newTokens));
+
+        // Clear session score for this wager's game so it's a fresh challenge
+        const wagerFresh = await wagerRef.get();
+        const gameKey = wagerFresh.data().game.key;
+        const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+        delete sessions[gameKey];
+        localStorage.setItem('megaplexSessionScores', JSON.stringify(sessions));
+
+        console.log('[Megaplex] ⚔️ Wager accepted!');
+        return { success: true, newTokens };
+    } catch (err) {
+        console.error('[Megaplex] acceptWager failed:', err);
+        return { success: false, reason: err.message || 'error' };
+    }
+};
+
+/**
+ * Decline an incoming wager. Refunds the challenger.
+ */
+window.MegaplexCloud.declineWager = async function(wagerId) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false, reason: 'not_logged_in' };
+
+    const wagerRef = fbDB.collection('wagers').doc(wagerId);
+
+    try {
+        await fbDB.runTransaction(async (tx) => {
+            const wagerDoc = await tx.get(wagerRef);
+            if (!wagerDoc.exists) throw new Error('wager_missing');
+            const w = wagerDoc.data();
+            if (w.opponent.uid !== u.uid) throw new Error('not_your_wager');
+            if (w.status !== 'pending') throw new Error('already_resolved');
+
+            // Refund challenger
+            const challengerRef = fbDB.collection('players').doc(w.challenger.uid);
+            const challengerDoc = await tx.get(challengerRef);
+            const cTokens = parseInt((challengerDoc.data().saveData && challengerDoc.data().saveData.megaplexTokens) || 0);
+            tx.set(challengerRef, {
+                saveData: { megaplexTokens: String(cTokens + w.amount) }
+            }, { merge: true });
+
+            // Mark declined
+            tx.update(wagerRef, {
+                status: 'declined',
+                completedAt: Date.now()
+            });
+        });
+        console.log('[Megaplex] Wager declined, challenger refunded');
+        return { success: true };
+    } catch (err) {
+        console.error('[Megaplex] declineWager failed:', err);
+        return { success: false, reason: err.message || 'error' };
+    }
+};
+
+/**
+ * Cancel an outgoing pending wager. Refunds yourself.
+ */
+window.MegaplexCloud.cancelWager = async function(wagerId) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false, reason: 'not_logged_in' };
+
+    const wagerRef = fbDB.collection('wagers').doc(wagerId);
+    const myDocRef = fbDB.collection('players').doc(u.uid);
+
+    try {
+        await fbDB.runTransaction(async (tx) => {
+            const wagerDoc = await tx.get(wagerRef);
+            const myDoc = await tx.get(myDocRef);
+            if (!wagerDoc.exists) throw new Error('wager_missing');
+            const w = wagerDoc.data();
+            if (w.challenger.uid !== u.uid) throw new Error('not_your_wager');
+            if (w.status !== 'pending') throw new Error('already_resolved');
+
+            // Refund self
+            const myTokens = parseInt((myDoc.data().saveData && myDoc.data().saveData.megaplexTokens) || 0);
+            tx.set(myDocRef, {
+                saveData: { megaplexTokens: String(myTokens + w.amount) }
+            }, { merge: true });
+
+            tx.update(wagerRef, {
+                status: 'cancelled',
+                completedAt: Date.now()
+            });
+        });
+
+        const myFresh = await myDocRef.get();
+        const newTokens = parseInt(myFresh.data().saveData.megaplexTokens) || 0;
+        localStorage.setItem('megaplexTokens', String(newTokens));
+        return { success: true, newTokens };
+    } catch (err) {
+        console.error('[Megaplex] cancelWager failed:', err);
+        return { success: false, reason: err.message || 'error' };
+    }
+};
+
+/**
+ * Submit your session score for an active wager.
+ * Pulls from megaplexSessionScores (set when player plays the game after accepting).
+ */
+window.MegaplexCloud.submitWagerScore = async function(wagerId) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false, reason: 'not_logged_in' };
+
+    const wagerRef = fbDB.collection('wagers').doc(wagerId);
+
+    try {
+        const wagerDoc = await wagerRef.get();
+        if (!wagerDoc.exists) return { success: false, reason: 'wager_missing' };
+        const w = wagerDoc.data();
+        if (w.status !== 'active') return { success: false, reason: 'not_active' };
+
+        // Determine which side I'm on
+        const isChallenger = w.challenger.uid === u.uid;
+        const isOpponent = w.opponent.uid === u.uid;
+        if (!isChallenger && !isOpponent) return { success: false, reason: 'not_your_wager' };
+
+        const mySide = isChallenger ? 'challenger' : 'opponent';
+        if (w[mySide].score !== null) return { success: false, reason: 'already_submitted' };
+
+        // Pull session score
+        const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+        const sessionScore = sessions[w.game.key];
+        if (sessionScore === undefined || sessionScore === null) {
+            return { success: false, reason: 'no_session_score' };
+        }
+
+        // Write the score
+        const updates = {};
+        updates[mySide + '.score'] = sessionScore;
+        updates[mySide + '.submittedAt'] = Date.now();
+        await wagerRef.update(updates);
+
+        console.log('[Megaplex] ⚔️ Wager score submitted:', sessionScore);
+        return { success: true, score: sessionScore };
+    } catch (err) {
+        console.error('[Megaplex] submitWagerScore failed:', err);
+        return { success: false, reason: err.message || 'error' };
+    }
+};
+
+/**
+ * Resolve a wager — determine winner and pay out.
+ * Called automatically when claim is requested OR when wager expires.
+ */
+window.MegaplexCloud.resolveWager = async function(wagerId) {
+    const wagerRef = fbDB.collection('wagers').doc(wagerId);
+    try {
+        await fbDB.runTransaction(async (tx) => {
+            const wagerDoc = await tx.get(wagerRef);
+            if (!wagerDoc.exists) throw new Error('wager_missing');
+            const w = wagerDoc.data();
+            if (w.status !== 'active') return; // already resolved
+
+            const cScore = w.challenger.score;
+            const oScore = w.opponent.score;
+            const now = Date.now();
+            const expired = now >= w.expiresAt;
+
+            // If still time left and not both submitted, don't resolve yet
+            if (!expired && (cScore === null || oScore === null)) {
+                throw new Error('not_ready');
+            }
+
+            // Determine winner
+            let winner = null;
+            let resultStatus = 'completed';
+
+            if (cScore === null && oScore === null) {
+                // Both no-shows — full refund minus 5% each
+                resultStatus = 'tied';
+            } else if (cScore === null) {
+                winner = w.opponent.uid;
+            } else if (oScore === null) {
+                winner = w.challenger.uid;
+            } else if (cScore === oScore) {
+                resultStatus = 'tied';
+            } else {
+                const higherWins = w.game.scoreType === 'higher';
+                if (higherWins) {
+                    winner = (cScore > oScore) ? w.challenger.uid : w.opponent.uid;
+                } else {
+                    winner = (cScore < oScore) ? w.challenger.uid : w.opponent.uid;
+                }
+            }
+
+            // Calculate payouts
+            const pot = w.pot;
+            let challengerPayout = 0;
+            let opponentPayout = 0;
+
+            if (resultStatus === 'tied') {
+                // 5% per side cut, refund the rest
+                const cut = Math.floor(w.amount * window.MegaplexCloud.WAGER_HOUSE_CUT_TIE);
+                const refundEach = w.amount - cut;
+                challengerPayout = refundEach;
+                opponentPayout = refundEach;
+            } else {
+                // Winner takes pot minus 10%
+                const cut = Math.floor(pot * window.MegaplexCloud.WAGER_HOUSE_CUT_WIN);
+                const winnings = pot - cut;
+                if (winner === w.challenger.uid) challengerPayout = winnings;
+                else opponentPayout = winnings;
+            }
+
+            // Pay out (read both player docs)
+            const cRef = fbDB.collection('players').doc(w.challenger.uid);
+            const oRef = fbDB.collection('players').doc(w.opponent.uid);
+            const [cDoc, oDoc] = await Promise.all([tx.get(cRef), tx.get(oRef)]);
+
+            if (challengerPayout > 0) {
+                const cTok = parseInt((cDoc.data().saveData && cDoc.data().saveData.megaplexTokens) || 0);
+                tx.set(cRef, { saveData: { megaplexTokens: String(cTok + challengerPayout) } }, { merge: true });
+            }
+            if (opponentPayout > 0) {
+                const oTok = parseInt((oDoc.data().saveData && oDoc.data().saveData.megaplexTokens) || 0);
+                tx.set(oRef, { saveData: { megaplexTokens: String(oTok + opponentPayout) } }, { merge: true });
+            }
+
+            // Update wager
+            tx.update(wagerRef, {
+                status: resultStatus,
+                winner: winner,
+                completedAt: now,
+                challengerPayout: challengerPayout,
+                opponentPayout: opponentPayout
+            });
+        });
+
+        return { success: true };
+    } catch (err) {
+        if (err.message === 'not_ready') return { success: false, reason: 'not_ready' };
+        console.error('[Megaplex] resolveWager failed:', err);
+        return { success: false, reason: err.message || 'error' };
+    }
+};
+
+/**
+ * Mark a wager as 'claimed' from the local user's side.
+ * Called when the user clicks "Collect Winnings".
+ */
+window.MegaplexCloud.markWagerClaimed = async function(wagerId) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false };
+    const wagerRef = fbDB.collection('wagers').doc(wagerId);
+    try {
+        const doc = await wagerRef.get();
+        if (!doc.exists) return { success: false };
+        const w = doc.data();
+        const isChallenger = w.challenger.uid === u.uid;
+        const updates = {};
+        updates[(isChallenger ? 'challenger' : 'opponent') + '.claimed'] = true;
+        await wagerRef.update(updates);
+
+        // Sync local token balance after claim (in case payout already hit cloud)
+        const myDoc = await fbDB.collection('players').doc(u.uid).get();
+        const tokens = parseInt(myDoc.data().saveData?.megaplexTokens || 0);
+        localStorage.setItem('megaplexTokens', String(tokens));
+        return { success: true, newTokens: tokens };
+    } catch (err) {
+        console.error('[Megaplex] markWagerClaimed failed:', err);
+        return { success: false };
+    }
+};
+
+/**
+ * Subscribe to live wager updates for the current user.
+ * Returns wagers where I'm either challenger or opponent.
+ */
+window.MegaplexCloud.subscribeToWagers = function(callback) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return () => {};
+
+    // Need two queries because Firestore can't OR across fields cheaply
+    let asChallenger = [];
+    let asOpponent = [];
+
+    const fireUpdate = () => {
+        const all = [...asChallenger, ...asOpponent];
+        // Dedupe by wager ID
+        const map = new Map();
+        all.forEach(w => map.set(w.id, w));
+        const wagers = Array.from(map.values());
+        callback(wagers);
+    };
+
+    const unsub1 = fbDB.collection('wagers')
+        .where('challenger.uid', '==', u.uid)
+        .onSnapshot((snap) => {
+            asChallenger = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            fireUpdate();
+        }, (err) => console.error('[Megaplex] wager sub (challenger) error:', err));
+
+    const unsub2 = fbDB.collection('wagers')
+        .where('opponent.uid', '==', u.uid)
+        .onSnapshot((snap) => {
+            asOpponent = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            fireUpdate();
+        }, (err) => console.error('[Megaplex] wager sub (opponent) error:', err));
+
+    return () => { unsub1(); unsub2(); };
+};
+
+/**
+ * Auto-resolve any expired active wagers for the current user.
+ * Call this on page load.
+ */
+window.MegaplexCloud.checkExpiredWagers = async function() {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return;
+    try {
+        const now = Date.now();
+        const [a, b] = await Promise.all([
+            fbDB.collection('wagers')
+                .where('challenger.uid', '==', u.uid)
+                .where('status', '==', 'active')
+                .get(),
+            fbDB.collection('wagers')
+                .where('opponent.uid', '==', u.uid)
+                .where('status', '==', 'active')
+                .get()
+        ]);
+        const expiredIds = new Set();
+        [...a.docs, ...b.docs].forEach(d => {
+            if (d.data().expiresAt <= now) expiredIds.add(d.id);
+        });
+        for (const id of expiredIds) {
+            await window.MegaplexCloud.resolveWager(id);
+        }
+    } catch (err) {
+        console.warn('[Megaplex] checkExpiredWagers error:', err);
+    }
+};
+
+// ============================================================
 // 🔐 AUTH STATE LISTENER
 // ============================================================
 fbAuth.onAuthStateChanged(async (user) => {
@@ -662,5 +1219,5 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pagehide', () => window.MegaplexCloud.saveOnExit());
 window.addEventListener('beforeunload', () => window.MegaplexCloud.saveOnExit());
 
-console.log('[Megaplex] Firebase module loaded (v2.3, ' +
-    window.MegaplexCloud.registeredGameKeys.length + ' keys registered, social system online)');
+console.log('[Megaplex] Firebase module loaded (v2.4, ' +
+    window.MegaplexCloud.registeredGameKeys.length + ' keys registered, social + wager systems online)');

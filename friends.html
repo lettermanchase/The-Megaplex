@@ -218,9 +218,56 @@
             position: sticky; top: 100px;
             max-height: calc(100vh - 130px);
             display: flex; flex-direction: column;
+            overflow: hidden;
         }
         @media (max-width: 900px) {
             .sidebar { position: static; max-height: none; }
+        }
+        
+        /* The scrollable area containing all sections except the search bar */
+        .sidebar-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 6px;
+            margin-right: -6px;  /* hide scrollbar gutter visually */
+        }
+        .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(0, 210, 211, 0.5); border-radius: 3px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+
+        /* Each section gets a height cap and its own mini-scrollbar
+           so sections don't fight for space */
+        .sidebar-section { margin-bottom: 6px; }
+        .sidebar-section-body {
+            max-height: 240px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .sidebar-section-body::-webkit-scrollbar { width: 4px; }
+        .sidebar-section-body::-webkit-scrollbar-thumb { background: rgba(0, 210, 211, 0.4); border-radius: 2px; }
+
+        /* Friends section grows to fill remaining space */
+        .sidebar-section.friends-section .sidebar-section-body {
+            max-height: 400px;
+        }
+
+        /* Collapsible section toggle */
+        .section-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        .section-header .collapse-icon {
+            transition: transform 0.2s;
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+        .section-header.collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+        .sidebar-section.collapsed .sidebar-section-body {
+            max-height: 0;
+            overflow: hidden;
+            padding: 0;
         }
 
         .search-section { margin-bottom: 20px; }
@@ -635,6 +682,314 @@
         }
         .needs-login h2 { color: #00d2d3; font-family: 'Orbitron', sans-serif; }
         .needs-login a { color: #feca57; }
+
+        .needs-login {
+            text-align: center; padding: 60px 20px; color: #aaa;
+        }
+        .needs-login h2 { color: #00d2d3; font-family: 'Orbitron', sans-serif; }
+        .needs-login a { color: #feca57; }
+
+        /* ============================================================
+           ⚔️ WAGER SYSTEM STYLES
+           ============================================================ */
+        .pill.purple { border-color: #a55eea; color: #a55eea; }
+
+        .section-count.wager { background: rgba(165, 94, 234, 0.2); color: #a55eea; border-color: rgba(165, 94, 234, 0.4); }
+        .section-count.gold { background: rgba(254, 202, 87, 0.2); color: #feca57; border-color: rgba(254, 202, 87, 0.4); }
+
+        /* Wager card in sidebar */
+        .wager-card {
+            background: linear-gradient(135deg, rgba(165, 94, 234, 0.08), rgba(0,0,0,0.5));
+            border: 1px solid rgba(165, 94, 234, 0.4);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+        .wager-card:hover {
+            border-color: #a55eea;
+            transform: translateX(3px);
+            box-shadow: -3px 0 15px rgba(165, 94, 234, 0.3);
+        }
+        .wager-card.pending { border-color: rgba(254, 202, 87, 0.5); background: linear-gradient(135deg, rgba(254, 202, 87, 0.08), rgba(0,0,0,0.5)); }
+        .wager-card.ready-claim {
+            border-color: #1dd1a1;
+            background: linear-gradient(135deg, rgba(29, 209, 161, 0.15), rgba(0,0,0,0.5));
+            animation: claimReadyPulse 1.6s ease-in-out infinite alternate;
+        }
+        @keyframes claimReadyPulse {
+            from { box-shadow: 0 0 6px rgba(29, 209, 161, 0.3); }
+            to   { box-shadow: 0 0 18px rgba(29, 209, 161, 0.7); }
+        }
+
+        .wager-card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 6px;
+        }
+        .wager-vs {
+            color: #fff; font-weight: bold; font-size: 0.9em;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .wager-vs .vs-tag {
+            color: #a55eea; font-family: 'Orbitron', sans-serif;
+            font-size: 0.75em; padding: 0 4px;
+        }
+        .wager-amount {
+            background: rgba(254, 202, 87, 0.2); color: #feca57;
+            padding: 2px 8px; border-radius: 8px;
+            font-size: 0.75em; font-weight: bold;
+            border: 1px solid rgba(254, 202, 87, 0.4);
+            white-space: nowrap;
+        }
+        .wager-game-line {
+            color: #c8d6e5; font-size: 0.8em; margin-top: 2px;
+        }
+        .wager-status-line {
+            font-size: 0.75em; margin-top: 4px;
+            color: #888; font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+        .wager-status-line.urgent { color: #ff4757; animation: urgent 1.2s alternate infinite; }
+        @keyframes urgent { from { opacity: 0.7; } to { opacity: 1; } }
+        .wager-status-line.win   { color: #1dd1a1; }
+        .wager-status-line.lose  { color: #ff4757; }
+        .wager-status-line.tie   { color: #feca57; }
+
+        /* ============= CHALLENGE MODAL ============= */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            display: none; align-items: center; justify-content: center;
+            z-index: 8000; backdrop-filter: blur(8px);
+        }
+        .modal-overlay.show { display: flex; animation: fadeInModal 0.25s; }
+        @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+
+        .wager-modal {
+            background: linear-gradient(135deg, #1a1a2e, #2d1b4e);
+            border: 2px solid #a55eea;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 540px;
+            width: 92%;
+            box-shadow: 0 0 40px rgba(165, 94, 234, 0.5);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .wager-modal h2 {
+            color: #a55eea; font-family: 'Orbitron', sans-serif;
+            margin: 0 0 8px; text-align: center; letter-spacing: 2px;
+        }
+        .wager-modal-sub {
+            text-align: center; color: #c8d6e5;
+            font-size: 0.9em; margin-bottom: 22px;
+        }
+        .wager-modal-close {
+            position: absolute; top: 12px; right: 16px;
+            background: none; border: none; color: #fff;
+            font-size: 1.6em; cursor: pointer; opacity: 0.6;
+        }
+        .wager-modal-close:hover { opacity: 1; }
+
+        .wager-modal-section {
+            margin-bottom: 18px;
+        }
+        .wager-modal-label {
+            font-family: 'Orbitron', sans-serif;
+            color: #a55eea; font-size: 0.85em;
+            letter-spacing: 2px; text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .wager-game-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 4px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+        .wager-game-pick {
+            background: rgba(0,0,0,0.5); border: 1px solid rgba(165, 94, 234, 0.3);
+            border-radius: 8px; padding: 10px;
+            text-align: center; cursor: pointer; transition: 0.15s;
+            color: #fff; font-size: 0.85em;
+        }
+        .wager-game-pick:hover { border-color: #a55eea; background: rgba(165, 94, 234, 0.15); }
+        .wager-game-pick.selected {
+            border-color: #a55eea; background: rgba(165, 94, 234, 0.3);
+            box-shadow: 0 0 15px rgba(165, 94, 234, 0.4);
+        }
+        .wager-game-pick-type {
+            font-size: 0.7em; color: #888; margin-top: 4px;
+        }
+        .wager-game-pick.selected .wager-game-pick-type { color: #c8d6e5; }
+
+        .wager-amount-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 8px;
+        }
+        .wager-amount-pick {
+            background: rgba(0,0,0,0.5); border: 1px solid rgba(254, 202, 87, 0.3);
+            border-radius: 8px; padding: 10px;
+            text-align: center; cursor: pointer; transition: 0.15s;
+            color: #feca57; font-weight: bold; font-family: 'Orbitron', sans-serif;
+            font-size: 0.85em;
+        }
+        .wager-amount-pick:hover { border-color: #feca57; background: rgba(254, 202, 87, 0.1); }
+        .wager-amount-pick.selected {
+            border-color: #feca57; background: rgba(254, 202, 87, 0.25);
+            box-shadow: 0 0 15px rgba(254, 202, 87, 0.4);
+        }
+        .wager-amount-pick.disabled {
+            opacity: 0.3; cursor: not-allowed; pointer-events: none;
+        }
+
+        .wager-summary {
+            background: rgba(0,0,0,0.5); border-radius: 10px;
+            padding: 14px; margin: 16px 0;
+            border: 1px dashed rgba(165, 94, 234, 0.4);
+        }
+        .wager-summary-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 4px 0; font-size: 0.95em;
+        }
+        .wager-summary-row.big {
+            border-top: 1px solid rgba(165, 94, 234, 0.3);
+            padding-top: 10px; margin-top: 6px;
+            font-size: 1.1em; font-weight: bold;
+        }
+        .wager-summary-label { color: #aaa; }
+        .wager-summary-value { color: #feca57; font-weight: bold; font-family: monospace; }
+        .wager-summary-value.win { color: #1dd1a1; }
+
+        .btn-wager-send {
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, #a55eea, #6c5ce7);
+            color: #fff; border: none; border-radius: 10px;
+            font-weight: bold; font-size: 1em; cursor: pointer;
+            font-family: 'Orbitron', sans-serif; letter-spacing: 2px;
+            transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(165, 94, 234, 0.4);
+        }
+        .btn-wager-send:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(165, 94, 234, 0.7);
+        }
+        .btn-wager-send:disabled {
+            background: #333; color: #666; cursor: not-allowed; box-shadow: none;
+        }
+
+        .btn-action.btn-challenge {
+            background: linear-gradient(135deg, #a55eea, #6c5ce7);
+            color: #fff; box-shadow: 0 0 12px rgba(165, 94, 234, 0.4);
+        }
+        .btn-action.btn-challenge:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(165, 94, 234, 0.6); }
+
+        /* ============= ACTIVE WAGER DETAIL CARD (in profile view) ============= */
+        .active-wager-card {
+            background: linear-gradient(135deg, rgba(165, 94, 234, 0.1), rgba(0,0,0,0.5));
+            border: 2px solid rgba(165, 94, 234, 0.4);
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 14px;
+            position: relative;
+        }
+        .active-wager-card.ready { border-color: #1dd1a1; background: linear-gradient(135deg, rgba(29, 209, 161, 0.1), rgba(0,0,0,0.5)); }
+        .active-wager-card.pending { border-color: #feca57; background: linear-gradient(135deg, rgba(254, 202, 87, 0.08), rgba(0,0,0,0.5)); }
+        .active-wager-card.completed { opacity: 0.85; border-color: #555; background: rgba(0,0,0,0.5); }
+
+        .aw-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px dashed rgba(165, 94, 234, 0.3);
+            padding-bottom: 10px; margin-bottom: 12px; gap: 10px; flex-wrap: wrap;
+        }
+        .aw-title {
+            color: #a55eea; font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px; font-size: 1em;
+        }
+        .aw-pot {
+            background: linear-gradient(135deg, #feca57, #ff9f43);
+            color: #000; font-weight: bold;
+            padding: 4px 12px; border-radius: 12px;
+            font-family: 'Orbitron', sans-serif; font-size: 0.85em;
+        }
+
+        .aw-vs-row {
+            display: grid; grid-template-columns: 1fr auto 1fr;
+            align-items: center; gap: 12px; margin: 12px 0;
+        }
+        .aw-side {
+            background: rgba(0,0,0,0.5); border-radius: 10px;
+            padding: 10px; text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .aw-side.me { border-color: #00d2d3; }
+        .aw-side.them { border-color: #ff4757; }
+        .aw-side.winner { border-color: #1dd1a1; box-shadow: 0 0 15px rgba(29, 209, 161, 0.5); }
+        .aw-side-label {
+            font-size: 0.7em; color: #888; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 4px;
+        }
+        .aw-side-name {
+            color: #fff; font-weight: bold; font-size: 0.9em;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .aw-side-score {
+            margin-top: 6px; font-family: 'Orbitron', sans-serif;
+            font-size: 1.4em; font-weight: bold; color: #1dd1a1;
+        }
+        .aw-side-score.hidden-score { color: #555; }
+        .aw-side-score.no-submit { color: #666; font-size: 0.9em; font-style: italic; }
+        .aw-vs { color: #a55eea; font-family: 'Orbitron', sans-serif; font-weight: bold; }
+
+        .aw-timer {
+            text-align: center; color: #feca57; font-family: 'Orbitron', sans-serif;
+            font-size: 0.85em; letter-spacing: 1px; margin: 8px 0;
+        }
+        .aw-timer.urgent { color: #ff4757; animation: urgent 1.2s alternate infinite; }
+
+        .aw-actions {
+            display: flex; gap: 8px; flex-wrap: wrap;
+        }
+        .aw-actions button, .aw-actions a {
+            flex: 1; padding: 10px;
+            border-radius: 8px; border: none; cursor: pointer;
+            font-weight: bold; transition: 0.2s; font-size: 0.9em;
+            text-decoration: none; text-align: center;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .btn-play-wager {
+            background: linear-gradient(135deg, #00d2d3, #0984e3); color: #fff;
+        }
+        .btn-play-wager:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 210, 211, 0.5); }
+        .btn-submit-wager {
+            background: linear-gradient(135deg, #a55eea, #6c5ce7); color: #fff;
+        }
+        .btn-submit-wager:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(165, 94, 234, 0.5); }
+        .btn-submit-wager:disabled {
+            background: #333; color: #666; cursor: not-allowed;
+        }
+        .btn-claim-wager {
+            background: linear-gradient(135deg, #1dd1a1, #10ac84); color: #fff;
+            animation: claimReadyPulse 1.6s ease-in-out infinite alternate;
+        }
+        .btn-cancel-wager {
+            background: rgba(255, 71, 87, 0.15); color: #ff4757;
+            border: 1px solid #ff4757 !important;
+        }
+        .aw-result-banner {
+            text-align: center;
+            padding: 10px; border-radius: 8px; margin: 8px 0;
+            font-family: 'Orbitron', sans-serif; font-weight: bold;
+            letter-spacing: 2px; font-size: 0.95em;
+        }
+        .aw-result-banner.win { background: rgba(29, 209, 161, 0.15); color: #1dd1a1; border: 1px solid #1dd1a1; }
+        .aw-result-banner.lose { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid #ff4757; }
+        .aw-result-banner.tie { background: rgba(254, 202, 87, 0.15); color: #feca57; border: 1px solid #feca57; }
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -664,32 +1019,68 @@
         </div>
         <div class="header-right">
             <span class="pill" id="pillUsername">👤 Loading...</span>
+            <span class="pill gold">🎟️ <span id="pillTokens">0</span></span>
             <span class="pill gold">⭐ <span id="pillFriendCount">0</span> Friends</span>
+            <span class="pill purple">⚔️ <span id="pillWagerCount">0</span> Wagers</span>
         </div>
     </header>
 
     <!-- Main grid: sidebar (friends list + search) | profile view -->
     <div class="friends-container" id="mainContent">
 
-        <!-- LEFT SIDEBAR -->
-        <aside class="sidebar">
-            <div class="search-section">
-                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search players by username..." maxlength="20">
-                <div class="search-results" id="searchResults"></div>
-            </div>
-
-            <div class="section-header">
-                <span>📨 Pending</span>
-                <span class="section-count pending" id="pendingCount">0</span>
-            </div>
-            <div id="pendingList"></div>
-
-            <div class="section-header">
-                <span>⭐ Friends</span>
-                <span class="section-count" id="friendCountSidebar">0</span>
-            </div>
-            <div class="friend-list" id="friendsList"></div>
-        </aside>
+                <!-- LEFT SIDEBAR -->
+                <aside class="sidebar">
+                    <!-- Search stays pinned at the top -->
+                    <div class="search-section">
+                        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search players by username..." maxlength="20">
+                        <div class="search-results" id="searchResults"></div>
+                    </div>
+        
+                    <!-- Everything below scrolls together -->
+                    <div class="sidebar-scroll">
+        
+                        <div class="sidebar-section" data-section="friendreq">
+                            <div class="section-header" onclick="toggleSection(this)">
+                                <span><span class="collapse-icon">▼</span> 📨 Friend Requests</span>
+                                <span class="section-count pending" id="pendingCount">0</span>
+                            </div>
+                            <div class="sidebar-section-body">
+                                <div id="pendingList"></div>
+                            </div>
+                        </div>
+        
+                        <div class="sidebar-section" data-section="wagerinv">
+                            <div class="section-header" onclick="toggleSection(this)">
+                                <span><span class="collapse-icon">▼</span> ⚔️ Wager Invites</span>
+                                <span class="section-count wager" id="wagerInviteCount">0</span>
+                            </div>
+                            <div class="sidebar-section-body">
+                                <div id="wagerInviteList"></div>
+                            </div>
+                        </div>
+        
+                        <div class="sidebar-section" data-section="wageract">
+                            <div class="section-header" onclick="toggleSection(this)">
+                                <span><span class="collapse-icon">▼</span> 🎯 Active Wagers</span>
+                                <span class="section-count gold" id="wagerActiveCount">0</span>
+                            </div>
+                            <div class="sidebar-section-body">
+                                <div id="wagerActiveList"></div>
+                            </div>
+                        </div>
+        
+                        <div class="sidebar-section friends-section" data-section="friends">
+                            <div class="section-header" onclick="toggleSection(this)">
+                                <span><span class="collapse-icon">▼</span> ⭐ Friends</span>
+                                <span class="section-count" id="friendCountSidebar">0</span>
+                            </div>
+                            <div class="sidebar-section-body">
+                                <div class="friend-list" id="friendsList"></div>
+                            </div>
+                        </div>
+        
+                    </div>
+                </aside>
 
         <!-- RIGHT: PROFILE VIEW -->
         <main class="profile-view" id="profileView">
@@ -700,6 +1091,31 @@
             </div>
         </main>
 
+    </div>
+
+    <!-- ============= ⚔️ WAGER CHALLENGE MODAL ============= -->
+    <div class="modal-overlay" id="wagerModal" onclick="if(event.target===this) closeWagerModal()">
+        <div class="wager-modal">
+            <button class="wager-modal-close" onclick="closeWagerModal()">×</button>
+            <h2>⚔️ CHALLENGE TO A WAGER</h2>
+            <div class="wager-modal-sub" id="wagerModalSub">vs OPPONENT</div>
+
+            <div class="wager-modal-section">
+                <div class="wager-modal-label">1. Pick a Game</div>
+                <div class="wager-game-grid" id="wagerGameGrid"></div>
+            </div>
+
+            <div class="wager-modal-section">
+                <div class="wager-modal-label">2. Pick a Wager Amount</div>
+                <div class="wager-amount-grid" id="wagerAmountGrid"></div>
+            </div>
+
+            <div class="wager-summary" id="wagerSummary" style="display:none;"></div>
+
+            <button class="btn-wager-send" id="btnSendWager" onclick="confirmSendWager()" disabled>
+                SELECT GAME & AMOUNT
+            </button>
+        </div>
     </div>
 
     <script>
@@ -848,13 +1264,25 @@ setTimeout(() => {
             guesser: '🔐 Code Breaker'
         };
 
-        /* ====================================================
+                /* ====================================================
            STATE
            ==================================================== */
-        let socialState = { friends: [], incoming: [], outgoing: [] };
+           let socialState = { friends: [], incoming: [], outgoing: [] };
         let activeProfileUid = null;
         let socialUnsubscribe = null;
+        let wagerUnsubscribe = null;
         let searchDebounceTimer = null;
+        let wagerList = [];                  // live array of wagers I'm in
+        let pendingWagerOpponentUid = null;  // who am I about to challenge?
+        let wagerSelection = { game: null, amount: null };
+        let wagerTimerInterval = null;
+
+// Allow users to collapse/expand sidebar sections to see more of what they want
+window.toggleSection = function(headerEl) {
+    const section = headerEl.closest('.sidebar-section');
+    section.classList.toggle('collapsed');
+    headerEl.classList.toggle('collapsed');
+};
 
         /* ====================================================
            STARFIELD (cosmetic background)
@@ -1046,16 +1474,497 @@ setTimeout(() => {
         /* ====================================================
            SOCIAL STATE — live subscription + render lists
            ==================================================== */
-        function startSocialSubscription() {
+           function startSocialSubscription() {
             if (typeof socialUnsubscribe === 'function') socialUnsubscribe();
             socialUnsubscribe = window.MegaplexCloud.subscribeToSocial((data) => {
                 socialState = data;
                 renderSidebar();
-                // If a friend is currently being viewed, refresh their card too
-                // (in case they got removed/added)
                 if (activeProfileUid) refreshProfileActions();
             });
         }
+
+        /* ====================================================
+           ⚔️ WAGER SUBSCRIPTION + RENDERING
+           ==================================================== */
+        function startWagerSubscription() {
+            if (typeof wagerUnsubscribe === 'function') wagerUnsubscribe();
+            wagerUnsubscribe = window.MegaplexCloud.subscribeToWagers((wagers) => {
+                wagerList = wagers;
+                renderWagerSections();
+                if (activeProfileUid) renderActiveWagersForProfile(activeProfileUid);
+                updateTokenPill();
+            });
+            // Run once at start to clean up expired wagers
+            window.MegaplexCloud.checkExpiredWagers();
+            // Live timers
+            if (wagerTimerInterval) clearInterval(wagerTimerInterval);
+            wagerTimerInterval = setInterval(tickWagerTimers, 1000);
+        }
+
+        function updateTokenPill() {
+            const tokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+            const el = document.getElementById('pillTokens');
+            if (el) el.textContent = tokens.toLocaleString();
+        }
+
+        function getMyUid() {
+            return window.MegaplexCloud.currentFbUser?.uid || null;
+        }
+
+        function getMySide(w) {
+            const me = getMyUid();
+            if (w.challenger.uid === me) return 'challenger';
+            if (w.opponent.uid === me) return 'opponent';
+            return null;
+        }
+        function getOtherSide(w) {
+            return getMySide(w) === 'challenger' ? 'opponent' : 'challenger';
+        }
+
+        function formatWagerTime(ms) {
+            if (ms <= 0) return 'EXPIRED';
+            const h = Math.floor(ms / 3600000);
+            const m = Math.floor((ms % 3600000) / 60000);
+            const s = Math.floor((ms % 60000) / 1000);
+            if (h > 0) return `${h}h ${m}m ${s}s`;
+            if (m > 0) return `${m}m ${s}s`;
+            return `${s}s`;
+        }
+
+        // Determine if THIS player can claim winnings (resolved + not yet claimed)
+        function canClaimWager(w) {
+            const side = getMySide(w);
+            if (!side) return false;
+            const isResolved = ['completed', 'tied'].includes(w.status);
+            if (!isResolved) return false;
+            // Only claim if I have a payout coming
+            const myPayout = (side === 'challenger') ? (w.challengerPayout || 0) : (w.opponentPayout || 0);
+            const alreadyClaimed = w[side].claimed === true;
+            return myPayout > 0 && !alreadyClaimed;
+        }
+
+        function renderWagerSections() {
+            const myUid = getMyUid();
+            const inviteList = document.getElementById('wagerInviteList');
+            const activeList = document.getElementById('wagerActiveList');
+            if (!inviteList || !activeList) return;
+
+            // Filter: invites = pending where I'm the opponent
+            const invites = wagerList.filter(w => w.status === 'pending' && w.opponent.uid === myUid);
+            // Outgoing pending = pending where I'm the challenger (show in active section as "waiting")
+            const outgoingPending = wagerList.filter(w => w.status === 'pending' && w.challenger.uid === myUid);
+            // Active = both accepted, not yet resolved
+            const active = wagerList.filter(w => w.status === 'active');
+            // Resolved + unclaimed = ready to claim
+            const claimable = wagerList.filter(w => canClaimWager(w));
+
+            // Sidebar counts
+            document.getElementById('wagerInviteCount').textContent = invites.length;
+            const activeTotal = outgoingPending.length + active.length + claimable.length;
+            document.getElementById('wagerActiveCount').textContent = activeTotal;
+            document.getElementById('pillWagerCount').textContent = activeTotal + invites.length;
+
+            // ===== Invites list =====
+            if (!invites.length) {
+                inviteList.innerHTML = '<div class="empty-state" style="padding:14px;">No wager invites</div>';
+            } else {
+                inviteList.innerHTML = invites.map(w => buildWagerCard(w, 'invite')).join('');
+            }
+
+            // ===== Active + outgoing-pending + claimable list =====
+            const combined = [...claimable, ...active, ...outgoingPending];
+            if (!combined.length) {
+                activeList.innerHTML = '<div class="empty-state" style="padding:14px;">No active wagers</div>';
+            } else {
+                activeList.innerHTML = combined.map(w => {
+                    if (canClaimWager(w)) return buildWagerCard(w, 'claim');
+                    if (w.status === 'pending') return buildWagerCard(w, 'pending');
+                    return buildWagerCard(w, 'active');
+                }).join('');
+            }
+
+            // Wire click handlers
+            document.querySelectorAll('[data-wager-id]').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'BUTTON') return;
+                    const w = wagerList.find(x => x.id === el.dataset.wagerId);
+                    if (w) {
+                        const otherUid = (getMySide(w) === 'challenger') ? w.opponent.uid : w.challenger.uid;
+                        openProfile(otherUid);
+                    }
+                });
+            });
+        }
+
+        function buildWagerCard(w, mode) {
+            const side = getMySide(w);
+            const otherSide = getOtherSide(w);
+            const otherName = w[otherSide].username;
+            const amountStr = window.MegaplexCloud.formatTokenAmount(w.amount);
+            const cardClass = mode === 'claim' ? 'wager-card ready-claim' : (mode === 'invite' || mode === 'pending' ? 'wager-card pending' : 'wager-card');
+
+            let statusLine = '';
+            let statusCls = '';
+            if (mode === 'invite') { statusLine = '📨 Tap to view & accept'; statusCls = ''; }
+            else if (mode === 'pending') { statusLine = '⏳ Waiting for response'; statusCls = ''; }
+            else if (mode === 'active') {
+                const remaining = w.expiresAt - Date.now();
+                statusLine = '⏰ ' + formatWagerTime(remaining);
+                statusCls = remaining < 3600000 ? 'urgent' : '';
+            } else if (mode === 'claim') {
+                const isWin = w.winner === getMyUid();
+                if (w.status === 'tied') { statusLine = '🤝 TIE — Tap to claim refund'; statusCls = 'tie'; }
+                else if (isWin) { statusLine = '🏆 YOU WON — Tap to claim'; statusCls = 'win'; }
+                else { statusLine = '💔 You lost'; statusCls = 'lose'; }
+            }
+
+            return `
+                <div class="${cardClass}" data-wager-id="${w.id}">
+                    <div class="wager-card-header">
+                        <span class="wager-vs">${escapeHtml(otherName)} <span class="vs-tag">VS</span></span>
+                        <span class="wager-amount">${amountStr} 🎟️</span>
+                    </div>
+                    <div class="wager-game-line">${w.game.title}</div>
+                    <div class="wager-status-line ${statusCls}">${statusLine}</div>
+                </div>
+            `;
+        }
+
+        // Update only the timer text in active wager cards (live tick)
+        function tickWagerTimers() {
+            document.querySelectorAll('.wager-status-line[data-wager-timer]').forEach(el => {
+                const expires = parseInt(el.dataset.wagerTimer);
+                const remaining = expires - Date.now();
+                el.textContent = '⏰ ' + formatWagerTime(remaining);
+                if (remaining < 3600000) el.classList.add('urgent');
+                if (remaining <= 0) {
+                    // Trigger expiration check
+                    window.MegaplexCloud.checkExpiredWagers();
+                }
+            });
+            // Also tick the active wager detail cards (in profile view)
+            document.querySelectorAll('.aw-timer[data-wager-timer]').forEach(el => {
+                const expires = parseInt(el.dataset.wagerTimer);
+                const remaining = expires - Date.now();
+                el.textContent = '⏰ ' + formatWagerTime(remaining) + ' remaining';
+                if (remaining < 3600000) el.classList.add('urgent');
+            });
+        }
+
+        /* ====================================================
+           ⚔️ ACTIVE WAGER DETAIL CARDS (in profile view)
+           ==================================================== */
+        function renderActiveWagersForProfile(opponentUid) {
+            const container = document.getElementById('profileActiveWagers');
+            if (!container) return;
+            const myUid = getMyUid();
+            // Only wagers between me and this opponent that aren't resolved long ago
+            const relevant = wagerList.filter(w => {
+                const involvesPair = (w.challenger.uid === myUid && w.opponent.uid === opponentUid)
+                                  || (w.challenger.uid === opponentUid && w.opponent.uid === myUid);
+                if (!involvesPair) return false;
+                if (['cancelled', 'declined'].includes(w.status)) return false;
+                if (w.status === 'completed' || w.status === 'tied') {
+                    // Only show if I haven't claimed yet, OR was completed in last 24h
+                    if (canClaimWager(w)) return true;
+                    if (w.completedAt && (Date.now() - w.completedAt < 86400000)) return true;
+                    return false;
+                }
+                return true;
+            });
+
+            if (!relevant.length) {
+                container.innerHTML = '<div class="empty-state" style="padding:14px;">No active wagers with this player.</div>';
+                return;
+            }
+            container.innerHTML = relevant.map(buildActiveWagerDetailCard).join('');
+        }
+
+        function buildActiveWagerDetailCard(w) {
+            const myUid = getMyUid();
+            const side = getMySide(w);
+            const otherSide = getOtherSide(w);
+            const me = w[side];
+            const them = w[otherSide];
+            const isResolved = ['completed', 'tied'].includes(w.status);
+            const myScore = me.score;
+            const theirScore = them.score;
+            const bothSubmitted = (myScore !== null) && (theirScore !== null);
+
+            // Hide opponent's score until both have submitted
+            const showTheirScore = bothSubmitted || isResolved;
+
+            // Card class
+            let cardClass = 'active-wager-card';
+            if (canClaimWager(w)) cardClass += ' ready';
+            else if (w.status === 'pending') cardClass += ' pending';
+            else if (isResolved) cardClass += ' completed';
+
+            // Determine winner side highlighting
+            let mySideExtra = ' me', themSideExtra = ' them';
+            if (isResolved && w.winner) {
+                if (w.winner === myUid) mySideExtra += ' winner';
+                else themSideExtra += ' winner';
+            }
+
+            // Build score displays
+            const renderScore = (val, isHidden) => {
+                if (val === null) return `<div class="aw-side-score no-submit">No submission</div>`;
+                if (isHidden) return `<div class="aw-side-score hidden-score">●●●</div>`;
+                return `<div class="aw-side-score">${val.toLocaleString()}</div>`;
+            };
+
+            // Build action buttons
+            let actionsHTML = '';
+            if (w.status === 'pending') {
+                if (side === 'challenger') {
+                    actionsHTML = `<button class="btn-cancel-wager" onclick="handleCancelWager('${w.id}')">↩ CANCEL CHALLENGE</button>`;
+                } else {
+                    actionsHTML = `
+                        <button class="btn-submit-wager" onclick="handleAcceptWager('${w.id}')">⚔ ACCEPT — PAY ${window.MegaplexCloud.formatTokenAmount(w.amount)} 🎟️</button>
+                        <button class="btn-cancel-wager" onclick="handleDeclineWager('${w.id}')">✕ DECLINE</button>
+                    `;
+                }
+            } else if (w.status === 'active') {
+                const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+                const haveSession = sessions[w.game.key] !== undefined;
+                if (myScore !== null) {
+                    actionsHTML = `<div style="text-align:center; color:#1dd1a1; padding:8px;">✓ Score submitted: <strong>${myScore}</strong> — waiting for opponent...</div>`;
+                } else if (haveSession) {
+                    actionsHTML = `
+                        <a href="${w.game.link}" class="btn-play-wager" onclick="trackWagerPlay()">▶ PLAY AGAIN</a>
+                        <button class="btn-submit-wager" onclick="handleSubmitWager('${w.id}')">📤 SUBMIT SCORE: ${sessions[w.game.key]}</button>
+                    `;
+                } else {
+                    actionsHTML = `<a href="${w.game.link}" class="btn-play-wager" onclick="trackWagerPlay()">▶ PLAY ${w.game.title}</a>`;
+                }
+            } else if (canClaimWager(w)) {
+                const myPayout = (side === 'challenger') ? w.challengerPayout : w.opponentPayout;
+                actionsHTML = `<button class="btn-claim-wager" onclick="handleClaimWager('${w.id}')">🏆 CLAIM ${myPayout.toLocaleString()} 🎟️</button>`;
+            } else if (isResolved) {
+                actionsHTML = `<div style="text-align:center; color:#888; padding:8px;">✓ Resolved</div>`;
+            }
+
+            // Result banner
+            let resultBanner = '';
+            if (isResolved) {
+                if (w.status === 'tied') {
+                    resultBanner = `<div class="aw-result-banner tie">🤝 TIE — BOTH REFUNDED (5% CUT)</div>`;
+                } else if (w.winner === myUid) {
+                    resultBanner = `<div class="aw-result-banner win">🏆 YOU WON THE POT!</div>`;
+                } else {
+                    resultBanner = `<div class="aw-result-banner lose">💔 YOU LOST</div>`;
+                }
+            }
+
+            // Timer (only during active phase)
+            let timerHTML = '';
+            if (w.status === 'active') {
+                const remaining = w.expiresAt - Date.now();
+                const urgent = remaining < 3600000 ? 'urgent' : '';
+                timerHTML = `<div class="aw-timer ${urgent}" data-wager-timer="${w.expiresAt}">⏰ ${formatWagerTime(remaining)} remaining</div>`;
+            }
+
+            return `
+                <div class="${cardClass}">
+                    <div class="aw-header">
+                        <span class="aw-title">⚔️ ${w.game.title}</span>
+                        <span class="aw-pot">POT: ${w.pot.toLocaleString()} 🎟️</span>
+                    </div>
+                    <div class="aw-vs-row">
+                        <div class="aw-side${mySideExtra}">
+                            <div class="aw-side-label">YOU</div>
+                            <div class="aw-side-name">${escapeHtml(me.username)}</div>
+                            ${renderScore(myScore, false)}
+                        </div>
+                        <div class="aw-vs">VS</div>
+                        <div class="aw-side${themSideExtra}">
+                            <div class="aw-side-label">${otherSide === 'challenger' ? 'CHALLENGER' : 'OPPONENT'}</div>
+                            <div class="aw-side-name">${escapeHtml(them.username)}</div>
+                            ${renderScore(theirScore, !showTheirScore)}
+                        </div>
+                    </div>
+                    ${timerHTML}
+                    ${resultBanner}
+                    <div class="aw-actions">${actionsHTML}</div>
+                </div>
+            `;
+        }
+
+        /* ====================================================
+           ⚔️ CHALLENGE MODAL
+           ==================================================== */
+        function openWagerModal(opponentUid) {
+            pendingWagerOpponentUid = opponentUid;
+            wagerSelection = { game: null, amount: null };
+
+            // Set subtitle
+            const friend = socialState.friends.find(f => f.uid === opponentUid);
+            const oppName = friend?.username || 'PLAYER';
+            document.getElementById('wagerModalSub').textContent = '⚔️ vs ' + oppName;
+
+            // Build game grid
+            const gameGrid = document.getElementById('wagerGameGrid');
+            gameGrid.innerHTML = window.MegaplexCloud.WAGER_GAMES.map(g => `
+                <div class="wager-game-pick" data-game-key="${g.key}">
+                    <div>${g.title}</div>
+                    <div class="wager-game-pick-type">${g.scoreType === 'higher' ? '↑ Higher wins' : '↓ Lower wins'}</div>
+                </div>
+            `).join('');
+            gameGrid.querySelectorAll('.wager-game-pick').forEach(el => {
+                el.addEventListener('click', () => {
+                    gameGrid.querySelectorAll('.wager-game-pick').forEach(x => x.classList.remove('selected'));
+                    el.classList.add('selected');
+                    wagerSelection.game = el.dataset.gameKey;
+                    refreshWagerSummary();
+                });
+            });
+
+            // Build amount grid
+            const amtGrid = document.getElementById('wagerAmountGrid');
+            const myTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+            amtGrid.innerHTML = window.MegaplexCloud.WAGER_AMOUNTS.map(amt => {
+                const disabled = myTokens < amt;
+                return `<div class="wager-amount-pick ${disabled ? 'disabled' : ''}" data-amount="${amt}">
+                    ${window.MegaplexCloud.formatTokenAmount(amt)} 🎟️
+                </div>`;
+            }).join('');
+            amtGrid.querySelectorAll('.wager-amount-pick:not(.disabled)').forEach(el => {
+                el.addEventListener('click', () => {
+                    amtGrid.querySelectorAll('.wager-amount-pick').forEach(x => x.classList.remove('selected'));
+                    el.classList.add('selected');
+                    wagerSelection.amount = parseInt(el.dataset.amount);
+                    refreshWagerSummary();
+                });
+            });
+
+            document.getElementById('wagerSummary').style.display = 'none';
+            document.getElementById('btnSendWager').disabled = true;
+            document.getElementById('btnSendWager').textContent = 'SELECT GAME & AMOUNT';
+            document.getElementById('wagerModal').classList.add('show');
+        }
+
+        function closeWagerModal() {
+            document.getElementById('wagerModal').classList.remove('show');
+            pendingWagerOpponentUid = null;
+            wagerSelection = { game: null, amount: null };
+        }
+
+        function refreshWagerSummary() {
+            const sumEl = document.getElementById('wagerSummary');
+            const btn = document.getElementById('btnSendWager');
+            if (!wagerSelection.game || !wagerSelection.amount) {
+                sumEl.style.display = 'none';
+                btn.disabled = true;
+                btn.textContent = 'SELECT GAME & AMOUNT';
+                return;
+            }
+            const gameInfo = window.MegaplexCloud.getWagerGameInfo(wagerSelection.game);
+            const amt = wagerSelection.amount;
+            const pot = amt * 2;
+            const cut = Math.floor(pot * window.MegaplexCloud.WAGER_HOUSE_CUT_WIN);
+            const winnings = pot - cut;
+            sumEl.style.display = 'block';
+            sumEl.innerHTML = `
+                <div class="wager-summary-row">
+                    <span class="wager-summary-label">Game:</span>
+                    <span class="wager-summary-value">${gameInfo.title}</span>
+                </div>
+                <div class="wager-summary-row">
+                    <span class="wager-summary-label">Your wager:</span>
+                    <span class="wager-summary-value">-${amt.toLocaleString()} 🎟️</span>
+                </div>
+                <div class="wager-summary-row">
+                    <span class="wager-summary-label">Total pot:</span>
+                    <span class="wager-summary-value">${pot.toLocaleString()} 🎟️</span>
+                </div>
+                <div class="wager-summary-row">
+                    <span class="wager-summary-label">House cut (10%):</span>
+                    <span class="wager-summary-value">-${cut.toLocaleString()} 🎟️</span>
+                </div>
+                <div class="wager-summary-row big">
+                    <span class="wager-summary-label">If you WIN:</span>
+                    <span class="wager-summary-value win">+${winnings.toLocaleString()} 🎟️</span>
+                </div>
+            `;
+            btn.disabled = false;
+            btn.textContent = '⚔ SEND CHALLENGE';
+        }
+
+        async function confirmSendWager() {
+            if (!pendingWagerOpponentUid || !wagerSelection.game || !wagerSelection.amount) return;
+            const btn = document.getElementById('btnSendWager');
+            btn.disabled = true;
+            btn.textContent = '⏳ SENDING...';
+
+            const r = await window.MegaplexCloud.sendWagerChallenge(
+                pendingWagerOpponentUid, wagerSelection.game, wagerSelection.amount
+            );
+            if (r.success) {
+                toast('Wager challenge sent!', 'success', '⚔️');
+                closeWagerModal();
+                updateTokenPill();
+            } else {
+                let msg = 'Failed to send wager';
+                if (r.reason === 'insufficient_tokens') msg = 'Not enough tokens!';
+                else if (r.reason === 'not_friends') msg = 'You must be friends first.';
+                else if (r.reason === 'self') msg = "You can't wager yourself!";
+                toast(msg, 'error', '❌');
+                btn.disabled = false;
+                btn.textContent = '⚔ SEND CHALLENGE';
+            }
+        }
+
+        /* ====================================================
+           ⚔️ WAGER ACTION HANDLERS (called by onclick attributes)
+           ==================================================== */
+        window.handleAcceptWager = async function(wagerId) {
+            const r = await window.MegaplexCloud.acceptWager(wagerId);
+            if (r.success) {
+                toast('Wager accepted! Go play to win!', 'success', '⚔️');
+                updateTokenPill();
+            } else {
+                let msg = 'Failed to accept';
+                if (r.reason === 'insufficient_tokens') msg = 'Not enough tokens!';
+                toast(msg, 'error', '❌');
+            }
+        };
+        window.handleDeclineWager = async function(wagerId) {
+            if (!confirm('Decline this wager? The challenger will be refunded.')) return;
+            const r = await window.MegaplexCloud.declineWager(wagerId);
+            if (r.success) toast('Wager declined', 'info', '👋');
+        };
+        window.handleCancelWager = async function(wagerId) {
+            if (!confirm('Cancel this wager? You will be refunded.')) return;
+            const r = await window.MegaplexCloud.cancelWager(wagerId);
+            if (r.success) {
+                toast('Wager cancelled — tokens refunded', 'info', '↩️');
+                updateTokenPill();
+            }
+        };
+        window.handleSubmitWager = async function(wagerId) {
+            const r = await window.MegaplexCloud.submitWagerScore(wagerId);
+            if (r.success) {
+                toast('Score submitted! Waiting for opponent...', 'success', '📤');
+                // Try to resolve in case opponent already submitted
+                await window.MegaplexCloud.resolveWager(wagerId);
+            } else {
+                if (r.reason === 'no_session_score') toast('You need to play the game first!', 'warning', '🎮');
+                else if (r.reason === 'already_submitted') toast('You already submitted!', 'warning', '⚠️');
+                else toast('Failed to submit', 'error', '❌');
+            }
+        };
+        window.handleClaimWager = async function(wagerId) {
+            const r = await window.MegaplexCloud.markWagerClaimed(wagerId);
+            if (r.success) {
+                if (r.newTokens !== undefined) localStorage.setItem('megaplexTokens', String(r.newTokens));
+                updateTokenPill();
+                toast('Winnings claimed! 🎟️', 'success', '🏆');
+            }
+        };
+        window.trackWagerPlay = function() {
+            // No-op for now — placeholder hook
+        };
 
         function renderSidebar() {
             // Update top header counters
@@ -1234,6 +2143,12 @@ setTimeout(() => {
                     </div>
                 </div>
 
+                                <!-- ACTIVE WAGERS WITH THIS PLAYER -->
+                <div class="stats-section">
+                    <div class="stats-section-title">⚔️ Wagers With This Player</div>
+                    <div id="profileActiveWagers"></div>
+                </div>
+
                 <!-- TROPHY PROGRESS -->
                 <div class="stats-section">
                     <div class="stats-section-title">🎖️ Trophy Progress</div>
@@ -1268,10 +2183,12 @@ setTimeout(() => {
                 </div>
             `;
 
-            // Render the avatar
-            renderAvatarPreview(document.getElementById('profAvatar'), p.avatar, { username });
+                        // Render the avatar
+                        renderAvatarPreview(document.getElementById('profAvatar'), p.avatar, { username });
             // Render the action buttons
             refreshProfileActions();
+            // Render any active wagers between us & this player
+            renderActiveWagersForProfile(activeProfileUid);
         }
 
         /* ====================================================
@@ -1299,6 +2216,7 @@ setTimeout(() => {
             if (isFriend) {
                 html = `
                     <span class="btn-action btn-friends">✓ Friends</span>
+                    <button class="btn-action btn-challenge" onclick="openWagerModal('${uid}')">⚔️ Challenge to Wager</button>
                     <button class="btn-action btn-remove" onclick="handleRemoveFriend('${uid}')">✕ Remove Friend</button>
                 `;
             } else if (isOutgoing) {
@@ -1342,6 +2260,11 @@ setTimeout(() => {
             const r = await window.MegaplexCloud.removeFriend(uid);
             if (r.success) toast('Friend removed', 'info', '👋');
         };
+
+        // Expose wager modal opener to inline onclick attributes
+        window.openWagerModal = openWagerModal;
+        window.closeWagerModal = closeWagerModal;
+        window.confirmSendWager = confirmSendWager;
 
         /* ====================================================
            Format "last seen" timestamp into friendly text
@@ -1396,9 +2319,12 @@ window.MegaplexCloud.onReady((user) => {
 
     setLoadingStatus('FETCHING FRIENDS LIST...', 85);
     startSocialSubscription();
+    
+    setLoadingStatus('SYNCING WAGERS...', 92);
+    startWagerSubscription();
+    updateTokenPill();
 
     // Wait one tick so the first social snapshot can render before fading out.
-    // The subscribeToSocial callback fires almost immediately with current data.
     setTimeout(() => {
         setLoadingStatus('READY', 100);
         hideLoadingScreen();
