@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chase Letterman — Live Resume. Professional portfolio, experience, education, and accomplishments.">
+    <meta name="author" content="Chase Letterman">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=()">
+    <title>Chase Letterman | Live Resume & Portfolio</title>
+    <!-- Strict CSP: no inline/external JS allowed -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; form-action 'self'; base-uri 'self'; frame-ancestors 'none'; script-src 'none'; object-src 'none';">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f2748;
+            --primary-light: #1e4079;
+            --accent: #d4a574;
+            --accent-dark: #b8854a;
+            --bg: #fafaf7;
+            --bg-card: #ffffff;
+            --text: #1a1a1a;
+            --text-muted: #5a6577;
+            --border: #e5e7eb;
+            --success: #10b981;
+            /* Brand colors */
+            --linkedin: #0A66C2;
+            --linkedin-dark: #004182;
+        }
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            line-height: 1.65;
+        }
+        h1, h2, h3, h4 { font-family: 'Playfair Display', Georgia, serif; margin: 0 0 12px 0; }
+
+        /* ===== Header / Hero ===== */
+        .hero {
+            background: linear-gradient(135deg, #0f2748 0%, #1e4079 100%);
+            color: #fff;
+            padding: 60px 40px 80px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: -50%; right: -10%;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(212,165,116,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 50px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+        .avatar {
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            border: 4px solid var(--accent);
+            background: #fff;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+        }
+        .hero-info { flex: 1 1 400px; }
+        .hero-info .eyebrow {
+            color: var(--accent);
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .hero-info h1 {
+            font-size: 3.4rem;
+            line-height: 1.1;
+            margin-bottom: 10px;
+        }
+        .hero-info .title {
+            font-size: 1.3rem;
+            color: #cdd9ec;
+            margin-bottom: 20px;
+            font-weight: 400;
+        }
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin-bottom: 24px;
+            color: #cdd9ec;
+            font-size: 0.95rem;
+        }
+        .hero-meta span { display: inline-flex; align-items: center; gap: 6px; }
+        .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent);
+            color: var(--primary);
+            padding: 12px 26px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s, filter 0.2s;
+        }
+        .btn:hover, .btn:focus {
+            background: var(--accent-dark);
+            transform: translateY(-2px);
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+        .btn-outline {
+            background: transparent;
+            color: #fff;
+            border: 2px solid #fff;
+        }
+        .btn-outline:hover { background: #fff; color: var(--primary); }
+
+        /* ===== Brand buttons (LinkedIn & Instagram) ===== */
+        .btn-linkedin {
+            background: var(--linkedin);
+            color: #fff;
+        }
+        .btn-linkedin:hover, .btn-linkedin:focus {
+            background: var(--linkedin-dark);
+            color: #fff;
+        }
+        .btn-instagram {
+            /* Official Instagram gradient (pure CSS — no external assets) */
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            color: #fff;
+            border: none;
+        }
+        .btn-instagram:hover, .btn-instagram:focus {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            filter: brightness(0.92);
+            color: #fff;
+        }
+
+        /* ===== Quote banner ===== */
+        .quote-banner {
+            max-width: 1100px;
+            margin: 30px auto 0 auto;
+            padding: 0 40px;
+        }
+        .quote-banner blockquote {
+            margin: 0;
+            background: var(--bg-card);
+            border-left: 4px solid var(--accent);
+            border-radius: 8px;
+            padding: 22px 28px;
+            box-shadow: 0 4px 16px rgba(15,39,72,0.06);
+            font-family: 'Playfair Display', Georgia, serif;
+            font-style: italic;
+            font-size: 1.15rem;
+            color: var(--primary);
+            text-align: center;
+            position: relative;
+        }
+        .quote-banner blockquote::before {
+            content: "\201C"; /* left double quotation mark */
+            font-size: 2.4rem;
+            color: var(--accent);
+            line-height: 0;
+            vertical-align: -0.4em;
+            margin-right: 6px;
+        }
+        .quote-banner cite {
+            display: block;
+            margin-top: 10px;
+            font-style: normal;
+            font-family: 'Inter', Arial, sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        /* Rotator container reserves space for the tallest quote */
+        .quote-rotator {
+            position: relative;
+            min-height: 140px; /* tweak if your longest quote wraps further */
+        }
+        /* Each slide is absolutely stacked and fades in/out via animation */
+        .quote-rotator .quote-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            opacity: 0;
+            animation: quoteCycle 60s infinite;
+        }
+        /* Stagger each slide's start time by 15s */
+        .quote-rotator .quote-slide:nth-child(1) { animation-delay:  0s; }
+        .quote-rotator .quote-slide:nth-child(2) { animation-delay: 15s; }
+        .quote-rotator .quote-slide:nth-child(3) { animation-delay: 30s; }
+        .quote-rotator .quote-slide:nth-child(4) { animation-delay: 45s; }
+        /*
+            Cycle math (per slide, over 60s total):
+            - 0%–1.5%   : fade in   (~0.9s)
+            - 1.5%–25%  : fully visible (~14.1s)
+            - 25%–26.5% : fade out  (~0.9s)
+            - 26.5%–100%: hidden until next loop
+        */
+        @keyframes quoteCycle {
+            0%    { opacity: 0; }
+            1.5%  { opacity: 1; }
+            25%   { opacity: 1; }
+            26.5% { opacity: 0; }
+            100%  { opacity: 0; }
+        }
+        /* Respect users who prefer reduced motion (WCAG 2.3.3 / Sec 508) */
+        @media (prefers-reduced-motion: reduce) {
+            .quote-rotator { min-height: 0; }
+            .quote-rotator .quote-slide {
+                position: static;
+                opacity: 1;
+                animation: none;
+                margin-bottom: 16px;
+            }
+        }
+
+        /* ===== Tabs (pure CSS, no JS) ===== */
+        .tabs-section {
+            max-width: 1100px;
+            margin: 30px auto 60px auto;
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(15,39,72,0.12);
+            position: relative;
+            z-index: 2;
+            overflow: hidden;
+        }
+        .tabs input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .tab-labels {
+            display: flex;
+            flex-wrap: wrap;
+            background: #f3f4f6;
+            border-bottom: 1px solid var(--border);
+        }
+        .tab-labels label {
+            flex: 1 1 auto;
+            padding: 18px 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            border-bottom: 3px solid transparent;
+            transition: color 0.2s, background 0.2s, border-color 0.2s;
+            user-select: none;
+        }
+        .tab-labels label:hover { color: var(--primary); background: #e9ecef; }
+        .tab-labels label:focus-within { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+        .tab-panel { display: none; padding: 50px 40px; animation: fadein 0.4s ease; }
+        @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        #tab-about:checked   ~ .tab-labels label[for="tab-about"],
+        #tab-exp:checked     ~ .tab-labels label[for="tab-exp"],
+        #tab-edu:checked     ~ .tab-labels label[for="tab-edu"],
+        #tab-skills:checked  ~ .tab-labels label[for="tab-skills"] {
+            color: var(--primary);
+            background: var(--bg-card);
+            border-bottom-color: var(--accent);
+        }
+        #tab-about:checked   ~ .tab-content #panel-about,
+        #tab-exp:checked     ~ .tab-content #panel-exp,
+        #tab-edu:checked     ~ .tab-content #panel-edu,
+        #tab-skills:checked  ~ .tab-content #panel-skills { display: block; }
+
+        .panel-title {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .panel-subtitle { color: var(--text-muted); margin-bottom: 30px; font-size: 1.05rem; }
+
+        /* ===== About panel ===== */
+        .about-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 40px;
+        }
+        .about-grid p { color: var(--text-muted); font-size: 1.05rem; margin-bottom: 16px; }
+        .quick-facts {
+            background: #f9fafb;
+            border-left: 4px solid var(--accent);
+            padding: 24px;
+            border-radius: 8px;
+        }
+        .quick-facts h4 { color: var(--primary); font-size: 1.15rem; }
+        .quick-facts dl { margin: 0; }
+        .quick-facts dt { font-weight: 600; color: var(--text); margin-top: 12px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+        .quick-facts dd { margin: 4px 0 0 0; color: var(--text-muted); }
+
+        .competencies {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        .competency {
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .competency h4 { color: var(--primary); font-size: 1.05rem; margin-bottom: 6px; }
+        .competency p { font-size: 0.92rem; color: var(--text-muted); margin: 0; }
+
+        /* ===== Timeline (Experience) ===== */
+        .timeline { position: relative; padding-left: 30px; }
+        .timeline::before {
+            content: "";
+            position: absolute;
+            left: 8px; top: 0; bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+        .timeline-item { position: relative; margin-bottom: 36px; }
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -28px; top: 6px;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 3px solid var(--bg-card);
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+        .timeline-item h3 { color: var(--primary); font-size: 1.3rem; margin-bottom: 4px; }
+        .timeline-item .role-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+        .timeline-item ul { margin: 10px 0 0 0; padding-left: 20px; color: var(--text-muted); }
+        .timeline-item ul li { margin-bottom: 6px; }
+
+        /* ===== Education & Certs ===== */
+        .edu-grid { display: grid; gap: 20px; }
+        .edu-card {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .edu-icon {
+            width: 50px; height: 50px;
+            background: var(--primary);
+            color: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+        .edu-card h3 { color: var(--primary); font-size: 1.15rem; margin-bottom: 4px; }
+        .edu-card .meta { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 8px; }
+        .edu-card p { margin: 0; color: var(--text-muted); font-size: 0.95rem; }
+
+        .certs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .cert-badge {
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-left: 4px solid var(--accent);
+            padding: 16px 18px;
+            border-radius: 6px;
+        }
+        .cert-badge strong { display: block; color: var(--primary); margin-bottom: 4px; }
+        .cert-badge span { color: var(--text-muted); font-size: 0.88rem; }
+
+        /* ===== Skills ===== */
+        .skills-section { margin-bottom: 32px; }
+        .skills-section h3 { color: var(--primary); font-size: 1.2rem; margin-bottom: 16px; }
+        .skill-row { margin-bottom: 14px; }
+        .skill-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.92rem;
+        }
+        .skill-bar {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .skill-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent));
+            border-radius: 4px;
+        }
+
+        /* ===== Tools & Technologies ===== */
+        .tools-section { margin-top: 30px; }
+        .tools-section > h3 { color: var(--primary); font-size: 1.2rem; margin-bottom: 16px; }
+        .tools-group {
+            background: #f9fafb;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: 8px;
+            padding: 20px 22px;
+            margin-bottom: 16px;
+        }
+        .tools-group h4 {
+            color: var(--primary);
+            font-size: 1.02rem;
+            margin: 0 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tools-group h4 .tools-icon { font-size: 1.15rem; }
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .tag-list li {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--primary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 999px;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .tag-list li:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        /* ===== Contact ===== */
+        .contact-section {
+            max-width: 700px;
+            margin: 0 auto 80px auto;
+            padding: 0 40px;
+        }
+        .contact-section h2 {
+            text-align: center;
+            color: var(--primary);
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+        .contact-section .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 30px; }
+        .contact-form {
+            background: var(--bg-card);
+            padding: 36px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(15,39,72,0.08);
+        }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.92rem; }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.98rem;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: var(--primary-light);
+            outline: none;
+        }
+        .form-group textarea { resize: vertical; min-height: 110px; }
+
+        /* ===== Footer ===== */
+        .footer {
+            background: var(--primary);
+            color: #cdd9ec;
+            text-align: center;
+            padding: 30px 20px;
+            font-size: 0.9rem;
+        }
+        .footer a { color: var(--accent); text-decoration: none; margin: 0 10px; }
+        .footer a:hover { text-decoration: underline; }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .hero { padding: 40px 20px 60px 20px; }
+            .hero-info h1 { font-size: 2.2rem; }
+            .avatar { width: 130px; height: 130px; }
+            .quote-banner { padding: 0 16px; margin-top: 20px; }
+            .quote-banner blockquote { font-size: 1rem; padding: 18px 20px; }
+            .tabs-section { margin: 20px 16px 40px 16px; }
+            .tab-panel { padding: 30px 20px; }
+            .tab-labels label { padding: 14px 10px; font-size: 0.85rem; }
+            .about-grid { grid-template-columns: 1fr; }
+            .contact-section { padding: 0 20px; }
+            .contact-form { padding: 24px; }
+        }
+
+        /* ===== Print styles ===== */
+        @media print {
+            .hero { background: #fff; color: #000; padding: 20px; }
+            .hero-info h1, .panel-title { color: #000; }
+            .tab-labels, .hero-actions, .contact-section, .footer { display: none; }
+            .tabs-section { box-shadow: none; margin: 0; }
+            .tab-panel { display: block !important; page-break-inside: avoid; }
+            .quote-banner blockquote { box-shadow: none; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== HERO ===== -->
+    <header class="hero">
+        <div class="hero-container">
+            <div class="avatar" aria-hidden="true">
+                <!-- Use your own downloaded headshot image, e.g. /img/headshot.jpg -->
+                <img src="headshot.JPG" alt="Chase Letterman headshot" loading="lazy" width="180" height="180">
+            </div>
+            <div class="hero-info">
+                <div class="eyebrow">Live Resume · Portfolio</div>
+                <h1>Chase Letterman</h1>
+                <p class="title">Network Communication Systems Specialist</p>
+                <div class="hero-meta">
+                    <span>📍 Baumholder, Germany</span>
+                    <span>✉️ lettermanchase@gmail.com</span>
+                    <span>🔗 Available for opportunities</span>
+                </div>
+                <div class="hero-actions">
+                    <a href="https://www.linkedin.com/in/chaseletterman/" class="btn btn-linkedin" target="_blank" rel="noopener noreferrer nofollow">LinkedIn</a>
+                    <a href="https://www.instagram.com/chaseletterman/" class="btn btn-instagram" target="_blank" rel="noopener noreferrer nofollow">Instagram</a>
+                    <a href="C:\Users\638090_Admin1\Documents\Live Resume\chase_letterman_resume.pdf" class="btn btn-outline" download>Download PDF</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== QUOTE BANNER (Rotating, Pure CSS) ===== -->
+    <section class="quote-banner" aria-label="Rotating personal quotes">
+        <div class="quote-rotator">
+            <blockquote class="quote-slide">
+                Innovation distinguishes between a leader and a follower.
+                <cite>— Steve Jobs</cite>
+            </blockquote>
+            <blockquote class="quote-slide">
+                The best way to predict the future is to invent it.
+                <cite>— Alan Kay</cite>
+            </blockquote>
+            <blockquote class="quote-slide">
+                Discipline equals freedom.
+                <cite>— Jocko Willink</cite>
+            </blockquote>
+            <blockquote class="quote-slide">
+                It is not the critic who counts; the credit belongs to the man who is actually in the arena.
+                <cite>— Theodore Roosevelt</cite>
+            </blockquote>
+        </div>
+    </section>
+
+    <!-- ===== TABBED RESUME ===== -->
+    <main class="tabs-section tabs">
+        <!-- Radio inputs control which tab is active (no JS needed) -->
+        <input type="radio" name="tab" id="tab-about" checked aria-label="About tab">
+        <input type="radio" name="tab" id="tab-exp" aria-label="Experience tab">
+        <input type="radio" name="tab" id="tab-edu" aria-label="Education tab">
+        <input type="radio" name="tab" id="tab-skills" aria-label="Skills tab">
+
+        <div class="tab-labels" role="tablist">
+            <label for="tab-about" tabindex="0">About</label>
+            <label for="tab-exp" tabindex="0">Experience</label>
+            <label for="tab-edu" tabindex="0">Education & Certs</label>
+            <label for="tab-skills" tabindex="0">Skills & Tools</label>
+        </div>
+
+        <div class="tab-content">
+            <!-- ===== ABOUT ===== -->
+            <section class="tab-panel" id="panel-about" role="tabpanel">
+                <h2 class="panel-title">About Me</h2>
+                <p class="panel-subtitle">A brief introduction to who I am and what I do.</p>
+                <div class="about-grid">
+                    <div>
+                        <p>Hello! I'm <strong>Chase</strong>, a problem-solver who thrives under pressure, driven by a simple philosophy: never stop learning, and always leave a system better and more secure than I found it.</p>
+                        <p>Serving as a Network Communication Systems Specialist and NCO in the U.S. Army, I’ve managed everything from fiber optics and computer networking to satellite and radio hardware. My technical foundation is backed by CompTIA (Network+, Security+), ETA International, and LPI Linux Essentials certifications. However, my greatest takeaways from the military are my leadership and decision-making skills. Managing personnel and mission-critical systems in high-pressure environments taught me how to lead with empathy and execute with precision.</p>
+                        <p>Today, my passion lies in cybersecurity and software engineering. I am transitioning my military expertise into a Network Administrator role, where I can continuously learn and build innovative, secure solutions. I am excited about the future of tech—let's connect and secure our digital future together..</p>
+                    </div>
+                    <aside class="quick-facts">
+                        <h4>Quick Facts</h4>
+                        <dl>
+                            <dt>Location</dt><dd>Bakersfield, CA</dd>
+                            <dt>Experience</dt><dd>8 Years</dd>
+                            <dt>Languages</dt><dd>English</dd>
+                            <dt>Open To</dt><dd>Full-time</dd>
+                        </dl>
+                    </aside>
+                </div>
+                <div class="competencies">
+                    <div class="competency"><h4>🎯 Strategic Thinking</h4><p>The ability to look beyond immediate tasks to understand how daily actions impact long-term organizational goals. It is the practice of anticipating challenges, planning for scalability, and making proactive decisions that ensure future resilience and success.</p></div>
+                    <div class="competency"><h4>💡 Innovation</h4><p>The relentless pursuit of improvement and efficiency. It is a mindset characterized by curiosity and resourcefulness, driving one to challenge the status quo, optimize processes, and deliver creative solutions to complex problems.</p></div>
+                    <div class="competency"><h4>🤝 Leadership</h4><p>The commitment to taking extreme ownership and elevating those around you, regardless of official title. It involves leading by example, fostering a collaborative environment, mentoring peers, and maintaining integrity and composure under pressure.</p></div>
+                    <div class="competency"><h4>📈 Results-Driven</h4><p>An unwavering focus on delivering tangible, high-quality outcomes. It is the discipline to execute tasks with precision, honor commitments, and ensure that every effort translates into measurable value and operational excellence.</p></div>
+                </div>
+            </section>
+
+            <!-- ===== EXPERIENCE ===== -->
+            <section class="tab-panel" id="panel-exp" role="tabpanel">
+                <h2 class="panel-title">Professional Experience</h2>
+                <p class="panel-subtitle">My career journey and roles I've held.</p>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <h3>Network Communication Systems Specialist</h3>
+                        <div class="role-meta">
+                            <span>🏢 U.S. Army, 2SB</span>
+                            <span>📅 20 Nov 2025 – Present</span>
+                            <span>📍 Baumholder, Germany</span>
+                        </div>
+                        <ul>
+                            <li>Team leader of SNN expeditionary team during a combat deployment to Jordan.</li>
+                        </ul>
+                    </div>
+                    <div class="timeline-item">
+                        <h3>Network Communication Systems Specialist</h3>
+                        <div class="role-meta">
+                            <span>🏢 U.S. Army, 1CD</span>
+                            <span>📅 17 Aug 2022 - 19 Nov 2025</span>
+                            <span>📍 Fort Hood, TX</span>
+                        </div>
+                        <ul>
+                            <li>Directed network infrastructure management and optimized non-standard configurations during five major operational exercises supporting 20,000+ personnel. These proactive enhancements directly reduced network latency by 30% and increased satellite link reliability to 99.9%</li>
+                            <li>Managed a complex network architecture integrating SATCOM and line-of-sight systems across 55 strategic nodes. Ensured highly available, uninterrupted voice and data communications for enterprise-level operations.</li>
+                        </ul>
+                    </div>
+                    <div class="timeline-item">
+                        <h3>Nodal Network Systems Operator-Maintainer</h3>
+                        <div class="role-meta">
+                            <span>🏢 U.S. Army, 1CD</span>
+                            <span>📅 29 Oct 2021 - 17 Aug 2022 </span>
+                            <span>📍 Fort Hood, TX</span>
+                        </div>
+                        <ul>
+                            <li>Managed the setup and technical support of multi-enclave tactical networks for the 1st Cavalry Division’s Main Command Post during an exercise. My proactive troubleshooting of transport and baseband systems directly resulted in maintaining 95% network uptime throughout the high-intensity mission.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            <!-- ===== EDUCATION ===== -->
+            <section class="tab-panel" id="panel-edu" role="tabpanel">
+                <h2 class="panel-title">Education & Certifications</h2>
+                <p class="panel-subtitle">Academic background and professional credentials.</p>
+                <div class="edu-grid">
+                    <div class="edu-card">
+                        <div class="edu-icon" aria-hidden="true">🎓</div>
+                        <div>
+                            <h3>B.S. in Cloud and Network Engineering</h3>
+                            <div class="meta">Western Governors University · 2028</div>
+                        </div>
+                    </div>
+                </div>
+                <h3 style="margin-top:36px; color:var(--primary);">Certifications</h3>
+                <div class="certs-grid">
+                    <div class="cert-badge"><strong>Security+</strong><span>CompTIA · Expires Sep 2028 </span></div>
+                    <div class="cert-badge"><strong>Network+</strong><span>CompTIA · Expires Sep 2028</span></div>
+                    <div class="cert-badge"><strong>Fiber Optics Installer</strong><span>ETA International · Expires Jun 2028</span></div>
+                    <div class="cert-badge"><strong>Linux Essentials</strong><span>LPI</span></div>
+                </div>
+            </section>
+            <!-- ===== SKILLS & TOOLS ===== -->
+            <section class="tab-panel" id="panel-skills" role="tabpanel">
+                <h2 class="panel-title">Skills & Tools</h2>
+                <p class="panel-subtitle">Technical proficiencies and the tools I work with day-to-day.</p>
+
+                <div class="skills-section">
+                    <h3>Technical Skills</h3>
+                    <div class="skill-row">
+                        <div class="skill-label"><span>Network Architecture & Troubleshooting</span><span>Expert</span></div>
+                        <div class="skill-bar"><div class="skill-fill" style="width:95%"></div></div>
+                    </div>
+                    <div class="skill-row">
+                        <div class="skill-label"><span>Cybersecurity & Network Defense</span><span>Advanced</span></div>
+                        <div class="skill-bar"><div class="skill-fill" style="width:85%"></div></div>
+                    </div>
+                    <div class="skill-row">
+                        <div class="skill-label"><span>Systems Administration & Linux Proficiency</span><span>Advanced</span></div>
+                        <div class="skill-bar"><div class="skill-fill" style="width:80%"></div></div>
+                    </div>
+                    <div class="skill-row">
+                        <div class="skill-label"><span>Cloud Platforms & Infrastructure as Code (IaC)</span><span>Intermediate</span></div>
+                        <div class="skill-bar"><div class="skill-fill" style="width:70%"></div></div>
+                    </div>
+                </div>
+
+                <div class="skills-section">
+                    <h3>Soft Skills</h3>
+                    <div class="skill-row">
+                        <div class="skill-label"><span>Communication</span><span>Expert</span></div>
+                        <div class="skill-bar"><div class="skill-fill" style="width:92%"></div></div>
+                    </div>
+                    <div class="skill-row">
+                        <div class="skill-label"><span>Team Leadership</span><span>Advanced</span></div>
+                        <div class="skill-bar"><div class="skill-fill" style="width:88%"></div></div>
+                    </div>
+					<div class="skill-row">
+                        <div class="skill-label"><span>Adaptability</span><span>Advanced</span></div>
+                        <div class="skill-bar"><div class="skill-fill" style="width:80%"></div></div>
+                </div>
+
+                <div class="tools-section">
+                    <h3>Tools & Technologies</h3>
+
+                    <div class="tools-group">
+                        <h4><span class="tools-icon" aria-hidden="true">🌐</span> Networking & Infrastructure</h4>
+                        <ul class="tag-list">
+                            <li>Cisco IOS</li>
+                            <li>Juniper</li>
+                            <li>SATCOM</li>
+                            <li>Line-of-Sight Radio</li>
+                            <li>Fiber Optics</li>
+                            <li>VLANs / Trunking</li>
+                            <li>BGP / OSPF</li>
+                            <li>VPN / IPsec</li>
+                            <li>DNS / DHCP</li>
+                            <li>TCP/IP</li>
+                            <li>SNMP</li>
+                            <li>SolarWinds</li>
+                        </ul>
+                    </div>
+
+                    <div class="tools-group">
+                        <h4><span class="tools-icon" aria-hidden="true">🛡️</span> Security & Compliance</h4>
+                        <ul class="tag-list">
+                            <li>Wireshark</li>
+                            <li>Nmap</li>
+                            <li>Splunk</li>
+                            <li>Firewalls (ACLs)</li>
+                            <li>IDS / IPS</li>
+                            <li>NIST CSF</li>
+                            <li>DoD RMF</li>
+                            <li>STIGs</li>
+                            <li>PKI / Certificates</li>
+                            <li>Zero Trust Principles</li>
+                            <li>Incident Response</li>
+                        </ul>
+                    </div>
+
+                    <div class="tools-group">
+                        <h4><span class="tools-icon" aria-hidden="true">💻</span> Systems & Cloud</h4>
+                        <ul class="tag-list">
+                            <li>Linux (RHEL / Ubuntu)</li>
+                            <li>Windows Server</li>
+                            <li>Active Directory</li>
+                            <li>PowerShell</li>
+                            <li>Bash</li>
+                            <li>Python (basics)</li>
+                            <li>Git / GitHub</li>
+                            <li>AWS</li>
+                            <li>Microsoft Azure</li>
+                            <li>Docker</li>
+                            <li>VMware / Hyper-V</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ===== CONTACT ===== -->
+    <section class="contact-section" id="contact">
+        <h2>Get In Touch</h2>
+        <p class="subtitle">Interested in collaborating or have an opportunity? Send me a message.</p>
+        <form class="contact-form" method="post" action="/contact" autocomplete="on" novalidate>
+            <!-- CSRF token MUST be populated by the server-side framework -->
+            <input type="hidden" name="csrf_token" value="">
+            <div class="form-group">
+                <label for="name">Your Name</label>
+                <input type="text" id="name" name="name" required maxlength="100" autocomplete="name" pattern="[A-Za-z\s\-\.']{1,100}">
+            </div>
+            <div class="form-group">
+                <label for="email">Your Email</label>
+                <input type="email" id="email" name="email" required maxlength="254" autocomplete="email">
+            </div>
+            <div class="form-group">
+                <label for="subject">Subject</label>
+                <input type="text" id="subject" name="subject" required maxlength="200">
+            </div>
+            <div class="form-group">
+                <label for="message">Message</label>
+                <textarea id="message" name="message" required maxlength="2000"></textarea>
+            </div>
+            <button type="submit" class="btn">Send Message</button>
+        </form>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <p>© 2024 Chase Letterman · All rights reserved.</p>
+        <p>
+            <a href="https://www.linkedin.com/in/chaseletterman/" target="_blank" rel="noopener noreferrer nofollow">LinkedIn</a> ·
+            <a href="https://www.instagram.com/chaseletterman/" target="_blank" rel="noopener noreferrer nofollow">Instagram</a>
+        </p>
+    </footer>
+</body>
+</html>
