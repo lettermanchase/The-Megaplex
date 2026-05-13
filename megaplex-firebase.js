@@ -13,6 +13,31 @@ if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const fbAuth = firebase.auth();
 const fbDB = firebase.firestore();
 
+// ============================================================
+// 🧹 ONE-TIME MIGRATION: clear pre-fix exploit session scores
+// ============================================================
+// Before the wager-baseline fix shipped, megaplexSessionScores could
+// contain a player's full lifetime score (e.g., 132,431,159 for Clicker).
+// We wipe that ONCE per user, then set a flag so we never wipe again.
+// After this runs, session scores persist normally between game and
+// friends pages, exactly as they should.
+(function migrateLegacySessionScores() {
+    try {
+        const MIGRATION_FLAG = 'megaplexMigration_sessionScores_v1';
+        if (localStorage.getItem(MIGRATION_FLAG) === 'done') return;
+
+        const raw = localStorage.getItem('megaplexSessionScores');
+        if (raw) {
+            console.log('[Megaplex] 🧹 First-load migration: wiping legacy session scores');
+            localStorage.removeItem('megaplexSessionScores');
+        }
+        localStorage.setItem(MIGRATION_FLAG, 'done');
+        console.log('[Megaplex] ✅ Session score migration complete (will not run again)');
+    } catch (e) {
+        console.warn('[Megaplex] Migration error:', e);
+    }
+})();
+
 window.MegaplexCloud = {
     currentFbUser: null,
     isGuestMode: localStorage.getItem('megaplexGuestMode') === 'true',
@@ -292,7 +317,7 @@ window.MegaplexCloud.loadFromCloud = async function(uid) {
             }
         }
 
-                        // 🔒 ACCOUNT ISOLATION FIX
+                                // 🔒 ACCOUNT ISOLATION FIX
         window.MegaplexCloud.registeredGameKeys.forEach(({ key, type }) => {
             if (s[key] !== undefined && s[key] !== null) {
                 if (type === 'json') {
@@ -304,6 +329,29 @@ window.MegaplexCloud.loadFromCloud = async function(uid) {
                 localStorage.removeItem(key);
             }
         });
+
+        // 🧹 ONE-TIME CLOUD CLEANUP: wipe pre-fix exploit session scores
+        // from the cloud the first time this account is loaded after the fix.
+        // Uses a per-account flag so it runs exactly once per account.
+        try {
+            const CLOUD_FLAG = 'megaplexCloudMigration_sessionScores_v1_' + uid;
+            if (localStorage.getItem(CLOUD_FLAG) !== 'done') {
+                if (s.megaplexSessionScores) {
+                    console.log('[Megaplex] 🧹 First-load cloud migration: wiping legacy cloud session scores for', data.username);
+                    // Local copy: clear immediately
+                    localStorage.removeItem('megaplexSessionScores');
+                    // Cloud copy: overwrite with empty object on next save
+                    // (saveToCloud reads localStorage, so empty local → empty cloud)
+                    await fbDB.collection('players').doc(uid).set({
+                        saveData: { megaplexSessionScores: {} }
+                    }, { merge: true });
+                    console.log('[Megaplex] ✅ Cloud session scores cleared for', data.username);
+                }
+                localStorage.setItem(CLOUD_FLAG, 'done');
+            }
+        } catch (e) {
+            console.warn('[Megaplex] Cloud migration error:', e);
+        }
 
         // Also clear non-registered account-specific keys so they don't leak
         ['recentlyPlayed', 'megaplexLastDaily'].forEach(key => {
@@ -919,6 +967,59 @@ window.MegaplexCloud.cancelWager = async function(wagerId) {
     }
 };
 
+// ============================================================
+// 🎯 WAGER SESSION-SCORE API
+// Games must explicitly call these. Session scores are NEVER
+// auto-written from saves — they only exist when a player
+// genuinely plays a fresh round.
+// ============================================================
+
+/**
+ * Called by a game at game-OVER (or whenever the player finishes a run).
+ * Records the achieved score for any active wager on this game.
+ *
+ * @param {string} gameKey - matches WAGER_GAMES key (e.g. 'clicker', 'snake')
+ * @param {number} score   - the score from THIS run only
+ */
+window.MegaplexCloud.reportWagerRunScore = function(gameKey, score) {
+    if (typeof score !== 'number' || isNaN(score)) return;
+    const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+
+    // Determine whether higher or lower is better for this game
+    const info = window.MegaplexCloud.getWagerGameInfo(gameKey);
+    const higherIsBetter = !info || info.scoreType === 'higher';
+
+    const existing = sessions[gameKey];
+    let shouldUpdate = false;
+    if (existing === undefined || existing === null) {
+        shouldUpdate = true;
+    } else if (higherIsBetter && score > existing) {
+        shouldUpdate = true;
+    } else if (!higherIsBetter && score < existing) {
+        shouldUpdate = true;
+    }
+
+    if (shouldUpdate) {
+        sessions[gameKey] = score;
+        localStorage.setItem('megaplexSessionScores', JSON.stringify(sessions));
+        console.log('[Megaplex] 🎯 Wager session score for "' + gameKey + '": ' + score);
+    }
+};
+
+/**
+ * Clears the session score for a game.
+ * Call this when a wager is submitted/resolved, or when a fresh
+ * run should begin (e.g. on prestige).
+ */
+window.MegaplexCloud.clearWagerSessionScore = function(gameKey) {
+    const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+    if (sessions[gameKey] !== undefined) {
+        delete sessions[gameKey];
+        localStorage.setItem('megaplexSessionScores', JSON.stringify(sessions));
+        console.log('[Megaplex] 🎯 Cleared session score for "' + gameKey + '"');
+    }
+};
+
 /**
  * Submit your session score for an active wager.
  * Pulls from megaplexSessionScores (set when player plays the game after accepting).
@@ -935,7 +1036,6 @@ window.MegaplexCloud.submitWagerScore = async function(wagerId) {
         const w = wagerDoc.data();
         if (w.status !== 'active') return { success: false, reason: 'not_active' };
 
-        // Determine which side I'm on
         const isChallenger = w.challenger.uid === u.uid;
         const isOpponent = w.opponent.uid === u.uid;
         if (!isChallenger && !isOpponent) return { success: false, reason: 'not_your_wager' };
@@ -943,18 +1043,19 @@ window.MegaplexCloud.submitWagerScore = async function(wagerId) {
         const mySide = isChallenger ? 'challenger' : 'opponent';
         if (w[mySide].score !== null) return { success: false, reason: 'already_submitted' };
 
-        // Pull session score
         const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
         const sessionScore = sessions[w.game.key];
         if (sessionScore === undefined || sessionScore === null) {
             return { success: false, reason: 'no_session_score' };
         }
 
-        // Write the score
         const updates = {};
         updates[mySide + '.score'] = sessionScore;
         updates[mySide + '.submittedAt'] = Date.now();
         await wagerRef.update(updates);
+
+        // 🆕 Clear the session score so it can't be re-submitted to another wager
+        window.MegaplexCloud.clearWagerSessionScore(w.game.key);
 
         console.log('[Megaplex] ⚔️ Wager score submitted:', sessionScore);
         return { success: true, score: sessionScore };
@@ -1051,6 +1152,13 @@ window.MegaplexCloud.resolveWager = async function(wagerId) {
                 opponentPayout: opponentPayout
             });
         });
+
+        // 🧹 Clean up session score for this game (wager is over)
+        try {
+            const wagerDoc = await wagerRef.get();
+            const gameKey = wagerDoc.data()?.game?.key;
+            if (gameKey) window.MegaplexCloud.clearWagerSessionScore(gameKey);
+        } catch (e) {}
 
         return { success: true };
     } catch (err) {
@@ -1210,7 +1318,7 @@ fbAuth.onAuthStateChanged(async (user) => {
 // ============================================================
 // 💾 AUTO-SAVE
 // ============================================================
-setInterval(() => window.MegaplexCloud.saveToCloud(), 30000);
+setInterval(() => window.MegaplexCloud.saveToCloud(), 120000);  // every 2 minutes
 
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) window.MegaplexCloud.saveOnExit();
@@ -1221,3 +1329,82 @@ window.addEventListener('beforeunload', () => window.MegaplexCloud.saveOnExit())
 
 console.log('[Megaplex] Firebase module loaded (v2.4, ' +
     window.MegaplexCloud.registeredGameKeys.length + ' keys registered, social + wager systems online)');
+
+    // ============================================================
+// 💬 GLOBAL CHAT ROOM — Real-time chat across all pages
+// ============================================================
+
+window.MegaplexCloud.CHAT_MAX_MESSAGES = 50;        // How many recent messages to show
+window.MegaplexCloud.CHAT_MAX_LENGTH = 200;         // Max chars per message
+window.MegaplexCloud.CHAT_COOLDOWN_MS = 1500;       // Anti-spam: 1.5s between messages
+window.MegaplexCloud._lastChatSendAt = 0;
+
+/**
+ * Send a chat message to the global chat room.
+ * Requires the user to be logged in (no guests).
+ */
+window.MegaplexCloud.sendChatMessage = async function(text) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u || window.MegaplexCloud.isGuestMode) {
+        return { success: false, reason: 'not_logged_in' };
+    }
+
+    // Trim and validate
+    const clean = String(text || '').trim().slice(0, window.MegaplexCloud.CHAT_MAX_LENGTH);
+    if (!clean) return { success: false, reason: 'empty' };
+
+    // Anti-spam cooldown
+    const now = Date.now();
+    if (now - window.MegaplexCloud._lastChatSendAt < window.MegaplexCloud.CHAT_COOLDOWN_MS) {
+        return { success: false, reason: 'cooldown' };
+    }
+
+    try {
+        const username = localStorage.getItem('megaplexUsername') || 'Player';
+        // Pull avatar so the chat can show colors/hats next to names
+        let avatar = {};
+        try {
+            const avatarData = JSON.parse(localStorage.getItem('avatarData')) || {};
+            avatar = avatarData.equipped || {};
+        } catch (e) {}
+
+        await fbDB.collection('chatMessages').add({
+            uid: u.uid,
+            username: username,
+            avatar: avatar,
+            text: clean,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            createdAt: now  // client-side fallback for sorting before server stamps it
+        });
+
+        window.MegaplexCloud._lastChatSendAt = now;
+        return { success: true };
+    } catch (err) {
+        console.error('[Megaplex] sendChatMessage failed:', err);
+        return { success: false, reason: 'error' };
+    }
+};
+
+/**
+ * Subscribe to live chat messages.
+ * Callback receives an array of the most recent messages, oldest first.
+ * Returns an unsubscribe function.
+ */
+window.MegaplexCloud.subscribeToChat = function(callback) {
+    return fbDB.collection('chatMessages')
+        .orderBy('createdAt', 'desc')
+        .limit(window.MegaplexCloud.CHAT_MAX_MESSAGES)
+        .onSnapshot((snap) => {
+            const messages = [];
+            snap.forEach(doc => {
+                messages.push({ id: doc.id, ...doc.data() });
+            });
+            // Reverse so oldest is first (so we can append at bottom)
+            messages.reverse();
+            callback(messages);
+        }, (err) => {
+            console.error('[Megaplex] subscribeToChat error:', err);
+        });
+};
+
+console.log('[Megaplex] 💬 Chat module loaded');

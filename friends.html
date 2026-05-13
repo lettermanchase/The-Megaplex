@@ -793,6 +793,54 @@
         }
         .wager-modal-close:hover { opacity: 1; }
 
+        .wager-info-btn {
+    background: rgba(165, 94, 234, 0.2);
+    border: 2px solid #a55eea;
+    color: #a55eea;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9em;
+    font-family: 'Orbitron', sans-serif;
+    transition: 0.2s;
+    display: inline-flex; align-items: center; justify-content: center;
+    line-height: 1;
+}
+.wager-info-btn:hover {
+    background: #a55eea;
+    color: #fff;
+    transform: scale(1.1);
+    box-shadow: 0 0 12px rgba(165, 94, 234, 0.6);
+}
+
+.wager-info-section {
+    background: rgba(0,0,0,0.4);
+    border-left: 3px solid #a55eea;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    text-align: left;
+}
+.wager-info-title {
+    font-family: 'Orbitron', sans-serif;
+    color: #a55eea;
+    font-size: 0.95em;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+.wager-info-list {
+    color: #c8d6e5;
+    font-size: 0.9em;
+    line-height: 1.6;
+    margin: 0;
+    padding-left: 20px;
+}
+.wager-info-list li { margin-bottom: 6px; }
+.wager-info-list b { color: #fff; }
+.wager-info-list i { color: #feca57; font-style: normal; font-weight: bold; }
+
         .wager-modal-section {
             margin-bottom: 18px;
         }
@@ -1094,11 +1142,14 @@
     </div>
 
     <!-- ============= ⚔️ WAGER CHALLENGE MODAL ============= -->
-    <div class="modal-overlay" id="wagerModal" onclick="if(event.target===this) closeWagerModal()">
-        <div class="wager-modal">
-            <button class="wager-modal-close" onclick="closeWagerModal()">×</button>
-            <h2>⚔️ CHALLENGE TO A WAGER</h2>
-            <div class="wager-modal-sub" id="wagerModalSub">vs OPPONENT</div>
+<div class="modal-overlay" id="wagerModal" onclick="if(event.target===this) closeWagerModal()">
+    <div class="wager-modal">
+        <button class="wager-modal-close" onclick="closeWagerModal()">×</button>
+        <h2 style="display:flex; align-items:center; justify-content:center; gap:10px;">
+            ⚔️ CHALLENGE TO A WAGER
+            <button class="wager-info-btn" onclick="openWagerInfo()" title="How wagers work">ℹ</button>
+        </h2>
+        <div class="wager-modal-sub" id="wagerModalSub">vs OPPONENT</div>
 
             <div class="wager-modal-section">
                 <div class="wager-modal-label">1. Pick a Game</div>
@@ -1117,6 +1168,59 @@
             </button>
         </div>
     </div>
+
+    <!-- ============= ℹ️ HOW WAGERS WORK MODAL ============= -->
+<div class="modal-overlay" id="wagerInfoModal" onclick="if(event.target===this) closeWagerInfo()">
+    <div class="wager-modal" style="max-width:600px;">
+        <button class="wager-modal-close" onclick="closeWagerInfo()">×</button>
+        <h2>ℹ️ HOW WAGERS WORK</h2>
+        <div class="wager-modal-sub">Read this before you challenge!</div>
+
+        <div class="wager-info-section">
+            <div class="wager-info-title">⚔️ The Basics</div>
+            <ul class="wager-info-list">
+                <li>Both players bet the same amount of tokens.</li>
+                <li>You and your opponent each play the chosen game.</li>
+                <li>Highest score (or lowest, for time-based games) wins the pot.</li>
+                <li>You have <b>24 hours</b> after the wager is accepted to play and submit.</li>
+            </ul>
+        </div>
+
+        <div class="wager-info-section">
+            <div class="wager-info-title">🎯 Score Rules — IMPORTANT</div>
+            <ul class="wager-info-list">
+                <li><b>Only the score you achieve during the wager counts.</b> When you open the game, your wager "starts fresh" from zero.</li>
+                <li>For idle/accumulator games like <b>Clicker Frenzy</b>, only the cosmic energy you earn <i>during this session</i> is submitted — not your lifetime total. This keeps wagers fair between veterans and new players.</li>
+                <li>Your real lifetime progress and all-time high score are <b>never affected</b> by a wager.</li>
+                <li>You must submit your score from the Friends page after playing.</li>
+            </ul>
+        </div>
+
+        <div class="wager-info-section">
+            <div class="wager-info-title">🏆 Payouts</div>
+            <ul class="wager-info-list">
+                <li><b>Winner:</b> Takes the full pot minus a 10% house cut.</li>
+                <li><b>Tie:</b> Both players are refunded their bet minus a 5% cut each.</li>
+                <li><b>No-show / expired:</b> Player who didn't submit forfeits the wager.</li>
+                <li>You must click <b>"CLAIM"</b> on the friends page to collect your winnings.</li>
+            </ul>
+        </div>
+
+        <div class="wager-info-section">
+            <div class="wager-info-title">⛔ Other Rules</div>
+            <ul class="wager-info-list">
+                <li>You can only wager friends — send a friend request first.</li>
+                <li>You can have multiple wagers active at the same time.</li>
+                <li>Tokens are escrowed (held) the moment you challenge or accept.</li>
+                <li>Cancelling a pending challenge refunds you immediately.</li>
+            </ul>
+        </div>
+
+        <button class="modal-btn" onclick="closeWagerInfo()" style="background:linear-gradient(135deg,#a55eea,#6c5ce7); color:#fff; padding:12px 30px; border-radius:10px; border:none; font-weight:bold; cursor:pointer; font-family:'Orbitron',sans-serif; letter-spacing:2px; margin-top:10px;">
+            GOT IT
+        </button>
+    </div>
+</div>
 
     <script>
         /* ====== LOADING SCREEN CONTROLLER ====== */
@@ -1850,6 +1954,16 @@ window.toggleSection = function(headerEl) {
             wagerSelection = { game: null, amount: null };
         }
 
+        function openWagerInfo() {
+            document.getElementById('wagerInfoModal').classList.add('show');
+        }
+        function closeWagerInfo() {
+            document.getElementById('wagerInfoModal').classList.remove('show');
+        }
+        // Expose to inline onclick attributes
+        window.openWagerInfo = openWagerInfo;
+        window.closeWagerInfo = closeWagerInfo;
+
         function refreshWagerSummary() {
             const sumEl = document.getElementById('wagerSummary');
             const btn = document.getElementById('btnSendWager');
@@ -2331,6 +2445,13 @@ window.MegaplexCloud.onReady((user) => {
     }, 600);
 });
 
+        // Re-render wager UI when player returns from playing a game
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && activeProfileUid) {
+                renderActiveWagersForProfile(activeProfileUid);
+            }
+        });
+
         // If the user logs out while on this page, redirect home
         window.addEventListener('megaplex-auth-changed', (e) => {
             if (!e.detail.user) {
@@ -2339,5 +2460,9 @@ window.MegaplexCloud.onReady((user) => {
             }
         });
     </script>
+
+<link rel="stylesheet" href="chat.css">
+<script src="chat.js"></script>
+
 </body>
 </html>

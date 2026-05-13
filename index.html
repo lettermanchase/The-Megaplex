@@ -1096,6 +1096,7 @@
     cursor: not-allowed;
 }
 
+
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -2187,7 +2188,7 @@ function calculateTokens() {
 }
         async function fetchGlobalLeaderboard(force = false) {
             const now = Date.now();
-            if (!force && now - leaderboardLastFetch < 30000 && Object.keys(globalLeaderboardCache).length > 0) {
+            if (!force && now - leaderboardLastFetch < 300000 && Object.keys(globalLeaderboardCache).length > 0) {
                 renderLeaderboard(); return;
             }
             const banner = document.getElementById('lbStatusBanner');
@@ -3788,5 +3789,8 @@ function stopBountyTimer() {
     if (bountyTimerInterval) { clearInterval(bountyTimerInterval); bountyTimerInterval = null; }
 }
     </script>
+<link rel="stylesheet" href="chat.css">
+<script src="chat.js"></script>
+
 </body>
 </html>

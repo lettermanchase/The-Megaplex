@@ -370,6 +370,57 @@
             .shop-area { width: 100%; max-height: 500px; }
             .stats-panel { position: static; margin: 10px; }
         }
+
+                /* ===== WAGER ACTIVE BANNER ===== */
+                .wager-active-banner {
+            position: absolute;
+            top: 15px; left: 15px;
+            background: linear-gradient(135deg, rgba(165, 94, 234, 0.25), rgba(108, 92, 231, 0.15));
+            border: 1px solid #a55eea;
+            border-radius: 10px;
+            padding: 8px 14px;
+            color: #fff;
+            font-size: 0.85em;
+            box-shadow: 0 0 15px rgba(165, 94, 234, 0.4);
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: wagerBannerPulse 2s ease-in-out infinite alternate;
+            max-width: calc(100% - 200px);
+        }
+        @keyframes wagerBannerPulse {
+            from { box-shadow: 0 0 10px rgba(165, 94, 234, 0.3); }
+            to   { box-shadow: 0 0 20px rgba(165, 94, 234, 0.7); }
+        }
+        .wager-active-banner b { color: #a55eea; letter-spacing: 1px; }
+        .wager-active-banner #wagerSessionEarned {
+            color: #1dd1a1;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        .wager-banner-info {
+            background: rgba(165, 94, 234, 0.3);
+            color: #fff;
+            border: 1px solid #a55eea;
+            border-radius: 50%;
+            width: 18px; height: 18px;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.8em; font-weight: bold;
+            cursor: help;
+        }
+
+        @media (max-width: 900px) {
+            .game-container { flex-direction: column; }
+            .shop-area { width: 100%; max-height: 500px; }
+            .stats-panel { position: static; margin: 10px; }
+            .wager-active-banner {
+                position: static;
+                max-width: 100%;
+                margin: 10px;
+            }
+        }
+    </style>
     </style>
 	
 	<!-- Megaplex Cloud Sync (must be in every game page) -->
@@ -396,6 +447,11 @@
         
         <div class="click-area" id="clickArea">
             <div class="combo-display" id="comboDisplay"></div>
+            <div class="wager-active-banner" id="wagerBanner" style="display:none;">
+                ⚔️ <b>WAGER ACTIVE</b> — Earned this session:
+                <span id="wagerSessionEarned">0</span>
+                <span class="wager-banner-info" title="Only the cosmic energy you earn during this play session counts toward your wager. Your lifetime score and all-time high are not affected.">ℹ</span>
+            </div>
             <div class="stats-panel" id="statsPanel">
                 <div>Total Clicks: <b id="totalClicks">0</b></div>
                 <div>Lifetime: <b id="lifetimeScore">0</b></div>
@@ -625,12 +681,31 @@
     function saveGame() {
     gameState.lastSaved = Date.now();
     try {
+        // 1) Save full game state locally
         localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
-        const arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-        arcadeScores.clicker = Math.floor(gameState.lifetimeScore);
-        localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
 
-        // 🆕 Sync to cloud (debounced — auto-save runs every 5s but only push to cloud occasionally)
+        const currentLifetime = Math.floor(gameState.lifetimeScore);
+
+        // 2) ALL-TIME BEST: only update if current run beat it
+        if (window.MegaplexCloud && typeof window.MegaplexCloud.recordScore === 'function') {
+            window.MegaplexCloud.recordScore('clicker', currentLifetime, true);
+        } else {
+            const arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+            if (currentLifetime > (arcadeScores.clicker || 0)) {
+                arcadeScores.clicker = currentLifetime;
+                localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
+            }
+        }
+
+        // 3) WAGER SESSION SCORE — ALWAYS write only the delta from page load.
+        //    Never write the full lifetime score, regardless of wager state.
+        //    This guarantees the exploit cannot happen even if wager detection fails.
+        const sessionDelta = getWagerRunScore();
+        const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+        sessions.clicker = sessionDelta;
+        localStorage.setItem('megaplexSessionScores', JSON.stringify(sessions));
+
+        // 4) Cloud sync (debounced)
         if (window.MegaplexCloud && window.MegaplexCloud.isReady && !window._clickerCloudPending) {
             window._clickerCloudPending = true;
             setTimeout(() => {
@@ -699,10 +774,53 @@
     // 🎮 GAME LOGIC
     // ============================================================
     let comboCount = 0;
-    let comboTimer = 0;
-    let buyMult = 1;
-    let currentTab = 'click';
-    let displayScore = 0; // smoothly animated
+let comboTimer = 0;
+let buyMult = 1;
+let currentTab = 'click';
+let displayScore = 0; // smoothly animated
+
+// 🎯 WAGER RUN TRACKING
+// "Wager run score" = lifetime score gained DURING this page session,
+// starting from the moment the page loaded. This prevents players
+// from cashing in their all-time accumulated score on a wager.
+// Initialize to a sentinel value so we know if it hasn't been set yet
+let wagerRunBaseline = null;
+let wagerRunActive = false;
+
+function getWagerRunScore() {
+    // If baseline hasn't been initialized yet, the session score is 0.
+    // This protects against any save firing before bootGame() completes.
+    if (wagerRunBaseline === null) return 0;
+    return Math.max(0, Math.floor(gameState.lifetimeScore - wagerRunBaseline));
+}
+
+function reportWagerRunScore() {
+    if (!wagerRunActive) return;
+    if (window.MegaplexCloud && typeof window.MegaplexCloud.reportWagerRunScore === 'function') {
+        window.MegaplexCloud.reportWagerRunScore('clicker', getWagerRunScore());
+    }
+}
+
+// Async helper — checks the player's wager docs to see if any are active
+// for the given game key. Used to know whether to track a wager run.
+async function checkForActiveWager(gameKey) {
+    if (!window.MegaplexCloud || !window.MegaplexCloud.currentFbUser) return false;
+    return new Promise((resolve) => {
+        const unsub = window.MegaplexCloud.subscribeToWagers((wagers) => {
+            try { unsub(); } catch(e) {}
+            const me = window.MegaplexCloud.currentFbUser.uid;
+            const hasActive = wagers.some(w =>
+                w.status === 'active' &&
+                w.game.key === gameKey &&
+                ((w.challenger.uid === me && w.challenger.score === null) ||
+                 (w.opponent.uid === me && w.opponent.score === null))
+            );
+            resolve(hasActive);
+        });
+        // Safety fallback
+        setTimeout(() => { try { unsub(); } catch(e){} resolve(false); }, 3000);
+    });
+}
 
     function getPrestigeMult() {
         return 1 + (gameState.prestigeShards * 0.05);
@@ -1066,28 +1184,35 @@
         document.getElementById('prestigeModal').classList.remove('show');
     }
     function doPrestige() {
-        const shards = calcShardsAvailable();
-        if (shards < 1) return;
-        sfx.prestige();
-        gameState.prestigeShards += shards;
-        gameState.prestigeLevel++;
-        gameState.score = 0;
-        gameState.lifetimeScore = 0;
-        gameState.totalClicks = 0;
-        for (let key in upgrades) gameState.upgrades[key] = 0;
-        // Keep achievements!
-        saveGame();
-        closePrestige();
-        checkAchievements();
-        updateUI();
-        // Big visual effect
-        for (let i = 0; i < 50; i++) {
-            setTimeout(() => {
-                const rect = clickArea.getBoundingClientRect();
-                createParticleBurst(rect.left + rect.width/2, rect.top + rect.height/2, '#ffd700', 5);
-            }, i * 30);
-        }
+    const shards = calcShardsAvailable();
+    if (shards < 1) return;
+    sfx.prestige();
+    gameState.prestigeShards += shards;
+    gameState.prestigeLevel++;
+    gameState.score = 0;
+    gameState.lifetimeScore = 0;
+    gameState.totalClicks = 0;
+    for (let key in upgrades) gameState.upgrades[key] = 0;
+
+    // 🎯 Reset wager-run baseline to match the new (zero) lifetime,
+    // and clear any session score so a fresh post-prestige run is what counts.
+    wagerRunBaseline = 0;
+    if (window.MegaplexCloud) {
+        window.MegaplexCloud.clearWagerSessionScore('clicker');
     }
+
+    saveGame();
+    closePrestige();
+    checkAchievements();
+    updateUI();
+    // Big visual effect
+    for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+            const rect = clickArea.getBoundingClientRect();
+            createParticleBurst(rect.left + rect.width/2, rect.top + rect.height/2, '#ffd700', 5);
+        }, i * 30);
+    }
+}
 
     // ============================================================
     // 🗑️ HARD RESET
@@ -1148,6 +1273,9 @@
     // ============================================================
     // 🎨 UI UPDATES
     // ============================================================
+        // ============================================================
+    // 🎨 UI UPDATES
+    // ============================================================
     function updateUI() {
         // Smoothly animate score
         displayScore += (gameState.score - displayScore) * 0.3;
@@ -1157,6 +1285,17 @@
         document.getElementById('lifetimeScore').innerText = formatNum(gameState.lifetimeScore);
         document.getElementById('prestigeLevel').innerText = gameState.prestigeLevel;
         document.getElementById('prestigeMult').innerText = '×' + getPrestigeMult().toFixed(2);
+
+        // 🎯 Show/update wager banner ONLY when there's an active wager
+        const banner = document.getElementById('wagerBanner');
+        if (banner) {
+            if (wagerRunActive) {
+                banner.style.display = 'flex';
+                document.getElementById('wagerSessionEarned').innerText = formatNum(getWagerRunScore());
+            } else {
+                banner.style.display = 'none';
+            }
+        }
 
         // Milestone bar
         const milestones = [100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 1e10, 1e12];
@@ -1200,32 +1339,57 @@
     // ============================================================
     // 🚀 BOOT
     // ============================================================
-    function bootGame() {
-        const loaded = loadGame();
-        if (loaded) {
-            const { earnings, time } = calculateOfflineEarnings();
-            if (earnings > 0 && time > 30) {
-                gameState.score += earnings;
-                gameState.lifetimeScore += earnings;
-                document.getElementById('offlineEarnings').innerText = formatNum(earnings);
-                document.getElementById('awayTime').innerText = formatTime(time);
-                document.getElementById('welcomeModal').classList.add('show');
-            }
+    async function bootGame() {
+    const loaded = loadGame();
+    if (loaded) {
+        const { earnings, time } = calculateOfflineEarnings();
+        if (earnings > 0 && time > 30) {
+            gameState.score += earnings;
+            gameState.lifetimeScore += earnings;
+            document.getElementById('offlineEarnings').innerText = formatNum(earnings);
+            document.getElementById('awayTime').innerText = formatTime(time);
+            document.getElementById('welcomeModal').classList.add('show');
         }
-        displayScore = gameState.score;
-        buildShop();
-        updateUI();
-        checkAchievements();
     }
 
-    // Wait for Firebase to populate localStorage before booting
-    if (window.MegaplexCloud) {
-        window.MegaplexCloud.onReady(function() {
-            bootGame();
-        });
-    } else {
-        bootGame();
+    // 🎯 CRITICAL: Lock in the baseline IMMEDIATELY after load + offline catch-up.
+    // Anything from this moment forward counts as the wager-run score.
+    // This MUST happen before any save fires.
+    wagerRunBaseline = Math.floor(gameState.lifetimeScore);
+    console.log('[Clicker] 🎯 Wager baseline locked at:', wagerRunBaseline);
+
+    // 🎯 Detect whether the player has an active wager (for the banner display).
+    // This is now ONLY for showing the banner — the score safety doesn't depend on it.
+    wagerRunActive = await checkForActiveWager('clicker');
+    if (wagerRunActive) {
+        console.log('[Clicker] ⚔️ Active wager detected — banner will show');
     }
+
+    displayScore = gameState.score;
+    buildShop();
+    updateUI();
+    checkAchievements();
+}
+
+// Wait for Firebase to populate localStorage before booting
+if (window.MegaplexCloud) {
+    window.MegaplexCloud.onReady(function() {
+        bootGame();   // bootGame is async but we don't need to await it here
+    });
+} else {
+    bootGame();
+}
+
+    // Re-render when player returns to this tab (e.g., after playing a game)
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && activeProfileUid) {
+        renderActiveWagersForProfile(activeProfileUid);
+    }
+});
 </script>
+
+<link rel="stylesheet" href="chat.css">
+<script src="chat.js"></script>
+
 </body>
 </html>
