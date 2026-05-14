@@ -678,47 +678,100 @@
         { id: 'prestige_1',   name: 'Ascended',            icon: '⭐', desc: 'Prestige once',                         check: s => s.prestigeLevel >= 1 }
     ];
 
-    function saveGame() {
-    gameState.lastSaved = Date.now();
-    try {
-        // 1) Save full game state locally
-        localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+        // ============================================================
+    // 💾 SMART SAVE SYSTEM — Local always, Cloud debounced (max-delay)
+    // ============================================================
+    const CLOUD_DEBOUNCE_IDLE_MS = 5000;   // Wait 5 sec of inactivity
+    const CLOUD_DEBOUNCE_MAX_MS  = 30000;  // ...but never more than 30 sec
 
-        const currentLifetime = Math.floor(gameState.lifetimeScore);
+    let _pendingCloudSave   = null;
+    let _earliestSaveAt     = 0;
+    let _cloudWriteInFlight = false;
 
-        // 2) ALL-TIME BEST: only update if current run beat it
-        if (window.MegaplexCloud && typeof window.MegaplexCloud.recordScore === 'function') {
-            window.MegaplexCloud.recordScore('clicker', currentLifetime, true);
-        } else {
+    // LOCAL save — always safe, instant, free
+    function saveGameLocal() {
+        gameState.lastSaved = Date.now();
+        try {
+            localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+
+            const currentLifetime = Math.floor(gameState.lifetimeScore);
             const arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
             if (currentLifetime > (arcadeScores.clicker || 0)) {
                 arcadeScores.clicker = currentLifetime;
                 localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
             }
-        }
 
-        // 3) WAGER SESSION SCORE — ALWAYS write only the delta from page load.
-        //    Never write the full lifetime score, regardless of wager state.
-        //    This guarantees the exploit cannot happen even if wager detection fails.
-        const sessionDelta = getWagerRunScore();
-        const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
-        sessions.clicker = sessionDelta;
-        localStorage.setItem('megaplexSessionScores', JSON.stringify(sessions));
-
-        // 4) Cloud sync (debounced)
-        if (window.MegaplexCloud && window.MegaplexCloud.isReady && !window._clickerCloudPending) {
-            window._clickerCloudPending = true;
-            setTimeout(() => {
-                window.MegaplexCloud.saveToCloud()
-                    .then(() => console.log('[Clicker] ☁️ Synced to cloud'))
-                    .catch(e => console.error('[Clicker] Cloud sync failed:', e))
-                    .finally(() => { window._clickerCloudPending = false; });
-            }, 100);
+            const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+            sessions.clicker = getWagerRunScore();
+            localStorage.setItem('megaplexSessionScores', JSON.stringify(sessions));
+        } catch(e) {
+            console.error('[Clicker] Local save failed:', e);
         }
-    } catch(e) {
-        console.error('Save failed:', e);
     }
-}
+
+    // Schedule a debounced cloud save
+    function scheduleCloudSave() {
+        if (!window.MegaplexCloud || !window.MegaplexCloud.isReady) return;
+        if (window.MegaplexCloud.isGuestMode) return;
+
+        const now = Date.now();
+        if (_earliestSaveAt === 0) {
+            _earliestSaveAt = now + CLOUD_DEBOUNCE_MAX_MS;
+        }
+
+        clearTimeout(_pendingCloudSave);
+
+        const remainingUntilDeadline = _earliestSaveAt - now;
+        const delay = Math.max(100, Math.min(CLOUD_DEBOUNCE_IDLE_MS, remainingUntilDeadline));
+
+        _pendingCloudSave = setTimeout(flushCloudSave, delay);
+    }
+
+    // Push to cloud
+    function flushCloudSave() {
+        clearTimeout(_pendingCloudSave);
+        _pendingCloudSave = null;
+
+        if (_cloudWriteInFlight) {
+            _pendingCloudSave = setTimeout(flushCloudSave, 1000);
+            return;
+        }
+        if (!window.MegaplexCloud || !window.MegaplexCloud.isReady) return;
+        if (window.MegaplexCloud.isGuestMode) return;
+
+        _cloudWriteInFlight = true;
+        _earliestSaveAt = 0;
+
+        window.MegaplexCloud.saveToCloud()
+            .then(() => console.log('[Clicker] ☁️ Cloud sync OK'))
+            .catch(e => {
+                console.error('[Clicker] Cloud sync failed:', e);
+                _earliestSaveAt = Date.now() + CLOUD_DEBOUNCE_MAX_MS;
+            })
+            .finally(() => { _cloudWriteInFlight = false; });
+    }
+
+    // Combined save — call this anywhere you'd normally call saveGame()
+    function saveGame() {
+        saveGameLocal();
+        scheduleCloudSave();
+    }
+
+    // Exit save — force-flush regardless of debounce
+    function saveOnExit() {
+        saveGameLocal();
+        clearTimeout(_pendingCloudSave);
+        if (window.MegaplexCloud && window.MegaplexCloud.isReady && !window.MegaplexCloud.isGuestMode) {
+            try { window.MegaplexCloud.saveToCloud(); } catch(e) {}
+        }
+    }
+
+    // Exit handlers
+    window.addEventListener('pagehide', saveOnExit);
+    window.addEventListener('beforeunload', saveOnExit);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) saveOnExit();
+    });
 
     function loadGame() {
         const saved = localStorage.getItem(SAVE_KEY);
@@ -1261,14 +1314,7 @@ async function checkForActiveWager(gameKey) {
         updateUI();
     }, 100);
 
-    // Auto-save every 5 seconds
-    setInterval(saveGame, 5000);
 
-    // Save on page hide / unload
-    window.addEventListener('beforeunload', saveGame);
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) saveGame();
-    });
 
     // ============================================================
     // 🎨 UI UPDATES
@@ -1378,14 +1424,39 @@ if (window.MegaplexCloud) {
     });
 } else {
     bootGame();
+
+    async function bootGame() {
+    const loaded = loadGame();
+    if (loaded) {
+        const { earnings, time } = calculateOfflineEarnings();
+        if (earnings > 0 && time > 30) {
+            gameState.score += earnings;
+            gameState.lifetimeScore += earnings;
+            document.getElementById('offlineEarnings').innerText = formatNum(earnings);
+            document.getElementById('awayTime').innerText = formatTime(time);
+            document.getElementById('welcomeModal').classList.add('show');
+        }
+    }
+
+    wagerRunBaseline = Math.floor(gameState.lifetimeScore);
+    console.log('[Clicker] 🎯 Wager baseline locked at:', wagerRunBaseline);
+
+    wagerRunActive = await checkForActiveWager('clicker');
+    if (wagerRunActive) {
+        console.log('[Clicker] ⚔️ Active wager detected — banner will show');
+    }
+
+    displayScore = gameState.score;
+    buildShop();
+    updateUI();
+    checkAchievements();
+
+    // ✅ NEW: Start the auto-save timer ONLY after data is loaded
+    setInterval(saveGameLocal, 5000);
+    console.log('[Clicker] ✅ Auto-save started');
+}
 }
 
-    // Re-render when player returns to this tab (e.g., after playing a game)
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && activeProfileUid) {
-        renderActiveWagersForProfile(activeProfileUid);
-    }
-});
 </script>
 
 <link rel="stylesheet" href="chat.css">
