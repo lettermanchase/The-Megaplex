@@ -523,7 +523,21 @@ function startFriendList(){
     c4ListUnsub = C4.subscribeToC4(renderFriendGames);
 }
 
+
+let lastC4InviteIds = new Set();
 function renderFriendGames(games){
+    // --- invite toast detection (folded in — no separate listener) ---
+    const incomingInvites = games.filter(g =>
+        g.status === 'pending' && g.yellow.uid === myUid
+    );
+    const newIds = new Set(incomingInvites.map(g => g.id));
+    incomingInvites.forEach(g => {
+        if (!lastC4InviteIds.has(g.id)) {
+            toast(`New Connect 4 challenge from ${escapeHtml(g.red.username)}!`, 'info', '🔴');
+        }
+    });
+    lastC4InviteIds = newIds;
+
     const list=document.getElementById('friendGamesList');
     // Sort: active first, then pending invites, then finished
     const live = games.filter(g=>g.status==='active');
@@ -866,20 +880,7 @@ function leaveGame() {
     // Hide picker panel if open
     document.getElementById('c4PickerPanel').style.display = 'none';
 }
-let lastC4InviteIds = new Set();
-C4.subscribeToC4(function(c4Games) {
-    const incoming = c4Games.filter(g =>
-        g.status === 'pending' &&
-        g.yellow.uid === window.MegaplexCloud.currentFbUser?.uid
-    );
-    const newIds = new Set(incoming.map(g => g.id));
-    incoming.forEach(g => {
-        if (!lastC4InviteIds.has(g.id)) {
-            toast(`New Connect 4 challenge from ${escapeHtml(g.red.username)}!`, 'info', '🔴');
-        }
-    });
-    lastC4InviteIds = newIds;
-});
+
 </script>
 
 <link rel="stylesheet" href="chat.css">

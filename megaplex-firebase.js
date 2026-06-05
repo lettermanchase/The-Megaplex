@@ -201,6 +201,8 @@ window.MegaplexCloud.buildPublicProfile = function() {
 // ============================================================
 // ☁️ CLOUD SAVE  (now also writes publicProfile + usernameLower)
 // ============================================================
+window.MegaplexCloud._lastSaveHash = null;   // remembers what we last wrote
+
 window.MegaplexCloud.saveToCloud = async function() {
     const u = window.MegaplexCloud.currentFbUser;
     if (window.MegaplexCloud.isGuestMode || !u) {
@@ -208,10 +210,10 @@ window.MegaplexCloud.saveToCloud = async function() {
         return false;
     }
     if (window.MegaplexCloud._savePending) return false;
-    window.MegaplexCloud._savePending = true;
 
-    const saveData = { lastSaved: new Date().toISOString() };
-
+    // Build saveData WITHOUT the timestamp first, so the dirty-check
+    // only triggers on real data changes (not a ticking clock).
+    const saveData = {};
     window.MegaplexCloud.registeredGameKeys.forEach(({ key, type }) => {
         const raw = localStorage.getItem(key);
         if (raw === null || raw === undefined) return;
@@ -226,16 +228,28 @@ window.MegaplexCloud.saveToCloud = async function() {
         }
     });
 
+    // --- DIRTY CHECK: if nothing changed since last save, skip the write ---
+    const hash = JSON.stringify(saveData);
+    if (hash === window.MegaplexCloud._lastSaveHash) {
+        console.log('[Megaplex] 💤 Save skipped — no changes since last save');
+        return false;
+    }
+
+    window.MegaplexCloud._savePending = true;
+    saveData.lastSaved = new Date().toISOString();   // add timestamp AFTER hashing
+
     try {
         const username = localStorage.getItem('megaplexUsername') || '';
         const publicProfile = window.MegaplexCloud.buildPublicProfile();
 
         await fbDB.collection('players').doc(u.uid).set({
             username: username,
-            usernameLower: username.toLowerCase(),   // for case-insensitive search
+            usernameLower: username.toLowerCase(),
             saveData: saveData,
-            publicProfile: publicProfile             // visible to other players
+            publicProfile: publicProfile
         }, { merge: true });
+
+        window.MegaplexCloud._lastSaveHash = hash;   // remember what we saved
         console.log('[Megaplex] ✅ Cloud save OK at', new Date().toLocaleTimeString());
         return true;
     } catch (err) {
@@ -664,19 +678,29 @@ window.MegaplexCloud.subscribeToSocial = function(callback) {
         return () => {};
     }
 
+    let cachedFriendsKey = '';   // signature of the last friend list we resolved
+    let cachedProfiles = [];     // resolved friend profile objects
+
     return fbDB.collection('players').doc(u.uid).onSnapshot(async (snap) => {
         const d = snap.data() || {};
         const friendUids = d.friends || [];
         const incoming = (d.friendRequests && d.friendRequests.incoming) || [];
         const outgoing = (d.friendRequests && d.friendRequests.outgoing) || [];
 
-        // Resolve friend UIDs into full profile objects (parallel fetch)
-        const friendProfiles = await Promise.all(
-            friendUids.map(uid => window.MegaplexCloud.getPlayerProfile(uid))
-        );
+        // Only re-fetch friend profiles if the friend LIST actually changed.
+        // (Your own doc changes constantly — token payouts, autosaves — but
+        //  the friend list rarely does, so we skip the expensive re-reads.)
+        const key = friendUids.slice().sort().join(',');
+        if (key !== cachedFriendsKey) {
+            cachedFriendsKey = key;
+            const profiles = await Promise.all(
+                friendUids.map(uid => window.MegaplexCloud.getPlayerProfile(uid))
+            );
+            cachedProfiles = profiles.filter(Boolean);
+        }
 
         callback({
-            friends: friendProfiles.filter(Boolean),
+            friends: cachedProfiles,
             incoming: incoming,
             outgoing: outgoing
         });
@@ -1773,12 +1797,21 @@ fbAuth.onAuthStateChanged(async (user) => {
 // ============================================================
 setInterval(() => window.MegaplexCloud.saveToCloud(), 120000);  // every 2 minutes
 
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) window.MegaplexCloud.saveOnExit();
-});
+// Debounce exit saves so flipping tabs / closing doesn't fire 2-3 writes at once.
+let _exitSaveTimer = null;
+function _debouncedExitSave() {
+    if (_exitSaveTimer) return;  // a save is already queued
+    _exitSaveTimer = setTimeout(() => {
+        _exitSaveTimer = null;
+        window.MegaplexCloud.saveOnExit();
+    }, 200);
+}
 
-window.addEventListener('pagehide', () => window.MegaplexCloud.saveOnExit());
-window.addEventListener('beforeunload', () => window.MegaplexCloud.saveOnExit());
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) _debouncedExitSave();
+});
+window.addEventListener('pagehide', _debouncedExitSave);
+window.addEventListener('beforeunload', _debouncedExitSave);
 
 console.log('[Megaplex] Firebase module loaded (v2.4, ' +
     window.MegaplexCloud.registeredGameKeys.length + ' keys registered, social + wager systems online)');
