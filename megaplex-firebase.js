@@ -1266,6 +1266,459 @@ window.MegaplexCloud.checkExpiredWagers = async function() {
 };
 
 // ============================================================
+// ⭕ CONNECT 4 — Real-time head-to-head wager battles
+// ============================================================
+// Client-only (matches existing wager system). Easy to lift into
+// a Cloud Function later for full anti-cheat validation.
+// ============================================================
+
+window.MegaplexCloud.C4_AMOUNTS = [50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000];
+window.MegaplexCloud.C4_HOUSE_CUT_WIN = 0.10;  // 10% of pot when there's a winner
+window.MegaplexCloud.C4_HOUSE_CUT_TIE = 0.05;  // 5% per side on a draw
+window.MegaplexCloud.C4_DURATION_MS = 3600000; // 1 hour expiry after BOTH accept
+window.MegaplexCloud.C4_ROWS = 6;
+window.MegaplexCloud.C4_COLS = 7;
+
+// ---- Build an empty board (flattened to a string so Firestore stores it cleanly) ----
+window.MegaplexCloud.c4EmptyBoard = function() {
+    // 42 cells, all '0' (empty). 1 = red, 2 = yellow.
+    return '0'.repeat(window.MegaplexCloud.C4_ROWS * window.MegaplexCloud.C4_COLS);
+};
+
+// ---- Convert flat board string <-> 2D array helpers ----
+window.MegaplexCloud.c4ToGrid = function(boardStr) {
+    const R = window.MegaplexCloud.C4_ROWS, C = window.MegaplexCloud.C4_COLS;
+    const grid = [];
+    for (let r = 0; r < R; r++) {
+        const row = [];
+        for (let c = 0; c < C; c++) row.push(parseInt(boardStr[r * C + c]));
+        grid.push(row);
+    }
+    return grid;
+};
+window.MegaplexCloud.c4FromGrid = function(grid) {
+    return grid.map(row => row.join('')).join('');
+};
+
+// ---- Drop a piece into a column; returns new boardStr or null if column full ----
+window.MegaplexCloud.c4Drop = function(boardStr, col, player) {
+    const grid = window.MegaplexCloud.c4ToGrid(boardStr);
+    const R = window.MegaplexCloud.C4_ROWS;
+    for (let r = R - 1; r >= 0; r--) {
+        if (grid[r][col] === 0) {
+            grid[r][col] = player;
+            return window.MegaplexCloud.c4FromGrid(grid);
+        }
+    }
+    return null; // column full
+};
+
+// ---- Win check: returns 0 (none), 1 (red wins), 2 (yellow wins) ----
+window.MegaplexCloud.c4CheckWin = function(boardStr) {
+    const grid = window.MegaplexCloud.c4ToGrid(boardStr);
+    const R = window.MegaplexCloud.C4_ROWS, C = window.MegaplexCloud.C4_COLS;
+    const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+    for (let r = 0; r < R; r++) {
+        for (let c = 0; c < C; c++) {
+            const p = grid[r][c];
+            if (p === 0) continue;
+            for (const [dr, dc] of dirs) {
+                let count = 1;
+                let rr = r + dr, cc = c + dc;
+                while (rr >= 0 && rr < R && cc >= 0 && cc < C && grid[rr][cc] === p) {
+                    count++;
+                    if (count === 4) return p;
+                    rr += dr; cc += dc;
+                }
+            }
+        }
+    }
+    return 0;
+};
+
+// ---- Board full? (draw detection) ----
+window.MegaplexCloud.c4IsFull = function(boardStr) {
+    return boardStr.indexOf('0') === -1;
+};
+
+/**
+ * Create a Connect 4 challenge to a friend.
+ * Escrows the challenger's tokens. Challenger is always "red" and moves first.
+ */
+window.MegaplexCloud.createC4Challenge = async function(opponentUid, amount) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false, reason: 'not_logged_in' };
+    if (u.uid === opponentUid) return { success: false, reason: 'self' };
+    if (!window.MegaplexCloud.C4_AMOUNTS.includes(amount)) return { success: false, reason: 'invalid_amount' };
+
+    const myDocRef = fbDB.collection('players').doc(u.uid);
+    const oppDocRef = fbDB.collection('players').doc(opponentUid);
+    const gameRef = fbDB.collection('connect4Games').doc();
+
+    try {
+        await fbDB.runTransaction(async (tx) => {
+            const myDoc = await tx.get(myDocRef);
+            const oppDoc = await tx.get(oppDocRef);
+            if (!myDoc.exists) throw new Error('your_doc_missing');
+            if (!oppDoc.exists) throw new Error('opponent_missing');
+
+            const myData = myDoc.data();
+            const oppData = oppDoc.data();
+            const myFriends = myData.friends || [];
+            if (!myFriends.includes(opponentUid)) throw new Error('not_friends');
+
+            const myTokens = parseInt((myData.saveData && myData.saveData.megaplexTokens) || 0);
+            if (myTokens < amount) throw new Error('insufficient_tokens');
+
+            tx.set(myDocRef, { saveData: { megaplexTokens: String(myTokens - amount) } }, { merge: true });
+
+            const now = Date.now();
+            tx.set(gameRef, {
+                red:    { uid: u.uid, username: myData.username, avatar: (myData.publicProfile && myData.publicProfile.avatar) || {} },
+                yellow: { uid: opponentUid, username: oppData.username, avatar: (oppData.publicProfile && oppData.publicProfile.avatar) || {} },
+                board: window.MegaplexCloud.c4EmptyBoard(),
+                turn: 'red',
+                moveCount: 0,
+                status: 'pending',   // pending | active | completed | draw | declined | cancelled
+                winner: null,        // uid of winner, or 'draw'
+                amount: amount,
+                pot: amount * 2,
+                redClaimed: false,
+                yellowClaimed: false,
+                redPayout: 0,
+                yellowPayout: 0,
+                createdAt: now,
+                acceptedAt: null,
+                expiresAt: null,
+                completedAt: null,
+                lastMoveAt: now
+            });
+        });
+
+        const myFresh = await myDocRef.get();
+        const newTokens = parseInt(myFresh.data().saveData.megaplexTokens) || 0;
+        localStorage.setItem('megaplexTokens', String(newTokens));
+        return { success: true, gameId: gameRef.id, newTokens };
+    } catch (err) {
+        console.error('[Megaplex] createC4Challenge failed:', err);
+        return { success: false, reason: err.message || 'error' };
+    }
+};
+
+/**
+ * Accept a Connect 4 challenge (escrows opponent tokens, activates game).
+ */
+window.MegaplexCloud.acceptC4 = async function(gameId) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false, reason: 'not_logged_in' };
+
+    const gameRef = fbDB.collection('connect4Games').doc(gameId);
+    const myDocRef = fbDB.collection('players').doc(u.uid);
+
+    try {
+        await fbDB.runTransaction(async (tx) => {
+            const gDoc = await tx.get(gameRef);
+            const myDoc = await tx.get(myDocRef);
+            if (!gDoc.exists) throw new Error('game_missing');
+            const g = gDoc.data();
+            if (g.yellow.uid !== u.uid) throw new Error('not_your_game');
+            if (g.status !== 'pending') throw new Error('already_resolved');
+
+            const myTokens = parseInt((myDoc.data().saveData && myDoc.data().saveData.megaplexTokens) || 0);
+            if (myTokens < g.amount) throw new Error('insufficient_tokens');
+
+            tx.set(myDocRef, { saveData: { megaplexTokens: String(myTokens - g.amount) } }, { merge: true });
+
+            const now = Date.now();
+            tx.update(gameRef, {
+                status: 'active',
+                acceptedAt: now,
+                expiresAt: now + window.MegaplexCloud.C4_DURATION_MS,
+                lastMoveAt: now
+            });
+        });
+
+        const myFresh = await myDocRef.get();
+        const newTokens = parseInt(myFresh.data().saveData.megaplexTokens) || 0;
+        localStorage.setItem('megaplexTokens', String(newTokens));
+        return { success: true, newTokens };
+    } catch (err) {
+        console.error('[Megaplex] acceptC4 failed:', err);
+        return { success: false, reason: err.message || 'error' };
+    }
+};
+
+/**
+ * Decline a Connect 4 challenge — refunds the challenger.
+ */
+window.MegaplexCloud.declineC4 = async function(gameId) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false, reason: 'not_logged_in' };
+    const gameRef = fbDB.collection('connect4Games').doc(gameId);
+    try {
+        await fbDB.runTransaction(async (tx) => {
+            const gDoc = await tx.get(gameRef);
+            if (!gDoc.exists) throw new Error('game_missing');
+            const g = gDoc.data();
+            if (g.yellow.uid !== u.uid) throw new Error('not_your_game');
+            if (g.status !== 'pending') throw new Error('already_resolved');
+
+            const cRef = fbDB.collection('players').doc(g.red.uid);
+            const cDoc = await tx.get(cRef);
+            const cTok = parseInt((cDoc.data().saveData && cDoc.data().saveData.megaplexTokens) || 0);
+            tx.set(cRef, { saveData: { megaplexTokens: String(cTok + g.amount) } }, { merge: true });
+
+            tx.update(gameRef, { status: 'declined', completedAt: Date.now() });
+        });
+        return { success: true };
+    } catch (err) {
+        console.error('[Megaplex] declineC4 failed:', err);
+        return { success: false, reason: err.message || 'error' };
+    }
+};
+
+/**
+ * Cancel an outgoing pending challenge — refunds yourself.
+ */
+window.MegaplexCloud.cancelC4 = async function(gameId) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false, reason: 'not_logged_in' };
+    const gameRef = fbDB.collection('connect4Games').doc(gameId);
+    const myDocRef = fbDB.collection('players').doc(u.uid);
+    try {
+        await fbDB.runTransaction(async (tx) => {
+            const gDoc = await tx.get(gameRef);
+            const myDoc = await tx.get(myDocRef);
+            if (!gDoc.exists) throw new Error('game_missing');
+            const g = gDoc.data();
+            if (g.red.uid !== u.uid) throw new Error('not_your_game');
+            if (g.status !== 'pending') throw new Error('already_resolved');
+
+            const myTokens = parseInt((myDoc.data().saveData && myDoc.data().saveData.megaplexTokens) || 0);
+            tx.set(myDocRef, { saveData: { megaplexTokens: String(myTokens + g.amount) } }, { merge: true });
+            tx.update(gameRef, { status: 'cancelled', completedAt: Date.now() });
+        });
+        const myFresh = await myDocRef.get();
+        const newTokens = parseInt(myFresh.data().saveData.megaplexTokens) || 0;
+        localStorage.setItem('megaplexTokens', String(newTokens));
+        return { success: true, newTokens };
+    } catch (err) {
+        console.error('[Megaplex] cancelC4 failed:', err);
+        return { success: false, reason: err.message || 'error' };
+    }
+};
+
+/**
+ * Make a move (drop a piece in a column).
+ * Validates turn + legal move + win/draw, then pays out on game end.
+ */
+window.MegaplexCloud.makeC4Move = async function(gameId, col) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false, reason: 'not_logged_in' };
+    const gameRef = fbDB.collection('connect4Games').doc(gameId);
+
+    try {
+        let result = { success: true };
+        await fbDB.runTransaction(async (tx) => {
+            const gDoc = await tx.get(gameRef);
+            if (!gDoc.exists) throw new Error('game_missing');
+            const g = gDoc.data();
+            if (g.status !== 'active') throw new Error('not_active');
+
+            const mySide = (g.red.uid === u.uid) ? 'red' : (g.yellow.uid === u.uid ? 'yellow' : null);
+            if (!mySide) throw new Error('not_your_game');
+            if (g.turn !== mySide) throw new Error('not_your_turn');
+
+            const player = mySide === 'red' ? 1 : 2;
+            const newBoard = window.MegaplexCloud.c4Drop(g.board, col, player);
+            if (newBoard === null) throw new Error('column_full');
+
+            const winSym = window.MegaplexCloud.c4CheckWin(newBoard);
+            const isFull = window.MegaplexCloud.c4IsFull(newBoard);
+            const now = Date.now();
+
+            if (winSym !== 0) {
+                // Someone won — pay out pot minus house cut
+                const winnerUid = (winSym === 1) ? g.red.uid : g.yellow.uid;
+                const cut = Math.floor(g.pot * window.MegaplexCloud.C4_HOUSE_CUT_WIN);
+                const winnings = g.pot - cut;
+                const redPayout = (winnerUid === g.red.uid) ? winnings : 0;
+                const yellowPayout = (winnerUid === g.yellow.uid) ? winnings : 0;
+
+                const winnerRef = fbDB.collection('players').doc(winnerUid);
+                const wDoc = await tx.get(winnerRef);
+                const wTok = parseInt((wDoc.data().saveData && wDoc.data().saveData.megaplexTokens) || 0);
+                tx.set(winnerRef, { saveData: { megaplexTokens: String(wTok + winnings) } }, { merge: true });
+
+                tx.update(gameRef, {
+                    board: newBoard, status: 'completed', winner: winnerUid,
+                    moveCount: g.moveCount + 1, lastMoveAt: now, completedAt: now,
+                    redPayout, yellowPayout
+                });
+                result = { success: true, gameOver: true, winner: winnerUid };
+            } else if (isFull) {
+                // Draw — refund each minus 5%
+                const cut = Math.floor(g.amount * window.MegaplexCloud.C4_HOUSE_CUT_TIE);
+                const refundEach = g.amount - cut;
+                const redRef = fbDB.collection('players').doc(g.red.uid);
+                const yelRef = fbDB.collection('players').doc(g.yellow.uid);
+                const [redD, yelD] = await Promise.all([tx.get(redRef), tx.get(yelRef)]);
+                const rTok = parseInt((redD.data().saveData && redD.data().saveData.megaplexTokens) || 0);
+                const yTok = parseInt((yelD.data().saveData && yelD.data().saveData.megaplexTokens) || 0);
+                tx.set(redRef, { saveData: { megaplexTokens: String(rTok + refundEach) } }, { merge: true });
+                tx.set(yelRef, { saveData: { megaplexTokens: String(yTok + refundEach) } }, { merge: true });
+
+                tx.update(gameRef, {
+                    board: newBoard, status: 'draw', winner: 'draw',
+                    moveCount: g.moveCount + 1, lastMoveAt: now, completedAt: now,
+                    redPayout: refundEach, yellowPayout: refundEach
+                });
+                result = { success: true, gameOver: true, winner: 'draw' };
+            } else {
+                // Normal move — flip turn
+                tx.update(gameRef, {
+                    board: newBoard,
+                    turn: mySide === 'red' ? 'yellow' : 'red',
+                    moveCount: g.moveCount + 1,
+                    lastMoveAt: now
+                });
+                result = { success: true, gameOver: false };
+            }
+        });
+
+        // Sync my token balance if game ended
+        if (result.gameOver) {
+            const myDoc = await fbDB.collection('players').doc(u.uid).get();
+            const tokens = parseInt(myDoc.data().saveData?.megaplexTokens || 0);
+            localStorage.setItem('megaplexTokens', String(tokens));
+            result.newTokens = tokens;
+        }
+        return result;
+    } catch (err) {
+        console.error('[Megaplex] makeC4Move failed:', err);
+        return { success: false, reason: err.message || 'error' };
+    }
+};
+
+/**
+ * Forfeit / resolve an expired game. If expired, whoever's turn it was loses
+ * (they failed to move in time). Pays the other player.
+ */
+window.MegaplexCloud.resolveC4Expired = async function(gameId) {
+    const gameRef = fbDB.collection('connect4Games').doc(gameId);
+    try {
+        await fbDB.runTransaction(async (tx) => {
+            const gDoc = await tx.get(gameRef);
+            if (!gDoc.exists) throw new Error('game_missing');
+            const g = gDoc.data();
+            if (g.status !== 'active') return;
+            if (Date.now() < g.expiresAt) return; // not expired yet
+
+            // The player whose turn it is forfeits
+            const loserSide = g.turn;
+            const winnerUid = loserSide === 'red' ? g.yellow.uid : g.red.uid;
+            const cut = Math.floor(g.pot * window.MegaplexCloud.C4_HOUSE_CUT_WIN);
+            const winnings = g.pot - cut;
+            const redPayout = (winnerUid === g.red.uid) ? winnings : 0;
+            const yellowPayout = (winnerUid === g.yellow.uid) ? winnings : 0;
+
+            const winnerRef = fbDB.collection('players').doc(winnerUid);
+            const wDoc = await tx.get(winnerRef);
+            const wTok = parseInt((wDoc.data().saveData && wDoc.data().saveData.megaplexTokens) || 0);
+            tx.set(winnerRef, { saveData: { megaplexTokens: String(wTok + winnings) } }, { merge: true });
+
+            tx.update(gameRef, {
+                status: 'completed', winner: winnerUid,
+                completedAt: Date.now(), redPayout, yellowPayout
+            });
+        });
+        return { success: true };
+    } catch (err) {
+        console.warn('[Megaplex] resolveC4Expired error:', err);
+        return { success: false };
+    }
+};
+
+/**
+ * Mark a finished game as claimed from this player's side, sync tokens.
+ */
+window.MegaplexCloud.claimC4 = async function(gameId) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return { success: false };
+    const gameRef = fbDB.collection('connect4Games').doc(gameId);
+    try {
+        const doc = await gameRef.get();
+        if (!doc.exists) return { success: false };
+        const g = doc.data();
+        const isRed = g.red.uid === u.uid;
+        const updates = {};
+        updates[isRed ? 'redClaimed' : 'yellowClaimed'] = true;
+        await gameRef.update(updates);
+
+        const myDoc = await fbDB.collection('players').doc(u.uid).get();
+        const tokens = parseInt(myDoc.data().saveData?.megaplexTokens || 0);
+        localStorage.setItem('megaplexTokens', String(tokens));
+        return { success: true, newTokens: tokens };
+    } catch (err) {
+        console.error('[Megaplex] claimC4 failed:', err);
+        return { success: false };
+    }
+};
+
+/**
+ * Subscribe to all Connect 4 games involving the current user.
+ */
+window.MegaplexCloud.subscribeToC4 = function(callback) {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return () => {};
+    let asRed = [], asYellow = [];
+    const fire = () => {
+        const map = new Map();
+        [...asRed, ...asYellow].forEach(g => map.set(g.id, g));
+        callback(Array.from(map.values()));
+    };
+    const unsub1 = fbDB.collection('connect4Games').where('red.uid', '==', u.uid)
+        .onSnapshot(s => { asRed = s.docs.map(d => ({ id: d.id, ...d.data() })); fire(); },
+                    e => console.error('[Megaplex] C4 sub (red) error:', e));
+    const unsub2 = fbDB.collection('connect4Games').where('yellow.uid', '==', u.uid)
+        .onSnapshot(s => { asYellow = s.docs.map(d => ({ id: d.id, ...d.data() })); fire(); },
+                    e => console.error('[Megaplex] C4 sub (yellow) error:', e));
+    return () => { unsub1(); unsub2(); };
+};
+
+/**
+ * Subscribe to a single Connect 4 game (for the active board view).
+ */
+window.MegaplexCloud.subscribeToC4Game = function(gameId, callback) {
+    return fbDB.collection('connect4Games').doc(gameId).onSnapshot(
+        d => { if (d.exists) callback({ id: d.id, ...d.data() }); },
+        e => console.error('[Megaplex] C4 game sub error:', e)
+    );
+};
+
+/**
+ * Auto-resolve any expired active games for the current user (call on load).
+ */
+window.MegaplexCloud.checkExpiredC4 = async function() {
+    const u = window.MegaplexCloud.currentFbUser;
+    if (!u) return;
+    try {
+        const now = Date.now();
+        const [a, b] = await Promise.all([
+            fbDB.collection('connect4Games').where('red.uid', '==', u.uid).where('status', '==', 'active').get(),
+            fbDB.collection('connect4Games').where('yellow.uid', '==', u.uid).where('status', '==', 'active').get()
+        ]);
+        const ids = new Set();
+        [...a.docs, ...b.docs].forEach(d => { if (d.data().expiresAt <= now) ids.add(d.id); });
+        for (const id of ids) await window.MegaplexCloud.resolveC4Expired(id);
+    } catch (err) {
+        console.warn('[Megaplex] checkExpiredC4 error:', err);
+    }
+};
+
+console.log('[Megaplex] ⭕ Connect 4 module loaded');
+
+// ============================================================
 // 🔐 AUTH STATE LISTENER
 // ============================================================
 fbAuth.onAuthStateChanged(async (user) => {
