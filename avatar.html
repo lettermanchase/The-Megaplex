@@ -264,6 +264,35 @@
             color: #000; text-shadow: 0 0 6px #fff;
         }
         @keyframes npGodcore { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+                /* ===== DAILY CHAMPION — REAL FLAMES NAMEPLATE ===== */
+                .nameplate.np-inferno-daily {
+            background: linear-gradient(0deg, #ff3838 0%, #ff6b00 40%, #1a0500 100%);
+            color: #fff;
+            text-shadow: 0 0 5px #ff9f1a, 0 0 10px #ff3838;
+            box-shadow: 0 0 14px #ff6b00, 0 -5px 18px #ff3838;
+            border-color: #ff9f1a;
+            overflow: visible;
+        }
+        .nameplate.np-inferno-daily::before,
+        .nameplate.np-inferno-daily::after {
+            content: '🔥🔥🔥🔥🔥🔥';
+            position: absolute; left: 0; right: 0;
+            text-align: center; font-size: 1.2em; letter-spacing: -3px;
+            pointer-events: none; line-height: 1;
+            filter: drop-shadow(0 0 5px #ff6b00);
+        }
+        .nameplate.np-inferno-daily::before {
+            top: -0.8em;
+            animation: flameDance 0.45s steps(2) infinite;
+        }
+        .nameplate.np-inferno-daily::after {
+            top: -0.6em; opacity: 0.75; font-size: 0.9em;
+            animation: flameDance 0.6s steps(2) infinite reverse;
+        }
+        @keyframes flameDance {
+            0%, 100% { transform: translateX(-2px) scaleY(1); }
+            50% { transform: translateX(2px) scaleY(1.3); }
+        }
         .nameplate.np-pulse {
             background: linear-gradient(90deg, #1dd1a1, #10ac84, #1dd1a1);
             animation: npPulse 1.5s ease-in-out infinite;
@@ -307,12 +336,56 @@
             box-shadow: 0 0 10px #fff;
             animation: orbit 4s linear infinite, fadePop 4s ease-in-out infinite, hueShift 4s linear infinite;
         }
-        .aura-godcore .aura-particle {
-            background: radial-gradient(circle, #fff, #ffd700 50%, #ff8a00 90%, transparent);
-            box-shadow: 0 0 18px #ffd700, 0 0 30px #ff8a00, 0 0 45px #fff;
-            width: 10px; height: 10px;
-            animation: orbit 2.5s linear infinite, fadePop 2.5s ease-in-out infinite;
-        }
+        /* ===== DIVINE RADIANCE — the most awesome aura in existence ===== */
+.aura-godcore {
+    /* Pulsing divine light core behind the bot */
+    background: radial-gradient(circle at center,
+        rgba(255,255,255,0.5) 0%,
+        rgba(255,215,0,0.35) 20%,
+        rgba(255,138,0,0.2) 40%,
+        transparent 70%) !important;
+    animation: divineCorePulse 2.2s ease-in-out infinite;
+    filter: drop-shadow(0 0 25px #ffd700);
+}
+@keyframes divineCorePulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50%      { opacity: 1;   transform: scale(1.15); }
+}
+/* Outer ring of large radiant particles (slow, majestic) */
+.aura-godcore .aura-particle {
+    background: radial-gradient(circle, #fff 0%, #fffacd 30%, #ffd700 60%, #ff8a00 90%, transparent);
+    box-shadow:
+        0 0 12px #fff,
+        0 0 24px #ffd700,
+        0 0 40px #ff8a00,
+        0 0 60px #ffd700;
+    width: 14px; height: 14px;
+    animation: divineOrbitOuter 4s linear infinite, divineFade 4s ease-in-out infinite;
+}
+/* Inner counter-rotating ring of smaller bright particles (faster) */
+.aura-godcore .aura-particle:nth-child(odd) {
+    width: 8px; height: 8px;
+    background: radial-gradient(circle, #fff 0%, #fffacd 50%, #ffd700 100%);
+    box-shadow: 0 0 10px #fff, 0 0 20px #ffd700, 0 0 30px #fffacd;
+    animation: divineOrbitInner 2.2s linear infinite reverse, divineFade 2.2s ease-in-out infinite;
+}
+@keyframes divineOrbitOuter {
+    0%   { transform: rotate(0deg) translateX(105px) rotate(0deg) scale(1); opacity: 0; }
+    10%  { opacity: 1; }
+    50%  { transform: rotate(180deg) translateX(105px) rotate(-180deg) scale(1.3); opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: rotate(360deg) translateX(105px) rotate(-360deg) scale(1); opacity: 0; }
+}
+@keyframes divineOrbitInner {
+    0%   { transform: rotate(0deg) translateX(70px) rotate(0deg); opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { transform: rotate(360deg) translateX(70px) rotate(-360deg); opacity: 0; }
+}
+@keyframes divineFade {
+    0%, 100% { opacity: 0; }
+    50%      { opacity: 1; filter: brightness(1.5); }
+}
         .aura-leaves .aura-particle {
             background: radial-gradient(circle, #1dd1a1, #10ac84 60%, transparent);
             box-shadow: 0 0 8px #1dd1a1;
@@ -990,6 +1063,7 @@
             ],
             // PRESTIGE — uses ✨ Prestige Tokens (the same currency the hub gives you when you ascend)
             nameplates: [
+            { id: 'np_inferno_daily', name: 'Daily Champion', lore: 'Real flames. Earned ONLY by winning the Game of the Day. Cannot be bought.', rarity: 'mythic', dailyOnly: true, animClass: 'np-inferno-daily', text: 'CHAMPION' },
                 { id: 'np_pulse',    name: 'Emerald Pulse',  lore: 'A steady, healthy heartbeat.', rarity: 'rare',      starsPrice: 5,  prestigeReq: 1, animClass: 'np-pulse',   text: 'PRESTIGE' },
                 { id: 'np_ice',      name: 'Frostbite',      lore: 'Cool, calm, lethal.',          rarity: 'epic',      starsPrice: 10, prestigeReq: 1, animClass: 'np-ice',     text: 'FROZEN' },
                 { id: 'np_fire',     name: 'Inferno',        lore: 'Some bots just wanna watch the data burn.', rarity: 'epic', starsPrice: 12, prestigeReq: 1, animClass: 'np-fire',    text: 'BURNING' },
@@ -1112,16 +1186,18 @@
             auraContainer.className = 'aura-container';
             auraContainer.innerHTML = '';
             if (auraItem) {
-                auraContainer.classList.add('show');
-                auraContainer.classList.add(auraItem.animClass);
-                const N = 8;
-                for (let i = 0; i < N; i++) {
-                    const p = document.createElement('div');
-                    p.className = 'aura-particle';
-                    p.style.animationDelay = (-i * (3 / N)) + 's';
-                    auraContainer.appendChild(p);
-                }
-            }
+    auraContainer.classList.add('show');
+    auraContainer.classList.add(auraItem.animClass);
+    // Divine Radiance gets a denser dual-ring particle field for maximum godliness ✨
+    const N = (auraItem.id === 'aura_godcore') ? 14 : 8;
+    const cycle = (auraItem.id === 'aura_godcore') ? 4 : 3;
+    for (let i = 0; i < N; i++) {
+        const p = document.createElement('div');
+        p.className = 'aura-particle';
+        p.style.animationDelay = (-i * (cycle / N)) + 's';
+        auraContainer.appendChild(p);
+    }
+}
 
             let listHTML = `
                 <div class="equipped-row"><strong>🎨</strong> ${c.name}</div>
@@ -1364,7 +1440,12 @@
             let lockOverlay = '';
             let cardClass = `item-card r-${item.rarity}`;
 
-            if (achLocked) {
+            if (item.dailyOnly && !owned) {
+                // Daily Champion nameplate — can ONLY be won in the Game of the Day
+                cardClass += ' locked';
+                lockOverlay = `<div class="lock-overlay"><div class="lock-icon">🔥</div><div class="lock-text">Win the Game of the Day!</div></div>`;
+                actionHTML = `<button class="item-action locked" disabled>🔥 Daily Challenge Only</button>`;
+            } else if (achLocked) {
                 cardClass += ' locked';
                 lockOverlay = `<div class="lock-overlay"><div class="lock-icon">🏆</div><div class="lock-text">Trophy Required</div></div>`;
                 actionHTML = `<button class="item-action unlock-ach" disabled>🏆 Achievement Locked</button>`;

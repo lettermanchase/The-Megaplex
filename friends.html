@@ -284,6 +284,36 @@
         .profile-nameplate.np-galaxy { background: linear-gradient(90deg, #0f0c29, #302b63, #24243e, #302b63, #0f0c29); animation: npRainbow 7s linear infinite; box-shadow: 0 0 10px #302b63; }
         .profile-nameplate.np-godcore { background: linear-gradient(90deg, #ffd700, #fff, #ffd700, #ff8a00, #ffd700); animation: npRainbow 2.5s linear infinite; box-shadow: 0 0 12px #ffd700; color: #000; }
         .profile-nameplate.np-pulse { background: linear-gradient(90deg, #1dd1a1, #10ac84, #1dd1a1); animation: npPulse 1.5s ease-in-out infinite; }
+
+/* ===== DAILY CHAMPION — REAL FLAMES NAMEPLATE ===== */
+.profile-nameplate.np-inferno-daily {
+    background: linear-gradient(0deg, #ff3838 0%, #ff6b00 40%, #1a0500 100%);
+    color: #fff;
+    text-shadow: 0 0 4px #ff9f1a, 0 0 8px #ff3838;
+    box-shadow: 0 0 12px #ff6b00, 0 -4px 14px #ff3838;
+    border-color: #ff9f1a;
+    overflow: visible;
+}
+.profile-nameplate.np-inferno-daily::before,
+.profile-nameplate.np-inferno-daily::after {
+    content: '🔥🔥🔥🔥🔥';
+    position: absolute; left: 0; right: 0;
+    text-align: center; font-size: 1.1em; letter-spacing: -2px;
+    pointer-events: none; line-height: 1;
+    filter: drop-shadow(0 0 4px #ff6b00);
+}
+.profile-nameplate.np-inferno-daily::before {
+    top: -0.75em;
+    animation: profFlameDance 0.45s steps(2) infinite;
+}
+.profile-nameplate.np-inferno-daily::after {
+    top: -0.55em; opacity: 0.7; font-size: 0.85em;
+    animation: profFlameDance 0.6s steps(2) infinite reverse;
+}
+@keyframes profFlameDance {
+    0%, 100% { transform: translateX(-1px) scaleY(1); }
+    50% { transform: translateX(1px) scaleY(1.25); }
+}
         @keyframes npRainbow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
         @keyframes npPulse { 0%,100% { box-shadow: 0 0 4px #1dd1a1; } 50% { box-shadow: 0 0 18px #1dd1a1; } }
 
@@ -298,6 +328,49 @@
         .aura-godcore .profile-aura-particle { background: radial-gradient(circle, #fff, #ffd700 50%, #ff8a00 90%, transparent); box-shadow: 0 0 14px #ffd700; width: 8px; height: 8px; animation: profOrbit 2.5s linear infinite; }
         .aura-leaves .profile-aura-particle { background: radial-gradient(circle, #1dd1a1, #10ac84 60%, transparent); box-shadow: 0 0 6px #1dd1a1; border-radius: 0 100% 0 100%; animation: profOrbit 5s linear infinite; }
         @keyframes profOrbit { 0% { transform: rotate(0deg) translateX(70px) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: rotate(360deg) translateX(70px) rotate(-360deg); opacity: 0; } }
+                /* ===== DIVINE RADIANCE (godcore) — full treatment on profile ===== */
+                .profile-aura-container.aura-godcore {
+            background: radial-gradient(circle at center,
+                rgba(255,255,255,0.5) 0%,
+                rgba(255,215,0,0.35) 20%,
+                rgba(255,138,0,0.2) 40%,
+                transparent 70%);
+            animation: profDivineCorePulse 2.2s ease-in-out infinite;
+            filter: drop-shadow(0 0 18px #ffd700);
+        }
+        @keyframes profDivineCorePulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50%      { opacity: 1;   transform: scale(1.15); }
+        }
+        .aura-godcore .profile-aura-particle {
+            background: radial-gradient(circle, #fff 0%, #fffacd 30%, #ffd700 60%, #ff8a00 90%, transparent);
+            box-shadow: 0 0 8px #fff, 0 0 16px #ffd700, 0 0 28px #ff8a00;
+            width: 10px; height: 10px;
+            animation: profDivineOuter 4s linear infinite, profDivineFade 4s ease-in-out infinite;
+        }
+        .aura-godcore .profile-aura-particle:nth-child(odd) {
+            width: 6px; height: 6px;
+            background: radial-gradient(circle, #fff 0%, #fffacd 50%, #ffd700 100%);
+            box-shadow: 0 0 8px #fff, 0 0 16px #ffd700;
+            animation: profDivineInner 2.2s linear infinite reverse, profDivineFade 2.2s ease-in-out infinite;
+        }
+        @keyframes profDivineOuter {
+            0%   { transform: rotate(0deg) translateX(72px) rotate(0deg) scale(1); opacity: 0; }
+            10%  { opacity: 1; }
+            50%  { transform: rotate(180deg) translateX(72px) rotate(-180deg) scale(1.3); opacity: 1; }
+            90%  { opacity: 1; }
+            100% { transform: rotate(360deg) translateX(72px) rotate(-360deg) scale(1); opacity: 0; }
+        }
+        @keyframes profDivineInner {
+            0%   { transform: rotate(0deg) translateX(48px) rotate(0deg); opacity: 0; }
+            15%  { opacity: 1; }
+            85%  { opacity: 1; }
+            100% { transform: rotate(360deg) translateX(48px) rotate(-360deg); opacity: 0; }
+        }
+        @keyframes profDivineFade {
+            0%, 100% { opacity: 0; }
+            50%      { opacity: 1; filter: brightness(1.5); }
+        }
 
         .profile-info { display: flex; flex-direction: column; gap: 8px; }
         .profile-username { font-family: 'Orbitron', sans-serif; font-size: 2.2em; color: #00d2d3; text-shadow: 0 0 15px rgba(0,210,211,0.6); margin: 0; letter-spacing: 2px; word-break: break-all; }
@@ -741,6 +814,7 @@ const shopDatabase = {
         { id: 'bg_holo', css: 'linear-gradient(135deg, #f368e0, #feca57, #00d2d3, #6c5ce7, #f368e0)', anim: 'holo' }
     ],
     nameplates: [
+    { id: 'np_inferno_daily', animClass: 'np-inferno-daily' },
         { id: 'np_pulse', animClass: 'np-pulse' }, { id: 'np_ice', animClass: 'np-ice' },
         { id: 'np_fire', animClass: 'np-fire' }, { id: 'np_rainbow', animClass: 'np-rainbow' },
         { id: 'np_void', animClass: 'np-void' }, { id: 'np_galaxy', animClass: 'np-galaxy' },
@@ -824,8 +898,10 @@ function renderAvatarPreview(targetEl, equipped, opts = {}) {
     let auraHTML = '';
     const auraItem = shopDatabase.auras.find(a => a.id === cur.aura);
     if (auraItem) {
+        const N = (auraItem.id === 'aura_godcore') ? 14 : 8;
+        const cycle = (auraItem.id === 'aura_godcore') ? 4 : 3;
         let particles = '';
-        for (let i = 0; i < 8; i++) particles += '<div class="profile-aura-particle" style="animation-delay:' + (-i * 0.375) + 's"></div>';
+        for (let i = 0; i < N; i++) particles += '<div class="profile-aura-particle" style="animation-delay:' + (-i * (cycle / N)) + 's"></div>';
         auraHTML = '<div class="profile-aura-container show ' + auraItem.animClass + '">' + particles + '</div>';
     }
     let npHTML = '';

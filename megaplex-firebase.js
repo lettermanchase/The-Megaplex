@@ -75,6 +75,10 @@ window.MegaplexCloud.registeredGameKeys = [
     // Add inside registeredGameKeys array
     { key: 'megaplexBounties',          type: 'json'   },
     { key: 'megaplexBountyDay',         type: 'string' },
+       
+    // Daily Challenge ("Game of the Day")
+    { key: 'megaplexDailyChallenge',    type: 'json'   },
+    { key: 'megaplexDailyWinnerChecked', type: 'string' },
     
     // ----- 🎯 Wager System keys -----
     { key: 'megaplexSessionScores',     type: 'json'   },   // session score tracker (shared with bounties)

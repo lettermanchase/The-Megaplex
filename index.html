@@ -408,6 +408,35 @@
         .hub-nameplate.np-void { background: linear-gradient(90deg, #000, #6c5ce7, #000, #f368e0, #000); animation: npHubRainbow 5s linear infinite; box-shadow: 0 0 10px #6c5ce7; }
         .hub-nameplate.np-galaxy { background: linear-gradient(90deg, #0f0c29, #302b63, #24243e, #302b63, #0f0c29); animation: npHubRainbow 7s linear infinite; box-shadow: 0 0 10px #302b63; }
         .hub-nameplate.np-godcore { background: linear-gradient(90deg, #ffd700, #fff, #ffd700, #ff8a00, #ffd700); animation: npHubRainbow 2.5s linear infinite; box-shadow: 0 0 12px #ffd700; color: #000; }
+                /* ===== DAILY CHAMPION — REAL FLAMES NAMEPLATE (hub) ===== */
+                .hub-nameplate.np-inferno-daily {
+            background: linear-gradient(0deg, #ff3838 0%, #ff6b00 40%, #1a0500 100%);
+            color: #fff;
+            text-shadow: 0 0 4px #ff9f1a, 0 0 8px #ff3838;
+            box-shadow: 0 0 12px #ff6b00, 0 -4px 14px #ff3838;
+            border-color: #ff9f1a;
+            overflow: visible;
+        }
+        .hub-nameplate.np-inferno-daily::before,
+        .hub-nameplate.np-inferno-daily::after {
+            content: '🔥🔥🔥🔥🔥';
+            position: absolute; left: 0; right: 0;
+            text-align: center; font-size: 1.1em; letter-spacing: -2px;
+            pointer-events: none; line-height: 1;
+            filter: drop-shadow(0 0 4px #ff6b00);
+        }
+        .hub-nameplate.np-inferno-daily::before {
+            top: -0.75em;
+            animation: hubFlameDance 0.45s steps(2) infinite;
+        }
+        .hub-nameplate.np-inferno-daily::after {
+            top: -0.55em; opacity: 0.7; font-size: 0.85em;
+            animation: hubFlameDance 0.6s steps(2) infinite reverse;
+        }
+        @keyframes hubFlameDance {
+            0%, 100% { transform: translateX(-1px) scaleY(1); }
+            50% { transform: translateX(1px) scaleY(1.25); }
+        }
         .hub-nameplate.np-pulse { background: linear-gradient(90deg, #1dd1a1, #10ac84, #1dd1a1); animation: npHubPulse 1.5s ease-in-out infinite; }
         @keyframes npHubPulse { 0%,100% { box-shadow: 0 0 4px #1dd1a1; } 50% { box-shadow: 0 0 18px #1dd1a1; } }
 
@@ -425,6 +454,51 @@
         .hub-aura-rainbow .hub-aura-particle { background: conic-gradient(from 0deg, #ff006e, #fb5607, #ffbe0b, #8338ec, #3a86ff, #ff006e); box-shadow: 0 0 8px #fff; animation: hubOrbit 4s linear infinite, hubFade 4s ease-in-out infinite, hubHueShift 4s linear infinite; }
         .hub-aura-godcore .hub-aura-particle { background: radial-gradient(circle, #fff, #ffd700 50%, #ff8a00 90%, transparent); box-shadow: 0 0 14px #ffd700; width: 8px; height: 8px; animation: hubOrbit 2.5s linear infinite, hubFade 2.5s ease-in-out infinite; }
         .hub-aura-leaves .hub-aura-particle { background: radial-gradient(circle, #1dd1a1, #10ac84 60%, transparent); box-shadow: 0 0 6px #1dd1a1; border-radius: 0 100% 0 100%; animation: hubOrbit 5s linear infinite, hubFade 5s ease-in-out infinite; }
+                /* ===== DIVINE RADIANCE (godcore) — full treatment on hub ===== */
+                .hub-aura-container.hub-aura-godcore {
+            background: radial-gradient(circle at center,
+                rgba(255,255,255,0.5) 0%,
+                rgba(255,215,0,0.35) 20%,
+                rgba(255,138,0,0.2) 40%,
+                transparent 70%);
+            animation: hubDivineCorePulse 2.2s ease-in-out infinite;
+            filter: drop-shadow(0 0 18px #ffd700);
+        }
+        @keyframes hubDivineCorePulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50%      { opacity: 1;   transform: scale(1.15); }
+        }
+        /* Outer ring — large majestic particles */
+        .hub-aura-godcore .hub-aura-particle {
+            background: radial-gradient(circle, #fff 0%, #fffacd 30%, #ffd700 60%, #ff8a00 90%, transparent);
+            box-shadow: 0 0 8px #fff, 0 0 16px #ffd700, 0 0 28px #ff8a00;
+            width: 10px; height: 10px;
+            animation: hubDivineOuter 4s linear infinite, hubDivineFade 4s ease-in-out infinite;
+        }
+        /* Inner ring — counter-rotating smaller particles */
+        .hub-aura-godcore .hub-aura-particle:nth-child(odd) {
+            width: 6px; height: 6px;
+            background: radial-gradient(circle, #fff 0%, #fffacd 50%, #ffd700 100%);
+            box-shadow: 0 0 8px #fff, 0 0 16px #ffd700;
+            animation: hubDivineInner 2.2s linear infinite reverse, hubDivineFade 2.2s ease-in-out infinite;
+        }
+        @keyframes hubDivineOuter {
+            0%   { transform: rotate(0deg) translateX(78px) rotate(0deg) scale(1); opacity: 0; }
+            10%  { opacity: 1; }
+            50%  { transform: rotate(180deg) translateX(78px) rotate(-180deg) scale(1.3); opacity: 1; }
+            90%  { opacity: 1; }
+            100% { transform: rotate(360deg) translateX(78px) rotate(-360deg) scale(1); opacity: 0; }
+        }
+        @keyframes hubDivineInner {
+            0%   { transform: rotate(0deg) translateX(52px) rotate(0deg); opacity: 0; }
+            15%  { opacity: 1; }
+            85%  { opacity: 1; }
+            100% { transform: rotate(360deg) translateX(52px) rotate(-360deg); opacity: 0; }
+        }
+        @keyframes hubDivineFade {
+            0%, 100% { opacity: 0; }
+            50%      { opacity: 1; filter: brightness(1.5); }
+        }
         @keyframes hubOrbit {
             0%   { transform: rotate(0deg) translateX(75px) rotate(0deg); opacity: 0; }
             10%  { opacity: 1; } 90% { opacity: 1; }
@@ -1097,6 +1171,105 @@
     border: 1px dashed #1dd1a1;
     cursor: not-allowed;
 }
+/* ===== GAME OF THE DAY MODAL ===== */
+.modal.gotd-modal {
+    border-color: #ff6348;
+    box-shadow: 0 0 40px rgba(255, 99, 72, 0.5);
+    max-width: 520px;
+}
+.modal.gotd-modal h2 { color: #ff6348; }
+
+.gotd-game-showcase {
+    text-align: center;
+    margin: 20px 0;
+    padding: 25px 20px;
+    background: linear-gradient(135deg, rgba(255, 99, 72, 0.15), rgba(254, 202, 87, 0.08));
+    border-radius: 14px;
+    border: 1px solid rgba(255, 99, 72, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+.gotd-game-showcase::before {
+    content: '';
+    position: absolute; top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: conic-gradient(transparent, rgba(255, 99, 72, 0.15), transparent 30%);
+    animation: rotate 5s linear infinite;
+}
+.gotd-game-showcase > * { position: relative; z-index: 1; }
+.gotd-game-icon {
+    font-size: 4em; line-height: 1;
+    filter: drop-shadow(0 0 15px rgba(255, 99, 72, 0.6));
+    animation: floatIcon 3s infinite ease-in-out;
+}
+.gotd-game-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.6em; font-weight: 700;
+    color: #fff; margin-top: 10px;
+    text-shadow: 0 0 10px rgba(255, 99, 72, 0.5);
+}
+.gotd-game-label {
+    color: #feca57; text-transform: uppercase;
+    letter-spacing: 3px; font-size: 0.75em;
+    margin-top: 5px; font-weight: bold;
+}
+
+.gotd-prizes {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255, 99, 72, 0.3);
+    border-radius: 12px; padding: 16px 18px; margin: 18px 0;
+}
+.gotd-prize-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px dashed rgba(255, 99, 72, 0.15);
+    font-size: 0.95em;
+}
+.gotd-prize-row:last-child { border-bottom: none; }
+.gotd-prize-label { color: #c8d6e5; display: flex; align-items: center; gap: 8px; }
+.gotd-prize-value { font-weight: bold; color: #1dd1a1; }
+.gotd-prize-value.winner { color: #feca57; }
+
+.gotd-winner-item {
+    font-size: 1.6em;
+    filter: drop-shadow(0 0 8px rgba(254, 202, 87, 0.6));
+    vertical-align: middle;
+}
+
+.gotd-attempt-warning {
+    background: rgba(254, 202, 87, 0.1);
+    border: 1px solid rgba(254, 202, 87, 0.4);
+    border-radius: 8px; padding: 12px;
+    text-align: center; color: #feca57;
+    font-size: 0.9em; font-weight: bold;
+    margin-bottom: 15px;
+}
+.gotd-attempt-warning.used {
+    background: rgba(255, 71, 87, 0.1);
+    border-color: rgba(255, 71, 87, 0.4);
+    color: #ff9f9f;
+}
+
+.btn-gotd {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #ff6348, #feca57);
+    color: #000; border: none; border-radius: 10px;
+    font-weight: bold; font-size: 1.1em; cursor: pointer;
+    font-family: 'Orbitron', sans-serif; letter-spacing: 2px;
+    transition: 0.2s; box-shadow: 0 4px 15px rgba(255, 99, 72, 0.4);
+}
+.btn-gotd:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(255, 99, 72, 0.7);
+}
+.btn-gotd:disabled {
+    background: #333; color: #666; cursor: not-allowed; box-shadow: none;
+}
+
+.gotd-countdown {
+    text-align: center; color: #888; font-size: 0.8em;
+    margin-top: 12px; font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+}
 
 
     </style>
@@ -1239,6 +1412,40 @@
             </button>
         </div>
     </div>
+        <!-- GAME OF THE DAY MODAL -->
+        <div class="modal-overlay" id="gotdModal" onclick="if(event.target===this)closeGotdModal()">
+            <div class="modal gotd-modal">
+                <button class="modal-close" onclick="closeGotdModal()">×</button>
+                <h2>🎯 Game of the Day</h2>
+    
+                <div class="gotd-game-showcase">
+                    <div class="gotd-game-icon" id="gotdGameIcon">🎮</div>
+                    <div class="gotd-game-title" id="gotdGameTitle">Loading...</div>
+                    <div class="gotd-game-label">Today's Challenge</div>
+                </div>
+    
+                <div class="gotd-prizes">
+                    <div class="gotd-prize-row">
+                        <span class="gotd-prize-label">🏆 Winner of the Day</span>
+                        <span class="gotd-prize-value winner" id="gotdWinnerPrize">2,500 🎟️ + <span class="gotd-winner-item" id="gotdWinnerItem">👑</span></span>
+                    </div>
+                    <div class="gotd-prize-row">
+                        <span class="gotd-prize-label">🎁 Just for Playing</span>
+                        <span class="gotd-prize-value" id="gotdParticipatePrize">150 🎟️</span>
+                    </div>
+                </div>
+    
+                <div class="gotd-attempt-warning" id="gotdWarning">
+                    ⚡ You have ONE attempt — make it count!
+                </div>
+    
+                <button id="gotdPlayBtn" class="btn-gotd" onclick="confirmStartDailyChallenge()">
+                    ▶ START MY ATTEMPT
+                </button>
+    
+                <div class="gotd-countdown" id="gotdCountdown">⏰ New game in: --:--:--</div>
+            </div>
+        </div>
 
     <header id="mainHeader">
         <div class="header-expanded">
@@ -1276,6 +1483,11 @@
                         </button>
                         <span class="daily-streak-badge" id="dailyStreakBadge">🔥 <span id="dailyStreakNum">0</span></span>
                     </div>
+                    <button id="dailyChallengeBtn" class="play-btn"
+                        style="background: linear-gradient(135deg,#ff6348,#feca57); color:#000; border-radius:20px; padding:10px 20px;"
+                        onclick="openDailyChallengeModal()" onmouseenter="sfx.hover()">
+                        🎯 Game of the Day
+                    </button>
                     <div class="token-display" id="tokenDisplayBox">🎟️ <span id="tokenBalance">0</span></div>
                     <div class="prestige-token-display" id="prestigeTokenDisplay" style="display:none;" onclick="openPrestigeModal()" title="Prestige Tokens — click for details">✨ <span id="prestigeTokenBalance">0</span></div>
                 </div>
@@ -1770,6 +1982,7 @@
             ],
             // Used to look up cosmetic info for prestige slot rendering on the hub
             nameplates: [
+            { id: 'np_inferno_daily', animClass: 'np-inferno-daily' },
                 { id: 'np_pulse',   animClass: 'np-pulse' },
                 { id: 'np_ice',     animClass: 'np-ice' },
                 { id: 'np_fire',    animClass: 'np-fire' },
@@ -1869,11 +2082,12 @@
                 const auraItem = shopDatabase.auras.find(a => a.id === avatarData.equipped.aura);
                 if (auraItem) {
                     auraContainer.classList.add('show', auraItem.animClass);
-                    const N = 8;
+                    const N = (auraItem.id === 'aura_godcore') ? 14 : 8;
+                    const cycle = (auraItem.id === 'aura_godcore') ? 4 : 3;
                     for (let i = 0; i < N; i++) {
                         const p = document.createElement('div');
                         p.className = 'hub-aura-particle';
-                        p.style.animationDelay = (-i * (3 / N)) + 's';
+                        p.style.animationDelay = (-i * (cycle / N)) + 's';
                         auraContainer.appendChild(p);
                     }
                 }
@@ -2713,7 +2927,7 @@ function calculateTokens() {
                 if (e.key === 'Escape') e.target.blur();
                 return;
             }
-            if (e.key === 'Escape') { closeLevelModal(); closePrestigeModal(); closeDailyModal(); }
+            if (e.key === 'Escape') { closeLevelModal(); closePrestigeModal(); closeDailyModal(); closeGotdModal(); }
             if (e.key === '/') { e.preventDefault(); document.getElementById('searchBar').focus(); }
             if (e.key === 'm' || e.key === 'M') toggleSound();
             if (e.key >= '1' && e.key <= '8') {
@@ -2724,16 +2938,16 @@ function calculateTokens() {
         });
 
                         // Refresh bounty view & badge when window regains focus (returning from a game)
-        window.addEventListener('focus', () => {
-            loadScores();
-            const bountyView = document.getElementById('bounty-view');
-            if (bountyView && bountyView.style.display === 'block') {
-                renderBountyView();
-            }
-            if (typeof updateBountyTabBadge === 'function') updateBountyTabBadge();
-            // Pull cloud tokens in case a wager paid out while we were away
-            if (typeof syncTokensFromCloud === 'function') syncTokensFromCloud();
-        });
+                        window.addEventListener('focus', () => {
+    loadScores();
+    if (typeof submitDailyScore === 'function') submitDailyScore();  // 👈 ADD THIS LINE
+    const bountyView = document.getElementById('bounty-view');
+    if (bountyView && bountyView.style.display === 'block') {
+        renderBountyView();
+    }
+    if (typeof updateBountyTabBadge === 'function') updateBountyTabBadge();
+    if (typeof syncTokensFromCloud === 'function') syncTokensFromCloud();
+});
 
         // Also handle tab visibility changes (mobile/tab-switch)
         document.addEventListener('visibilitychange', () => {
@@ -2822,7 +3036,8 @@ function calculateTokens() {
                     'lastCalculatedScoreValue','avatarData','avatarInventory','avatarSeenItems',
                     'claimedAchievements','nj2_times','recentlyPlayed','megaplexLastDaily',
                     'megaplexStreak','megaplexCycleDay','megaplexStreakUnlocks','megaplexActivePerks',
-                    'megaplexBounties','megaplexSessionScores','megaplexLastKnownScores'
+                            'megaplexBounties','megaplexSessionScores','megaplexLastKnownScores',
+        'megaplexDailyChallenge','megaplexDailyWinnerChecked'
                 ].forEach(k => localStorage.removeItem(k));
                 
                 await fbDB.collection('players').doc(cred.user.uid).set({
@@ -2855,7 +3070,8 @@ function calculateTokens() {
             'lastCalculatedScoreValue','avatarData','avatarInventory','avatarSeenItems',
             'claimedAchievements','nj2_times','recentlyPlayed','megaplexLastDaily',
             'megaplexStreak','megaplexCycleDay','megaplexStreakUnlocks','megaplexActivePerks',
-            'megaplexBounties','megaplexSessionScores','megaplexLastKnownScores'
+            'megaplexBounties','megaplexSessionScores','megaplexLastKnownScores',
+        'megaplexDailyChallenge','megaplexDailyWinnerChecked'
         ].forEach(k => localStorage.removeItem(k));
         
         await fbAuth.signInWithEmailAndPassword(usernameToEmail(v.u), v.p);
@@ -2898,7 +3114,8 @@ function calculateTokens() {
         'lastCalculatedScoreValue','avatarData','avatarInventory','avatarSeenItems',
         'claimedAchievements','nj2_times','megaplexUsername','recentlyPlayed','megaplexLastDaily',
         'megaplexStreak','megaplexCycleDay','megaplexStreakUnlocks','megaplexActivePerks',
-        'megaplexBounties','megaplexSessionScores','megaplexLastKnownScores'
+                'megaplexBounties','megaplexSessionScores','megaplexLastKnownScores',
+        'megaplexDailyChallenge','megaplexDailyWinnerChecked'
     ].forEach(k => localStorage.removeItem(k));
     location.reload();
 }
@@ -2949,6 +3166,7 @@ function refreshUIAfterAuthChange() {
                 hideLoadingOverlay();
                 hideLoginModal();
                 loadScores();
+                if (typeof resolveYesterdaysDailyWinner === 'function') resolveYesterdaysDailyWinner();
                 renderHubAvatar();
                 window.MegaplexCloud.syncDailyClaimFromCloud().then(() => checkDailyBonus());
                 showRecentBadges();
@@ -3856,6 +4074,330 @@ function startBountyTimer() {
 }
 function stopBountyTimer() {
     if (bountyTimerInterval) { clearInterval(bountyTimerInterval); bountyTimerInterval = null; }
+}
+/* =========================================================
+   ====== DAILY GAME OF THE DAY SYSTEM (NEW) ============
+   ========================================================= */
+
+// Pool of games that can be picked as the daily challenge.
+const DAILY_GAME_POOL = [
+    { key: 'asteroids',    title: '☄️ Quantum Asteroids', link: 'asteroids.html',   unit: ' pts',   reverse: false },
+    { key: 'snake',        title: '🐍 Snake Classic',     link: 'snake.html',       unit: '',       reverse: false },
+    { key: 'cyberrunner',  title: '🏃‍♂️ Cyber Runner',    link: 'runner.html',      unit: 'm',      reverse: false },
+    { key: 'fps',          title: '🔫 System Breach',     link: 'fps.html',         unit: ' pts',   reverse: false },
+    { key: 'nf_score',     title: '🐦 Neon Flapper',      link: 'neonflapper.html', unit: '',       reverse: false },
+    { key: 'pr_score',     title: '🎵 Pulse Runner',      link: 'pulserunner.html', unit: '%',      reverse: false },
+    { key: 'reaction',     title: '⚡ Reaction Tester',   link: 'reaction.html',    unit: 'ms',     reverse: true  },
+    { key: 'math',         title: '🧠 Quick Math',        link: 'math.html',        unit: '',       reverse: false },
+    { key: 'memory',       title: '👁️ Memory Match',      link: 'memory.html',      unit: ' moves', reverse: true  },
+    { key: 'nj2_score',    title: '⚡ Neon Jumper 2',     link: 'neonjumper2.html', unit: ' pts',   reverse: false },
+    { key: 'tanks_score',  title: '💣 Plasma Tanks',      link: 'tanks.html',       unit: ' pts',   reverse: false },
+    { key: 'guesser',      title: '🔐 Code Breaker',      link: 'guesser.html',     unit: '',       reverse: false }
+];
+
+// Prize amounts
+const DAILY_CHALLENGE_COIN_PRIZE  = 2500; // coins the daily WINNER gets
+const DAILY_CHALLENGE_PARTICIPATE = 150;  // coins just for playing
+
+// Exclusive cosmetic items that rotate daily (winner gets these)
+const DAILY_WINNER_ITEMS = ['np_inferno_daily'];
+
+// "YYYY-MM-DD" in UTC — the day flips at the same moment for everyone worldwide.
+function getDailyKey() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+// Deterministic: same date = same game for EVERYONE (no cheating by refreshing).
+function getDailyGame() {
+    const dayStr = getDailyKey();
+    let hash = 0;
+    for (let i = 0; i < dayStr.length; i++) hash = (hash * 31 + dayStr.charCodeAt(i)) >>> 0;
+    return DAILY_GAME_POOL[hash % DAILY_GAME_POOL.length];
+}
+
+// Today's exclusive winner cosmetic
+function getTodaysWinnerItem() {
+    const dayStr = getDailyKey();
+    let hash = 0;
+    for (let i = 0; i < dayStr.length; i++) hash = (hash * 17 + dayStr.charCodeAt(i)) >>> 0;
+    return DAILY_WINNER_ITEMS[hash % DAILY_WINNER_ITEMS.length];
+}
+
+// Grants the fire nameplate into the avatar inventory (matches avatar.html format).
+function grantAvatarItem(itemId) {
+    const inv = JSON.parse(localStorage.getItem('avatarInventory'))
+        || { colors: [], hats: [], bgs: [], nameplates: [], auras: [] };
+
+    if (!inv.colors)     inv.colors = [];
+    if (!inv.hats)       inv.hats = [];
+    if (!inv.bgs)        inv.bgs = [];
+    if (!inv.nameplates) inv.nameplates = [];
+    if (!inv.auras)      inv.auras = [];
+
+    if (itemId.startsWith('np_')) {
+        if (!inv.nameplates.includes(itemId)) inv.nameplates.push(itemId);
+    } else if (itemId.startsWith('aura_')) {
+        if (!inv.auras.includes(itemId)) inv.auras.push(itemId);
+    } else if (itemId.startsWith('hat_')) {
+        if (!inv.hats.includes(itemId)) inv.hats.push(itemId);
+    } else if (itemId.startsWith('color_')) {
+        if (!inv.colors.includes(itemId)) inv.colors.push(itemId);
+    } else if (itemId.startsWith('bg_')) {
+        if (!inv.bgs.includes(itemId)) inv.bgs.push(itemId);
+    }
+
+    localStorage.setItem('avatarInventory', JSON.stringify(inv));
+}
+
+// ===== Daily challenge state (stored locally) =====
+function getDailyChallengeState() {
+    return JSON.parse(localStorage.getItem('megaplexDailyChallenge')) || {
+        date: null, attempted: false, startValue: null, submittedScore: null
+    };
+}
+function setDailyChallengeState(s) {
+    localStorage.setItem('megaplexDailyChallenge', JSON.stringify(s));
+}
+
+// Reset state when the day changes
+function ensureDailyChallengeFresh() {
+    const state = getDailyChallengeState();
+    if (state.date !== getDailyKey()) {
+        setDailyChallengeState({
+            date: getDailyKey(), attempted: false, startValue: null, submittedScore: null
+        });
+    }
+}
+
+// Player starts their ONE daily attempt
+function startDailyChallenge() {
+    sfx.click();
+    const user = getCurrentFbUser();
+    if (!user && !getIsGuestMode()) { showLoginModal(); return; }
+
+    ensureDailyChallengeFresh();
+    const state = getDailyChallengeState();
+    if (state.attempted) {
+        toast('You already used your daily attempt! Come back tomorrow.', 'warning', '⏳');
+        return;
+    }
+
+    const game = getDailyGame();
+    state.attempted = true;
+    state.startValue = getTrackKeyValue(game.key);
+    setDailyChallengeState(state);
+
+    // Clear session score so ONLY this upcoming run counts
+    const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+    delete sessions[game.key];
+    localStorage.setItem('megaplexSessionScores', JSON.stringify(sessions));
+
+    saveToCloud();
+    showHubLoading('LOADING DAILY CHALLENGE...');
+    setTimeout(() => { window.location.href = game.link; }, 400);
+}
+
+// === GAME OF THE DAY MODAL (themed) ===
+let gotdCountdownInterval = null;
+
+// Opens the themed Game of the Day modal
+function openDailyChallengeModal() {
+    sfx.click();
+    ensureDailyChallengeFresh();
+    const game = getDailyGame();
+    const state = getDailyChallengeState();
+        // The prize is always the fire nameplate
+        const itemIcon = '🔥';
+
+    // Split the emoji icon off the front of the title (e.g. "☄️ Quantum Asteroids")
+    const titleParts = game.title.trim().split(' ');
+    const gameIcon = titleParts[0];
+    const gameName = titleParts.slice(1).join(' ');
+
+    document.getElementById('gotdGameIcon').innerText = gameIcon;
+    document.getElementById('gotdGameTitle').innerText = gameName;
+    document.getElementById('gotdWinnerPrize').innerHTML =
+    `${DAILY_CHALLENGE_COIN_PRIZE.toLocaleString()} 🎟️ + <span style="background:linear-gradient(0deg,#ff3838,#ff6b00); padding:2px 8px; border-radius:8px; font-size:0.75em; font-weight:bold; box-shadow:0 0 8px #ff6b00; color:#fff;">🔥 INFERNO NAMEPLATE</span>`;
+    document.getElementById('gotdParticipatePrize').innerText =
+        `${DAILY_CHALLENGE_PARTICIPATE.toLocaleString()} 🎟️`;
+
+    const warning = document.getElementById('gotdWarning');
+    const playBtn = document.getElementById('gotdPlayBtn');
+
+    if (state.attempted) {
+        warning.className = 'gotd-attempt-warning used';
+        warning.innerText = '✓ You already used today\'s attempt! Come back tomorrow.';
+        playBtn.disabled = true;
+        playBtn.innerText = '⏳ ATTEMPT USED';
+    } else {
+        warning.className = 'gotd-attempt-warning';
+        warning.innerText = '⚡ You have ONE attempt — make it count!';
+        playBtn.disabled = false;
+        playBtn.innerText = '▶ START MY ATTEMPT';
+    }
+
+    // Start the countdown to the next day (UTC reset)
+    updateGotdCountdown();
+    if (gotdCountdownInterval) clearInterval(gotdCountdownInterval);
+    gotdCountdownInterval = setInterval(updateGotdCountdown, 1000);
+
+    document.getElementById('gotdModal').classList.add('show');
+}
+
+function closeGotdModal() {
+    document.getElementById('gotdModal').classList.remove('show');
+    if (gotdCountdownInterval) { clearInterval(gotdCountdownInterval); gotdCountdownInterval = null; }
+}
+
+// Called by the modal's "Start My Attempt" button
+function confirmStartDailyChallenge() {
+    closeGotdModal();
+    startDailyChallenge();
+}
+
+// Countdown to next UTC midnight (when a new game unlocks)
+function updateGotdCountdown() {
+    const now = new Date();
+    const tomorrow = new Date(Date.UTC(
+        now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0
+    ));
+    const remaining = tomorrow.getTime() - now.getTime();
+    const el = document.getElementById('gotdCountdown');
+    if (el) el.innerText = `⏰ New game in: ${formatTime(remaining)}`;
+}
+
+// Submit the player's daily score to the cloud after they play
+async function submitDailyScore() {
+    const user = getCurrentFbUser();
+    if (!user) return; // guests can't compete for the global prize
+
+    ensureDailyChallengeFresh();
+    const state = getDailyChallengeState();
+    if (!state.attempted || state.submittedScore !== null) return;
+
+    const game = getDailyGame();
+    const sessionScore = getSessionScore(game.key);
+    if (sessionScore === undefined) return; // they haven't actually played yet
+
+    state.submittedScore = sessionScore;
+    setDailyChallengeState(state);
+
+    try {
+        const dayKey = getDailyKey();
+        await fbDB.collection('dailyChallenge').doc(dayKey)
+            .collection('entries').doc(user.uid).set({
+                username: localStorage.getItem('megaplexUsername') || 'PLAYER',
+                score: sessionScore,
+                gameKey: game.key,
+                submittedAt: new Date().toISOString()
+            });
+
+        // Award participation reward
+        let tokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+        const reward = Math.floor(DAILY_CHALLENGE_PARTICIPATE * getPrestigeMultiplier());
+        tokens += reward;
+        localStorage.setItem('megaplexTokens', tokens);
+        document.getElementById('tokenBalance').innerText = tokens;
+        document.getElementById('miniTokenBalance').innerText = tokens;
+        document.getElementById('tokenDisplayBox').classList.add('pop');
+        setTimeout(() => document.getElementById('tokenDisplayBox').classList.remove('pop'), 500);
+        toast(`Daily score submitted! +${reward} 🎟️ for playing.`, 'success', '🎯');
+        saveToCloud();
+    } catch (err) {
+        console.warn('Daily score submit failed:', err);
+    }
+}
+
+// Resolve YESTERDAY'S winner when a player loads the page on a new day.
+// (Client-side version — simple, no Cloud Functions needed.)
+async function resolveYesterdaysDailyWinner() {
+    const user = getCurrentFbUser();
+    if (!user) return;
+
+    // Figure out yesterday's date key (UTC)
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    // Have WE already checked/resolved this day? Skip if so.
+    const lastChecked = localStorage.getItem('megaplexDailyWinnerChecked');
+    if (lastChecked === yesterday) return;
+    localStorage.setItem('megaplexDailyWinnerChecked', yesterday);
+
+    try {
+        const winnerDoc = await fbDB.collection('dailyChallenge').doc(yesterday).get();
+
+        // If a winner is already recorded, just check if it's ME.
+        if (winnerDoc.exists && winnerDoc.data().winnerUid) {
+            const w = winnerDoc.data();
+            if (w.winnerUid === user.uid && !w.claimedByWinner) {
+                awardDailyWinnerPrize(w);
+                await fbDB.collection('dailyChallenge').doc(yesterday)
+                    .set({ claimedByWinner: true }, { merge: true });
+            }
+            return;
+        }
+
+        // No winner yet — first person to load resolves it.
+        const entriesSnap = await fbDB.collection('dailyChallenge').doc(yesterday)
+            .collection('entries').get();
+        if (entriesSnap.empty) return;
+
+        // Need to know which game it was to sort correctly
+        const entries = [];
+        entriesSnap.forEach(d => entries.push({ uid: d.id, ...d.data() }));
+
+        const gameKey = entries[0].gameKey;
+        const gameInfo = DAILY_GAME_POOL.find(g => g.key === gameKey) || { reverse: false };
+
+        // Sort: reverse=true means lower is better (reaction/memory/etc)
+        if (gameInfo.reverse) entries.sort((a, b) => a.score - b.score);
+        else entries.sort((a, b) => b.score - a.score);
+
+        const winner = entries[0];
+
+        // Record the winner in Firestore
+        await fbDB.collection('dailyChallenge').doc(yesterday).set({
+            winnerUid: winner.uid,
+            winnerName: winner.username,
+            winnerScore: winner.score,
+            gameKey: gameKey,
+            resolvedAt: new Date().toISOString(),
+            claimedByWinner: false
+        }, { merge: true });
+
+        // If I'm the winner, give myself the prize now
+        if (winner.uid === user.uid) {
+            awardDailyWinnerPrize({
+                winnerName: winner.username,
+                winnerScore: winner.score,
+                gameKey: gameKey
+            });
+            await fbDB.collection('dailyChallenge').doc(yesterday)
+                .set({ claimedByWinner: true }, { merge: true });
+        }
+    } catch (err) {
+        console.warn('Daily winner resolve failed:', err);
+    }
+}
+
+// Give the daily winner their coins + exclusive item
+function awardDailyWinnerPrize(winnerData) {
+    let tokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+    const prize = Math.floor(DAILY_CHALLENGE_COIN_PRIZE * getPrestigeMultiplier());
+    tokens += prize;
+    addLifetimeXp(DAILY_CHALLENGE_COIN_PRIZE);
+    localStorage.setItem('megaplexTokens', tokens);
+    document.getElementById('tokenBalance').innerText = tokens;
+    document.getElementById('miniTokenBalance').innerText = tokens;
+
+    // Grant the exclusive cosmetic
+    const itemId = getTodaysWinnerItem();
+    grantAvatarItem(itemId);
+
+    sfx.win();
+    setTimeout(() => sfx.coin(), 200);
+    toast(`🏆 YOU WON the Daily Challenge! +${prize} 🎟️ & exclusive item!`, 'prestige', '🏆');
+    renderHubAvatar();
+    saveToCloud();
 }
     </script>
 <link rel="stylesheet" href="chat.css">
