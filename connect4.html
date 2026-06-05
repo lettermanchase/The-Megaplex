@@ -786,57 +786,100 @@ window.addEventListener('megaplex-auth-changed',(e)=>{
     if(!e.detail.user && myUid){ toast('Logged out — returning to hub','warning','🚪'); setTimeout(()=>location.href='index.html',1500); }
 });
 
-/* ===== Challenge a friend directly from connect4.html ===== */
+// ===== Challenge a friend directly from connect4.html =====
 let c4Friends = [];
-async function openC4FriendPicker(){
-    document.getElementById('friendPanel').style.display='none';
-    document.getElementById('c4PickerPanel').style.display='block';
-    const box=document.getElementById('c4FriendChoices');
-    box.innerHTML='<div class="empty-state">Loading friends...</div>';
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Attach event listeners after DOM is ready
+    const challengeBtn = document.getElementById('c4ChallengeBtn');
+    if (challengeBtn) challengeBtn.onclick = openC4FriendPicker;
+
+    const cancelBtn = document.getElementById('c4CancelBtn');
+    if (cancelBtn) cancelBtn.onclick = closeC4FriendPicker;
+});
+
+async function openC4FriendPicker() {
+    document.getElementById('friendPanel').style.display = 'none';
+    document.getElementById('c4PickerPanel').style.display = 'block';
+    const box = document.getElementById('c4FriendChoices');
+    box.innerHTML = '<div class="empty-state">Loading friends...</div>';
 
     const social = await C4.getMySocialState();
-    if(!social.friends.length){
-        box.innerHTML='<div class="empty-state">No friends yet! Add some on the Friends page.</div>';
+    if (!social.friends.length) {
+        box.innerHTML = '<div class="empty-state">No friends yet! Add some on the Friends page.</div>';
         return;
     }
     // Fetch usernames
-    const profiles = await Promise.all(social.friends.map(uid=>C4.getPlayerProfile(uid)));
+    const profiles = await Promise.all(social.friends.map(uid => C4.getPlayerProfile(uid)));
     c4Friends = profiles.filter(Boolean);
 
-    box.innerHTML = c4Friends.map(f=>`
-        <div class="c4-game-row" onclick="pickC4Friend('${f.uid}')">
+    box.innerHTML = c4Friends.map(f => `
+        <div class="c4-game-row" style="cursor:pointer;" onclick="window.pickC4Friend('${f.uid}')">
             <span class="vs">${escapeHtml(f.username)}</span>
             <span class="status invite">Challenge →</span>
         </div>
     `).join('');
 }
-function closeC4FriendPicker(){
-    document.getElementById('c4PickerPanel').style.display='none';
-    document.getElementById('friendPanel').style.display='block';
-}
-async function pickC4Friend(opponentUid){
-    const f = c4Friends.find(x=>x.uid===opponentUid);
-    const name = f?.username || 'PLAYER';
-    const myTokens = parseInt(localStorage.getItem('megaplexTokens'))||0;
-    const amts = C4.C4_AMOUNTS.filter(a=>a<=myTokens);
-    if(!amts.length){ toast('Not enough tokens for any wager!','error','💸'); return; }
-    const choices = amts.map((a,i)=>`${i+1}) ${a.toLocaleString()} 🎟️`).join('\n');
-    const pick = prompt(`🔴 Connect 4 vs ${name}\n\nChoose wager amount:\n${choices}\n\nEnter a number (1-${amts.length}):`);
-    if(pick===null) return;
-    const idx=parseInt(pick)-1;
-    if(isNaN(idx)||idx<0||idx>=amts.length){ toast('Invalid choice','warning','⚠️'); return; }
 
-    toast('Creating challenge...','info','🔴');
+// Make pickC4Friend globally available for inline onclick
+window.pickC4Friend = async function(opponentUid) {
+    const f = c4Friends.find(x => x.uid === opponentUid);
+    const name = f?.username || 'PLAYER';
+    const myTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+    const amts = C4.C4_AMOUNTS.filter(a => a <= myTokens);
+    if (!amts.length) { toast('Not enough tokens for any wager!', 'error', '💸'); return; }
+    const choices = amts.map((a, i) => `${i + 1}) ${a.toLocaleString()} 🎟️`).join('\n');
+    const pick = prompt(`🔴 Connect 4 vs ${name}\n\nChoose wager amount:\n${choices}\n\nEnter a number (1-${amts.length}):`);
+    if (pick === null) return;
+    const idx = parseInt(pick) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= amts.length) { toast('Invalid choice', 'warning', '⚠️'); return; }
+
+    toast('Creating challenge...', 'info', '🔴');
     const r = await C4.createC4Challenge(opponentUid, amts[idx]);
-    if(r.success){
+    if (r.success) {
         updateTokenPill();
         closeC4FriendPicker();
         openFriendGame(r.gameId);
-        toast('Challenge sent!','success','🔴');
+        toast('Challenge sent!', 'success', '🔴');
     } else {
-        toast(r.reason==='insufficient_tokens'?'Not enough tokens!':'Failed to create','error','❌');
+        toast(r.reason === 'insufficient_tokens' ? 'Not enough tokens!' : 'Failed to create', 'error', '❌');
     }
+};
+
+function closeC4FriendPicker() {
+    document.getElementById('c4PickerPanel').style.display = 'none';
+    document.getElementById('friendPanel').style.display = 'block';
 }
+
+// Hide picker when leaving game
+function leaveGame() {
+    closeResult();
+    if (c4GameUnsub) { c4GameUnsub(); c4GameUnsub = null; }
+    if (c4Timer) { clearInterval(c4Timer); c4Timer = null; }
+    activeGameId = null; activeGameData = null; lastRenderedStatus = null;
+    document.getElementById('gameStage').classList.remove('show');
+    document.getElementById('lobbyView').style.display = 'block';
+    selectMode(currentMode);
+    if (currentMode === 'friend') startFriendList();
+    const scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    document.getElementById('c4ScoreDisplay').textContent = scores.connect4_score || 0;
+    // Hide picker panel if open
+    document.getElementById('c4PickerPanel').style.display = 'none';
+}
+let lastC4InviteIds = new Set();
+C4.subscribeToC4(function(c4Games) {
+    const incoming = c4Games.filter(g =>
+        g.status === 'pending' &&
+        g.yellow.uid === window.MegaplexCloud.currentFbUser?.uid
+    );
+    const newIds = new Set(incoming.map(g => g.id));
+    incoming.forEach(g => {
+        if (!lastC4InviteIds.has(g.id)) {
+            toast(`New Connect 4 challenge from ${escapeHtml(g.red.username)}!`, 'info', '🔴');
+        }
+    });
+    lastC4InviteIds = newIds;
+});
 </script>
 
 <link rel="stylesheet" href="chat.css">
