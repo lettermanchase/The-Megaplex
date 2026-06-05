@@ -1907,9 +1907,14 @@ window.toggleSection = function(headerEl) {
             const oppName = friend?.username || 'PLAYER';
             document.getElementById('wagerModalSub').textContent = '⚔️ vs ' + oppName;
 
-            // Build game grid
-            const gameGrid = document.getElementById('wagerGameGrid');
-            gameGrid.innerHTML = window.MegaplexCloud.WAGER_GAMES.map(g => `
+                        // Build game grid — Connect 4 is a special LIVE head-to-head pick at the top
+                        const gameGrid = document.getElementById('wagerGameGrid');
+            const c4Pick = `
+                <div class="wager-game-pick" data-game-key="connect4_live" style="border-color:#ff4757;">
+                    <div>🔴 Connect 4 Battle</div>
+                    <div class="wager-game-pick-type" style="color:#feca57;">⚡ Live 1v1 — winner takes pot</div>
+                </div>`;
+            gameGrid.innerHTML = c4Pick + window.MegaplexCloud.WAGER_GAMES.map(g => `
                 <div class="wager-game-pick" data-game-key="${g.key}">
                     <div>${g.title}</div>
                     <div class="wager-game-pick-type">${g.scoreType === 'higher' ? '↑ Higher wins' : '↓ Lower wins'}</div>
@@ -1973,7 +1978,10 @@ window.toggleSection = function(headerEl) {
                 btn.textContent = 'SELECT GAME & AMOUNT';
                 return;
             }
-            const gameInfo = window.MegaplexCloud.getWagerGameInfo(wagerSelection.game);
+            const isC4 = wagerSelection.game === 'connect4_live';
+            const gameInfo = isC4
+                ? { title: '🔴 Connect 4 Battle' }
+                : window.MegaplexCloud.getWagerGameInfo(wagerSelection.game);
             const amt = wagerSelection.amount;
             const pot = amt * 2;
             const cut = Math.floor(pot * window.MegaplexCloud.WAGER_HOUSE_CUT_WIN);
@@ -2010,6 +2018,27 @@ window.toggleSection = function(headerEl) {
             const btn = document.getElementById('btnSendWager');
             btn.disabled = true;
             btn.textContent = '⏳ SENDING...';
+
+            // 🔴 Connect 4 is a LIVE game — create the board & jump to it instead of a score wager
+            if (wagerSelection.game === 'connect4_live') {
+                const c4 = await window.MegaplexCloud.createC4Challenge(
+                    pendingWagerOpponentUid, wagerSelection.amount
+                );
+                if (c4.success) {
+                    toast('Connect 4 challenge sent! Opening board...', 'success', '🔴');
+                    updateTokenPill();
+                    closeWagerModal();
+                    setTimeout(() => { window.location.href = 'connect4.html?game=' + c4.gameId; }, 800);
+                } else {
+                    let msg = 'Failed to create Connect 4 game';
+                    if (c4.reason === 'insufficient_tokens') msg = 'Not enough tokens!';
+                    else if (c4.reason === 'not_friends') msg = 'You must be friends first.';
+                    toast(msg, 'error', '❌');
+                    btn.disabled = false;
+                    btn.textContent = '⚔ SEND CHALLENGE';
+                }
+                return;
+            }
 
             const r = await window.MegaplexCloud.sendWagerChallenge(
                 pendingWagerOpponentUid, wagerSelection.game, wagerSelection.amount

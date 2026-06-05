@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connect 4 — The Megaplex</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #fff; margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden;
+}
+.starfield { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle linear infinite; }
+@keyframes twinkle { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
+body::before {
+    content:" "; position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: 0.6;
+    background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%), linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
+    background-size: 100% 4px, 6px 100%; animation: flicker 0.15s infinite;
+}
+@keyframes flicker { 0%,100% { opacity: 0.55; } 50% { opacity: 0.65; } }
+
+/* Loading screen */
+#c4Loading { position: fixed; inset: 0; background: linear-gradient(135deg,#0f2027,#203a43,#2c5364); z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 25px;
+    font-family: 'Orbitron', sans-serif; transition: opacity 0.5s, visibility 0.5s; }
+#c4Loading.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+.c4-load-logo { font-size: 2.8em; color: #ff4757; letter-spacing: 4px; text-shadow: 0 0 15px #ff4757, 0 0 30px #feca57; animation: logoPulse 1.6s infinite alternate; }
+@keyframes logoPulse { from { text-shadow: 0 0 10px #ff4757; } to { text-shadow: 0 0 25px #ff4757, 0 0 50px #feca57; } }
+.c4-spinner { width: 70px; height: 70px; border: 5px solid rgba(255,71,87,0.15); border-top-color: #ff4757; border-right-color: #feca57; border-radius: 50%; animation: spin 1s linear infinite; box-shadow: 0 0 30px rgba(255,71,87,0.5); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.c4-load-text { color: #feca57; letter-spacing: 3px; text-transform: uppercase; font-size: 0.9em; }
+
+header { background: rgba(0,0,0,0.7); border-bottom: 3px solid #ff4757; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px); padding: 18px 30px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50; flex-wrap: wrap; gap: 12px; }
+.header-left { display: flex; align-items: center; gap: 18px; }
+.back-btn { background: rgba(0,0,0,0.5); border: 1px solid #ff4757; color: #ff4757; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; text-decoration: none; transition: 0.2s; font-size: 0.9em; }
+.back-btn:hover { background: rgba(255,71,87,0.2); transform: translateX(-3px); }
+.page-title { font-family: 'Orbitron', sans-serif; color: #ff4757; font-size: 1.6em; letter-spacing: 3px; text-shadow: 0 0 10px #ff4757; margin: 0; }
+.header-right { display: flex; gap: 10px; align-items: center; }
+.pill { background: rgba(0,0,0,0.5); border: 1px solid #feca57; color: #feca57; padding: 6px 14px; border-radius: 15px; font-weight: bold; font-size: 0.9em; }
+
+.container { max-width: 900px; margin: 30px auto; padding: 0 20px; position: relative; z-index: 10; }
+
+/* Mode selector */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+@media (max-width: 600px){ .mode-grid { grid-template-columns: 1fr; } }
+.mode-card { background: rgba(0,0,0,0.6); border: 2px solid rgba(255,71,87,0.4); border-radius: 16px; padding: 25px; text-align: center; cursor: pointer; transition: 0.25s; }
+.mode-card:hover { border-color: #ff4757; transform: translateY(-4px); box-shadow: 0 10px 30px rgba(255,71,87,0.3); }
+.mode-card.active { border-color: #ff4757; background: rgba(255,71,87,0.15); box-shadow: 0 0 20px rgba(255,71,87,0.4); }
+.mode-card .mc-icon { font-size: 2.6em; }
+.mode-card h2 { font-family: 'Orbitron', sans-serif; color: #ff4757; margin: 10px 0 6px; }
+.mode-card p { color: #c8d6e5; font-size: 0.88em; margin: 0; }
+
+.panel { background: rgba(0,0,0,0.7); border: 1px solid rgba(255,71,87,0.3); border-radius: 16px; padding: 25px; box-shadow: 0 5px 25px rgba(0,0,0,0.4); backdrop-filter: blur(10px); margin-bottom: 20px; }
+.panel h3 { font-family: 'Orbitron', sans-serif; color: #ff4757; letter-spacing: 2px; margin: 0 0 15px; text-transform: uppercase; font-size: 1.1em; }
+
+.diff-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 18px; }
+@media (max-width: 500px){ .diff-grid { grid-template-columns: 1fr; } }
+.diff-pick { background: rgba(0,0,0,0.5); border: 2px solid #444; border-radius: 10px; padding: 14px; text-align: center; cursor: pointer; transition: 0.2s; }
+.diff-pick.easy.active   { border-color: #1dd1a1; background: rgba(29,209,161,0.15); box-shadow: 0 0 15px rgba(29,209,161,0.4); }
+.diff-pick.medium.active { border-color: #feca57; background: rgba(254,202,87,0.15); box-shadow: 0 0 15px rgba(254,202,87,0.4); }
+.diff-pick.hard.active   { border-color: #ff4757; background: rgba(255,71,87,0.15); box-shadow: 0 0 15px rgba(255,71,87,0.4); }
+.diff-pick:hover { border-color: #aaa; }
+.diff-pick .dp-icon { font-size: 1.6em; }
+.diff-pick .dp-name { font-family:'Orbitron',sans-serif; font-weight: bold; margin-top: 4px; }
+.diff-pick .dp-reward { font-size: 0.75em; color: #aaa; margin-top: 3px; }
+
+.btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg,#ff4757,#feca57); color: #000; border: none; border-radius: 10px; font-weight: bold; font-size: 1em; cursor: pointer; font-family:'Orbitron',sans-serif; letter-spacing: 2px; transition: 0.2s; box-shadow: 0 4px 15px rgba(255,71,87,0.4); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(255,71,87,0.6); }
+
+/* Friend game list */
+.c4-game-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,71,87,0.3); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; flex-wrap: wrap; }
+.c4-game-row:hover { border-color: #ff4757; transform: translateX(3px); }
+.c4-game-row .vs { color: #fff; font-weight: bold; }
+.c4-game-row .vs .vtag { color: #ff4757; font-family:'Orbitron',sans-serif; font-size: 0.8em; padding: 0 4px; }
+.c4-game-row .status { font-size: 0.78em; font-family:'Orbitron',sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+.c4-game-row .status.yourturn { color: #1dd1a1; }
+.c4-game-row .status.waiting { color: #feca57; }
+.c4-game-row .status.invite { color: #ff4757; }
+.c4-game-row .status.done { color: #888; }
+.c4-amt { background: rgba(254,202,87,0.2); color: #feca57; padding: 2px 8px; border-radius: 8px; font-size: 0.75em; font-weight: bold; border: 1px solid rgba(254,202,87,0.4); }
+.empty-state { text-align: center; padding: 25px; color: #666; font-style: italic; }
+
+/* Game board area */
+.game-stage { display: none; }
+.game-stage.show { display: block; }
+.stage-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.player-tag { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); padding: 8px 14px; border-radius: 12px; border: 2px solid #444; }
+.player-tag.red    { border-color: #ff4757; }
+.player-tag.yellow { border-color: #feca57; }
+.player-tag.turn   { box-shadow: 0 0 18px currentColor; animation: turnPulse 1.4s ease-in-out infinite alternate; }
+@keyframes turnPulse { from { box-shadow: 0 0 8px rgba(255,255,255,0.3); } to { box-shadow: 0 0 20px rgba(255,255,255,0.7); } }
+.player-tag.red.turn { color: #ff4757; } .player-tag.yellow.turn { color: #feca57; }
+.player-tag .disc { width: 22px; height: 22px; border-radius: 50%; }
+.player-tag.red .disc { background: radial-gradient(circle at 35% 30%, #ff8a8a, #ff4757 70%); }
+.player-tag.yellow .disc { background: radial-gradient(circle at 35% 30%, #fff4b8, #feca57 70%); }
+.player-tag .pname { font-weight: bold; color: #fff; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vs-mid { font-family:'Orbitron',sans-serif; color: #ff4757; font-weight: bold; }
+
+.pot-bar { text-align: center; background: linear-gradient(135deg, rgba(254,202,87,0.15), rgba(0,0,0,0.4)); border: 1px dashed rgba(254,202,87,0.4); border-radius: 10px; padding: 8px; margin-bottom: 12px; font-family:'Orbitron',sans-serif; }
+.pot-bar .pot { color: #feca57; font-weight: bold; }
+.turn-banner { text-align: center; font-family:'Orbitron',sans-serif; letter-spacing: 2px; margin-bottom: 12px; padding: 10px; border-radius: 8px; font-weight: bold; }
+.turn-banner.you { color: #1dd1a1; background: rgba(29,209,161,0.1); border: 1px solid rgba(29,209,161,0.3); }
+.turn-banner.them { color: #feca57; background: rgba(254,202,87,0.1); border: 1px solid rgba(254,202,87,0.3); }
+.timer-line { text-align: center; color: #feca57; font-family:'Orbitron',sans-serif; font-size: 0.85em; margin-bottom: 12px; }
+.timer-line.urgent { color: #ff4757; animation: turnPulse 1s infinite alternate; }
+
+/* The board */
+.board-wrap { display: flex; justify-content: center; }
+.board { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; background: linear-gradient(135deg,#0984e3,#341f97); padding: 14px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.6), inset 0 0 30px rgba(0,0,0,0.4); max-width: 480px; width: 100%; }
+.col { display: flex; flex-direction: column; gap: 8px; cursor: pointer; transition: 0.15s; border-radius: 8px; }
+.col.playable:hover { background: rgba(255,255,255,0.12); }
+.cell { width: 100%; aspect-ratio: 1; background: #0f2027; border-radius: 50%; box-shadow: inset 0 4px 8px rgba(0,0,0,0.6); transition: 0.2s; }
+.cell.p1 { background: radial-gradient(circle at 35% 30%, #ff8a8a, #ff4757 70%); box-shadow: 0 0 12px rgba(255,71,87,0.6), inset 0 -3px 6px rgba(0,0,0,0.4); }
+.cell.p2 { background: radial-gradient(circle at 35% 30%, #fff4b8, #feca57 70%); box-shadow: 0 0 12px rgba(254,202,87,0.6), inset 0 -3px 6px rgba(0,0,0,0.4); }
+.cell.drop { animation: dropIn 0.3s ease; }
+@keyframes dropIn { from { transform: translateY(-300%); } to { transform: translateY(0); } }
+.cell.win { animation: winFlash 0.7s ease-in-out infinite alternate; }
+@keyframes winFlash { from { filter: brightness(1); } to { filter: brightness(1.8); transform: scale(1.08); } }
+
+.stage-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.stage-actions button, .stage-actions a { flex: 1; min-width: 120px; padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; font-family:'Segoe UI',sans-serif; text-align: center; text-decoration: none; }
+.btn-leave { background: rgba(255,71,87,0.15); color: #ff4757; border: 1px solid #ff4757 !important; }
+.btn-accept { background: linear-gradient(135deg,#1dd1a1,#10ac84); color: #fff; }
+.btn-decline { background: rgba(255,71,87,0.15); color: #ff4757; border: 1px solid #ff4757 !important; }
+.btn-cancel { background: rgba(255,71,87,0.15); color: #ff4757; border: 1px solid #ff4757 !important; }
+.btn-rematch { background: linear-gradient(135deg,#ff4757,#feca57); color: #000; }
+.btn-claim { background: linear-gradient(135deg,#1dd1a1,#10ac84); color: #fff; animation: turnPulse 1.4s infinite alternate; }
+
+/* Result modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 8000; backdrop-filter: blur(8px); }
+.modal-overlay.show { display: flex; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.result-modal { background: linear-gradient(135deg,#1a1a2e,#2c1414); border: 2px solid #ff4757; border-radius: 16px; padding: 35px 30px; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 0 40px rgba(255,71,87,0.5); }
+.result-modal .r-icon { font-size: 4em; }
+.result-modal h2 { font-family:'Orbitron',sans-serif; letter-spacing: 2px; margin: 10px 0; }
+.result-modal h2.win { color: #1dd1a1; } .result-modal h2.lose { color: #ff4757; } .result-modal h2.draw { color: #feca57; }
+.result-modal p { color: #c8d6e5; }
+.result-modal .r-reward { font-family:'Orbitron',sans-serif; font-size: 1.4em; color: #feca57; margin: 10px 0; }
+.result-actions { display: flex; gap: 10px; margin-top: 20px; }
+.result-actions button { flex: 1; padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; font-family:'Orbitron',sans-serif; letter-spacing: 1px; }
+
+#toastContainer { position: fixed; top: 20px; right: 20px; z-index: 9000; display: flex; flex-direction: column; gap: 10px; }
+.toast { background: rgba(0,0,0,0.95); color: #fff; border-left: 4px solid #ff4757; padding: 15px 25px; border-radius: 8px; min-width: 250px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); animation: slideIn 0.4s ease, fadeOut 0.4s ease 3.6s forwards; display: flex; align-items: center; gap: 12px; }
+.toast.success { border-color: #1dd1a1; } .toast.error { border-color: #ff4757; } .toast.warning { border-color: #feca57; }
+@keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+@keyframes fadeOut { to { opacity: 0; transform: translateX(120%); } }
+
+.needs-login { text-align: center; padding: 60px 20px; color: #aaa; }
+.needs-login h2 { color: #ff4757; font-family:'Orbitron',sans-serif; }
+.needs-login a { color: #feca57; }
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
+</head>
+<body>
+
+<div id="c4Loading">
+    <div class="c4-load-logo">🔴 CONNECT 4</div>
+    <div class="c4-spinner"></div>
+    <div class="c4-load-text" id="c4LoadText">CONNECTING...</div>
+</div>
+
+<div class="starfield" id="starfield"></div>
+<div id="toastContainer"></div>
+
+<header>
+    <div class="header-left">
+        <a href="index.html" class="back-btn">← Back to Hub</a>
+        <h1 class="page-title">🔴 CONNECT 4</h1>
+    </div>
+    <div class="header-right">
+        <span class="pill" id="pillUsername">👤 ...</span>
+        <span class="pill">🎟️ <span id="pillTokens">0</span></span>
+    </div>
+</header>
+
+<div class="container" id="mainContent">
+
+    <!-- MODE SELECT -->
+    <div id="lobbyView">
+        <div class="mode-grid">
+            <div class="mode-card active" id="modeCpuCard" onclick="selectMode('cpu')">
+                <div class="mc-icon">🤖</div>
+                <h2>VS CPU</h2>
+                <p>Free to play. Climb the global leaderboard!</p>
+            </div>
+            <div class="mode-card" id="modeFriendCard" onclick="selectMode('friend')">
+                <div class="mc-icon">👥</div>
+                <h2>VS FRIEND</h2>
+                <p>Wager tokens — winner takes the pot!</p>
+            </div>
+        </div>
+
+        <!-- CPU PANEL -->
+        <div class="panel" id="cpuPanel">
+            <h3>🤖 Choose Difficulty</h3>
+            <div class="diff-grid">
+                <div class="diff-pick easy active" data-diff="easy" onclick="selectDiff('easy')">
+                    <div class="dp-icon">🟢</div><div class="dp-name">EASY</div><div class="dp-reward">Win: +1 score · +5 🎟️</div>
+                </div>
+                <div class="diff-pick medium" data-diff="medium" onclick="selectDiff('medium')">
+                    <div class="dp-icon">🟡</div><div class="dp-name">MEDIUM</div><div class="dp-reward">Win: +3 score · +10 🎟️</div>
+                </div>
+                <div class="diff-pick hard" data-diff="hard" onclick="selectDiff('hard')">
+                    <div class="dp-icon">🔴</div><div class="dp-name">HARD</div><div class="dp-reward">Win: +10 score · +25 🎟️</div>
+                </div>
+            </div>
+            <div style="text-align:center; color:#aaa; font-size:0.85em; margin-bottom:14px;">
+                Your Connect 4 score: <strong style="color:#feca57;" id="c4ScoreDisplay">0</strong> Pts
+            </div>
+            <button class="btn-primary" onclick="startCpuGame()">▶ START CPU MATCH</button>
+        </div>
+
+                <!-- FRIEND PANEL -->
+                <div class="panel" id="friendPanel" style="display:none;">
+                    <h3>👥 Your Connect 4 Games</h3>
+                    <button class="btn-primary" style="margin-bottom:16px;" onclick="openC4FriendPicker()">⚔️ CHALLENGE A FRIEND</button>
+                    <div id="friendGamesList"><div class="empty-state">Loading your games...</div></div>
+                </div>
+        
+                <!-- FRIEND PICKER (inline) -->
+                <div class="panel" id="c4PickerPanel" style="display:none;">
+                    <h3>⚔️ Pick a Friend & Wager</h3>
+                    <div id="c4FriendChoices" style="margin-bottom:16px;"></div>
+                    <button class="btn-leave" style="width:100%;padding:12px;border-radius:10px;cursor:pointer;font-weight:bold;" onclick="closeC4FriendPicker()">← Cancel</button>
+                </div>
+    </div>
+
+    <!-- GAME STAGE -->
+    <div class="game-stage" id="gameStage">
+        <div class="stage-header">
+            <div class="player-tag red" id="tagRed"><div class="disc"></div><span class="pname" id="nameRed">Red</span></div>
+            <div class="vs-mid">VS</div>
+            <div class="player-tag yellow" id="tagYellow"><div class="disc"></div><span class="pname" id="nameYellow">Yellow</span></div>
+        </div>
+
+        <div class="pot-bar" id="potBar" style="display:none;">💰 POT: <span class="pot" id="potValue">0</span> 🎟️</div>
+        <div class="turn-banner you" id="turnBanner">YOUR TURN</div>
+        <div class="timer-line" id="timerLine" style="display:none;"></div>
+
+        <div class="board-wrap">
+            <div class="board" id="board"></div>
+        </div>
+
+        <div class="stage-actions" id="stageActions"></div>
+    </div>
+
+    <div id="loginRequired" style="display:none;"></div>
+</div>
+
+<!-- RESULT MODAL -->
+<div class="modal-overlay" id="resultModal" onclick="if(event.target===this) closeResult()">
+    <div class="result-modal">
+        <div class="r-icon" id="resultIcon">🏆</div>
+        <h2 id="resultTitle" class="win">YOU WIN!</h2>
+        <p id="resultSub"></p>
+        <div class="r-reward" id="resultReward"></div>
+        <div class="result-actions" id="resultActions"></div>
+    </div>
+</div>
+
+<script>
+/* ===== Loading + stars + toast ===== */
+function setLoad(t){ const e=document.getElementById('c4LoadText'); if(e) e.innerText=t; }
+function hideLoad(){ const s=document.getElementById('c4Loading'); if(s){ s.classList.add('hide'); setTimeout(()=>s.remove(),600);} }
+setTimeout(()=>{ const s=document.getElementById('c4Loading'); if(s && !s.classList.contains('hide')){ hideLoad(); } }, 10000);
+
+(function stars(){ const sf=document.getElementById('starfield'); for(let i=0;i<70;i++){ const s=document.createElement('div'); s.className='star'; const sz=Math.random()*2+1; s.style.width=sz+'px'; s.style.height=sz+'px'; s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*100+'%'; s.style.animationDuration=(Math.random()*3+2)+'s'; s.style.animationDelay=Math.random()*3+'s'; sf.appendChild(s);} })();
+
+function toast(msg,type='info',icon='🔴'){ const c=document.getElementById('toastContainer'); const t=document.createElement('div'); t.className=`toast ${type}`; t.innerHTML=`<span style="font-size:1.5em;">${icon}</span><span>${msg}</span>`; c.appendChild(t); setTimeout(()=>t.remove(),4000); }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function updateTokenPill(){ document.getElementById('pillTokens').textContent=(parseInt(localStorage.getItem('megaplexTokens'))||0).toLocaleString(); }
+
+const ROWS=6, COLS=7;
+const C4 = window.MegaplexCloud;
+
+/* ===== State ===== */
+let currentMode='cpu';
+let cpuDiff='easy';
+let myUid=null;
+
+// CPU local game state
+let cpuBoard=null, cpuTurn=1, cpuOver=false; // 1=player(red), 2=cpu(yellow)
+
+// Friend game state
+let c4ListUnsub=null, c4GameUnsub=null;
+let activeGameId=null, activeGameData=null;
+let c4Timer=null;
+
+/* ===== Mode selection ===== */
+function selectMode(m){
+    currentMode=m;
+    document.getElementById('modeCpuCard').classList.toggle('active', m==='cpu');
+    document.getElementById('modeFriendCard').classList.toggle('active', m==='friend');
+    document.getElementById('cpuPanel').style.display = m==='cpu' ? 'block':'none';
+    document.getElementById('friendPanel').style.display = m==='friend' ? 'block':'none';
+}
+function selectDiff(d){
+    cpuDiff=d;
+    document.querySelectorAll('.diff-pick').forEach(p=>p.classList.toggle('active', p.dataset.diff===d));
+}
+
+/* ===== Board helpers (local mirror of module logic) ===== */
+function emptyGrid(){ return Array.from({length:ROWS},()=>Array(COLS).fill(0)); }
+function dropGrid(grid,col,player){ for(let r=ROWS-1;r>=0;r--){ if(grid[r][col]===0){ grid[r][col]=player; return r; } } return -1; }
+function checkWinGrid(grid){
+    const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){ const p=grid[r][c]; if(!p)continue;
+        for(const[dr,dc]of dirs){ let n=1,rr=r+dr,cc=c+dc; const cells=[[r,c]];
+            while(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&grid[rr][cc]===p){ n++; cells.push([rr,cc]); if(n===4) return {player:p,cells}; rr+=dr; cc+=dc; } } }
+    return null;
+}
+function gridFull(grid){ return grid.every(row=>row.every(c=>c!==0)); }
+function validCols(grid){ const v=[]; for(let c=0;c<COLS;c++) if(grid[0][c]===0) v.push(c); return v; }
+
+/* ===== Render board ===== */
+function renderBoard(grid, playable, winCells){
+    const b=document.getElementById('board'); b.innerHTML='';
+    const winSet = new Set((winCells||[]).map(([r,c])=>r+'_'+c));
+    for(let c=0;c<COLS;c++){
+        const col=document.createElement('div'); col.className='col'+(playable?' playable':''); col.dataset.col=c;
+        for(let r=0;r<ROWS;r++){
+            const cell=document.createElement('div'); cell.className='cell';
+            if(grid[r][c]===1) cell.classList.add('p1');
+            if(grid[r][c]===2) cell.classList.add('p2');
+            if(winSet.has(r+'_'+c)) cell.classList.add('win');
+            col.appendChild(cell);
+        }
+        if(playable) col.onclick=()=>onColumnClick(c);
+        b.appendChild(col);
+    }
+}
+
+/* ====================================================
+   🤖 CPU MODE
+   ==================================================== */
+function startCpuGame(){
+    activeGameId=null; activeGameData=null;
+    if(c4GameUnsub){ c4GameUnsub(); c4GameUnsub=null; }
+    if(c4Timer){ clearInterval(c4Timer); c4Timer=null; }
+    cpuBoard=emptyGrid(); cpuTurn=1; cpuOver=false;
+
+    document.getElementById('lobbyView').style.display='none';
+    document.getElementById('gameStage').classList.add('show');
+    document.getElementById('potBar').style.display='none';
+    document.getElementById('timerLine').style.display='none';
+
+    document.getElementById('nameRed').textContent = localStorage.getItem('megaplexUsername')||'YOU';
+    const diffName = cpuDiff==='easy'?'CPU 🟢':cpuDiff==='medium'?'CPU 🟡':'CPU 🔴';
+    document.getElementById('nameYellow').textContent = diffName;
+
+    document.getElementById('stageActions').innerHTML =
+        `<button class="btn-rematch" onclick="startCpuGame()">🔄 Restart</button>
+         <button class="btn-leave" onclick="leaveGame()">↩ Leave</button>`;
+
+    updateCpuView();
+}
+
+function updateCpuView(){
+    renderBoard(cpuBoard, !cpuOver && cpuTurn===1, null);
+    const tr=document.getElementById('tagRed'), ty=document.getElementById('tagYellow');
+    tr.classList.toggle('turn', !cpuOver && cpuTurn===1);
+    ty.classList.toggle('turn', !cpuOver && cpuTurn===2);
+    const banner=document.getElementById('turnBanner');
+    if(cpuOver){ banner.style.display='none'; return; }
+    banner.style.display='block';
+    if(cpuTurn===1){ banner.className='turn-banner you'; banner.textContent='YOUR TURN'; }
+    else { banner.className='turn-banner them'; banner.textContent='CPU THINKING...'; }
+}
+
+function onColumnClick(col){
+    if(currentMode==='cpu' || !activeGameId){ cpuPlayerMove(col); }
+    else { friendMove(col); }
+}
+
+function cpuPlayerMove(col){
+    if(cpuOver || cpuTurn!==1) return;
+    const r=dropGrid(cpuBoard,col,1);
+    if(r===-1) return;
+    afterCpuMove();
+    if(cpuOver) return;
+    cpuTurn=2; updateCpuView();
+    setTimeout(cpuAiMove, 550);
+}
+
+function cpuAiMove(){
+    if(cpuOver) return;
+    const col = chooseCpuMove(cpuBoard, cpuDiff);
+    dropGrid(cpuBoard,col,2);
+    afterCpuMove();
+    if(cpuOver) return;
+    cpuTurn=1; updateCpuView();
+}
+
+function afterCpuMove(){
+    const win=checkWinGrid(cpuBoard);
+    if(win){
+        cpuOver=true;
+        renderBoard(cpuBoard,false,win.cells);
+        if(win.player===1) cpuWin();
+        else cpuLose();
+        return;
+    }
+    if(gridFull(cpuBoard)){
+        cpuOver=true; renderBoard(cpuBoard,false,null); cpuDraw(); return;
+    }
+}
+
+/* Weighted score + token reward on CPU win */
+function cpuWin(){
+    const scoreAdd = cpuDiff==='easy'?1:cpuDiff==='medium'?3:10;
+    const tokenAdd = cpuDiff==='easy'?5:cpuDiff==='medium'?10:25;
+
+    // Update arcadeScores.connect4_score (cumulative)
+    const scores = JSON.parse(localStorage.getItem('arcadeScores'))||{};
+    scores.connect4_score = (scores.connect4_score||0) + scoreAdd;
+    localStorage.setItem('arcadeScores', JSON.stringify(scores));
+
+    // Award tokens
+    const tokens = (parseInt(localStorage.getItem('megaplexTokens'))||0) + tokenAdd;
+    localStorage.setItem('megaplexTokens', String(tokens));
+    updateTokenPill();
+    document.getElementById('c4ScoreDisplay').textContent = scores.connect4_score;
+
+    // Cloud autosave
+    if(C4.saveToCloud) C4.saveToCloud();
+
+    showResult('win', '🏆', 'YOU BEAT THE CPU!', `+${scoreAdd} Connect 4 score`, `+${tokenAdd} 🎟️`, false);
+}
+function cpuLose(){ showResult('lose','💀','THE CPU WINS','Better luck next time!','', false); }
+function cpuDraw(){ showResult('draw','🤝','DRAW','The board filled up.','', false); }
+
+/* ===== CPU AI ===== */
+function chooseCpuMove(grid, diff){
+    const cols=validCols(grid);
+    // Always: take immediate win
+    for(const c of cols){ const g=cloneGrid(grid); dropGrid(g,c,2); if(checkWinGrid(g)) return c; }
+    if(diff==='easy'){
+        // 50% chance to block an obvious loss, else random
+        if(Math.random()<0.5){ const blk=findBlock(grid); if(blk!==-1) return blk; }
+        return cols[Math.floor(Math.random()*cols.length)];
+    }
+    if(diff==='medium'){
+        const blk=findBlock(grid); if(blk!==-1) return blk;
+        // Prefer center-ish columns
+        const order=[3,2,4,1,5,0,6].filter(c=>cols.includes(c));
+        return order[Math.floor(Math.random()*Math.min(3,order.length))] ?? cols[0];
+    }
+    // HARD: minimax with alpha-beta
+    return minimaxRoot(grid, 5);
+}
+function cloneGrid(g){ return g.map(r=>r.slice()); }
+function findBlock(grid){ // returns a column that blocks player's immediate win
+    for(const c of validCols(grid)){ const g=cloneGrid(grid); dropGrid(g,c,1); if(checkWinGrid(g)) return c; }
+    return -1;
+}
+
+function minimaxRoot(grid, depth){
+    const cols=validCols(grid);
+    let bestScore=-Infinity, bestCol=cols[Math.floor(cols.length/2)];
+    const order=[3,2,4,1,5,0,6].filter(c=>cols.includes(c));
+    for(const c of order){
+        const g=cloneGrid(grid); dropGrid(g,c,2);
+        const sc=minimax(g, depth-1, -Infinity, Infinity, false);
+        if(sc>bestScore){ bestScore=sc; bestCol=c; }
+    }
+    return bestCol;
+}
+function minimax(grid, depth, alpha, beta, maximizing){
+    const win=checkWinGrid(grid);
+    if(win){ return win.player===2 ? 100000+depth : -100000-depth; }
+    if(gridFull(grid)||depth===0) return evalBoard(grid);
+    const cols=validCols(grid);
+    const order=[3,2,4,1,5,0,6].filter(c=>cols.includes(c));
+    if(maximizing){
+        let val=-Infinity;
+        for(const c of order){ const g=cloneGrid(grid); dropGrid(g,c,2); val=Math.max(val, minimax(g,depth-1,alpha,beta,false)); alpha=Math.max(alpha,val); if(alpha>=beta)break; }
+        return val;
+    } else {
+        let val=Infinity;
+        for(const c of order){ const g=cloneGrid(grid); dropGrid(g,c,1); val=Math.min(val, minimax(g,depth-1,alpha,beta,true)); beta=Math.min(beta,val); if(alpha>=beta)break; }
+        return val;
+    }
+}
+function evalBoard(grid){
+    let score=0;
+    // center column bonus
+    for(let r=0;r<ROWS;r++) if(grid[r][3]===2) score+=6; else if(grid[r][3]===1) score-=6;
+    const lines=[];
+    // all windows of 4
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+        if(c+3<COLS) lines.push([[r,c],[r,c+1],[r,c+2],[r,c+3]]);
+        if(r+3<ROWS) lines.push([[r,c],[r+1,c],[r+2,c],[r+3,c]]);
+        if(r+3<ROWS&&c+3<COLS) lines.push([[r,c],[r+1,c+1],[r+2,c+2],[r+3,c+3]]);
+        if(r+3<ROWS&&c-3>=0) lines.push([[r,c],[r+1,c-1],[r+2,c-2],[r+3,c-3]]);
+    }
+    for(const line of lines){
+        let me=0,opp=0,empty=0;
+        for(const[r,c]of line){ const v=grid[r][c]; if(v===2)me++; else if(v===1)opp++; else empty++; }
+        if(me===3&&empty===1) score+=50;
+        else if(me===2&&empty===2) score+=10;
+        if(opp===3&&empty===1) score-=70;
+        else if(opp===2&&empty===2) score-=12;
+    }
+    return score;
+}
+
+/* ====================================================
+   👥 FRIEND MODE
+   ==================================================== */
+function startFriendList(){
+    if(c4ListUnsub){ c4ListUnsub(); c4ListUnsub=null; }
+    C4.checkExpiredC4();
+    c4ListUnsub = C4.subscribeToC4(renderFriendGames);
+}
+
+function renderFriendGames(games){
+    const list=document.getElementById('friendGamesList');
+    // Sort: active first, then pending invites, then finished
+    const live = games.filter(g=>g.status==='active');
+    const invites = games.filter(g=>g.status==='pending' && g.yellow.uid===myUid);
+    const outgoing = games.filter(g=>g.status==='pending' && g.red.uid===myUid);
+    const finished = games.filter(g=>['completed','draw'].includes(g.status))
+        .filter(g=> (g.red.uid===myUid && !g.redClaimed) || (g.yellow.uid===myUid && !g.yellowClaimed) || (g.completedAt && Date.now()-g.completedAt<86400000))
+        .sort((a,b)=>(b.completedAt||0)-(a.completedAt||0)).slice(0,10);
+
+    const all=[...live,...invites,...outgoing,...finished];
+    if(!all.length){ list.innerHTML='<div class="empty-state">No Connect 4 games yet. Challenge a friend!</div>'; return; }
+
+    list.innerHTML = all.map(g=>{
+        const mySide = g.red.uid===myUid ? 'red':'yellow';
+        const other = mySide==='red' ? g.yellow : g.red;
+        let statusTxt='', cls='';
+        if(g.status==='active'){
+            const myTurn = g.turn===mySide;
+            statusTxt = myTurn ? '▶ Your turn' : '⏳ Their turn';
+            cls = myTurn ? 'yourturn':'waiting';
+        } else if(g.status==='pending'){
+            if(mySide==='yellow'){ statusTxt='📨 Invite — tap'; cls='invite'; }
+            else { statusTxt='⏳ Waiting for accept'; cls='waiting'; }
+        } else {
+            const isWin = g.winner===myUid;
+            const unclaimed = (mySide==='red'?!g.redClaimed:!g.yellowClaimed) && (mySide==='red'?g.redPayout:g.yellowPayout)>0;
+            if(g.status==='draw') statusTxt = unclaimed?'🤝 Draw — claim':'🤝 Draw';
+            else statusTxt = isWin ? (unclaimed?'🏆 Won — claim!':'🏆 Won') : '💔 Lost';
+            cls='done';
+        }
+        return `<div class="c4-game-row" onclick="openFriendGame('${g.id}')">
+            <span class="vs">${escapeHtml(other.username)} <span class="vtag">VS</span></span>
+            <span class="c4-amt">${C4.formatTokenAmount(g.amount)} 🎟️</span>
+            <span class="status ${cls}">${statusTxt}</span>
+        </div>`;
+    }).join('');
+}
+
+function openFriendGame(gameId){
+    activeGameId=gameId;
+    if(c4GameUnsub){ c4GameUnsub(); c4GameUnsub=null; }
+    document.getElementById('lobbyView').style.display='none';
+    document.getElementById('gameStage').classList.add('show');
+    document.getElementById('potBar').style.display='block';
+    c4GameUnsub = C4.subscribeToC4Game(gameId, renderActiveGame);
+    if(c4Timer){ clearInterval(c4Timer); }
+    c4Timer=setInterval(tickTimer,1000);
+}
+
+let lastRenderedStatus=null, lastBoard=null;
+function renderActiveGame(g){
+    activeGameData=g;
+    const mySide = g.red.uid===myUid ? 'red':'yellow';
+    const grid = C4.c4ToGrid(g.board);
+
+    // Detect game-over transition for modal
+    const wasActive = lastRenderedStatus==='active' || lastRenderedStatus===null;
+    document.getElementById('nameRed').textContent = g.red.username;
+    document.getElementById('nameYellow').textContent = g.yellow.username;
+    document.getElementById('potValue').textContent = g.pot.toLocaleString();
+
+    const win = checkWinGrid(grid);
+    const playable = g.status==='active' && g.turn===mySide;
+    renderBoard(grid, playable, win?win.cells:null);
+
+    const tr=document.getElementById('tagRed'), ty=document.getElementById('tagYellow');
+    tr.classList.toggle('turn', g.status==='active' && g.turn==='red');
+    ty.classList.toggle('turn', g.status==='active' && g.turn==='yellow');
+
+    const banner=document.getElementById('turnBanner');
+    const timer=document.getElementById('timerLine');
+
+    if(g.status==='pending'){
+        banner.style.display='block'; timer.style.display='none';
+        if(mySide==='yellow'){ banner.className='turn-banner them'; banner.textContent='ACCEPT TO START PLAYING'; }
+        else { banner.className='turn-banner them'; banner.textContent='WAITING FOR OPPONENT TO ACCEPT'; }
+    } else if(g.status==='active'){
+        banner.style.display='block'; timer.style.display='block';
+        if(g.turn===mySide){ banner.className='turn-banner you'; banner.textContent='YOUR TURN'; }
+        else { banner.className='turn-banner them'; banner.textContent="OPPONENT'S TURN"; }
+    } else {
+        banner.style.display='none'; timer.style.display='none';
+    }
+
+    renderStageActions(g, mySide);
+
+    // Show result modal when game finishes (only on transition into finished state)
+    if(['completed','draw'].includes(g.status) && lastRenderedStatus==='active'){
+        showFriendResult(g, mySide);
+    }
+    lastRenderedStatus=g.status;
+}
+
+function renderStageActions(g, mySide){
+    const a=document.getElementById('stageActions');
+    if(g.status==='pending'){
+        if(mySide==='yellow'){
+            a.innerHTML=`<button class="btn-accept" onclick="acceptFriendGame()">⚔ ACCEPT — PAY ${C4.formatTokenAmount(g.amount)} 🎟️</button>
+                         <button class="btn-decline" onclick="declineFriendGame()">✕ DECLINE</button>`;
+        } else {
+            a.innerHTML=`<button class="btn-cancel" onclick="cancelFriendGame()">↩ CANCEL CHALLENGE</button>
+                         <button class="btn-leave" onclick="leaveGame()">← Back</button>`;
+        }
+    } else if(g.status==='active'){
+        a.innerHTML=`<button class="btn-leave" onclick="leaveGame()">← Back to Lobby</button>`;
+    } else {
+        // finished — claim if owed
+        const owed = (mySide==='red'?(!g.redClaimed&&g.redPayout>0):(!g.yellowClaimed&&g.yellowPayout>0));
+        let html='';
+        if(owed){ const payout=mySide==='red'?g.redPayout:g.yellowPayout; html+=`<button class="btn-claim" onclick="claimFriendGame()">🏆 CLAIM ${payout.toLocaleString()} 🎟️</button>`; }
+        html+=`<button class="btn-leave" onclick="leaveGame()">← Back to Lobby</button>`;
+        a.innerHTML=html;
+    }
+}
+
+async function friendMove(col){
+    if(!activeGameData || activeGameData.status!=='active') return;
+    const mySide = activeGameData.red.uid===myUid ? 'red':'yellow';
+    if(activeGameData.turn!==mySide){ toast("Not your turn!",'warning','⏳'); return; }
+    const r=await C4.makeC4Move(activeGameId, col);
+    if(!r.success){
+        if(r.reason==='not_your_turn') toast("Not your turn!",'warning','⏳');
+        else if(r.reason==='column_full') toast('Column is full!','warning','🚫');
+        else toast('Move failed','error','❌');
+    }
+}
+
+async function acceptFriendGame(){
+    const r=await C4.acceptC4(activeGameId);
+    if(r.success){ toast('Game accepted! Make your move.','success','⚔️'); updateTokenPill(); }
+    else { toast(r.reason==='insufficient_tokens'?'Not enough tokens!':'Failed to accept','error','❌'); }
+}
+async function declineFriendGame(){
+    if(!confirm('Decline this challenge? The challenger is refunded.')) return;
+    const r=await C4.declineC4(activeGameId);
+    if(r.success){ toast('Challenge declined','info','👋'); leaveGame(); }
+}
+async function cancelFriendGame(){
+    if(!confirm('Cancel this challenge? You get refunded.')) return;
+    const r=await C4.cancelC4(activeGameId);
+    if(r.success){ toast('Cancelled — refunded','info','↩️'); updateTokenPill(); leaveGame(); }
+}
+async function claimFriendGame(){
+    const r=await C4.claimC4(activeGameId);
+    if(r.success){ updateTokenPill(); toast('Winnings claimed! 🎟️','success','🏆'); closeResult(); }
+}
+
+function tickTimer(){
+    if(!activeGameData || activeGameData.status!=='active'){ return; }
+    const remaining = activeGameData.expiresAt - Date.now();
+    const t=document.getElementById('timerLine');
+    if(remaining<=0){ t.textContent='⏰ EXPIRED — resolving...'; C4.checkExpiredC4(); return; }
+    const h=Math.floor(remaining/3600000), m=Math.floor((remaining%3600000)/60000), s=Math.floor((remaining%60000)/1000);
+    t.textContent='⏰ '+(h>0?h+'h ':'')+m+'m '+s+'s remaining';
+    t.classList.toggle('urgent', remaining<300000);
+}
+
+/* ===== Result modal ===== */
+function showResult(kind, icon, title, sub, reward, showClaim){
+    document.getElementById('resultIcon').textContent=icon;
+    const tEl=document.getElementById('resultTitle'); tEl.textContent=title; tEl.className=kind;
+    document.getElementById('resultSub').textContent=sub;
+    document.getElementById('resultReward').textContent=reward||'';
+    let actions='';
+    if(currentMode==='cpu'){
+        actions=`<button class="btn-rematch" onclick="closeResult(); startCpuGame();">🔄 REMATCH</button>
+                 <button class="btn-leave" onclick="closeResult(); leaveGame();">← LOBBY</button>`;
+    }
+    document.getElementById('resultActions').innerHTML=actions;
+    document.getElementById('resultModal').classList.add('show');
+}
+function showFriendResult(g, mySide){
+    const isWin = g.winner===myUid;
+    const isDraw = g.winner==='draw';
+    const payout = mySide==='red'?g.redPayout:g.yellowPayout;
+    let kind,icon,title,sub,reward;
+    if(isDraw){ kind='draw'; icon='🤝'; title='DRAW'; sub='Bets refunded (minus 5%)'; reward=`+${payout.toLocaleString()} 🎟️`; }
+    else if(isWin){ kind='win'; icon='🏆'; title='YOU WIN!'; sub='You took the pot!'; reward=`+${payout.toLocaleString()} 🎟️`; }
+    else { kind='lose'; icon='💔'; title='YOU LOST'; sub='Your opponent won the pot.'; reward=''; }
+
+    document.getElementById('resultIcon').textContent=icon;
+    const tEl=document.getElementById('resultTitle'); tEl.textContent=title; tEl.className=kind;
+    document.getElementById('resultSub').textContent=sub;
+    document.getElementById('resultReward').textContent=reward;
+
+    const owed = (mySide==='red'?(!g.redClaimed&&g.redPayout>0):(!g.yellowClaimed&&g.yellowPayout>0));
+    let actions='';
+    if(owed) actions+=`<button class="btn-claim" onclick="claimFriendGame();">🏆 CLAIM ${payout.toLocaleString()} 🎟️</button>`;
+    actions+=`<button class="btn-rematch" onclick="rematchFriend('${mySide==='red'?g.yellow.uid:g.red.uid}', ${g.amount});">🔄 REMATCH</button>`;
+    actions+=`<button class="btn-leave" onclick="closeResult(); leaveGame();">← LOBBY</button>`;
+    document.getElementById('resultActions').innerHTML=actions;
+    document.getElementById('resultModal').classList.add('show');
+}
+function closeResult(){ document.getElementById('resultModal').classList.remove('show'); }
+
+async function rematchFriend(opponentUid, amount){
+    closeResult();
+    const myTokens=parseInt(localStorage.getItem('megaplexTokens'))||0;
+    if(myTokens<amount){ toast('Not enough tokens for a rematch!','error','💸'); leaveGame(); return; }
+    toast('Sending rematch...','info','🔄');
+    const r=await C4.createC4Challenge(opponentUid, amount);
+    if(r.success){ updateTokenPill(); openFriendGame(r.gameId); }
+    else { toast('Rematch failed','error','❌'); leaveGame(); }
+}
+
+/* ===== Leave / back to lobby ===== */
+function leaveGame(){
+    closeResult();
+    const picker=document.getElementById('c4PickerPanel'); if(picker) picker.style.display='none';
+    if(c4GameUnsub){ c4GameUnsub(); c4GameUnsub=null; }
+    if(c4Timer){ clearInterval(c4Timer); c4Timer=null; }
+    activeGameId=null; activeGameData=null; lastRenderedStatus=null;
+    document.getElementById('gameStage').classList.remove('show');
+    document.getElementById('lobbyView').style.display='block';
+    // restore correct panel
+    selectMode(currentMode);
+    if(currentMode==='friend') startFriendList();
+    // refresh CPU score display
+    const scores=JSON.parse(localStorage.getItem('arcadeScores'))||{};
+    document.getElementById('c4ScoreDisplay').textContent=scores.connect4_score||0;
+}
+
+/* ===== INIT ===== */
+function showLoginRequired(){
+    document.getElementById('mainContent').innerHTML=`
+        <div class="needs-login">
+            <h2>🔒 LOGIN REQUIRED</h2>
+            <p>You can play vs CPU as a guest, but friend battles & cloud saving need an account.</p>
+            <p><a href="index.html">← Return to Hub to log in</a></p>
+        </div>`;
+}
+
+setLoad('CONNECTING TO MEGAPLEX...');
+C4.onReady((user)=>{
+    setLoad('LOADING...');
+    myUid = user ? user.uid : null;
+    document.getElementById('pillUsername').textContent='👤 '+(localStorage.getItem('megaplexUsername')||'GUEST');
+    updateTokenPill();
+    const scores=JSON.parse(localStorage.getItem('arcadeScores'))||{};
+    document.getElementById('c4ScoreDisplay').textContent=scores.connect4_score||0;
+
+    // If logged in, friend mode is available
+    if(user){
+        startFriendList();
+        // Deep link: ?game=ID opens directly into a friend game
+        const params=new URLSearchParams(location.search);
+        const gid=params.get('game');
+        if(gid){ selectMode('friend'); openFriendGame(gid); }
+    } else {
+        // Guest — disable friend mode visually but allow CPU
+        document.getElementById('modeFriendCard').onclick=()=>toast('Log in to battle friends!','warning','🔒');
+        document.getElementById('modeFriendCard').style.opacity='0.5';
+    }
+
+    setTimeout(()=>{ setLoad('READY'); hideLoad(); }, 500);
+});
+
+// Logout while on this page → back to hub
+window.addEventListener('megaplex-auth-changed',(e)=>{
+    if(!e.detail.user && myUid){ toast('Logged out — returning to hub','warning','🚪'); setTimeout(()=>location.href='index.html',1500); }
+});
+
+/* ===== Challenge a friend directly from connect4.html ===== */
+let c4Friends = [];
+async function openC4FriendPicker(){
+    document.getElementById('friendPanel').style.display='none';
+    document.getElementById('c4PickerPanel').style.display='block';
+    const box=document.getElementById('c4FriendChoices');
+    box.innerHTML='<div class="empty-state">Loading friends...</div>';
+
+    const social = await C4.getMySocialState();
+    if(!social.friends.length){
+        box.innerHTML='<div class="empty-state">No friends yet! Add some on the Friends page.</div>';
+        return;
+    }
+    // Fetch usernames
+    const profiles = await Promise.all(social.friends.map(uid=>C4.getPlayerProfile(uid)));
+    c4Friends = profiles.filter(Boolean);
+
+    box.innerHTML = c4Friends.map(f=>`
+        <div class="c4-game-row" onclick="pickC4Friend('${f.uid}')">
+            <span class="vs">${escapeHtml(f.username)}</span>
+            <span class="status invite">Challenge →</span>
+        </div>
+    `).join('');
+}
+function closeC4FriendPicker(){
+    document.getElementById('c4PickerPanel').style.display='none';
+    document.getElementById('friendPanel').style.display='block';
+}
+async function pickC4Friend(opponentUid){
+    const f = c4Friends.find(x=>x.uid===opponentUid);
+    const name = f?.username || 'PLAYER';
+    const myTokens = parseInt(localStorage.getItem('megaplexTokens'))||0;
+    const amts = C4.C4_AMOUNTS.filter(a=>a<=myTokens);
+    if(!amts.length){ toast('Not enough tokens for any wager!','error','💸'); return; }
+    const choices = amts.map((a,i)=>`${i+1}) ${a.toLocaleString()} 🎟️`).join('\n');
+    const pick = prompt(`🔴 Connect 4 vs ${name}\n\nChoose wager amount:\n${choices}\n\nEnter a number (1-${amts.length}):`);
+    if(pick===null) return;
+    const idx=parseInt(pick)-1;
+    if(isNaN(idx)||idx<0||idx>=amts.length){ toast('Invalid choice','warning','⚠️'); return; }
+
+    toast('Creating challenge...','info','🔴');
+    const r = await C4.createC4Challenge(opponentUid, amts[idx]);
+    if(r.success){
+        updateTokenPill();
+        closeC4FriendPicker();
+        openFriendGame(r.gameId);
+        toast('Challenge sent!','success','🔴');
+    } else {
+        toast(r.reason==='insufficient_tokens'?'Not enough tokens!':'Failed to create','error','❌');
+    }
+}
+</script>
+
+<link rel="stylesheet" href="chat.css">
+<script src="chat.js"></script>
+</body>
+</html>

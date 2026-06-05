@@ -552,6 +552,8 @@
         .card-link.guesser h2 { color: #fa8231; }
         .card-link.racer { border-color: #ff007f; background: rgba(255, 0, 127, 0.1); }
         .card-link.racer h2 { color: #ff007f; }
+        .card-link.connect4 { border-color: #ff4757; background: rgba(255, 71, 87, 0.1); }
+        .card-link.connect4 h2 { color: #ff4757; }
 
         .tag { font-size: 0.75em; padding: 3px 10px; border-radius: 12px; display: inline-block; color: white; width: fit-content; margin: 0 auto; }
         .play-btn {
@@ -1452,6 +1454,26 @@
             <div class="card-content"><h2>🔐 Code Breaker</h2><span class="tag" style="background:#fa8231;">Logic</span><p>Crack the secret vault!</p></div>
             <div class="play-btn" style="background:#fa8231; color:#000;">Play Game ➔</div>
         </a>
+        <a href="pulserunner.html" class="card-link" data-category="arcade" data-name="pulse runner overdrive rhythm geometry dash" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()" style="border-color:#ff00ff; background:rgba(255,0,255,0.1);">
+            <span class="new-badge">NEW</span>
+            <div class="card-content"><h2 style="color:#ff00ff;">🎵 Pulse Runner</h2><span class="tag" style="background:#ff00ff; color:#000;">Rhythm Runner</span><p>Overdrive! 10 beat-synced circuits of pure chaos.</p></div>
+            <div class="play-btn" style="background:#ff00ff; color:#000;">Play Game ➔</div>
+        </a>
+        <a href="neonflapper.html" class="card-link" data-category="arcade" data-name="neon flapper data stream flappy bird drone" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()" style="border-color:#00ffff; background:rgba(0,255,255,0.1);">
+            <span class="new-badge">NEW</span>
+            <div class="card-content"><h2 style="color:#00ffff;">🐦 Neon Flapper</h2><span class="tag" style="background:#00ffff; color:#000;">Flappy Arcade</span><p>Data Stream! Flap the drone through the firewall.</p></div>
+            <div class="play-btn" style="background:#00ffff; color:#000;">Play Game ➔</div>
+        </a>
+        <a href="nethacksiege.html" class="card-link" data-category="arcade logic" data-name="nethack siege tower defense td defender" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()" style="border-color:#c724b1; background:rgba(199,36,177,0.1);">
+            <span class="new-badge">NEW</span>
+            <div class="card-content"><h2 style="color:#c724b1;">🛡️ NetHack Siege</h2><span class="tag" style="background:#c724b1; color:#fff;">Tower Defense</span><p>Defend the Mainframe! 20 nodes, 5 daemon bosses.</p></div>
+            <div class="play-btn" style="background:#c724b1; color:#fff;">Play Game ➔</div>
+        </a>
+        <a href="connect4.html" class="card-link connect4" data-category="logic pvp" data-name="connect 4 connect four wager battle" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <span class="new-badge">NEW</span>
+            <div class="card-content"><h2>🔴 Connect 4</h2><span class="tag" style="background:#ff4757; color:#fff;">PvP & vs CPU</span><p>Drop discs, line up 4 — wager friends or climb the CPU leaderboard!</p></div>
+            <div class="play-btn" style="background:linear-gradient(135deg,#ff4757,#feca57); color:#000;">Play Game ➔</div>
+        </a>
     </div>
 
     <a href="#" id="secret-casino-btn" class="hidden-ufo" onmouseenter="sfx.hover()" onclick="enterSpaceCasino(event)" title="???">🛸</a>
@@ -1933,7 +1955,21 @@
             { id: 'ach_memory_2', tier: 2, icon: '🔮', title: 'Mind Reader', desc: 'Beat Memory in 12 moves.', reward: 2000, check: (s) => (s.memory || 999) <= 12 },
             { id: 'ach_platformer2_2', tier: 2, icon: '👹', title: 'The Root Slayer', desc: 'Defeat the FINAL BOSS in Neon Jumper 2.', reward: 5000, check: (s) => (s.nj2_completed || 0) >= 1 },
             { id: 'ach_rich', tier: 2, icon: '💰', title: 'Token Billionaire', desc: 'Have 5,000 tokens.', reward: 1000, check: () => (parseInt(localStorage.getItem('megaplexTokens')) || 0) >= 5000 },
+            // ===== Pulse Runner =====
+            { id: 'ach_pr_1', tier: 1, icon: '🎵', title: 'Beat Matcher', desc: 'Clear your first circuit in Pulse Runner (100 total %).', reward: 1000, check: (s) => (s.pr_score || 0) >= 100 },
+            { id: 'ach_pr_2', tier: 1, icon: '🌀', title: 'Gravity Bender', desc: 'Reach 500 total % across Pulse Runner circuits.', reward: 1500, check: (s) => (s.pr_score || 0) >= 500 },
+            { id: 'ach_pr_3', tier: 2, icon: '⚡', title: 'Overdrive Master', desc: 'Clear ALL circuits in Pulse Runner (1,000 total %).', reward: 5000, check: (s) => (s.pr_score || 0) >= 1000 },
+            // ===== Neon Flapper =====
+            { id: 'ach_nf_1', tier: 1, icon: '🐦', title: 'Data Drone', desc: 'Score 10 in Neon Flapper.', reward: 600, check: (s) => (s.nf_score || 0) >= 10 },
+            { id: 'ach_nf_2', tier: 1, icon: '🔥', title: 'Firewall Breacher', desc: 'Score 25 in Neon Flapper.', reward: 1000, check: (s) => (s.nf_score || 0) >= 25 },
+            { id: 'ach_nf_3', tier: 2, icon: '⚡', title: 'Stream Master', desc: 'Score 50 in Neon Flapper.', reward: 3000, check: (s) => (s.nf_score || 0) >= 50 },
+            // ===== NetHack Siege =====
+            { id: 'ach_nhs_1', tier: 1, icon: '🛡️', title: 'Grid Guardian', desc: 'Win your first siege in NetHack Siege.', reward: 1500, check: (s) => (s.nhs_wins || 0) >= 1 },
+            { id: 'ach_nhs_2', tier: 1, icon: '⬡', title: 'Node Defender', desc: 'Reach node 10 in a single NetHack Siege.', reward: 1000, check: (s) => (s.nhs_best_node || 0) >= 10 },
+            { id: 'ach_nhs_3', tier: 2, icon: '💀', title: 'Daemon Slayer', desc: 'Purge 500 intruders total in NetHack Siege.', reward: 2500, check: (s) => (s.nhs_total_kills || 0) >= 500 },
+            { id: 'ach_nhs_4', tier: 2, icon: '☠️', title: 'Zero-Day Hero', desc: 'Win on ZERO-DAY difficulty in NetHack Siege.', reward: 5000, check: (s) => (s.nhs_omega_wins || 0) >= 1 },
             { id: 'ach_collector', tier: 2, icon: '🎒', title: 'Completionist', desc: 'Claim all other trophies.', reward: 5000, check: () => {
+            
                 let claimed = JSON.parse(localStorage.getItem('claimedAchievements')) || [];
                 return claimed.length >= achievementsList.length - 1; 
             }}
@@ -2152,7 +2188,7 @@ function calculateTokens() {
             { key: 'cyberrunner', title: '🏃‍♂️ Cyber Runner', unit: 'm', reverse: false, default: 0 },
             { key: 'racer_best_time', title: '🏎️ Vaporwave Racer', unit: 's', reverse: true, default: 999.99 },
             { key: 'fps', title: '🔫 System Breach', unit: '', reverse: false, default: 0 },
-            { key: 'platformer_deaths', title: '🏃 Neon Jumper', unit: ' Deaths', reverse: true, default: 999 },
+            { key: 'platformer_deaths', title: '🦘 Neon Jumper', unit: ' Deaths', reverse: true, default: 999 },
             { key: 'nj2_score', title: '⚡ Neon Jumper 2', unit: ' Pts', reverse: false, default: 0 },
             { key: 'snake', title: '🐍 Snake Classic', unit: '', reverse: false, default: 0 },
             { key: 'clicker', title: '👆 Clicker Frenzy', unit: '', reverse: false, default: 0 },
@@ -2160,7 +2196,11 @@ function calculateTokens() {
             { key: 'ttt', title: '⭕ Tic-Tac-Toe', unit: ' Wins', reverse: false, default: 0 },
             { key: 'math', title: '🧠 Quick Math', unit: '', reverse: false, default: 0 },
             { key: 'memory', title: '👁️ Memory Match', unit: ' Moves', reverse: true, default: 999 },
-            { key: 'guesser', title: '🔐 Code Breaker', unit: '', reverse: false, default: 0 }
+            { key: 'guesser', title: '🔐 Code Breaker', unit: '', reverse: false, default: 0 },
+            { key: 'pr_score', title: '🎵 Pulse Runner', unit: '%', reverse: false, default: 0 },
+            { key: 'nf_score', title: '🐦 Neon Flapper', unit: '', reverse: false, default: 0 },
+            { key: 'nethacksiege', title: '🛡️ NetHack Siege', unit: ' Pts', reverse: false, default: 0 },
+            { key: 'connect4_score', title: '🔴 Connect 4 (vs CPU)', unit: ' Pts', reverse: false, default: 0 },
         ];
         function loadScores() {
     let currentScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
@@ -2618,10 +2658,9 @@ function calculateTokens() {
         /* ====== Carousel (unchanged) ====== */
         const featuredGames = [
             { icon: "⚡", title: "Neon Jumper 2: System Overload", desc: "NEW! Dash, grapple, and battle 3 mandatory bosses across 18 levels!", link: "neonjumper2.html" },
-            { icon: "💥", title: "Glitch Brawler", desc: "Corrupt your rivals in the arena! PvP action.", link: "glitch_brawler.html" },
-            { icon: "☄️", title: "Quantum Asteroids", desc: "Blast through the asteroid field!", link: "asteroids.html" },
-            { icon: "🏃‍♂️", title: "Cyber Runner", desc: "Dash through the neon city!", link: "runner.html" },
-            { icon: "🏎️", title: "Vaporwave Racer", desc: "Master the drift, beat your rivals.", link: "racer.html" }
+            { icon: "🎵", title: "Pulse Runner: Overdrive", desc: "NEW! 10 beat-synced rhythm circuits — survive the chaos!", link: "pulserunner.html" },
+            { icon: "🐦", title: "Neon Flapper: Data Stream", desc: "NEW! Flap the data drone through the firewall.", link: "neonflapper.html" },
+            { icon: "🛡️", title: "NetHack Siege", desc: "NEW! Tower defense — defend the Mainframe across 20 nodes.", link: "nethacksiege.html" },
         ];
         let carouselIndex = 0, carouselInterval;
         function renderCarousel() {
@@ -3351,6 +3390,36 @@ const BOUNTY_TEMPLATES = [
       desc: 'Set a NEW Memory Match record of 10 moves or fewer.',
       trackKey: 'memory', type: 'beat_lower', target: 10,
       cost: 5000, reward: 18000, prestigeReward: 1, gameLink: 'memory.html' }
+      ,
+    // ===== Pulse Runner =====
+    { id: 'b_pr_med', difficulty: 'medium', icon: '🎵', title: 'Rhythm Rookie',
+      desc: 'Reach 400 total % in Pulse Runner.',
+      trackKey: 'pr_score', type: 'beat', target: 400,
+      cost: 700, reward: 2800, gameLink: 'pulserunner.html' },
+    { id: 'b_pr_legend', difficulty: 'legendary', icon: '🌟', title: 'Pulse Perfectionist',
+      desc: 'Reach 900 total % in Pulse Runner.',
+      trackKey: 'pr_score', type: 'beat', target: 900,
+      cost: 5000, reward: 19000, prestigeReward: 1, gameLink: 'pulserunner.html' },
+
+    // ===== Neon Flapper =====
+    { id: 'b_nf_easy', difficulty: 'easy', icon: '🐦', title: 'First Flight',
+      desc: 'Set a NEW Neon Flapper record of at least 12.',
+      trackKey: 'nf_score', type: 'beat', target: 12,
+      cost: 250, reward: 1000, gameLink: 'neonflapper.html' },
+    { id: 'b_nf_hard', difficulty: 'hard', icon: '🔥', title: 'Stream Surfer',
+      desc: 'Set a NEW Neon Flapper record of at least 40.',
+      trackKey: 'nf_score', type: 'beat', target: 40,
+      cost: 1500, reward: 6500, gameLink: 'neonflapper.html' },
+
+    // ===== NetHack Siege =====
+    { id: 'b_nhs_med', difficulty: 'medium', icon: '🛡️', title: 'Hold the Line',
+      desc: 'Set a NEW NetHack Siege score record of 5,000.',
+      trackKey: 'nethacksiege', type: 'beat', target: 5000,
+      cost: 800, reward: 3200, gameLink: 'nethacksiege.html' },
+    { id: 'b_nhs_legend', difficulty: 'legendary', icon: '☠️', title: 'Mainframe Sentinel',
+      desc: 'Set a NEW NetHack Siege score record of 25,000.',
+      trackKey: 'nethacksiege', type: 'beat', target: 25000,
+      cost: 5000, reward: 19000, prestigeReward: 1, gameLink: 'nethacksiege.html' }
 ];
 
 const BOUNTY_REFRESH_MS = 86400000; // 24 hours

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Neon Flapper: Data Stream</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+    body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0b1016, #1a0a2e, #091521); color: #fff; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; }
+    header { padding: 12px 30px; background: rgba(0,0,0,0.85); border-bottom: 2px solid #ff00ff; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(255,0,255,0.3); }
+    .back-btn { background: transparent; border: 2px solid #ff00ff; color: #ff00ff; padding: 8px 20px; border-radius: 20px; text-decoration: none; font-weight: bold; transition: 0.3s; }
+    .back-btn:hover { background: #ff00ff; color: #000; box-shadow: 0 0 15px #ff00ff; }
+    .title-glitch { color: #fff; font-size: 1.5em; text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; animation: glitch 3s infinite; }
+    @keyframes glitch { 0%, 90%, 100% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; } 92% { text-shadow: -2px 0 #ff00ff, 2px 0 #00ffff; } 94% { text-shadow: 0 2px #ff00ff, 0 -2px #00ffff; } }
+    .sound-btn { background: rgba(0,0,0,0.8); border: 2px solid #48dbfb; color: #48dbfb; font-size: 1.3em; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
+    .game-wrapper { display: flex; flex: 1; padding: 15px; gap: 20px; max-width: 1280px; margin: 0 auto; width: 100%; box-sizing: border-box; justify-content: center; align-items: flex-start; }
+    .dashboard { width: 250px; background: rgba(0,0,0,0.6); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,0,255,0.4); display: flex; flex-direction: column; gap: 12px; }
+    .dashboard h3 { margin: 0; color: #ff00ff; border-bottom: 1px solid #333; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-size: 1em; }
+    .stat-box { background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; border-left: 3px solid #ff00ff; }
+    .stat-label { font-size: 0.75em; color: #a4b0be; text-transform: uppercase; }
+    .stat-value { font-size: 1.4em; font-weight: bold; color: #ff00ff; margin-top: 3px; }
+    .controls-info { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; font-size: 0.75em; color: #c8d6e5; line-height: 1.6; }
+    .controls-info kbd { background: #222; padding: 1px 5px; border-radius: 3px; border: 1px solid #ff00ff; color: #ff00ff; font-size: 0.9em; }
+    .canvas-container { position: relative; padding: 8px; background: rgba(0,0,0,0.7); border-radius: 12px; border: 2px solid #333; box-shadow: 0 0 30px rgba(0,0,0,0.8); transition: 0.3s; }
+    .canvas-container.playing { border-color: #ff00ff; box-shadow: 0 0 40px rgba(255,0,255,0.3); }
+    .canvas-container.damage { animation: shake 0.3s; }
+    canvas { background: #000; border-radius: 6px; display: block; cursor: pointer; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    .overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; opacity: 0; pointer-events: none; transition: 0.3s; border-radius: 8px; }
+    .overlay.active { opacity: 1; pointer-events: all; }
+    .btn-start { background: linear-gradient(135deg, #ff00ff, #00ffff); color: #000; border: none; padding: 14px 28px; font-size: 1.2em; font-weight: bold; border-radius: 30px; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+    .btn-start:hover { transform: scale(1.05); box-shadow: 0 0 25px #ff00ff; }
+</style>
+
+<!-- Megaplex Cloud Sync (must be in every game page) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
+</head>
+<body>
+<header>
+    <a href="index.html" class="back-btn">⬅ Hub</a>
+    <h2 class="title-glitch">NEON FLAPPER: DATA STREAM</h2>
+    <button id="soundToggleBtn" class="sound-btn" onclick="toggleSound()">🔊</button>
+</header>
+
+<div class="game-wrapper">
+    <div class="dashboard">
+        <h3>System Status</h3>
+        <div class="stat-box" style="border-left-color:#f1c40f;">
+            <div class="stat-label">Score</div>
+            <div class="stat-value" id="scoreUI" style="color:#f1c40f;">0</div>
+        </div>
+        <div class="stat-box" style="border-left-color:#1dd1a1;">
+            <div class="stat-label">Best</div>
+            <div class="stat-value" id="bestUI" style="color:#1dd1a1;">0</div>
+        </div>
+        <div class="stat-box" style="border-left-color:#48dbfb;">
+            <div class="stat-label">Speed</div>
+            <div class="stat-value" id="speedUI" style="color:#48dbfb;">1.0x</div>
+        </div>
+        <div class="controls-info">
+            <kbd>Space</kbd> / <kbd>↑</kbd> / <kbd>W</kbd> Flap<br>
+            <kbd>Click</kbd> the screen to flap<br>
+            <kbd>R</kbd> Restart<br>
+            <kbd>Esc</kbd> Menu<br><br>
+            Navigate the data drone through the firewall gaps. Speed climbs the further you fly!
+        </div>
+    </div>
+
+    <div>
+        <div class="canvas-container" id="canvasWrapper">
+            <canvas id="gameCanvas" width="600" height="544"></canvas>
+            <div class="overlay active" id="overlay">
+                <div id="mainScreen" style="display:flex; flex-direction:column; align-items:center;">
+                    <h1 id="overlayTitle" style="font-size:3em; margin:0; color:#ff00ff; text-shadow: 0 0 30px #ff00ff, 3px 3px 0 #00ffff;">NEON FLAPPER</h1>
+                    <h2 style="margin:5px 0 15px; color:#00ffff; letter-spacing:6px; font-size:1.1em;">DATA STREAM</h2>
+                    <p id="overlaySub" style="font-size:1.1em; color:#a4b0be; margin:5px 0 20px; text-align:center; max-width:400px;">Pilot the data drone through the firewall. Flap to rise, gravity does the rest. How far can you stream?</p>
+                    <button class="btn-start" id="primaryBtn" onclick="startGame()">Start Game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// =================== AUDIO ENGINE ===================
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+let soundEnabled = localStorage.getItem('nfSound') !== 'false';
+function initAudio() { if(!audioCtx) audioCtx = new AudioContext(); if(audioCtx.state==='suspended') audioCtx.resume(); }
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('nfSound', soundEnabled);
+    document.getElementById('soundToggleBtn').innerText = soundEnabled?'🔊':'🔇';
+    if(soundEnabled){ initAudio(); if(isPlaying) music.play(); } else music.stop();
+}
+document.body.addEventListener('click', initAudio, {once:true});
+
+function playTone(freq, type, dur, vol=0.1, time) {
+    if(!soundEnabled || !audioCtx) return;
+    let t = time !== undefined ? time : audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(vol, t); gain.gain.exponentialRampToValueAtTime(0.001, t+dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t+dur+0.1);
+}
+
+const sfx = {
+    click: () => playTone(400, 'square', 0.08, 0.05),
+    flap: () => { playTone(500, 'sine', 0.08, 0.07); setTimeout(()=>playTone(700, 'sine', 0.06, 0.04), 40); },
+    score: () => { playTone(900, 'sine', 0.08, 0.06); setTimeout(()=>playTone(1300, 'sine', 0.15, 0.06), 60); },
+    die: () => { for(let i=0;i<4;i++) setTimeout(()=>playTone(200-i*40, 'sawtooth', 0.2, 0.1), i*100); },
+    best: () => { for(let i=0;i<6;i++) setTimeout(()=>playTone(400+i*120, 'square', 0.12, 0.06), i*90); },
+};
+
+const music = {
+    isPlaying:false, timerID:null, step:0, nextNoteTime:0, tempo:140,
+    bass: [110, 0, 110, 0, 130.81, 0, 110, 0, 98, 0, 98, 130.81, 87.31, 0, 110, 130.81],
+    lead: [0, 440, 0, 523, 0, 440, 0, 392, 0, 349, 0, 392, 0, 440, 523, 0],
+    playKick: function(time) {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.frequency.setValueAtTime(150, time); o.frequency.exponentialRampToValueAtTime(0.01, time+0.1);
+        g.gain.setValueAtTime(0.25, time); g.gain.exponentialRampToValueAtTime(0.01, time+0.1);
+        o.connect(g); g.connect(audioCtx.destination); o.start(time); o.stop(time+0.1);
+    },
+    playHat: function(time) {
+        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate*0.05, audioCtx.sampleRate);
+        const d = buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1)*0.3;
+        const src = audioCtx.createBufferSource(); src.buffer = buf;
+        const g = audioCtx.createGain(); g.gain.setValueAtTime(0.05, time); g.gain.exponentialRampToValueAtTime(0.001, time+0.04);
+        src.connect(g); g.connect(audioCtx.destination); src.start(time);
+    },
+    scheduleNote: function() {
+        let t = this.nextNoteTime;
+        let b = this.bass[this.step%16]; if(b) playTone(b, 'sawtooth', 0.15, 0.07, t);
+        let l = this.lead[this.step%16]; if(l) playTone(l, 'square', 0.08, 0.025, t);
+        if(this.step%4===0) this.playKick(t);
+        if(this.step%2===1) this.playHat(t);
+    },
+    scheduler: function() {
+        if(!music.isPlaying || !soundEnabled) return;
+        let stepTime = (60/music.tempo)/4;
+        while(music.nextNoteTime < audioCtx.currentTime + 0.1) {
+            music.scheduleNote();
+            music.nextNoteTime += stepTime;
+            music.step++;
+        }
+        music.timerID = setTimeout(()=>music.scheduler(), 25);
+    },
+    play: function() {
+        if(this.isPlaying || !soundEnabled) return;
+        initAudio(); this.isPlaying = true; this.step = 0; this.nextNoteTime = audioCtx.currentTime+0.05; this.scheduler();
+    },
+    stop: function() { this.isPlaying = false; clearTimeout(this.timerID); }
+};
+
+// =================== SETUP ===================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const canvasWrapper = document.getElementById('canvasWrapper');
+const W = canvas.width, H = canvas.height;
+
+const GRAVITY = 0.5, FLAP = -8.5, MAX_FALL = 11;
+const PIPE_W = 64, GAP = 160, PIPE_SPACING = 240;
+
+// =================== STATE ===================
+let isPlaying = false, gameLoopId;
+let score = 0, baseSpeed = 2.6, speedMult = 1;
+let bestScore = parseInt(localStorage.getItem('nf_best')) || 0;
+// Refresh best from cloud when Firebase loads
+if (window.MegaplexCloud) {
+    window.MegaplexCloud.onReady(function() {
+        bestScore = parseInt(localStorage.getItem('nf_best')) || bestScore;
+        updateUI();
+    });
+}
+
+let bird = { x:140, y:H/2, vy:0, w:34, h:26, rot:0 };
+let pipes = [];
+let particles = [];
+let stars = [];
+let scrollX = 0;
+
+// init starfield
+for(let i=0;i<60;i++) stars.push({ x:Math.random()*W, y:Math.random()*H, s:1+Math.random()*2, sp:0.2+Math.random()*0.6 });
+
+// =================== INPUT ===================
+function flap() {
+    if(!isPlaying) return;
+    bird.vy = FLAP;
+    sfx.flap();
+    spawnParticles(bird.x-6, bird.y+8, '#00ffff', 4);
+}
+window.addEventListener('keydown', e => {
+    let k = e.key.toLowerCase();
+    if([' ','arrowup'].includes(k) || e.key===' ' || e.key==='ArrowUp') e.preventDefault();
+    if(k===' ' || e.key===' ' || k==='arrowup' || e.key==='ArrowUp' || k==='w') flap();
+    if(k==='r' && isPlaying) { endGame(); startGame(); }
+    if(e.key==='Escape' && isPlaying) returnToMenu();
+});
+canvas.addEventListener('mousedown', flap);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); flap(); }, {passive:false});
+
+// =================== GAME FLOW ===================
+function resetGame() {
+    score = 0; speedMult = 1;
+    bird.x = 140; bird.y = H/2; bird.vy = 0; bird.rot = 0;
+    pipes = []; particles = []; scrollX = 0;
+    // pre-fill pipes off screen to the right
+    for(let i=0;i<5;i++) addPipe(W + 200 + i*PIPE_SPACING);
+}
+
+function addPipe(x) {
+    let margin = 80;
+    let gapY = margin + Math.random()*(H - GAP - margin*2);
+    pipes.push({ x:x, gapY:gapY, passed:false });
+}
+
+function startGame() {
+    sfx.click();
+    resetGame();
+    isPlaying = true;
+    document.getElementById('overlay').classList.remove('active');
+    canvasWrapper.classList.add('playing');
+    music.play();
+    if(gameLoopId) cancelAnimationFrame(gameLoopId);
+    gameLoopId = requestAnimationFrame(gameLoop);
+    updateUI();
+}
+
+function endGame() {
+    if(!isPlaying) return;
+    isPlaying = false;
+    music.stop();
+    sfx.die();
+    canvasWrapper.classList.add('damage');
+    setTimeout(()=>canvasWrapper.classList.remove('damage'), 300);
+    spawnParticles(bird.x, bird.y, '#ff4757', 30);
+
+    let isNewBest = false;
+    if(score > bestScore) { bestScore = score; localStorage.setItem('nf_best', bestScore); isNewBest = true; sfx.best(); }
+
+    // Persist to local arcadeScores (hub bounty system reads from here)
+    let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    if (!scores.nf_score || score > scores.nf_score) {
+        scores.nf_score = score;
+        localStorage.setItem('arcadeScores', JSON.stringify(scores));
+    }
+    // Cloud leaderboard sync
+    if (window.MegaplexCloud && window.MegaplexCloud.recordScore) {
+        window.MegaplexCloud.recordScore('nf_score', score, true)
+            .catch(e => console.error('[NF] Cloud sync failed:', e));
+    }
+
+    setTimeout(showGameOver.bind(null, isNewBest), 350);
+}
+
+function showGameOver(isNewBest) {
+    document.getElementById('overlayTitle').innerText = isNewBest ? 'NEW BEST!' : 'STREAM LOST';
+    document.getElementById('overlayTitle').style.color = isNewBest ? '#1dd1a1' : '#ff4757';
+    document.getElementById('overlaySub').innerHTML =
+        `Score: <b style="color:#f1c40f; font-size:1.4em">${score}</b><br>Best: <b style="color:#1dd1a1">${bestScore}</b>`;
+    document.getElementById('primaryBtn').innerText = 'Retry';
+    document.getElementById('primaryBtn').onclick = startGame;
+    document.getElementById('overlay').classList.add('active');
+    canvasWrapper.classList.remove('playing');
+}
+
+function returnToMenu() {
+    isPlaying = false;
+    music.stop();
+    document.getElementById('overlayTitle').innerText = 'NEON FLAPPER';
+    document.getElementById('overlayTitle').style.color = '#ff00ff';
+    document.getElementById('overlaySub').innerHTML = 'Pilot the data drone through the firewall. Flap to rise, gravity does the rest. How far can you stream?';
+    document.getElementById('primaryBtn').innerText = 'Start Game';
+    document.getElementById('primaryBtn').onclick = startGame;
+    document.getElementById('overlay').classList.add('active');
+    canvasWrapper.classList.remove('playing');
+}
+
+// =================== PHYSICS / UPDATE ===================
+function update() {
+    // speed ramps up gradually with score
+    speedMult = 1 + Math.min(score * 0.02, 1.2);
+    let speed = baseSpeed * speedMult;
+    scrollX += speed;
+
+    // bird physics
+    bird.vy += GRAVITY;
+    if(bird.vy > MAX_FALL) bird.vy = MAX_FALL;
+    bird.y += bird.vy;
+    bird.rot = Math.max(-0.4, Math.min(1.2, bird.vy * 0.08));
+
+    // ceiling / floor
+    if(bird.y < bird.h/2) { bird.y = bird.h/2; bird.vy = 0; }
+    if(bird.y + bird.h/2 > H) { endGame(); return; }
+
+    // move pipes
+    pipes.forEach(p => p.x -= speed);
+
+    // recycle / add pipes
+    if(pipes.length && pipes[pipes.length-1].x < W - PIPE_SPACING) {
+        addPipe(pipes[pipes.length-1].x + PIPE_SPACING);
+    }
+    pipes = pipes.filter(p => p.x + PIPE_W > -20);
+
+    // scoring + collision
+    for(let p of pipes) {
+        if(!p.passed && p.x + PIPE_W < bird.x) {
+            p.passed = true; score++; sfx.score();
+            spawnParticles(bird.x, bird.y, '#f1c40f', 6);
+        }
+        // collision check
+        let bx = bird.x - bird.w/2, by = bird.y - bird.h/2;
+        if(bx + bird.w > p.x && bx < p.x + PIPE_W) {
+            if(by < p.gapY || by + bird.h > p.gapY + GAP) { endGame(); return; }
+        }
+    }
+
+    // stars
+    stars.forEach(s => { s.x -= s.sp * speedMult; if(s.x < 0){ s.x = W; s.y = Math.random()*H; } });
+
+    updateParticles();
+}
+
+// =================== PARTICLES ===================
+function spawnParticles(x, y, color, n) {
+    for(let i=0;i<n;i++) particles.push({ x, y, vx:(Math.random()-0.5)*6, vy:(Math.random()-0.5)*6, life:1, color, size:2+Math.random()*3 });
+}
+function updateParticles() {
+    for(let i=particles.length-1;i>=0;i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 0.04;
+        if(p.life <= 0) particles.splice(i,1);
+    }
+}
+
+// =================== DRAW ===================
+function draw() {
+    // background
+    ctx.fillStyle = '#050a14';
+    ctx.fillRect(0, 0, W, H);
+
+    // starfield
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
+
+    // grid scanlines (cyber floor effect)
+    ctx.strokeStyle = 'rgba(255,0,255,0.08)';
+    ctx.lineWidth = 1;
+    for(let gx = -(scrollX % 40); gx < W; gx += 40) {
+        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+    }
+
+    // pipes (firewall gates)
+    pipes.forEach(p => {
+        drawPipe(p.x, 0, p.gapY, true);                       // top
+        drawPipe(p.x, p.gapY + GAP, H - (p.gapY + GAP), false); // bottom
+    });
+
+    // particles
+    particles.forEach(p => {
+        ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+    });
+    ctx.globalAlpha = 1;
+
+    // bird (data drone)
+    drawBird();
+
+    // score text on canvas
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 40px sans-serif'; ctx.textAlign = 'center';
+    ctx.shadowBlur = 15; ctx.shadowColor = '#ff00ff';
+    ctx.fillStyle = '#ff00ff';
+    ctx.fillText(score, W/2, 60);
+    ctx.shadowBlur = 0; ctx.textAlign = 'left';
+}
+
+function drawPipe(x, y, h, isTop) {
+    ctx.fillStyle = '#1a0a3a';
+    ctx.fillRect(x, y, PIPE_W, h);
+    ctx.strokeStyle = '#ff00ff';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 12; ctx.shadowColor = '#ff00ff';
+    ctx.strokeRect(x, y, PIPE_W, h);
+    // inner cyan glow lines
+    ctx.strokeStyle = 'rgba(0,255,255,0.5)';
+    ctx.lineWidth = 1; ctx.shadowColor = '#00ffff';
+    for(let ly = y + 12; ly < y + h - 8; ly += 22) {
+        ctx.beginPath(); ctx.moveTo(x+8, ly); ctx.lineTo(x+PIPE_W-8, ly); ctx.stroke();
+    }
+    // cap
+    let capY = isTop ? y + h - 14 : y;
+    ctx.fillStyle = '#ff00ff';
+    ctx.shadowBlur = 16;
+    ctx.fillRect(x-4, capY, PIPE_W+8, 14);
+    ctx.shadowBlur = 0;
+}
+
+function drawBird() {
+    ctx.save();
+    ctx.translate(bird.x, bird.y);
+    ctx.rotate(bird.rot);
+    // glowing body
+    ctx.fillStyle = '#00ffff';
+    ctx.shadowBlur = 18; ctx.shadowColor = '#00ffff';
+    ctx.beginPath();
+    ctx.moveTo(-bird.w/2, -bird.h/2);
+    ctx.lineTo(bird.w/2, 0);
+    ctx.lineTo(-bird.w/2, bird.h/2);
+    ctx.lineTo(-bird.w/3, 0);
+    ctx.closePath();
+    ctx.fill();
+    // eye
+    ctx.shadowBlur = 0; ctx.fillStyle = '#000';
+    ctx.fillRect(0, -6, 5, 5);
+    // thruster trail
+    ctx.fillStyle = '#ff00ff';
+    ctx.globalAlpha = 0.6;
+    ctx.fillRect(-bird.w/2 - 8, -3, 8, 6);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+}
+
+// =================== UI ===================
+function updateUI() {
+    document.getElementById('scoreUI').innerText = score;
+    document.getElementById('bestUI').innerText = bestScore;
+    document.getElementById('speedUI').innerText = speedMult.toFixed(1) + 'x';
+}
+
+function gameLoop() {
+    if(!isPlaying) return;
+    update();
+    if(!isPlaying) return;
+    draw();
+    updateUI();
+    gameLoopId = requestAnimationFrame(gameLoop);
+}
+
+document.addEventListener('visibilitychange', () => {
+    if(document.hidden) music.stop();
+    else if(isPlaying) music.play();
+});
+
+// initial idle render
+ctx.fillStyle = '#000'; ctx.fillRect(0,0,W,H);
+updateUI();
+</script>
+</body>
+</html>
