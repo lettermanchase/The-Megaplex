@@ -591,6 +591,11 @@ endless:false,autoStart:true,autoStartTimer:0,currentWaveReward:0,
 hero:null,heroChoice:'cipher',placingHero:false,
 coop:false,coopTowerId:0,allyHero:null,myCredits:0,allyCredits:0};
 
+// Returns the LOCAL player's wallet (coop = myCredits, solo = credits)
+function myWallet(){ return G.coop ? G.myCredits : G.credits; }
+function spendLocal(amt){ if(G.coop) G.myCredits-=amt; else G.credits-=amt; }
+function earnLocal(amt){ if(G.coop) G.myCredits+=amt; else G.credits+=amt; }
+
 var DIFF={easy:{mul:.7,startCredits:200,startHp:120},normal:{mul:1,startCredits:150,startHp:100},hard:{mul:1.5,startCredits:120,startHp:80},omega:{mul:2.3,startCredits:100,startHp:60}};
 var screenShakeAmt=0;
 var drag={active:false};
@@ -694,7 +699,7 @@ Enemy.prototype.targetable=function(tx,ty,canDetect){
 Enemy.prototype.takeDamage=function(amt){
   var real=amt*(1-this.armor);this.hp-=real;
   if(this.hp<=0&&!this.dead){this.dead=true;
-  if(G.coop){ G.myCredits+=this.reward; G.allyCredits+=this.reward; }
+  if(G.coop){ var half=Math.ceil(this.reward/2); G.myCredits+=half; G.allyCredits+=half; }
   else { G.credits+=this.reward; }
   G.score+=this.reward*2;G.kills++;
     if(G.hero)G.hero.gainXp(this.reward);
@@ -955,7 +960,7 @@ function drawHover(){
     ctx.strokeStyle=valid?'#ffd700':'#ff3b6b';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,28,0,6.28);ctx.stroke();
     ctx.fillStyle='#fff';ctx.font='22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(h.icon,x,y);return;}
   if(!G.selectedTowerType)return;var x=G.mouseX,y=G.mouseY;var def=TOWER_TYPES[G.selectedTowerType];
-  var valid=canPlaceAt(x,y,def.radius);var aff=G.credits>=def.cost;var ok=valid&&aff;var st=def.levels[0];
+  var valid=canPlaceAt(x,y,def.radius);var aff=myWallet()>=def.cost;var ok=valid&&aff;var st=def.levels[0];
   if(st.range>0){ctx.strokeStyle=ok?'rgba(95,255,212,.35)':'rgba(255,59,107,.35)';ctx.lineWidth=2;ctx.setLineDash([5,5]);ctx.beginPath();ctx.arc(x,y,st.range,0,6.28);ctx.stroke();ctx.setLineDash([]);}
   if(st.detectRange){ctx.strokeStyle='rgba(0,255,170,.3)';ctx.setLineDash([4,8]);ctx.beginPath();ctx.arc(x,y,st.detectRange,0,6.28);ctx.stroke();ctx.setLineDash([]);}
   ctx.fillStyle=ok?'rgba(95,255,212,.25)':'rgba(255,59,107,.25)';ctx.beginPath();ctx.arc(x,y,def.radius,0,6.28);ctx.fill();
@@ -975,7 +980,11 @@ function drawSelectedRange(){
 function payIncome(){
   var total=0;G.towers.forEach(function(t){if(t.def.income)total+=t.stats().income;});
   if(G.hero&&G.hero.stats().income)total+=G.hero.stats().income;
-  if(total>0){G.credits+=total;spawnFloat(512,260,'INCOME +'+total,'#feca57');sfx.cash();updateHUD();}
+  if(total>0){
+    if(G.coop){var ih=Math.ceil(total/2);G.myCredits+=ih;G.allyCredits+=ih;}
+    else{G.credits+=total;}
+    spawnFloat(512,260,'INCOME +'+total,'#feca57');sfx.cash();updateHUD();
+  }
 }
 function startNextWave(){
   if(G.state!=='playing'||G.waveActive)return;
@@ -1052,7 +1061,7 @@ function placeTower(x,y){
   if(!G.selectedTowerType)return false;
   var def=TOWER_TYPES[G.selectedTowerType];
   if(!canPlaceAt(x,y,def.radius)){spawnFloat(x,y,'BLOCKED','#ff3b6b');return false;}
-  if(G.credits<def.cost){spawnFloat(x,y,'LOW DATA','#ff3b6b');sfx.lose();return false;}
+  if(myWallet()<def.cost){spawnFloat(x,y,'LOW DATA','#ff3b6b');sfx.lose();return false;}
   if(G.coop){TDCoop.proposeAction({type:'place',tower:G.selectedTowerType,x:x,y:y,by:TDCoop.role});return true;}
   G.credits-=def.cost;G.towersBuilt++;var t=new Tower(G.selectedTowerType,x,y);G.towers.push(t);sfx.deploy();spawnParticles(t.x,t.y,def.color,12,false);updateHUD();refreshShopUI();
   return true;
@@ -1106,11 +1115,11 @@ function showTowerInfo(t){
   info.classList.add('show');
 }
 function hideTowerInfo(){document.getElementById('towerInfo').classList.remove('show');}
-function upgradeTower(){var t=G.selectedTower;if(!t||t.isHero||!t.canUpgrade())return;var c=t.upgradeCost();if(G.credits<c){sfx.lose();return;}
-  if(G.coop){TDCoop.proposeAction({type:'upgrade',towerId:t.id});return;} // ← coop
+function upgradeTower(){var t=G.selectedTower;if(!t||t.isHero||!t.canUpgrade())return;var c=t.upgradeCost();if(myWallet()<c){sfx.lose();return;}
+  if(G.coop){TDCoop.proposeAction({type:'upgrade',towerId:t.id,by:TDCoop.role});return;}
   G.credits-=c;t.totalSpent+=c;t.level++;sfx.overclock();spawnParticles(t.x,t.y,'#5fffd4',15,false);spawnFloat(t.x,t.y-20,'L'+(t.level+1)+'!','#5fffd4');updateHUD();showTowerInfo(t);}
   function sellTower(){var t=G.selectedTower;if(!t||t.isHero)return;
-  if(G.coop){TDCoop.proposeAction({type:'sell',towerId:t.id});return;} // ← coop
+    if(G.coop){TDCoop.proposeAction({type:'sell',towerId:t.id,by:TDCoop.role});return;}
   G.credits+=t.sellValue();spawnParticles(t.x,t.y,'#feca57',12,false);G.towers.splice(G.towers.indexOf(t),1);G.selectedTower=null;hideTowerInfo();sfx.scrap();updateHUD();refreshShopUI();}
 
 // ═══════════════════════════════════════════════════════════════
@@ -1155,7 +1164,7 @@ function endGame(won){
 // ═══════════════════════════════════════════════════════════════
 function updateHUD(){
   document.getElementById('ui-health').innerText=Math.ceil(G.health);
-  document.getElementById('ui-credits').innerText=G.credits;
+  document.getElementById('ui-credits').innerText=myWallet();
   document.getElementById('ui-wave').innerText=G.wave;
   document.getElementById('ui-maxwave').innerText=G.endless?'∞':G.maxWave;
   document.getElementById('ui-score').innerText=G.score.toLocaleString();
@@ -1170,7 +1179,7 @@ function updateHUD(){
   if(G.selectedTower)refreshTowerInfoLive();
 }
 function buildShopUI(){var shop=document.getElementById('towerShop');shop.innerHTML='';TOWER_ORDER.forEach(function(type,idx){var d=TOWER_TYPES[type];var btn=document.createElement('div');btn.className='tower-btn';btn.id='shop-'+type;btn.style.color=d.color;btn.innerHTML='<span class="t-key">'+(idx+1)+'</span><div class="t-icon">'+d.icon+'</div><div class="t-name">'+d.name+'</div><div class="t-cost">'+d.cost+'◈</div>';btn.onclick=function(){selectTowerType(type);};btn.title=d.desc;shop.appendChild(btn);});}
-function refreshShopUI(){TOWER_ORDER.forEach(function(type){var btn=document.getElementById('shop-'+type);if(!btn)return;var d=TOWER_TYPES[type];btn.classList.toggle('selected',G.selectedTowerType===type);btn.classList.toggle('cant-afford',G.credits<d.cost);});}
+function refreshShopUI(){TOWER_ORDER.forEach(function(type){var btn=document.getElementById('shop-'+type);if(!btn)return;var d=TOWER_TYPES[type];btn.classList.toggle('selected',G.selectedTowerType===type);btn.classList.toggle('cant-afford',myWallet()<d.cost);});}
 
 // ═══════════════════════════════════════════════════════════════
 // INPUT
@@ -1270,7 +1279,7 @@ var mapKey=(G.mapChoice&&MAPS[G.mapChoice])?G.mapChoice:'serpent';
   G.endless=document.getElementById('modeSelect').value==='endless';
   buildPath(mapKey);
   G.towers=[];G.enemies=[];G.projectiles=[];G.particles=[];G.floats=[];G.hero=null;
-  G.credits=dc.startCredits;G.health=dc.startHp;G.maxHealth=dc.startHp;G.score=0;G.wave=0;G.kills=0;G.towersBuilt=0;G.purges=3;G.diffMul=dc.mul;
+  G.credits=dc.startCredits;G.myCredits=dc.startCredits;G.allyCredits=dc.startCredits;G.health=dc.startHp;G.maxHealth=dc.startHp;G.score=0;G.wave=0;G.kills=0;G.towersBuilt=0;G.purges=3;G.diffMul=dc.mul;
   G.maxWave=G.endless?Infinity:20;G.autoStartTimer=0;G._rewarded=false;G._lastTokens=0;
   G.waves=G.endless?[]:generateWaves(dc.mul);G.spawnQueue=[];G.waveActive=false;G.spawnTimer=0;G.selectedTowerType=null;G.selectedTower=null;G.speed=1;
   G.placingHero=true; // prompt hero placement immediately
@@ -1518,15 +1527,15 @@ TDCoop.onAction=function(a){
   if(a.type==='place'){ _coopApplyPlace(a.tower,a.x,a.y,a.by); }
   else if(a.type==='hero_place'){ _coopApplyHeroPlace(a.hero,a.x,a.y,a.by); }  // ← ADD
   else if(a.type==='wave'){ startNextWave._fromNet=true; startNextWave(); startNextWave._fromNet=false; }
-  else if(a.type==='upgrade'){ _coopApplyUpgrade(a.towerId); }
-  else if(a.type==='sell'){ _coopApplySell(a.towerId); }
+  else if(a.type==='upgrade'){ _coopApplyUpgrade(a.towerId,a.by); }
+  else if(a.type==='sell'){ _coopApplySell(a.towerId,a.by); }
   else if(a.type==='purge'){ _coopApplyPurge(); }
   else if(a.type==='hero'){
     // host's ability acts on G.hero, guest's acts on G.allyHero — runs identically on both clients
     var theHero=(a.by==='host')?G.hero:G.allyHero;
     if(theHero){theHero.activateAbility();updateHUD();}
   }
-  else if(a.type==='cash'){ if(a.by!==TDCoop.role){ G.credits+=a.amount; spawnFloat(512,260,'ALLY SENT +'+a.amount+' ◈','#5fffd4'); sfx.cash(); updateHUD(); } }
+  else if(a.type==='cash'){ if(a.by!==TDCoop.role){ G.myCredits+=a.amount; spawnFloat(512,260,'ALLY SENT +'+a.amount+' ◈','#5fffd4'); sfx.cash(); updateHUD(); } }
   else if(a.type==='speed'){ _applySpeed(a.speed); spawnFloat(512,260,'SPEED → '+a.speed+'×','#e85fd4'); } // ← both clients lock to same speed
 };
 function _coopApplyHeroPlace(heroKey,x,y,by){
@@ -1548,8 +1557,13 @@ function _coopApplyPlace(type,x,y,by){
   G.towers.push(t);
   sfx.deploy();spawnParticles(t.x,t.y,def.color,12,false);updateHUD();refreshShopUI();
 }
-function _coopApplyUpgrade(id){var t=towerById(id);if(!t||t.isHero||!t.canUpgrade())return;var c=t.upgradeCost();if(G.credits<c)return;G.credits-=c;t.totalSpent+=c;t.level++;sfx.overclock();spawnParticles(t.x,t.y,'#5fffd4',15,false);updateHUD();if(G.selectedTower===t)showTowerInfo(t);}
-function _coopApplySell(id){var t=towerById(id);if(!t||t.isHero)return;G.credits+=t.sellValue();spawnParticles(t.x,t.y,'#feca57',12,false);G.towers.splice(G.towers.indexOf(t),1);if(G.selectedTower===t){G.selectedTower=null;hideTowerInfo();}sfx.scrap();updateHUD();refreshShopUI();}
+function _coopApplyUpgrade(id,by){var t=towerById(id);if(!t||t.isHero||!t.canUpgrade())return;var c=t.upgradeCost();
+  if(by===TDCoop.role){ if(G.myCredits<c)return; G.myCredits-=c; }
+  else { if(G.allyCredits<c)return; G.allyCredits-=c; }
+  t.totalSpent+=c;t.level++;sfx.overclock();spawnParticles(t.x,t.y,'#5fffd4',15,false);updateHUD();if(G.selectedTower===t)showTowerInfo(t);}
+  function _coopApplySell(id,by){var t=towerById(id);if(!t||t.isHero)return;var v=t.sellValue();
+  if(by===TDCoop.role){ G.myCredits+=v; } else { G.allyCredits+=v; }
+  spawnParticles(t.x,t.y,'#feca57',12,false);G.towers.splice(G.towers.indexOf(t),1);if(G.selectedTower===t){G.selectedTower=null;hideTowerInfo();}sfx.scrap();updateHUD();refreshShopUI();}
 function _coopApplyPurge(){G.enemies.forEach(function(e){if(e.dead||e.reached)return;if(e.boss)e.takeDamage(e.maxHp*.35);else e.takeDamage(99999);});document.getElementById('flash').className='flash-overlay purge';setTimeout(function(){document.getElementById('flash').className='flash-overlay';},150);screenShakeAmt=20;sfx.purge();updateHUD();}
 
 // ---- Boot a coop game from room data (BOTH clients call this) ----
@@ -1568,10 +1582,9 @@ function coopBootGame(d){
 function coopSendCash(){
   if(!G.coop||G.state!=='playing')return;
   var amt=100;
-  if(G.credits<amt){spawnFloat(512,300,'NOT ENOUGH DATA','#ff3b6b');sfx.lose();return;}
-  G.credits-=amt;
-  TDCoop.proposeAction({type:'cash',amount:amt});  // tell the other client to RECEIVE
-  spawnFloat(512,260,'SENT '+amt+' ◈ TO ALLY','#feca57');sfx.cash();updateHUD();
+  if(G.myCredits<amt){spawnFloat(512,300,'NOT ENOUGH DATA','#ff3b6b');sfx.lose();return;}
+  G.myCredits-=amt;
+  TDCoop.proposeAction({type:'cash',amount:amt,by:TDCoop.role});  // tell the other client to RECEIVE
 }
 // HOST: now that map + hero are chosen, create the room and wait
 function coopCreateRoomNow(){
