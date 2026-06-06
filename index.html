@@ -1270,6 +1270,68 @@
     margin-top: 12px; font-family: 'Orbitron', sans-serif;
     letter-spacing: 1px;
 }
+/* ===== SECRET CINEMA — GLITCH REVEAL ===== */
+.cinema-glitch-box {
+    animation: cinemaGlitchIn 0.7s cubic-bezier(0.25, 1, 0.3, 1);
+}
+@keyframes cinemaGlitchIn {
+    0%   { opacity: 0; transform: scale(0.9) skewX(20deg); filter: hue-rotate(90deg) blur(4px); clip-path: inset(45% 0 45% 0); }
+    15%  { opacity: 1; transform: scale(1.02) skewX(-12deg); filter: hue-rotate(-60deg); clip-path: inset(10% 0 60% 0); }
+    30%  { transform: translateX(-12px) skewX(8deg); filter: hue-rotate(40deg); clip-path: inset(60% 0 10% 0); }
+    45%  { transform: translateX(10px) skewX(-4deg); filter: none; clip-path: inset(25% 0 35% 0); }
+    60%  { transform: translateX(-5px); clip-path: inset(5% 0 5% 0); }
+    75%  { transform: translateX(3px) scale(1.01); clip-path: inset(0 0 0 0); }
+    100% { opacity: 1; transform: none; filter: none; clip-path: inset(0 0 0 0); }
+}
+
+/* RGB split "glitch" overlay flashes that fire during the reveal */
+.cinema-glitch-box::before,
+.cinema-glitch-box::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 16px;
+    pointer-events: none;
+    z-index: 20;
+    mix-blend-mode: screen;
+    opacity: 0;
+}
+.cinema-glitch-box.glitching::before {
+    background: rgba(255, 0, 64, 0.35);
+    animation: cinemaRgbShift 0.7s steps(2) 1;
+}
+.cinema-glitch-box.glitching::after {
+    background: rgba(0, 210, 211, 0.35);
+    animation: cinemaRgbShift 0.7s steps(2) reverse 1;
+}
+@keyframes cinemaRgbShift {
+    0%   { opacity: 0.6; transform: translate(-6px, 2px); }
+    20%  { opacity: 0.4; transform: translate(8px, -3px); }
+    40%  { opacity: 0.7; transform: translate(-4px, 4px); }
+    60%  { opacity: 0.3; transform: translate(5px, -2px); }
+    80%  { opacity: 0.5; transform: translate(-2px, 1px); }
+    100% { opacity: 0;   transform: translate(0, 0); }
+}
+
+/* Animated scanline sweep across the title for extra flair */
+.cinema-title-glitch {
+    position: relative;
+    display: inline-block;
+}
+.cinema-title-glitch::after {
+    content: '🎬 SECRET CINEMA';
+    position: absolute; left: 0; top: 0;
+    color: #ff0040;
+    overflow: hidden;
+    clip-path: inset(0 0 0 0);
+    animation: cinemaTextGlitch 0.7s steps(3) 1;
+    opacity: 0.7;
+}
+@keyframes cinemaTextGlitch {
+    0%   { transform: translate(-3px, 1px); clip-path: inset(0 0 70% 0); }
+    33%  { transform: translate(3px, -1px); clip-path: inset(60% 0 10% 0); }
+    66%  { transform: translate(-2px, 2px); clip-path: inset(20% 0 40% 0); }
+    100% { transform: translate(0, 0); clip-path: inset(0 0 100% 0); opacity: 0; }
+}
 
 
     </style>
@@ -1446,6 +1508,35 @@
                 <div class="gotd-countdown" id="gotdCountdown">⏰ New game in: --:--:--</div>
             </div>
         </div>
+        <!-- ===== SECRET CINEMA EASTER EGG ===== -->
+<div class="modal-overlay" id="secretCinemaModal" onclick="if(event.target===this)closeSecretCinema()">
+    <div class="modal cinema-glitch-box" id="secretCinemaBox"
+         style="border-color:#00d2d3; box-shadow:0 0 40px rgba(0,210,211,0.5); max-width:760px; width:94%; position:relative;">
+        <button class="modal-close" onclick="closeSecretCinema()">×</button>
+        <h2 style="color:#00d2d3; text-shadow:0 0 15px rgba(0,210,211,0.5);">
+            <span class="cinema-title-glitch" id="cinemaTitleGlitch">🎬 SECRET CINEMA</span>
+        </h2>
+        <p style="text-align:center; color:#aaa; margin:0 0 18px; letter-spacing:2px; font-size:0.85em;">
+            // YOU FOUND THE HIDDEN THEATER //
+        </p>
+
+        <!-- The video player -->
+        <video id="secretCinemaVideo" controls
+            style="width:100%; border-radius:12px; background:#000;
+                   box-shadow:0 0 25px rgba(0,210,211,0.4); border:1px solid rgba(0,210,211,0.3);">
+        </video>
+
+        <!-- The playlist of videos you control -->
+        <div id="secretCinemaPlaylist"
+            style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:18px;">
+        </div>
+
+        <div style="text-align:center; color:#555; font-size:0.75em; margin-top:14px; letter-spacing:1px;">
+            🛸 Shhh... this is just between us
+        </div>
+    </div>
+</div>
+<!-- ===== End Secret Cinema ===== -->
 
     <header id="mainHeader">
         <div class="header-expanded">
@@ -1563,7 +1654,7 @@
         <div id="master-leaderboards-container"></div>
         <div class="save-system">
             <button class="play-btn" style="background: #3498db; color: #fff;" onmouseenter="sfx.hover()" onclick="exportSave(); sfx.click();">💾 Export Save Data</button>
-            <button class="play-btn" style="background: #9b59b6; color: #fff;" onmouseenter="sfx.hover()" onclick="document.getElementById('importFile').click(); sfx.click();">📂 Load Save Data</button>
+            <button class="play-btn" style="background: #9b59b6; color: #fff;" onmouseenter="sfx.hover()" onclick="openSecretCinema(); sfx.click();">📂 Load Save Data</button>
         </div>
     </div>
 
@@ -4399,6 +4490,113 @@ function awardDailyWinnerPrize(winnerData) {
     renderHubAvatar();
     saveToCloud();
 }
+/* ====== SECRET CINEMA EASTER EGG ====== */
+
+// ════════════════════════════════════════════════════════════════
+//  🎬 ADD YOUR VIDEOS HERE
+//  Just put your .mp4 files in a folder (e.g. "videos/") next to
+//  index.html, then list them below. Change the labels to whatever
+//  you want shown on the buttons.
+//
+//  To add more, just copy a line and edit it. To remove one, delete
+//  its line. Order here = order of the buttons.
+// ════════════════════════════════════════════════════════════════
+const SECRET_CINEMA_VIDEOS = [
+    { label: '🎵 Army Song',     src: 'loaddata/clip1.mp4' },
+    { label: '😂 Funny Moment', src: 'loaddata/clip2.mp4' },
+    { label: '🛸 Mystery Vid',  src: 'loaddata/clip3.mp4' },
+    // { label: '🔥 New Clip',  src: 'videos/yourfile.mp4' },   ← copy this line to add more
+];
+// ════════════════════════════════════════════════════════════════
+
+let secretCinemaClicks = 0;   // counts how many times the egg has been found
+
+function openSecretCinema() {
+    secretCinemaClicks++;
+
+    // Special welcome the first time it's discovered
+    if (secretCinemaClicks === 1) {
+        toast('🎬 You discovered the SECRET CINEMA!', 'success', '🛸');
+    }
+    sfx.start();
+
+    // Build the playlist buttons from the video list above
+    const playlist = document.getElementById('secretCinemaPlaylist');
+    playlist.innerHTML = '';
+    SECRET_CINEMA_VIDEOS.forEach((vid, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'play-btn';
+        btn.style.cssText = 'background:rgba(0,0,0,0.5); border:1px solid #00d2d3; color:#00d2d3; padding:8px 16px;';
+        btn.textContent = vid.label;
+        btn.onmouseenter = () => sfx.hover();
+        btn.onclick = () => playSecretVideo(i, btn);
+        playlist.appendChild(btn);
+    });
+
+    // Show the modal
+    const modal = document.getElementById('secretCinemaModal');
+    const box   = document.getElementById('secretCinemaBox');
+    const title = document.getElementById('cinemaTitleGlitch');
+    modal.classList.add('show');
+
+    // ===== Trigger the glitch reveal animation =====
+    // Restart the animations by removing + re-adding the classes
+    box.classList.remove('cinema-glitch-box', 'glitching');
+    void box.offsetWidth;                 // force reflow so animation restarts
+    box.classList.add('cinema-glitch-box', 'glitching');
+
+    // Restart the title glitch too
+    title.style.animation = 'none';
+    void title.offsetWidth;
+    title.style.animation = '';
+
+    // A few quick glitchy sound blips for extra effect
+    if (typeof playTone === 'function') {
+        playTone(120, 'square', 0.06, 0.04);
+        setTimeout(() => playTone(300, 'sawtooth', 0.05, 0.04), 90);
+        setTimeout(() => playTone(80,  'square', 0.08, 0.04), 200);
+        setTimeout(() => playTone(600, 'square', 0.1,  0.04), 340);
+    }
+
+    // Remove the glitch overlay class once the animation finishes
+    setTimeout(() => box.classList.remove('glitching'), 720);
+
+    // Auto-play the first video if any exist
+    if (SECRET_CINEMA_VIDEOS.length > 0) {
+        // Small delay so the glitch plays before audio kicks in
+        setTimeout(() => playSecretVideo(0, playlist.firstChild), 400);
+    }
+}
+
+function playSecretVideo(index, btnEl) {
+    sfx.click();
+    const video = document.getElementById('secretCinemaVideo');
+    video.src = SECRET_CINEMA_VIDEOS[index].src;
+    video.play().catch(() => {/* user can press play manually if autoplay is blocked */});
+
+    // Highlight the active playlist button
+    document.querySelectorAll('#secretCinemaPlaylist .play-btn').forEach(b => {
+        b.style.background = 'rgba(0,0,0,0.5)';
+        b.style.color = '#00d2d3';
+    });
+    if (btnEl) {
+        btnEl.style.background = '#00d2d3';
+        btnEl.style.color = '#000';
+    }
+}
+
+function closeSecretCinema() {
+    const video = document.getElementById('secretCinemaVideo');
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    document.getElementById('secretCinemaModal').classList.remove('show');
+}
+
+// ESC also closes it
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSecretCinema();
+});
     </script>
 <link rel="stylesheet" href="chat.css">
 <script src="chat.js"></script>
