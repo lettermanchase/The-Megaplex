@@ -589,7 +589,7 @@ speed:1,diffMul:1,kills:0,towersBuilt:0,purges:3,
 lastTime:0,mouseX:0,mouseY:0,gridPulse:0,
 endless:false,autoStart:true,autoStartTimer:0,currentWaveReward:0,
 hero:null,heroChoice:'cipher',placingHero:false,
-coop:false,coopTowerId:0,allyHero:null};
+coop:false,coopTowerId:0,allyHero:null,myCredits:0,allyCredits:0};
 
 var DIFF={easy:{mul:.7,startCredits:200,startHp:120},normal:{mul:1,startCredits:150,startHp:100},hard:{mul:1.5,startCredits:120,startHp:80},omega:{mul:2.3,startCredits:100,startHp:60}};
 var screenShakeAmt=0;
@@ -658,10 +658,10 @@ function isDetected(x,y){
   return false;
 }
 function buffMultiplierAt(x,y){
-  var mul=1;var units=allUnits();
+  var best=1;var units=allUnits();
   for(var i=0;i<units.length;i++){var t=units[i];var st=t.stats();if(!st.buffMul)continue;
-    if(Math.hypot(x-t.x,y-t.y)<=st.range)mul*=st.buffMul;}
-  return mul;
+    if(Math.hypot(x-t.x,y-t.y)<=st.range)best=Math.max(best,st.buffMul);} // only strongest applies
+  return best;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -693,8 +693,12 @@ Enemy.prototype.targetable=function(tx,ty,canDetect){
 };
 Enemy.prototype.takeDamage=function(amt){
   var real=amt*(1-this.armor);this.hp-=real;
-  if(this.hp<=0&&!this.dead){this.dead=true;G.credits+=this.reward;G.score+=this.reward*2;G.kills++;
+  if(this.hp<=0&&!this.dead){this.dead=true;
+  if(G.coop){ G.myCredits+=this.reward; G.allyCredits+=this.reward; }
+  else { G.credits+=this.reward; }
+  G.score+=this.reward*2;G.kills++;
     if(G.hero)G.hero.gainXp(this.reward);
+    if(G.allyHero)G.allyHero.gainXp(this.reward);
     if(this.def.splits){for(var i=0;i<this.def.splitCount;i++){var baby=new Enemy(this.def.splits,this.hpMul||1);baby.x=this.x+(rnd()-.5)*20;baby.y=this.y+(rnd()-.5)*20;baby.wpIndex=this.wpIndex;G.enemies.push(baby);}}
     spawnParticles(this.x,this.y,this.def.color,this.boss?45:9,true);spawnFloat(this.x,this.y,'+'+this.reward,'#5fffd4');sfx.kill();updateHUD();}
 };
@@ -727,7 +731,11 @@ function Tower(typeKey,x,y){
 Tower.prototype.stats=function(){return this.def.levels[this.level];};
 Tower.prototype.canUpgrade=function(){return this.level<this.def.levels.length-1;};
 Tower.prototype.maxLevel=function(){return this.def.levels.length;};
-Tower.prototype.upgradeCost=function(){return Math.floor(this.def.cost*(this.level+1)*1.3);};
+Tower.prototype.upgradeCost=function(){
+  // L0→L1: 1.3×cost, L1→L2: 2.8×cost, L2→L3: 5.5×cost — top tiers cost way more
+  var tierMul=[1.3, 2.8, 5.5][this.level] || 5.5;
+  return Math.floor(this.def.cost*tierMul);
+};
 Tower.prototype.sellValue=function(){return Math.floor(this.totalSpent*.6);};
 Tower.prototype.selectTarget=function(st){
   var self=this;var candidates=[];
@@ -996,7 +1004,7 @@ function updateSpawning(dt){
     G.waveActive=false;music.setBoss(false);
     var reward=G.currentWaveReward||(20+G.wave*5);G.credits+=reward;G.score+=G.wave*100;
     spawnFloat(512,300,'NODE CLEARED +'+reward,'#5fffd4');sfx.nodeclear();updateHUD();
-    if(!G.endless&&G.wave>=G.maxWave){endGame(true);return;}
+    if(!G.endless&&G.wave>=G.maxWave){offerFreeplay();return;}
     document.getElementById('startWaveBtn').disabled=false;
     announce(G.endless?'NODE '+G.wave+' SECURED':'NODE SECURED','#5fffd4');
     if(G.endless&&G.autoStart)G.autoStartTimer=2.5;
@@ -1045,7 +1053,7 @@ function placeTower(x,y){
   var def=TOWER_TYPES[G.selectedTowerType];
   if(!canPlaceAt(x,y,def.radius)){spawnFloat(x,y,'BLOCKED','#ff3b6b');return false;}
   if(G.credits<def.cost){spawnFloat(x,y,'LOW DATA','#ff3b6b');sfx.lose();return false;}
-  if(G.coop){TDCoop.proposeAction({type:'place',tower:G.selectedTowerType,x:x,y:y});return true;} // ← coop: propose
+  if(G.coop){TDCoop.proposeAction({type:'place',tower:G.selectedTowerType,x:x,y:y,by:TDCoop.role});return true;}
   G.credits-=def.cost;G.towersBuilt++;var t=new Tower(G.selectedTowerType,x,y);G.towers.push(t);sfx.deploy();spawnParticles(t.x,t.y,def.color,12,false);updateHUD();refreshShopUI();
   return true;
 }
@@ -1114,7 +1122,8 @@ function enemyReachedCore(e){
   sfx.breach();screenShakeAmt=12;updateHUD();if(G.health<=0)endGame(false);
 }
 function endGame(won){
-  if(G.state==='ended')return;G.state='ended';G.running=false;music.stop();
+  if(G.state==='ended')return;
+  G.state='ended';G.running=false;music.stop();
   document.getElementById('gameWrapper').classList.remove('playing');hideTowerInfo();
   if(G.coop&&window.TDCoop){TDCoop.leaveRoom();}
   var dmm={easy:1,normal:1.6,hard:2.5,omega:4};var diff=document.getElementById('difficulty').value;var dm=dmm[diff]||1;
@@ -1123,10 +1132,21 @@ function endGame(won){
   bumpStat('nhs_total_kills',G.kills);bumpStat('nhs_games_played');
   if(won){bumpStat('nhs_wins');if(diff==='omega')bumpStat('nhs_omega_wins');if(G.health===G.maxHealth)bumpStat('nhs_perfect_wins');}
   var s=getArcadeScores();s.nhs_best_node=Math.max(s.nhs_best_node||0,G.wave);saveArcadeScores(s);
-  var tok=won?Math.floor((150+G.wave*15)*dm):Math.floor(G.wave*(G.endless?20:12)*dm);awardTokens(tok);
+  // ── only award tokens ONCE per session (prevents double-pay in Freeplay) ──
+  if(!G._rewarded){
+    var tok=won?Math.floor((150+G.wave*15)*dm):Math.floor(G.wave*(G.endless?20:12)*dm);
+    awardTokens(tok);
+    G._rewarded=true;
+    G._lastTokens=tok;
+  }
+  var tokShown=G._lastTokens||0;
   var es=document.getElementById('end-screen');es.className='menu-overlay '+(won?'win':'lose');es.style.display='flex';
   document.getElementById('end-title').innerText=won?'GRID SECURED':'GRID COMPROMISED';
-  document.getElementById('end-stats').innerHTML='Commander: <b>'+(G.hero?G.hero.def.name+' (★'+G.hero.level+')':'None')+'</b><br>Nodes Defended: <b>'+G.wave+(G.endless?' (ENDLESS)':' / '+G.maxWave)+'</b><br>Intruders Purged: <b>'+G.kills+'</b><br>Defenders Deployed: <b>'+G.towersBuilt+'</b><br>Siege Score: <b>'+finalScore.toLocaleString()+'</b><br>Reward: <b>+'+tok+' 🎟️</b>';
+  document.getElementById('end-stats').innerHTML='Commander: <b>'+(G.hero?G.hero.def.name+' (★'+G.hero.level+')':'None')+'</b><br>Nodes Defended: <b>'+G.wave+(G.endless?' (ENDLESS)':' / '+G.maxWave)+'</b><br>Intruders Purged: <b>'+G.kills+'</b><br>Defenders Deployed: <b>'+G.towersBuilt+'</b><br>Siege Score: <b>'+finalScore.toLocaleString()+'</b><br>Reward: <b>+'+tokShown+' 🎟️</b>';
+  // ── restore the ORIGINAL two buttons (offerFreeplay replaced them) ──
+  es.querySelector('.end-actions').innerHTML=
+    '<button class="menu-btn" style="color:#5fffd4;" onclick="openHeroSelect()">[ Re-Siege ]</button>'+
+    '<button class="menu-btn" style="color:#8a6aa5;" onclick="quitToMenu()">[ Menu ]</button>';
   if(won)sfx.win();else sfx.lose();
 }
 
@@ -1180,7 +1200,12 @@ window.addEventListener('mouseup',function(e){
   drag.active=false;
 });
 window.addEventListener('mousemove',function(e){if(G.selectedTowerType||G.placingHero){var p=canvasCoords(e.clientX,e.clientY);G.mouseX=p.x;G.mouseY=p.y;}});
-window.addEventListener('keydown',function(e){var k=e.key.toLowerCase();
+window.addEventListener('keydown',function(e){
+  // ── NEW: ignore game hotkeys while typing in any input/textarea/chat ──
+  var el=document.activeElement;
+  if(el && (el.tagName==='INPUT' || el.tagName==='TEXTAREA' || el.isContentEditable)) return;
+
+  var k=e.key.toLowerCase();
   if(k===' '){e.preventDefault();if(G.state==='playing')startNextWave();}
   if(k==='escape'){if(G.state==='playing'||G.state==='paused')togglePause();}
   if(G.state==='playing'){
@@ -1246,7 +1271,7 @@ var mapKey=(G.mapChoice&&MAPS[G.mapChoice])?G.mapChoice:'serpent';
   buildPath(mapKey);
   G.towers=[];G.enemies=[];G.projectiles=[];G.particles=[];G.floats=[];G.hero=null;
   G.credits=dc.startCredits;G.health=dc.startHp;G.maxHealth=dc.startHp;G.score=0;G.wave=0;G.kills=0;G.towersBuilt=0;G.purges=3;G.diffMul=dc.mul;
-  G.maxWave=G.endless?Infinity:20;G.autoStartTimer=0;
+  G.maxWave=G.endless?Infinity:20;G.autoStartTimer=0;G._rewarded=false;G._lastTokens=0;
   G.waves=G.endless?[]:generateWaves(dc.mul);G.spawnQueue=[];G.waveActive=false;G.spawnTimer=0;G.selectedTowerType=null;G.selectedTower=null;G.speed=1;
   G.placingHero=true; // prompt hero placement immediately
   document.getElementById('speedBtn').innerText='⏩ 1×';document.getElementById('startWaveBtn').disabled=false;
@@ -1490,7 +1515,7 @@ TDCoop.onRoomState=function(d){
 // ---- Apply a networked action to the LOCAL sim (runs on BOTH clients) ----
 TDCoop.onAction=function(a){
   if(!G.coop)return;
-  if(a.type==='place'){ _coopApplyPlace(a.tower,a.x,a.y); }
+  if(a.type==='place'){ _coopApplyPlace(a.tower,a.x,a.y,a.by); }
   else if(a.type==='hero_place'){ _coopApplyHeroPlace(a.hero,a.x,a.y,a.by); }  // ← ADD
   else if(a.type==='wave'){ startNextWave._fromNet=true; startNextWave(); startNextWave._fromNet=false; }
   else if(a.type==='upgrade'){ _coopApplyUpgrade(a.towerId); }
@@ -1513,12 +1538,14 @@ function _coopApplyHeroPlace(heroKey,x,y,by){
   announce(h.def.name+' DEPLOYED','#ffd700');updateHUD();
 }
 
-// ---- Deterministic appliers (no UI selection dependency) ----
-function _coopApplyPlace(type,x,y){
+function _coopApplyPlace(type,x,y,by){
   var def=TOWER_TYPES[type];
-  if(G.credits<def.cost)return;        // shared economy check only
-  G.credits-=def.cost;G.towersBuilt++;
-  var t=new Tower(type,x,y);G.towers.push(t);
+  // charge the placing player's OWN wallet
+  if(by===TDCoop.role){ if(G.myCredits<def.cost)return; G.myCredits-=def.cost; }
+  else { if(G.allyCredits<def.cost)return; G.allyCredits-=def.cost; }
+  G.towersBuilt++;
+  var t=new Tower(type,x,y);t.owner=by;
+  G.towers.push(t);
   sfx.deploy();spawnParticles(t.x,t.y,def.color,12,false);updateHUD();refreshShopUI();
 }
 function _coopApplyUpgrade(id){var t=towerById(id);if(!t||t.isHero||!t.canUpgrade())return;var c=t.upgradeCost();if(G.credits<c)return;G.credits-=c;t.totalSpent+=c;t.level++;sfx.overclock();spawnParticles(t.x,t.y,'#5fffd4',15,false);updateHUD();if(G.selectedTower===t)showTowerInfo(t);}
@@ -1581,6 +1608,44 @@ function showCoopWaitingRoom(){
   document.getElementById('coop-choice').style.display='none';
   document.getElementById('coop-room').style.display='flex';
   document.getElementById('coop-menu').style.display='flex';
+}
+function offerFreeplay(){
+  sfx.win();
+  var es=document.getElementById('end-screen');
+  es.className='menu-overlay win';es.style.display='flex';
+  document.getElementById('end-title').innerText='GRID SECURED';
+  document.getElementById('end-stats').innerHTML=
+    'Commander: <b>'+(G.hero?G.hero.def.name+' (★'+G.hero.level+')':'None')+'</b><br>'+
+    'Nodes Defended: <b>'+G.wave+' / 20</b><br>'+
+    'Intruders Purged: <b>'+G.kills+'</b><br>'+
+    'Score: <b>'+G.score.toLocaleString()+'</b><br><br>'+
+    '<span style="color:#feca57;">Campaign complete! Keep defending in FREEPLAY?</span>';
+  // inject buttons into the existing .end-actions row (no HTML changes needed)
+  var actions=es.querySelector('.end-actions');
+  actions.innerHTML=
+    '<button class="menu-btn" style="color:#feca57;" onclick="continueFreeplay()">[ Keep Defending ]</button>'+
+    '<button class="menu-btn" style="color:#5fffd4;" onclick="finishCampaign()">[ Claim Victory ]</button>';
+}
+
+function continueFreeplay(){
+  sfx.click();
+  finishCampaign(true);                 // award win-rewards now, but keep playing
+  G.endless=true;G.maxWave=Infinity;    // flip to endless mode
+  document.getElementById('ui-maxwave').innerText='∞';
+  document.getElementById('end-screen').style.display='none';
+  document.getElementById('startWaveBtn').disabled=false;
+  announce('FREEPLAY UNLOCKED','#feca57');
+  G.state='playing';
+}
+
+function finishCampaign(keepPlaying){
+  endGame(true);
+  if(keepPlaying){
+    // re-arm the game state that endGame() shut down
+    G.running=true;G.state='playing';G.lastTime=performance.now();
+    document.getElementById('gameWrapper').classList.add('playing');
+    music.start();requestAnimationFrame(loop);
+  }
 }
 </script>
 <link rel="stylesheet" href="chat.css">
