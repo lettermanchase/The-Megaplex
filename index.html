@@ -259,7 +259,7 @@
 
         .megaplex-logo {
             font-family: 'Orbitron', sans-serif;
-            font-size: 3.5em; color: #00d2d3; letter-spacing: 4px;
+            font-size: 3.2em; color: #00d2d3; letter-spacing: 3px;
             text-shadow: 0 0 10px #00d2d3, 0 0 20px #00d2d3, 0 0 40px #00d2d3, 0 0 80px #00d2d3;
             animation: neon-flicker 2.5s infinite alternate; user-select: none;
             margin: 0;
@@ -269,7 +269,7 @@
             0%,100% { opacity: 1; } 10%{opacity:.8;} 20%{opacity:1;} 30%{opacity:.7;}
             40%{opacity:1;} 50%{opacity:.9;} 60%{opacity:1;} 70%{opacity:.85;} 80%{opacity:1;} 90%{opacity:.95;}
         }
-        .subtitle { color: #c8d6e5; font-size: 1.2em; margin-top: 10px; }
+        .subtitle { color: #c8d6e5; font-size: 1.1em; margin-top: 8px; opacity: 0.85; font-weight: 300; letter-spacing: 1px; }
         body.light-mode .subtitle { color: #222; }
 		
         .user-greeting,
@@ -528,25 +528,29 @@
             color: #fff; font-size: 1.1em; outline: none;
             transition: 0.3s; backdrop-filter: blur(10px);
         }
+        body.light-mode .search-bar { background: rgba(255,255,255,0.85); color: #222; }
+        body.light-mode .search-bar::placeholder { color: #888; }
         .search-bar:focus { border-color: #00d2d3; box-shadow: 0 0 20px rgba(0, 210, 211, 0.5); }
         .search-bar-wrapper::before { content: '🔍'; position: absolute; left: 35px; top: 50%; transform: translateY(-50%); font-size: 1.2em; pointer-events: none; }
         .search-shortcut { position: absolute; right: 35px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 6px; font-size: 0.8em; color: #aaa; pointer-events: none; }
 
         /* Tabs */
-        .tab-container { display: flex; justify-content: center; gap: 12px; margin: 30px 0; flex-wrap: wrap; position: relative; z-index: 10; padding: 0 15px; }
+        .tab-container { display: flex; justify-content: center; gap: 10px; margin: 30px 0; flex-wrap: wrap; position: relative; z-index: 10; padding: 0 15px; }
         .tab-btn {
-            background: rgba(255, 255, 255, 0.1); border: 1px solid #fff; color: white; padding: 10px 22px;
-            border-radius: 30px; cursor: pointer; transition: 0.3s; font-weight: bold; font-size: 1em;
+            background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255,255,255,0.15); color: #c8d6e5; padding: 9px 20px;
+            border-radius: 30px; cursor: pointer; transition: 0.25s; font-weight: 600; font-size: 0.92em;
         }
-        .tab-btn:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
+        body.light-mode .tab-btn { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: #444; }
+        .tab-btn:hover { background: rgba(0, 210, 211, 0.15); border-color: #00d2d3; color: #fff; transform: translateY(-2px); }
+        body.light-mode .tab-btn:hover { color: #0984e3; }
         .tab-btn.active { background: #00d2d3; color: #000; border-color: #00d2d3; box-shadow: 0 0 15px #00d2d3; }
         .tab-btn.leaderboard-btn { background: #ff9f43; border-color: #ff9f43; color: #000; }
         .tab-btn.achievements-btn { background: #f368e0; border-color: #f368e0; color: #fff; }
         .tab-btn.achievements-btn.active { background: #f368e0; color: #000; box-shadow: 0 0 15px #f368e0; }
 
         .grid-container {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px; padding: 20px 40px 60px; max-width: 1400px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 18px; padding: 20px 40px 60px; max-width: 1400px; margin: 0 auto;
             position: relative; z-index: 10;
             justify-items: stretch;
         }
@@ -593,41 +597,117 @@
             font-size: 0.65em; font-weight: bold; padding: 3px 8px; border-radius: 10px; z-index: 5;
         }
 
-        /* Card colors (unchanged - keeping yours) */
-        .card-link.glitch { border-color: #f0f; background: rgba(255, 0, 255, 0.1); }
-        .card-link.glitch h2 { color: #f0f; }
-        .card-link.strikers { border-color: #00ffff; background: rgba(0, 255, 255, 0.1); }
-        .card-link.strikers h2 { color: #00ffff; }
-        .card-link.asteroids { border-color: #00cec9; background: rgba(0, 206, 201, 0.1); }
-        .card-link.asteroids h2 { color: #00cec9; }
-        .card-link.tanks { border-color: #e67e22; background: rgba(230, 126, 34, 0.1); }
-        .card-link.tanks h2 { color: #e67e22; }
-        .card-link.cyber { border-color: #9b59b6; background: rgba(155, 89, 182, 0.1); }
-        .card-link.cyber h2 { color: #9b59b6; }
-        .card-link.fps { border-color: #ff4757; background: rgba(255, 71, 87, 0.1); }
-        .card-link.fps h2 { color: #ff4757; }
-        .card-link.platformer { border-color: #fd79a8; background: rgba(253, 121, 168, 0.1); }
-        .card-link.platformer h2 { color: #fd79a8; }
-        .card-link.platformer2 { border-color: #ff00ff; background: rgba(255, 0, 255, 0.12); }
-        .card-link.platformer2 h2 { color: #ff00ff; }
-        .card-link.snake { border-color: #20bf6b; background: rgba(32, 191, 107, 0.1); }
-        .card-link.snake h2 { color: #20bf6b; }
-        .card-link.clicker { border-color: #f7b731; background: rgba(247, 183, 49, 0.1); }
-        .card-link.clicker h2 { color: #f7b731; }
-        .card-link.reaction { border-color: #eb3b5a; background: rgba(235, 59, 90, 0.1); }
-        .card-link.reaction h2 { color: #eb3b5a; }
-        .card-link.math { border-color: #3867d6; background: rgba(56, 103, 214, 0.1); }
-        .card-link.math h2 { color: #3867d6; }
-        .card-link.ttt { border-color: #a55eea; background: rgba(165, 94, 234, 0.1); }
-        .card-link.ttt h2 { color: #a55eea; }
-        .card-link.memory { border-color: #0fb9b1; background: rgba(15, 185, 177, 0.1); }
-        .card-link.memory h2 { color: #0fb9b1; }
-        .card-link.guesser { border-color: #fa8231; background: rgba(250, 130, 49, 0.1); }
-        .card-link.guesser h2 { color: #fa8231; }
-        .card-link.racer { border-color: #ff007f; background: rgba(255, 0, 127, 0.1); }
-        .card-link.racer h2 { color: #ff007f; }
-        .card-link.connect4 { border-color: #ff4757; background: rgba(255, 71, 87, 0.1); }
-        .card-link.connect4 h2 { color: #ff4757; }
+                /* ===== MODERN GAME CARDS (REDESIGNED) ===== */
+                .card-link {
+            text-decoration: none; color: inherit;
+            display: flex; flex-direction: column;
+            background: rgba(20, 28, 40, 0.85);
+            border-radius: 16px;
+            padding: 0; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            min-height: 0; position: relative;
+            backdrop-filter: blur(5px);
+            text-align: left;
+        }
+        body.light-mode .card-link { background: rgba(255,255,255,0.9); }
+
+        .card-link:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+            border-color: var(--accent, #00d2d3);
+        }
+        body.light-mode .card-link:hover { box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+
+        /* The "thumbnail" banner with the big emoji */
+        .card-thumb {
+            height: 130px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 4em; line-height: 1;
+            background: linear-gradient(135deg, var(--accent, #00d2d3) 0%, rgba(0,0,0,0.6) 130%);
+            position: relative; overflow: hidden;
+            filter: saturate(1.1);
+        }
+        .card-thumb::after {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.25), transparent 55%);
+            pointer-events: none;
+        }
+        .card-thumb .thumb-icon {
+            position: relative; z-index: 2;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+            transition: transform 0.3s ease;
+        }
+        .card-link:hover .card-thumb .thumb-icon { transform: scale(1.15) rotate(-4deg); }
+
+        /* Card text body */
+        .card-body {
+            padding: 14px 16px 16px;
+            display: flex; flex-direction: column; gap: 8px; flex: 1;
+        }
+        .card-body h2 {
+            margin: 0; font-size: 1.15em; color: #fff;
+        }
+        body.light-mode .card-body h2 { color: #1a1a2e; }
+        .card-body .card-desc {
+            margin: 0; font-size: 0.82em; line-height: 1.4;
+            color: #9aa7b8; flex: 1;
+        }
+        body.light-mode .card-body .card-desc { color: #555; }
+
+        .card-bottom {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 4px;
+        }
+        .card-tag {
+            font-size: 0.68em; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; padding: 4px 10px; border-radius: 20px;
+            background: rgba(255,255,255,0.08); color: var(--accent, #00d2d3);
+            border: 1px solid var(--accent, #00d2d3);
+        }
+        body.light-mode .card-tag { background: rgba(0,0,0,0.04); }
+        .card-cta {
+            font-size: 0.82em; font-weight: 700;
+            color: var(--accent, #00d2d3);
+            display: flex; align-items: center; gap: 4px;
+            transition: gap 0.2s ease;
+        }
+        .card-link:hover .card-cta { gap: 9px; }
+
+        /* Each game just sets its accent color via --accent */
+        .card-link.glitch     { --accent: #f0f; }
+        .card-link.strikers   { --accent: #00ffff; }
+        .card-link.asteroids  { --accent: #00cec9; }
+        .card-link.tanks      { --accent: #e67e22; }
+        .card-link.cyber      { --accent: #9b59b6; }
+        .card-link.fps        { --accent: #ff4757; }
+        .card-link.platformer { --accent: #fd79a8; }
+        .card-link.platformer2{ --accent: #ff00ff; }
+        .card-link.snake      { --accent: #20bf6b; }
+        .card-link.clicker    { --accent: #f7b731; }
+        .card-link.reaction   { --accent: #eb3b5a; }
+        .card-link.math       { --accent: #3867d6; }
+        .card-link.ttt        { --accent: #a55eea; }
+        .card-link.memory     { --accent: #0fb9b1; }
+        .card-link.guesser    { --accent: #fa8231; }
+        .card-link.racer      { --accent: #ff007f; }
+        .card-link.connect4   { --accent: #ff4757; }
+        .card-link.pulse      { --accent: #ff00ff; }
+        .card-link.flapper    { --accent: #00ffff; }
+        .card-link.nethack    { --accent: #c724b1; }
+
+        /* Section row headings (for grouping games) */
+        .grid-section-title {
+            grid-column: 1 / -1;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4em; color: #00d2d3;
+            letter-spacing: 2px; text-transform: uppercase;
+            margin: 20px 0 0; padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 210, 211, 0.25);
+            display: flex; align-items: center; gap: 10px;
+        }
+        body.light-mode .grid-section-title { color: #0984e3; border-color: rgba(9,132,227,0.25); }
+        .grid-section-title:first-child { margin-top: 0; }
 
         .tag { font-size: 0.75em; padding: 3px 10px; border-radius: 12px; display: inline-block; color: white; width: fit-content; margin: 0 auto; }
         .play-btn {
@@ -638,8 +718,22 @@
         }
         .play-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
 
-        /* Panel View */
+
+                /* Panel View */
         .panel-view { position: relative; z-index: 10; display: none; max-width: 1100px; margin: 0 auto 60px; padding: 30px; background: rgba(0,0,0,0.85); border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        body.light-mode .panel-view { background: rgba(255,255,255,0.92); }
+        body.light-mode .panel-view p,
+        body.light-mode .lb-stat-label,
+        body.light-mode .trophy-stat-label,
+        body.light-mode .bounty-stat-label { color: #555 !important; }
+        body.light-mode .lb-game-title,
+        body.light-mode .ach-title,
+        body.light-mode .bounty-title,
+        body.light-mode .lb-podium-name { color: #1a1a2e; }
+        body.light-mode .ach-desc,
+        body.light-mode .bounty-desc { color: #666; }
+        body.light-mode .modal-info-list,
+        body.light-mode .modal-info-list strong { color: #444; }
         #leaderboard-view { border: 1px solid #ff9f43; }
         #achievements-view { border: 1px solid #f368e0; }
 
@@ -781,7 +875,7 @@
         .hidden-ufo:hover { opacity: 1; transform: scale(1.4) translateY(-15px); filter: drop-shadow(0 0 20px rgba(0, 210, 211, 0.9)); animation: float 2s infinite ease-in-out; }
         @keyframes float { 0%,100% { transform: scale(1.4) translateY(-15px); } 50% { transform: scale(1.4) translateY(-5px); } }
 
-        .featured-carousel { width: calc(100% - 40px); max-width: 900px; margin: 30px auto 0 auto; background: rgba(0,0,0,0.7); border-radius: 18px; box-shadow: 0 0 30px #00d2d3a0; overflow: hidden; position: relative; z-index: 20; display: flex; align-items: center; min-height: 180px; }
+        .featured-carousel { width: calc(100% - 40px); max-width: 1000px; margin: 30px auto 0 auto; background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(15,32,39,0.7)); border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); border: 1px solid rgba(0,210,211,0.25); overflow: hidden; position: relative; z-index: 20; display: flex; align-items: center; min-height: 170px; }
         body.light-mode .featured-carousel { background: rgba(255,255,255,0.85) !important; color: #222 !important; }
         .carousel-slide { flex: 1; display: flex; align-items: center; gap: 30px; padding: 30px; transition: opacity 0.5s; }
         .carousel-img { width: 120px; height: 120px; border-radius: 16px; background: #222; display: flex; align-items: center; justify-content: center; font-size: 3em; box-shadow: 0 0 20px #00d2d3a0; animation: floatIcon 3s infinite ease-in-out; }
@@ -810,7 +904,8 @@
         .footer-links { margin: 10px 0 0 0; display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; align-items: center; }
         .footer-links a { color: #00d2d3; text-decoration: none; font-weight: bold; }
         .footer-links a:hover { color: #feca57; }
-        .theme-toggle-btn { background: #00d2d3; color: #222; border: none; border-radius: 12px; padding: 7px 18px; font-weight: bold; margin-left: 18px; cursor: pointer; }
+        .theme-toggle-btn { background: #00d2d3; color: #222; border: none; border-radius: 12px; padding: 7px 18px; font-weight: bold; margin-left: 18px; cursor: pointer; transition: 0.2s; }
+        body.light-mode .theme-toggle-btn { background: #0984e3; color: #fff; }
         .theme-toggle-btn:hover { background: #feca57; color: #000; }
 
         @media (max-width: 900px) {
@@ -1333,7 +1428,429 @@
     100% { transform: translate(0, 0); clip-path: inset(0 0 100% 0); opacity: 0; }
 }
 
+/* ============================================================
+   ===== PROFESSIONAL OVERHAUL (paste at end of <style>) ======
+   ============================================================ */
 
+   :root {
+    --bg-900: #0a0e14;
+    --bg-800: #111827;
+    --bg-700: #1a2332;
+    --surface: rgba(255,255,255,0.04);
+    --surface-hover: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.10);
+    --border-strong: rgba(255,255,255,0.18);
+    --accent: #00d2d3;
+    --accent-2: #6c5ce7;
+    --gold: #feca57;
+    --text: #e8edf4;
+    --text-dim: #9aa7b8;
+    --radius: 14px;
+    --shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+
+/* Calmer, flatter background — less competing gradient noise */
+body {
+    background: radial-gradient(1200px 600px at 50% -10%, #16202e 0%, var(--bg-900) 60%) fixed;
+    color: var(--text);
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    letter-spacing: 0.1px;
+}
+
+/* Soften the CRT scanline so it reads as "premium texture" not "broken TV" */
+body::before { opacity: 0.18 !important; animation: none !important; }
+
+/* ============================================================
+   ===== HEADER v2 — clean 3-zone flex layout =================
+   ============================================================ */
+
+   header {
+    height: 132px !important;
+    background: linear-gradient(180deg, rgba(13,18,28,0.94), rgba(13,18,28,0.80)) !important;
+    border-bottom: 1px solid var(--border-strong);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.45);
+}
+header.scrolled { height: 60px !important; }
+
+/* The expanded header becomes ONE clean flex row */
+.header-expanded {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0 32px !important;
+    gap: 28px;
+}
+
+/* === ZONE 1: LEFT (avatar + name + shop/friends) === */
+.hub-profile {
+    position: static !important;
+    transform: none !important;
+    order: 1;
+    flex-shrink: 0;
+}
+.hub-profile:hover { transform: translateY(-2px) !important; filter: brightness(1.05) !important; }
+.avatar-stage {
+    width: 84px !important; height: 84px !important;
+    border-radius: 14px !important; border: 2px solid var(--border-strong) !important;
+    box-shadow: var(--shadow) !important;
+}
+.bot-head { width: 38px; height: 30px; border-radius: 6px; }
+.bot-eyes { width: 22px; height: 11px; }
+.eye { width: 5px; height: 5px; }
+.bot-body { width: 30px; height: 26px; }
+.bot-hat { top: -17px; font-size: 1.3em; }
+.hub-nameplate { font-size: 0.38em !important; bottom: 5px; }
+
+/* Group avatar-shop + friends into a vertical mini-stack via the greeting area */
+.user-greeting {
+    position: static !important;
+    order: 2;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+    text-shadow: none !important;
+    color: var(--text) !important;
+    text-transform: none !important;
+    font-size: 0.92em !important;
+}
+
+.avatar-shop-btn, .friends-btn {
+    position: static !important;
+    top: auto !important; left: auto !important;
+    order: 3;
+    box-shadow: none !important;
+    height: 38px;
+    display: inline-flex !important;
+    align-items: center;
+}
+
+/* === ZONE 2: CENTER (logo) — keep it on ONE line === */
+.header-expanded > div:not(.hub-profile):not(.user-greeting):not(.header-controls) {
+    order: 4;
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+}
+.megaplex-logo {
+    font-size: 2.6em !important;        /* was 1.9em — much bigger */
+    text-shadow: 0 0 16px rgba(0,210,211,0.4) !important;
+    animation: none !important;
+    letter-spacing: 2px !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+}
+.subtitle { font-size: 0.9em !important; opacity: 0.55 !important; margin-top: 6px; white-space: nowrap; }
+
+/* === ZONE 3: RIGHT (all controls, neatly aligned) === */
+.header-controls {
+    position: static !important;
+    order: 5;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 10px !important;
+    flex-shrink: 0;
+}
+/* Force both rows to align on the SAME baseline height */
+.header-controls-top, .header-controls-bottom {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+.header-controls-top > * { height: 44px; display: inline-flex; align-items: center; }
+
+/* Make the Streak / Game of Day / token / prestige all match height + style */
+#dailyBonusBtn, #dailyChallengeBtn {
+    height: 44px !important;
+    border-radius: 12px !important;
+    padding: 0 16px !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border-strong) !important;
+    font-weight: 600 !important;
+    font-size: 0.82em !important;
+    box-shadow: none !important;
+    line-height: 1.1 !important;
+    white-space: nowrap;
+}
+#dailyBonusBtn:hover, #dailyChallengeBtn:hover {
+    background: var(--surface-hover) !important;
+    border-color: var(--accent) !important;
+    transform: translateY(-1px) !important;
+}
+
+.token-display, .prestige-token-display {
+    height: 44px !important;
+    display: inline-flex !important; align-items: center !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 12px !important;
+    font-size: 1em !important;
+    padding: 0 16px !important;
+    box-shadow: none !important;
+    color: var(--gold) !important;
+    margin: 0 !important;
+}
+.prestige-token-display { color: #d4a8ff !important; border-color: rgba(180,140,255,0.35) !important; }
+
+/* Streak badge that floats over the daily button — reposition cleanly */
+.daily-streak-badge {
+    top: -6px !important; right: -6px !important;
+    border: 2px solid var(--bg-900) !important;
+}
+
+/* Greeting block sits next to the avatar, not pinned to a corner */
+.user-greeting {
+    position: static !important;
+    text-shadow: none !important;
+    color: var(--text) !important;
+    text-transform: none !important;
+    font-size: 0.95em !important;
+}
+
+/* Controls: right-aligned cluster */
+.header-controls {
+    position: static !important;
+    align-items: flex-end !important;
+}
+
+/* ---------- UNIFIED BUTTON SYSTEM ---------- */
+/* One calm base style; accents are reserved for ONE primary action */
+.play-btn, .auth-btn, .friends-btn, .avatar-shop-btn, .theme-toggle-btn {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 10px !important;
+    padding: 9px 16px !important;
+    font-weight: 600 !important;
+    font-size: 0.88em !important;
+    box-shadow: none !important;
+    transition: background .18s, border-color .18s, transform .18s !important;
+    backdrop-filter: blur(6px);
+}
+.play-btn:hover, .auth-btn:hover, .friends-btn:hover,
+.avatar-shop-btn:hover, .theme-toggle-btn:hover {
+    background: var(--surface-hover) !important;
+    border-color: var(--accent) !important;
+    transform: translateY(-1px) !important;
+    filter: none !important;
+}
+
+/* The ONE primary action gets the accent fill */
+.auth-btn:not(.logout) {
+    background: linear-gradient(135deg, var(--accent), #0a9396) !important;
+    color: #021 !important; border-color: transparent !important;
+}
+.auth-btn.logout { background: rgba(255,71,87,0.12) !important; border-color: rgba(255,71,87,0.4) !important; color: #ff7a85 !important; }
+
+/* Token + prestige displays: matched pill style */
+.token-display, .prestige-token-display {
+    background: var(--surface) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 12px !important;
+    font-size: 1.05em !important;
+    padding: 8px 16px !important;
+    box-shadow: none !important;
+    color: var(--gold) !important;
+}
+.prestige-token-display { color: #d4a8ff !important; border-color: rgba(180,140,255,0.35) !important; }
+
+.sound-btn {
+    background: var(--surface) !important;
+    border: 1px solid var(--border-strong) !important;
+    color: var(--text) !important;
+}
+.sound-btn:hover { background: var(--surface-hover) !important; border-color: var(--accent) !important; box-shadow: none !important; }
+
+/* ---------- SEARCH BAR ---------- */
+.search-bar {
+    background: var(--surface) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 12px !important;
+    color: var(--text) !important;
+}
+.search-bar:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(0,210,211,0.12) !important; }
+
+/* ---------- TABS: pill row, single accent ---------- */
+.tab-btn {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-dim) !important;
+    border-radius: 10px !important;
+    font-size: 0.86em !important;
+    box-shadow: none !important;
+}
+.tab-btn:hover { background: var(--surface-hover) !important; color: var(--text) !important; border-color: var(--border-strong) !important; transform: none !important; }
+.tab-btn.active,
+.tab-btn.leaderboard-btn.active,
+.tab-btn.achievements-btn.active,
+.tab-btn.bounty-btn.active {
+    background: var(--accent) !important; color: #021 !important;
+    border-color: transparent !important; box-shadow: 0 4px 14px rgba(0,210,211,0.25) !important;
+}
+/* Tone special tabs to outline-only until active */
+.tab-btn.leaderboard-btn, .tab-btn.achievements-btn, .tab-btn.bounty-btn {
+    background: var(--surface) !important; color: var(--text-dim) !important;
+}
+
+/* ---------- SECTION TITLES ---------- */
+.grid-section-title {
+    color: var(--text) !important;
+    text-shadow: none !important;
+    font-size: 1.05em !important;
+    letter-spacing: 1px !important;
+    border-bottom: 1px solid var(--border) !important;
+    opacity: 0.95;
+}
+
+/* ---------- GAME CARDS: subtle refinements only ---------- */
+.card-link {
+    background: linear-gradient(180deg, rgba(26,35,50,0.9), rgba(17,24,39,0.9)) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+}
+.card-thumb { height: 120px !important; }
+.card-thumb::after { background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.18), transparent 55%) !important; }
+.card-link:hover { box-shadow: 0 14px 32px rgba(0,0,0,0.5) !important; }
+
+/* ---------- CAROUSEL ---------- */
+.featured-carousel {
+    background: linear-gradient(135deg, rgba(26,35,50,0.85), rgba(13,18,28,0.85)) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: var(--radius) !important;
+}
+.carousel-info h3 { color: var(--text) !important; }
+.carousel-img { box-shadow: 0 0 24px rgba(0,210,211,0.25) !important; }
+
+/* ---------- FOOTER ---------- */
+footer { background: rgba(10,14,20,0.9) !important; border-top: 1px solid var(--border) !important; color: var(--text-dim) !important; }
+footer a, .footer-links a { color: var(--accent) !important; }
+
+/* ---------- MINI HEADER PILLS ---------- */
+.mini-pill {
+    background: var(--surface) !important; border: 1px solid var(--border) !important;
+    color: var(--text) !important; border-radius: 10px !important;
+}
+.mini-pill:hover { background: var(--surface-hover) !important; }
+.mini-logo { text-shadow: none !important; color: var(--accent) !important; }
+
+/* ---------- Mobile cleanup ---------- */
+@media (max-width: 900px) {
+    header { height: auto !important; padding: 16px 0 !important; }
+    .header-expanded { flex-direction: column !important; gap: 14px; padding: 0 16px !important; }
+    .header-controls { align-items: center !important; width: 100%; }
+    .header-controls-top, .header-controls-bottom { flex-wrap: wrap; justify-content: center; }
+}
+/* ============================================================
+   ===== LEFT ZONE v4 — proper profile card ===================
+   ============================================================ */
+
+   .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: transparent;      /* no gray fill */
+    border: none;                 /* no border */
+    padding: 0;                   /* no box padding */
+    width: fit-content;
+}
+
+/* FORCE avatar to be first (left), text block second (right) */
+.hub-profile     { order: 1 !important; }
+.header-left-text{ order: 2 !important; }
+
+/* Avatar — compact, clean frame */
+.hub-profile {
+    position: static !important;
+    transform: none !important;
+    flex-shrink: 0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.hub-profile:hover { transform: scale(1.04) !important; filter: brightness(1.06) !important; }
+.avatar-stage {
+    width: 72px !important; height: 72px !important;
+    border-radius: 12px !important;
+    border: 2px solid var(--border-strong) !important;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5) !important;
+}
+.bot-head { width: 32px; height: 26px; border-radius: 6px; }
+.bot-eyes { width: 19px; height: 9px; }
+.eye { width: 4px; height: 4px; }
+.bot-body { width: 26px; height: 22px; }
+.bot-hat { top: -14px; font-size: 1.1em; }
+.hub-nameplate { font-size: 0.32em !important; bottom: 4px; }
+
+/* Text column: name row on top, buttons row below */
+.header-left-text {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+    min-width: 0;
+}
+
+/* Name row */
+.user-greeting {
+    position: static !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 7px !important;
+    text-shadow: none !important;
+    text-transform: none !important;
+    color: var(--text) !important;
+    font-size: 1em !important;
+    font-weight: 700 !important;
+    padding: 0 !important;
+}
+.user-greeting > span:first-child {
+    color: var(--text) !important;
+    letter-spacing: 0.3px;
+    font-size: 0.95em;
+}
+
+/* Level + prestige: small matched outline chips */
+.player-level {
+    background: rgba(254,202,87,0.12) !important;
+    border: 1px solid rgba(254,202,87,0.4) !important;
+    color: var(--gold) !important;
+    box-shadow: none !important;
+    padding: 2px 8px !important;
+    font-size: 0.7em !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+}
+.player-level:hover { transform: none !important; background: rgba(254,202,87,0.2) !important; }
+
+.prestige-badge {
+    animation: none !important;
+    box-shadow: none !important;
+    background: rgba(180,140,255,0.15) !important;
+    border: 1px solid rgba(180,140,255,0.45) !important;
+    color: #d4a8ff !important;
+    text-shadow: none !important;
+    padding: 2px 8px !important;
+    font-size: 0.7em !important;
+    border-radius: 6px !important;
+}
+.prestige-badge:hover { transform: none !important; background: rgba(180,140,255,0.25) !important; }
+
+/* Button row */
+.header-left-btns {
+    display: flex;
+    gap: 7px;
+}
+.avatar-shop-btn, .friends-btn {
+    position: static !important;
+    top: auto !important; left: auto !important;
+    box-shadow: none !important;
+    height: 30px;
+    padding: 0 12px !important;
+    font-size: 0.76em !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center;
+}
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1538,8 +2055,11 @@
 </div>
 <!-- ===== End Secret Cinema ===== -->
 
-    <header id="mainHeader">
-        <div class="header-expanded">
+<header id="mainHeader">
+    <div class="header-expanded">
+
+        <!-- LEFT ZONE -->
+        <div class="header-left">
             <a href="avatar.html" class="hub-profile" title="Avatar Shop" onmouseenter="sfx.hover()" onclick="sfx.start()">
                 <div class="avatar-stage" id="hubStageBG">
                     <div class="hub-aura-container" id="hubAuraContainer"></div>
@@ -1551,64 +2071,70 @@
                     <div class="bot-body" id="hubBotBody"></div>
                 </div>
             </a>
-            <a href="avatar.html" class="play-btn avatar-shop-btn" onmouseenter="sfx.hover()" onclick="sfx.start()">🛍️ Avatar Shop</a>
-            <button id="friendsBtn" class="friends-btn" onclick="openFriendsPage()" onmouseenter="sfx.hover()" title="View your friends">
-                👥 Friends
-                <span class="friend-notif-badge hidden" id="friendsNotifBadge">0</span>
-            </button>
-            <div class="user-greeting" id="userGreeting" onmouseenter="sfx.hover()">
-                <span onclick="changeUsername()">ID: GUEST_BOT ✏️</span>
-                <span class="player-level" id="playerLevel" onclick="openLevelModal()" title="Click for level details">LV.1</span>
-            </div>
-            <div>
-                <div class="megaplex-logo" aria-label="The Megaplex">🏙️ The Megaplex</div>
-                <div class="subtitle">Select a game to open a new terminal!</div>
-            </div>
-            <div class="header-controls">
-                <div class="header-controls-top">
-                    <div id="dailyBonusWrap">
-                        <button id="dailyBonusBtn" class="play-btn" 
-                            style="background: #f368e0; color: #fff; border-radius: 20px; padding: 10px 20px;" 
-                            onclick="openDailyModal()" onmouseenter="sfx.hover()">
-                            🎁 Daily Claim
-                        </button>
-                        <span class="daily-streak-badge" id="dailyStreakBadge">🔥 <span id="dailyStreakNum">0</span></span>
-                    </div>
-                    <button id="dailyChallengeBtn" class="play-btn"
-                        style="background: linear-gradient(135deg,#ff6348,#feca57); color:#000; border-radius:20px; padding:10px 20px;"
-                        onclick="openDailyChallengeModal()" onmouseenter="sfx.hover()">
-                        🎯 Game of the Day
-                    </button>
-                    <div class="token-display" id="tokenDisplayBox">🎟️ <span id="tokenBalance">0</span></div>
-                    <div class="prestige-token-display" id="prestigeTokenDisplay" style="display:none;" onclick="openPrestigeModal()" title="Prestige Tokens — click for details">✨ <span id="prestigeTokenBalance">0</span></div>
+            <div class="header-left-text">
+                <div class="user-greeting" id="userGreeting" onmouseenter="sfx.hover()">
+                    <span onclick="changeUsername()">ID: GUEST_BOT ✏️</span>
+                    <span class="player-level" id="playerLevel" onclick="openLevelModal()" title="Click for level details">LV.1</span>
                 </div>
-                <div class="header-controls-bottom">
-                    <button id="soundToggleBtn" class="sound-btn" onclick="toggleSound()" title="Toggle Sound (M)">🔊</button>
-                    <button id="headerAuthBtn" class="auth-btn" onclick="handleHeaderAuth()" onmouseenter="sfx.hover()">🔓 Log In</button>
+                <div class="header-left-btns">
+                    <a href="avatar.html" class="play-btn avatar-shop-btn" onmouseenter="sfx.hover()" onclick="sfx.start()">🛍️ Avatar Shop</a>
+                    <button id="friendsBtn" class="friends-btn" onclick="openFriendsPage()" onmouseenter="sfx.hover()" title="View your friends">
+                        👥 Friends
+                        <span class="friend-notif-badge hidden" id="friendsNotifBadge">0</span>
+                    </button>
                 </div>
             </div>
         </div>
 
-        <div class="header-mini">
-            <div class="mini-left">
-                <span class="mini-logo" onclick="window.scrollTo({top:0, behavior:'smooth'})">🏙️ MEGAPLEX</span>
-                <span class="mini-pill" onclick="changeUsername()" title="Change username">
-                    👤 <span id="miniUsername">GUEST_BOT</span>
-                </span>
+        <!-- CENTER ZONE -->
+        <div class="header-center">
+            <div class="megaplex-logo" aria-label="The Megaplex">🏙️ The Megaplex</div>
+            <div class="subtitle">Select a game to open a new terminal!</div>
+        </div>
+
+        <!-- RIGHT ZONE -->
+        <div class="header-controls">
+            <div class="header-controls-top">
+                <div id="dailyBonusWrap">
+                    <button id="dailyBonusBtn" class="play-btn" onclick="openDailyModal()" onmouseenter="sfx.hover()">
+                        🎁 Daily Claim
+                    </button>
+                    <span class="daily-streak-badge" id="dailyStreakBadge">🔥 <span id="dailyStreakNum">0</span></span>
+                </div>
+                <button id="dailyChallengeBtn" class="play-btn" onclick="openDailyChallengeModal()" onmouseenter="sfx.hover()">
+                    🎯 Game of the Day
+                </button>
+                <div class="token-display" id="tokenDisplayBox">🎟️ <span id="tokenBalance">0</span></div>
+                <div class="prestige-token-display" id="prestigeTokenDisplay" style="display:none;" onclick="openPrestigeModal()" title="Prestige Tokens — click for details">✨ <span id="prestigeTokenBalance">0</span></div>
             </div>
-            <div class="mini-right">
-                <span class="mini-pill gold">🎟️ <span id="miniTokenBalance">0</span></span>
-                <span class="mini-pill prestige" id="miniPrestigePill" style="display:none;" onclick="openPrestigeModal()" title="Prestige details">✨ <span id="miniPrestigeTokens">0</span></span>
-                <span class="mini-pill gold" onclick="openLevelModal()" title="Level details">⚡ LV.<span id="miniLevel">1</span></span>
-                <span class="mini-pill friends" id="miniFriendsPill" onclick="openFriendsPage()" title="View your friends">
-                    👥 <span id="miniFriendsCount">0</span>
-                    <span class="friend-notif-badge hidden" id="miniFriendsNotifBadge">0</span>
-                </span>
-                <span id="miniAuthPill" class="mini-pill auth-pill" onclick="handleHeaderAuth()" title="Log in">🔓 Log In</span>
-                <button class="sound-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+            <div class="header-controls-bottom">
+                <button id="soundToggleBtn" class="sound-btn" onclick="toggleSound()" title="Toggle Sound (M)">🔊</button>
+                <button id="headerAuthBtn" class="auth-btn" onclick="handleHeaderAuth()" onmouseenter="sfx.hover()">🔓 Log In</button>
             </div>
         </div>
-    </header>
+    </div>
+
+    <!-- MINI HEADER (shown when scrolled) -->
+    <div class="header-mini">
+        <div class="mini-left">
+            <span class="mini-logo" onclick="window.scrollTo({top:0, behavior:'smooth'})">🏙️ MEGAPLEX</span>
+            <span class="mini-pill" onclick="changeUsername()" title="Change username">
+                👤 <span id="miniUsername">GUEST_BOT</span>
+            </span>
+        </div>
+        <div class="mini-right">
+            <span class="mini-pill gold">🎟️ <span id="miniTokenBalance">0</span></span>
+            <span class="mini-pill prestige" id="miniPrestigePill" style="display:none;" onclick="openPrestigeModal()" title="Prestige details">✨ <span id="miniPrestigeTokens">0</span></span>
+            <span class="mini-pill gold" onclick="openLevelModal()" title="Level details">⚡ LV.<span id="miniLevel">1</span></span>
+            <span class="mini-pill friends" id="miniFriendsPill" onclick="openFriendsPage()" title="View your friends">
+                👥 <span id="miniFriendsCount">0</span>
+                <span class="friend-notif-badge hidden" id="miniFriendsNotifBadge">0</span>
+            </span>
+            <span id="miniAuthPill" class="mini-pill auth-pill" onclick="handleHeaderAuth()" title="Log in">🔓 Log In</span>
+            <button class="sound-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+        </div>
+    </div>
+</header>
 
     
 
@@ -1691,92 +2217,198 @@
     </div>
 
     <div class="grid-container" id="gameGrid">
-        <!-- (All your existing game cards remain here unchanged) -->
-        <a href="glitch_brawler.html" class="card-link glitch" data-category="fighting pvp" data-name="glitch brawler" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>💥 Glitch Brawler</h2><span class="tag" style="background:#f0f;">PvP Fighting</span><p>Corrupt your rivals in the arena!</p></div>
-            <div class="play-btn" style="background:#f0f; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="glitch_strikers.html" class="card-link strikers" data-category="arcade fighting pvp" data-name="glitch strikers" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>⚔️ Glitch Strikers</h2><span class="tag" style="background:#00ffff; color:#000;">Beat 'Em Up</span><p>Breach the Megaplex! Co-Op enabled.</p></div>
-            <div class="play-btn" style="background:#00ffff; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="asteroids.html" class="card-link asteroids" data-category="arcade" data-name="quantum asteroids" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>☄️ Quantum Asteroids</h2><span class="tag" style="background:#00cec9;">Space Shooter</span><p>Blast through the asteroid field!</p></div>
-            <div class="play-btn" style="background:#00cec9; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="tanks.html" class="card-link tanks" data-category="arcade pvp" data-name="plasma tanks" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>💣 Plasma Tanks</h2><span class="tag" style="background:#e67e22;">PvP & PvE</span><p>Blast enemies, unlock skins!</p></div>
-            <div class="play-btn" style="background:#e67e22; color:#fff;">Play Game ➔</div>
-        </a>
-        <a href="runner.html" class="card-link cyber" data-category="arcade" data-name="cyber runner" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>🏃‍♂️ Cyber Runner</h2><span class="tag" style="background:#9b59b6;">Endless Runner</span><p>Dash through the neon city!</p></div>
-            <div class="play-btn" style="background:#9b59b6; color:#fff;">Play Game ➔</div>
-        </a>
-        <a href="fps.html" class="card-link fps" data-category="arcade" data-name="system breach fps" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>🔫 System Breach</h2><span class="tag" style="background:#ff4757;">3D FPS</span><p>Survive the glitching waves!</p></div>
-            <div class="play-btn" style="background:#ff4757; color:#fff;">Play Game ➔</div>
-        </a>
-        <a href="platformer.html" class="card-link platformer" data-category="arcade" data-name="neon jumper platformer" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>🏃 Neon Jumper</h2><span class="tag" style="background:#fd79a8;">Platformer</span><p>Leap across the mainframe!</p></div>
-            <div class="play-btn" style="background:#fd79a8; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="neonjumper2.html" class="card-link platformer2" data-category="arcade" data-name="neon jumper 2 system overload sequel platformer" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <span class="new-badge">NEW</span>
-            <div class="card-content"><h2>⚡ Neon Jumper 2</h2><span class="tag" style="background:#ff00ff;">Platformer Sequel</span><p>System Overload! Dash, grapple, and battle 3 bosses across 18 levels.</p></div>
-            <div class="play-btn" style="background:#ff00ff; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="racer.html" class="card-link racer" data-category="arcade" data-name="vaporwave racer racing" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>🏎️ Vaporwave Racer</h2><span class="tag" style="background:#ff007f;">Drift Racing</span><p>Master the drift, beat your rivals.</p></div>
-            <div class="play-btn" style="background:#ff007f; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="snake.html" class="card-link snake" data-category="arcade" data-name="snake classic" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>🐍 Snake Classic</h2><span class="tag" style="background:#20bf6b;">Arcade</span><p>Eat data, grow longer!</p></div>
-            <div class="play-btn" style="background:#20bf6b; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="clicker.html" class="card-link clicker" data-category="arcade" data-name="clicker frenzy" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>👆 Clicker Frenzy</h2><span class="tag" style="background:#f7b731;">Arcade</span><p>Click to mine tokens!</p></div>
-            <div class="play-btn" style="background:#f7b731; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="reaction.html" class="card-link reaction" data-category="arcade" data-name="reaction tester reflex" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>⚡ Reaction Tester</h2><span class="tag" style="background:#eb3b5a;">Arcade</span><p>Test your raw reflexes!</p></div>
-            <div class="play-btn" style="background:#eb3b5a; color:#fff;">Play Game ➔</div>
-        </a>
-        <a href="math.html" class="card-link math" data-category="logic" data-name="quick math" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>🧠 Quick Math</h2><span class="tag" style="background:#3867d6;">Logic</span><p>Solve equations quickly!</p></div>
-            <div class="play-btn" style="background:#3867d6; color:#fff;">Play Game ➔</div>
-        </a>
-        <a href="tictactoe.html" class="card-link ttt" data-category="logic pvp" data-name="tic tac toe" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>⭕ Tic-Tac-Toe</h2><span class="tag" style="background:#a55eea;">Logic</span><p>Classic X and O battles!</p></div>
-            <div class="play-btn" style="background:#a55eea; color:#fff;">Play Game ➔</div>
-        </a>
-        <a href="memory.html" class="card-link memory" data-category="logic" data-name="memory match cards" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>👁️ Memory Match</h2><span class="tag" style="background:#0fb9b1;">Puzzle</span><p>Match the hidden cards!</p></div>
-            <div class="play-btn" style="background:#0fb9b1; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="guesser.html" class="card-link guesser" data-category="logic" data-name="code breaker guesser" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
-            <div class="card-content"><h2>🔐 Code Breaker</h2><span class="tag" style="background:#fa8231;">Logic</span><p>Crack the secret vault!</p></div>
-            <div class="play-btn" style="background:#fa8231; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="pulserunner.html" class="card-link" data-category="arcade" data-name="pulse runner overdrive rhythm geometry dash" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()" style="border-color:#ff00ff; background:rgba(255,0,255,0.1);">
-            <span class="new-badge">NEW</span>
-            <div class="card-content"><h2 style="color:#ff00ff;">🎵 Pulse Runner</h2><span class="tag" style="background:#ff00ff; color:#000;">Rhythm Runner</span><p>Overdrive! 10 beat-synced circuits of pure chaos.</p></div>
-            <div class="play-btn" style="background:#ff00ff; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="neonflapper.html" class="card-link" data-category="arcade" data-name="neon flapper data stream flappy bird drone" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()" style="border-color:#00ffff; background:rgba(0,255,255,0.1);">
-            <span class="new-badge">NEW</span>
-            <div class="card-content"><h2 style="color:#00ffff;">🐦 Neon Flapper</h2><span class="tag" style="background:#00ffff; color:#000;">Flappy Arcade</span><p>Data Stream! Flap the drone through the firewall.</p></div>
-            <div class="play-btn" style="background:#00ffff; color:#000;">Play Game ➔</div>
-        </a>
-        <a href="nethacksiege.html" class="card-link" data-category="arcade logic" data-name="nethack siege tower defense td defender" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()" style="border-color:#c724b1; background:rgba(199,36,177,0.1);">
-            <span class="new-badge">NEW</span>
-            <div class="card-content"><h2 style="color:#c724b1;">🛡️ NetHack Siege</h2><span class="tag" style="background:#c724b1; color:#fff;">Tower Defense</span><p>Defend the Mainframe! 20 nodes, 5 daemon bosses.</p></div>
-            <div class="play-btn" style="background:#c724b1; color:#fff;">Play Game ➔</div>
-        </a>
+
+        <!-- ════════════ NEW GAMES (FEATURED AT TOP) ════════════ -->
+        <div class="grid-section-title">🆕 New Releases</div>
+
         <a href="connect4.html" class="card-link connect4" data-category="logic pvp" data-name="connect 4 connect four wager battle" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
             <span class="new-badge">NEW</span>
-            <div class="card-content"><h2>🔴 Connect 4</h2><span class="tag" style="background:#ff4757; color:#fff;">PvP & vs CPU</span><p>Drop discs, line up 4 — wager friends or climb the CPU leaderboard!</p></div>
-            <div class="play-btn" style="background:linear-gradient(135deg,#ff4757,#feca57); color:#000;">Play Game ➔</div>
+            <div class="card-thumb"><span class="thumb-icon">🔴</span></div>
+            <div class="card-body">
+                <h2>Connect 4</h2>
+                <p class="card-desc">Drop discs, line up 4 — wager friends or climb the CPU leaderboard!</p>
+                <div class="card-bottom"><span class="card-tag">PvP & vs CPU</span><span class="card-cta">Play ➔</span></div>
+            </div>
         </a>
+
+        <a href="neonjumper2.html" class="card-link platformer2" data-category="arcade" data-name="neon jumper 2 system overload sequel platformer" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <span class="new-badge">NEW</span>
+            <div class="card-thumb"><span class="thumb-icon">⚡</span></div>
+            <div class="card-body">
+                <h2>Neon Jumper 2</h2>
+                <p class="card-desc">System Overload! Dash, grapple, and battle 3 bosses across 18 levels.</p>
+                <div class="card-bottom"><span class="card-tag">Platformer</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="pulserunner.html" class="card-link pulse" data-category="arcade" data-name="pulse runner overdrive rhythm geometry dash" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <span class="new-badge">NEW</span>
+            <div class="card-thumb"><span class="thumb-icon">🎵</span></div>
+            <div class="card-body">
+                <h2>Pulse Runner</h2>
+                <p class="card-desc">Overdrive! 10 beat-synced circuits of pure chaos.</p>
+                <div class="card-bottom"><span class="card-tag">Rhythm Runner</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="neonflapper.html" class="card-link flapper" data-category="arcade" data-name="neon flapper data stream flappy bird drone" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <span class="new-badge">NEW</span>
+            <div class="card-thumb"><span class="thumb-icon">🐦</span></div>
+            <div class="card-body">
+                <h2>Neon Flapper</h2>
+                <p class="card-desc">Data Stream! Flap the drone through the firewall.</p>
+                <div class="card-bottom"><span class="card-tag">Flappy Arcade</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="nethacksiege.html" class="card-link nethack" data-category="arcade logic" data-name="nethack siege tower defense td defender" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <span class="new-badge">NEW</span>
+            <div class="card-thumb"><span class="thumb-icon">🛡️</span></div>
+            <div class="card-body">
+                <h2>NetHack Siege</h2>
+                <p class="card-desc">Defend the Mainframe! 20 nodes, 5 daemon bosses.</p>
+                <div class="card-bottom"><span class="card-tag">Tower Defense</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <!-- ════════════ ALL GAMES ════════════ -->
+        <div class="grid-section-title">🎮 All Games</div>
+
+        <a href="glitch_brawler.html" class="card-link glitch" data-category="fighting pvp" data-name="glitch brawler" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">💥</span></div>
+            <div class="card-body">
+                <h2>Glitch Brawler</h2>
+                <p class="card-desc">Corrupt your rivals in the arena!</p>
+                <div class="card-bottom"><span class="card-tag">PvP Fighting</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="glitch_strikers.html" class="card-link strikers" data-category="arcade fighting pvp" data-name="glitch strikers" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">⚔️</span></div>
+            <div class="card-body">
+                <h2>Glitch Strikers</h2>
+                <p class="card-desc">Breach the Megaplex! Co-Op enabled.</p>
+                <div class="card-bottom"><span class="card-tag">Beat 'Em Up</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="asteroids.html" class="card-link asteroids" data-category="arcade" data-name="quantum asteroids" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">☄️</span></div>
+            <div class="card-body">
+                <h2>Quantum Asteroids</h2>
+                <p class="card-desc">Blast through the asteroid field!</p>
+                <div class="card-bottom"><span class="card-tag">Space Shooter</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="tanks.html" class="card-link tanks" data-category="arcade pvp" data-name="plasma tanks" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">💣</span></div>
+            <div class="card-body">
+                <h2>Plasma Tanks</h2>
+                <p class="card-desc">Blast enemies, unlock skins!</p>
+                <div class="card-bottom"><span class="card-tag">PvP & PvE</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="runner.html" class="card-link cyber" data-category="arcade" data-name="cyber runner" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">🏃‍♂️</span></div>
+            <div class="card-body">
+                <h2>Cyber Runner</h2>
+                <p class="card-desc">Dash through the neon city!</p>
+                <div class="card-bottom"><span class="card-tag">Endless Runner</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="fps.html" class="card-link fps" data-category="arcade" data-name="system breach fps" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">🔫</span></div>
+            <div class="card-body">
+                <h2>System Breach</h2>
+                <p class="card-desc">Survive the glitching waves!</p>
+                <div class="card-bottom"><span class="card-tag">3D FPS</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="platformer.html" class="card-link platformer" data-category="arcade" data-name="neon jumper platformer" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">🏃</span></div>
+            <div class="card-body">
+                <h2>Neon Jumper</h2>
+                <p class="card-desc">Leap across the mainframe!</p>
+                <div class="card-bottom"><span class="card-tag">Platformer</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="racer.html" class="card-link racer" data-category="arcade" data-name="vaporwave racer racing" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">🏎️</span></div>
+            <div class="card-body">
+                <h2>Vaporwave Racer</h2>
+                <p class="card-desc">Master the drift, beat your rivals.</p>
+                <div class="card-bottom"><span class="card-tag">Drift Racing</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="snake.html" class="card-link snake" data-category="arcade" data-name="snake classic" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">🐍</span></div>
+            <div class="card-body">
+                <h2>Snake Classic</h2>
+                <p class="card-desc">Eat data, grow longer!</p>
+                <div class="card-bottom"><span class="card-tag">Arcade</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="clicker.html" class="card-link clicker" data-category="arcade" data-name="clicker frenzy" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">👆</span></div>
+            <div class="card-body">
+                <h2>Clicker Frenzy</h2>
+                <p class="card-desc">Click to mine tokens!</p>
+                <div class="card-bottom"><span class="card-tag">Arcade</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="reaction.html" class="card-link reaction" data-category="arcade" data-name="reaction tester reflex" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">⚡</span></div>
+            <div class="card-body">
+                <h2>Reaction Tester</h2>
+                <p class="card-desc">Test your raw reflexes!</p>
+                <div class="card-bottom"><span class="card-tag">Arcade</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="math.html" class="card-link math" data-category="logic" data-name="quick math" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">🧠</span></div>
+            <div class="card-body">
+                <h2>Quick Math</h2>
+                <p class="card-desc">Solve equations quickly!</p>
+                <div class="card-bottom"><span class="card-tag">Logic</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="tictactoe.html" class="card-link ttt" data-category="logic pvp" data-name="tic tac toe" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">⭕</span></div>
+            <div class="card-body">
+                <h2>Tic-Tac-Toe</h2>
+                <p class="card-desc">Classic X and O battles!</p>
+                <div class="card-bottom"><span class="card-tag">Logic</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="memory.html" class="card-link memory" data-category="logic" data-name="memory match cards" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">👁️</span></div>
+            <div class="card-body">
+                <h2>Memory Match</h2>
+                <p class="card-desc">Match the hidden cards!</p>
+                <div class="card-bottom"><span class="card-tag">Puzzle</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
+        <a href="guesser.html" class="card-link guesser" data-category="logic" data-name="code breaker guesser" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <div class="card-thumb"><span class="thumb-icon">🔐</span></div>
+            <div class="card-body">
+                <h2>Code Breaker</h2>
+                <p class="card-desc">Crack the secret vault!</p>
+                <div class="card-bottom"><span class="card-tag">Logic</span><span class="card-cta">Play ➔</span></div>
+            </div>
+        </a>
+
     </div>
 
     <a href="#" id="secret-casino-btn" class="hidden-ufo" onmouseenter="sfx.hover()" onclick="enterSpaceCasino(event)" title="???">🛸</a>
@@ -4502,7 +5134,7 @@ function awardDailyWinnerPrize(winnerData) {
 //  its line. Order here = order of the buttons.
 // ════════════════════════════════════════════════════════════════
 const SECRET_CINEMA_VIDEOS = [
-    { label: '🎵 Army Song',    src: 'loaddata/clip1.mp4' },
+    { label: '🎵 Army Song',     src: 'loaddata/clip1.mp4' },
     { label: '😂 Funny Moment', src: 'loaddata/clip2.mp4' },
     { label: '🛸 Mystery Vid',  src: 'loaddata/clip3.mp4' },
     // { label: '🔥 New Clip',  src: 'videos/yourfile.mp4' },   ← copy this line to add more

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>NetHack Siege | Megaplex Engine</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
@@ -111,7 +111,7 @@ kbd{background:#1a0530;padding:2px 5px;border-radius:2px;color:#5fffd4;font-fami
 .menu-overlay#hero-menu{background:radial-gradient(circle at 50% 30%,rgba(60,40,0,.4),rgba(4,1,10,.98) 70%);}
 #hero-menu .menu-btn{font-size:1.05em;padding:6px 16px;}
 .map-menu-overlay{background:radial-gradient(circle at 50% 30%,rgba(0,60,50,.4),rgba(4,1,10,.98) 70%);}
-.map-card{background:rgba(10,0,20,.9);border:2px solid #2a1640;width:200px;padding:10px;cursor:pointer;transition:.18s;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);}
+.map-card{background:rgba(10,0,20,.9);border:2px solid #2a1640;width:200px;min-height:200px;padding:10px;cursor:pointer;transition:.18s;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);}
 .map-card:hover{transform:translateY(-4px);border-color:#5fffd4;box-shadow:0 0 18px rgba(95,255,212,.35);}
 .map-card.selected{border-color:#feca57;box-shadow:0 0 24px rgba(254,202,87,.5);background:rgba(40,30,0,.3);}
 .map-card canvas{width:100%;height:90px;display:block;background:#04010a;border:1px solid #2a1640;margin-bottom:7px;}
@@ -134,6 +134,49 @@ kbd{background:#1a0530;padding:2px 5px;border-radius:2px;color:#5fffd4;font-fami
 .flash-overlay.damage{background:#ff003c;opacity:.28;}
 .flash-overlay.purge{background:#feca57;opacity:.4;}
 .flash-overlay.hero{background:#ffd700;opacity:.3;}
+.flash-overlay.hero{background:#ffd700;opacity:.3;}
+
+/* ═══════ MOBILE SUPPORT ═══════ */
+html,body{touch-action:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;}
+canvas{touch-action:none;}
+.tower-shop{touch-action:pan-x;}
+
+#rotate-hint{display:none;position:fixed;inset:0;z-index:9999;background:#04010a;
+  flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  font-family:'Orbitron',sans-serif;color:#5fffd4;padding:30px;}
+@media (max-width:900px) and (orientation:portrait){
+  #rotate-hint{display:flex;}
+}
+
+@media (max-width:768px){
+  .header-title{font-size:1.1em;letter-spacing:2px;}
+  header{padding:8px 12px;}
+  .back-btn{padding:6px 10px;font-size:.75em;}
+  .hud-stat{font-size:.8em;padding:5px 9px;}
+  .integrity-bar{width:150px;}
+  .ctrl-btn{padding:10px 14px;font-size:.78em;min-height:42px;}
+  .control-bar{bottom:96px;gap:6px;padding:0 6px;}
+  .tower-btn{min-width:78px;padding:8px 10px;}
+  .tower-btn .t-icon{font-size:1.7em;}
+  .tower-shop{height:92px;}
+  .tower-info{width:180px;font-size:.95em;right:6px;top:56px;}
+  .ti-btn{padding:10px;}
+  .menu-overlay{flex-direction:column;padding:16px;overflow-y:auto;justify-content:flex-start;}
+  .menu-left{max-width:100%;align-items:center;text-align:center;}
+  .menu-logo{font-size:2.2em;}
+  .menu-right{align-items:center;width:100%;}
+  .match-settings{width:100%;max-width:360px;}
+  .menu-btn{font-size:1.1em;}
+}
+
+@media (max-height:500px) and (orientation:landscape){
+  header{padding:5px 12px;}
+  .header-title{font-size:1em;}
+  .tower-shop{height:74px;}
+  .tower-btn{min-width:64px;padding:4px 7px;}
+  .ctrl-btn{padding:6px 11px;font-size:.72em;min-height:36px;}
+}
+</style>
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -142,7 +185,12 @@ kbd{background:#1a0530;padding:2px 5px;border-radius:2px;color:#5fffd4;font-fami
 <script src="coop-firebase.js"></script>   <!-- NEW -->
 </head>
 <body>
-<header>
+  <div id="rotate-hint">
+    <div style="font-size:3em;animation:flick 1s infinite;">⟳</div>
+    <h2 style="color:#c724b1;">ROTATE YOUR DEVICE</h2>
+    <p style="color:#a98bc4;">NetHack Siege plays best in landscape mode.</p>
+  </div>
+  <header>
 <a href="index.html" class="back-btn">⬅ Hub</a>
 <h2 class="header-title">NETHACK<span class="accent"> SIEGE</span></h2>
 <div style="font-family:'Orbitron',monospace;color:#8a6aa5;font-size:.95em;font-weight:bold;">🎟️ <span id="ui-tokens" style="color:#feca57;">0</span></div>
@@ -433,12 +481,17 @@ flak:{name:'Flak',icon:'✺',color:'#ff3b6b',cost:110,radius:18,shape:'burst',de
   levels:[{dmg:6,range:95,rate:.45,pellets:4,desc:'4 shards'},{dmg:9,range:110,rate:.38,pellets:6,desc:'6 shards'},{dmg:14,range:125,rate:.3,pellets:8,desc:'8 shards'},{dmg:22,range:145,rate:.24,pellets:12,detect:true,desc:'12 shards + DETECT'}]},
 venom:{name:'Venom',icon:'☣',color:'#7cff5f',cost:100,radius:18,shape:'spore',desc:'Corrosive damage-over-time.',
   levels:[{dmg:4,range:130,rate:.7,dot:6,dotDur:3,desc:'Poison DoT'},{dmg:7,range:150,rate:.6,dot:11,dotDur:3.5,desc:'Toxic DoT'},{dmg:12,range:170,rate:.5,dot:20,dotDur:4,desc:'Plague DoT'},{dmg:20,range:195,rate:.42,dot:34,dotDur:4.5,detect:true,desc:'Necrosis + DETECT'}]},
-sniper:{name:'Railgun',icon:'⌖',color:'#ffffff',cost:200,radius:18,shape:'rail',desc:'Infinite range. Massive single-shot.',
+  sniper:{name:'Railgun',icon:'⌖',color:'#ffffff',cost:200,radius:18,shape:'rail',losBlocked:true,desc:'Infinite range — but walls block the shot. Place with clear sightlines.',
   levels:[{dmg:60,range:9999,rate:1.8,desc:'Rail slug'},{dmg:110,range:9999,rate:1.5,desc:'Heavy slug'},{dmg:200,range:9999,rate:1.2,desc:'Tungsten core'},{dmg:380,range:9999,rate:.9,detect:true,desc:'Annihilation + DETECT'}]},
 sentinel:{name:'Sentinel',icon:'◎',color:'#00ffaa',cost:140,radius:18,shape:'eye',detector:true,desc:'Reveals cloaked intruders + light damage.',
   levels:[{dmg:6,range:160,rate:.7,detect:true,detectRange:160,desc:'Reveal aura'},{dmg:12,range:185,rate:.55,detect:true,detectRange:185,desc:'Wide scan'},{dmg:22,range:215,rate:.45,detect:true,detectRange:215,desc:'Deep recon'},{dmg:38,range:250,rate:.35,detect:true,detectRange:250,desc:'Omniscient grid'}]},
-mine:{name:'Data Vault',icon:'⛃',color:'#feca57',cost:130,radius:18,shape:'vault',income:true,desc:'Generates passive ◈ each wave. No attack.',
-  levels:[{dmg:0,range:0,rate:99,income:25,desc:'+25 ◈/wave'},{dmg:0,range:0,rate:99,income:50,desc:'+50 ◈/wave'},{dmg:0,range:0,rate:99,income:90,desc:'+90 ◈/wave'},{dmg:0,range:0,rate:99,income:160,desc:'+160 ◈/wave'}]},
+  mine:{name:'Data Vault',icon:'⛃',color:'#feca57',cost:130,radius:18,shape:'vault',income:true,desc:'Generates passive ◈ each wave. No attack.',
+  levels:[
+    {dmg:0,range:0,rate:99,income:25,desc:'+25 ◈/wave'},
+    {dmg:0,range:0,rate:99,income:70,desc:'+70 ◈/wave'},
+    {dmg:0,range:0,rate:99,income:160,desc:'+160 ◈/wave'},
+    {dmg:0,range:0,rate:99,income:340,desc:'+340 ◈/wave'}
+  ]},
 booster:{name:'Overclocker',icon:'⚛',color:'#e85fd4',cost:180,radius:18,shape:'core',buff:true,desc:'Buffs nearby towers. No direct attack.',
   levels:[{dmg:0,range:120,rate:99,buffMul:1.15,desc:'+15% nearby dmg'},{dmg:0,range:140,rate:99,buffMul:1.25,desc:'+25% nearby dmg'},{dmg:0,range:160,rate:99,buffMul:1.4,desc:'+40% nearby dmg'},{dmg:0,range:185,rate:99,buffMul:1.6,detect:true,desc:'+60% + DETECT'}]}
 };
@@ -451,46 +504,69 @@ var TILE=64,COLS=16,ROWS=8;
 // theme: bg colors + path colors per map for graphical variety
 // blocked: array of {c,r,w,h} tile-rects where towers CANNOT be placed (obstacles)
 var MAPS={
-  // ── TIER 1: BEGINNER (long, open, easy) ──
-  serpent:{name:'Serpent Net',tier:1,theme:'cyan',
-    path:[{c:-1,r:1},{c:4,r:1},{c:4,r:4},{c:9,r:4},{c:9,r:1},{c:13,r:1},{c:13,r:6},{c:2,r:6},{c:2,r:3},{c:-1,r:3}],blocked:[]},
-  meadow:{name:'Open Meadow',tier:1,theme:'green',
-    path:[{c:-1,r:2},{c:11,r:2},{c:11,r:5},{c:3,r:5},{c:3,r:7},{c:16,r:7}],blocked:[]},
-  loop:{name:'Lazy Loop',tier:1,theme:'cyan',
-    path:[{c:-1,r:3},{c:13,r:3},{c:13,r:1},{c:5,r:1},{c:5,r:6},{c:13,r:6},{c:13,r:4},{c:16,r:4}],blocked:[]},
+  // ════════ TIER 1 ════════
+  serpent:{name:'Serpent Net',tier:1,theme:'cyan',mapMul:1.0,gimmick:'A free SCAN node reveals cloaked intruders.',
+    path:[{c:-1,r:1},{c:4,r:1},{c:4,r:4},{c:9,r:4},{c:9,r:1},{c:13,r:1},{c:13,r:6},{c:2,r:6},{c:2,r:3},{c:-1,r:3}],
+    blocked:[],
+    features:[{type:'reveal',c:4,r:3,w:2,h:2}]},          // sits on the r:3-4 path bend
 
-  // ── TIER 2: INTERMEDIATE (medium length + a couple obstacles) ──
-  fork:{name:'Forked Relay',tier:2,theme:'purple',
+  meadow:{name:'Open Meadow',tier:1,theme:'green',mapMul:1.0,gimmick:'BOOST pads amplify towers placed on them.',
+    path:[{c:-1,r:2},{c:11,r:2},{c:11,r:5},{c:3,r:5},{c:3,r:7},{c:16,r:7}],
+    blocked:[],
+    features:[{type:'boost',c:5,r:3,w:2,h:1},{type:'boost',c:8,r:6,w:2,h:1}]}, // beside the path
+
+  loop:{name:'Lazy Loop',tier:1,theme:'cyan',mapMul:1.05,gimmick:'A scan beacon and a boost pad on the loop.',
+    path:[{c:-1,r:3},{c:13,r:3},{c:13,r:1},{c:5,r:1},{c:5,r:6},{c:13,r:6},{c:13,r:4},{c:16,r:4}],
+    blocked:[],
+    features:[{type:'reveal',c:5,r:1,w:2,h:2},{type:'boost',c:7,r:4,w:2,h:1}]}, // scan on top run
+
+  // ════════ TIER 2 ════════
+  fork:{name:'Forked Relay',tier:2,theme:'purple',mapMul:1.1,gimmick:'A data-pool splits the board — build around it.',
     path:[{c:-1,r:0},{c:7,r:0},{c:7,r:3},{c:2,r:3},{c:2,r:7},{c:12,r:7},{c:12,r:2},{c:16,r:2}],
-    blocked:[{c:9,r:4,w:2,h:2}]},
-  furnace:{name:'The Furnace',tier:2,theme:'fire',
+    blocked:[{c:9,r:4,w:2,h:2}],
+    features:[{type:'nobuild',c:4,r:4,w:2,h:2,kind:'water'},{type:'boost',c:13,r:0,w:2,h:1}]},
+
+  furnace:{name:'The Furnace',tier:2,theme:'fire',mapMul:1.15,gimmick:'Molten pools and a scorched core.',
     path:[{c:-1,r:0},{c:5,r:0},{c:5,r:6},{c:10,r:6},{c:10,r:1},{c:16,r:1}],
-    blocked:[{c:6,r:1,w:3,h:4}]},
-  vault:{name:'Cold Vault',tier:2,theme:'ice',
+    blocked:[{c:6,r:1,w:3,h:4}],
+    features:[{type:'nobuild',c:0,r:6,w:4,h:2,kind:'lava'},{type:'reveal',c:5,r:5,w:1,h:1}]}, // scan on path corner
+
+  vault:{name:'Cold Vault',tier:2,theme:'ice',mapMul:1.15,gimmick:'Frozen reservoirs lock down placement.',
     path:[{c:-1,r:6},{c:6,r:6},{c:6,r:1},{c:11,r:1},{c:11,r:6},{c:16,r:6}],
-    blocked:[{c:0,r:0,w:5,h:2},{c:12,r:2,w:4,h:4}]},
+    blocked:[{c:0,r:0,w:5,h:2}],
+    features:[{type:'nobuild',c:12,r:2,w:4,h:3,kind:'water'},{type:'boost',c:7,r:2,w:1,h:2}]},
 
-  // ── TIER 3: ADVANCED (shorter paths, big obstacles squeeze placement) ──
-  bottleneck:{name:'Bottleneck',tier:3,theme:'fire',
+  // ════════ TIER 3 ════════
+  bottleneck:{name:'Bottleneck',tier:3,theme:'fire',mapMul:1.2,gimmick:'Armor walls + lava force one killbox.',
     path:[{c:-1,r:4},{c:6,r:4},{c:6,r:1},{c:9,r:1},{c:9,r:7},{c:16,r:7}],
-    blocked:[{c:0,r:0,w:5,h:3},{c:0,r:5,w:5,h:3},{c:11,r:0,w:5,h:5}]},
-  citadel:{name:'The Citadel',tier:3,theme:'purple',
-    path:[{c:-1,r:0},{c:4,r:0},{c:4,r:7},{c:8,r:7},{c:8,r:0},{c:12,r:0},{c:12,r:7},{c:16,r:7}],
-    blocked:[{c:5,r:2,w:2,h:3},{c:9,r:2,w:2,h:3},{c:13,r:2,w:3,h:3}]},
-  shards:{name:'Frost Shards',tier:3,theme:'ice',
-    path:[{c:-1,r:3},{c:5,r:3},{c:5,r:6},{c:10,r:6},{c:10,r:2},{c:16,r:2}],
-    blocked:[{c:0,r:0,w:4,h:2},{c:6,r:0,w:4,h:2},{c:6,r:7,w:4,h:1},{c:11,r:3,w:5,h:4}]},
+    blocked:[{c:0,r:0,w:5,h:3},{c:11,r:0,w:5,h:5}],
+    features:[{type:'nobuild',c:0,r:5,w:5,h:3,kind:'lava'},{type:'reveal',c:9,r:3,w:1,h:2}]}, // scan on vertical run
 
-  // ── TIER 4: EXPERT (very short, brutal placement, maze obstacles) ──
-  needle:{name:'The Needle',tier:4,theme:'void',
+  citadel:{name:'The Citadel',tier:3,theme:'purple',mapMul:1.25,gimmick:'Fortress pillars and a void rift.',
+    path:[{c:-1,r:0},{c:4,r:0},{c:4,r:7},{c:8,r:7},{c:8,r:0},{c:12,r:0},{c:12,r:7},{c:16,r:7}],
+    blocked:[{c:5,r:2,w:2,h:3},{c:9,r:2,w:2,h:3},{c:13,r:2,w:3,h:3}],
+    features:[{type:'hazard',c:0,r:5,w:4,h:3},{type:'boost',c:13,r:0,w:3,h:1}]},
+
+  shards:{name:'Frost Shards',tier:3,theme:'ice',mapMul:1.25,gimmick:'Glacier walls and a deep lake.',
+    path:[{c:-1,r:3},{c:5,r:3},{c:5,r:6},{c:10,r:6},{c:10,r:2},{c:16,r:2}],
+    blocked:[{c:0,r:0,w:4,h:2},{c:6,r:0,w:4,h:2}],
+    features:[{type:'nobuild',c:11,r:3,w:5,h:3,kind:'water'},{type:'reveal',c:5,r:4,w:1,h:2}]}, // scan on vertical run
+
+  // ════════ TIER 4 ════════
+  needle:{name:'The Needle',tier:4,theme:'void',mapMul:1.3,gimmick:'A razor build-corridor between rifts.',
     path:[{c:-1,r:4},{c:7,r:4},{c:7,r:2},{c:9,r:2},{c:9,r:6},{c:16,r:6}],
-    blocked:[{c:0,r:0,w:6,h:3},{c:0,r:6,w:6,h:2},{c:8,r:0,w:8,h:1},{c:10,r:0,w:6,h:5},{c:0,r:5,w:6,h:1}]},
-  crucible:{name:'Crucible',tier:4,theme:'fire',
+    blocked:[{c:0,r:0,w:6,h:3},{c:10,r:0,w:6,h:5}],
+    features:[{type:'hazard',c:0,r:6,w:6,h:2},{type:'reveal',c:7,r:2,w:2,h:1}]}, // scan on top connector
+
+  crucible:{name:'Crucible',tier:4,theme:'fire',mapMul:1.35,gimmick:'A central lava forge ringed by slag.',
     path:[{c:-1,r:1},{c:6,r:1},{c:6,r:6},{c:11,r:6},{c:11,r:1},{c:16,r:1}],
-    blocked:[{c:0,r:3,w:6,h:5},{c:7,r:0,w:4,h:5},{c:12,r:3,w:4,h:5}]},
-  singularity:{name:'Singularity',tier:4,theme:'void',
+    blocked:[{c:0,r:3,w:6,h:5},{c:12,r:3,w:4,h:5}],
+    features:[{type:'nobuild',c:7,r:0,w:4,h:5,kind:'lava'},{type:'reveal',c:11,r:3,w:1,h:2}]}, // scan on right run
+
+  singularity:{name:'Singularity',tier:4,theme:'void',mapMul:1.4,gimmick:'Reality fractures — barely any ground.',
     path:[{c:-1,r:0},{c:10,r:0},{c:10,r:7},{c:5,r:7},{c:5,r:3},{c:16,r:3}],
-    blocked:[{c:0,r:2,w:4,h:6},{c:6,r:4,w:4,h:4},{c:11,r:0,w:5,h:3},{c:11,r:4,w:5,h:4},{c:0,r:1,w:9,h:1}]}
+    blocked:[{c:0,r:2,w:4,h:6},{c:11,r:4,w:5,h:4}],
+    features:[{type:'hazard',c:6,r:4,w:4,h:3},{type:'reveal',c:10,r:4,w:1,h:2}]}  // scan on vertical run
 };
 var MAP_ORDER=['serpent','meadow','loop','fork','furnace','vault','bottleneck','citadel','shards','needle','crucible','singularity'];
 var TIER_INFO={
@@ -572,8 +648,9 @@ function buildWave(w,diffMul){
     if(w>=11)comp.push({type:'ghost',count:Math.floor(t/6),gap:.8});
     if(w>=12)comp.push({type:'juggernaut',count:Math.floor(t/8),gap:1.4});
   }
-  var hpMul=1+(w-1)*.18*diffMul;
-  if(G.endless)hpMul=1+(w-1)*.22*diffMul+Math.pow(w/15,1.8)*diffMul;
+  var mm=(G.map&&G.map.mapMul)||1;          // ← per-map difficulty
+  var hpMul=(1+(w-1)*.18*diffMul)*mm;
+  if(G.endless)hpMul=(1+(w-1)*.22*diffMul+Math.pow(w/15,1.8)*diffMul)*mm;
   return {num:w,comp:comp,hpMul:hpMul,reward:20+w*5};
 }
 
@@ -622,6 +699,7 @@ function tileCenter(c,r){return {x:c*TILE+TILE/2,y:r*TILE+TILE/2};}
 function buildPath(mapKey){
   var map=MAPS[mapKey];G.map=map;G.pathPoints=[];G.pathTiles={};G.pathSegLens=[];G.pathTotalLen=0;
   G.blocked=map.blocked||[];
+  G.features=map.features||[];
   for(var i=0;i<map.path.length;i++){var p=map.path[i];G.pathPoints.push(tileCenter(p.c,p.r));}
   for(var i=0;i<G.pathPoints.length-1;i++){var a=G.pathPoints[i],b=G.pathPoints[i+1];var len=Math.hypot(b.x-a.x,b.y-a.y);G.pathSegLens.push(len);G.pathTotalLen+=len;}
   for(var i=0;i<map.path.length-1;i++){var a=map.path[i],b=map.path[i+1];var dc=Math.sign(b.c-a.c),dr=Math.sign(b.r-a.r);var cc=a.c,rr=a.r;G.pathTiles[cc+','+rr]=true;while(cc!==b.c||rr!==b.r){cc+=dc;rr+=dr;G.pathTiles[cc+','+rr]=true;}}
@@ -632,6 +710,44 @@ function inBlockedZone(x,y){
     var x1=b.c*TILE,y1=b.r*TILE,x2=(b.c+b.w)*TILE,y2=(b.r+b.h)*TILE;
     if(x>=x1&&x<=x2&&y>=y1&&y<=y2)return true;}
   return false;
+}
+function inNobuildZone(x,y){
+  if(!G.features)return false;
+  for(var i=0;i<G.features.length;i++){var f=G.features[i];
+    if(f.type!=='nobuild')continue;
+    var x1=f.c*TILE,y1=f.r*TILE,x2=(f.c+f.w)*TILE,y2=(f.r+f.h)*TILE;
+    if(x>=x1&&x<=x2&&y>=y1&&y<=y2)return true;}
+  return false;
+}
+// Does the straight line from (x1,y1)→(x2,y2) cross any blocked wall rect?
+function lineHitsWall(x1,y1,x2,y2){
+  if(!G.blocked||!G.blocked.length)return false;
+  for(var i=0;i<G.blocked.length;i++){
+    var b=G.blocked[i];
+    var rx1=b.c*TILE, ry1=b.r*TILE, rx2=(b.c+b.w)*TILE, ry2=(b.r+b.h)*TILE;
+    if(segIntersectsRect(x1,y1,x2,y2,rx1,ry1,rx2,ry2))return true;
+  }
+  return false;
+}
+
+// Segment (x1,y1)-(x2,y2) vs axis-aligned rect [rx1,ry1,rx2,ry2]
+function segIntersectsRect(x1,y1,x2,y2,rx1,ry1,rx2,ry2){
+  // quick check: either endpoint inside the rect
+  if((x1>=rx1&&x1<=rx2&&y1>=ry1&&y1<=ry2)||(x2>=rx1&&x2<=rx2&&y2>=ry1&&y2<=ry2))return true;
+  // test against all 4 rect edges
+  return segSeg(x1,y1,x2,y2,rx1,ry1,rx2,ry1) || // top
+         segSeg(x1,y1,x2,y2,rx2,ry1,rx2,ry2) || // right
+         segSeg(x1,y1,x2,y2,rx2,ry2,rx1,ry2) || // bottom
+         segSeg(x1,y1,x2,y2,rx1,ry2,rx1,ry1);   // left
+}
+
+// Do segments (p1-p2) and (p3-p4) intersect?
+function segSeg(x1,y1,x2,y2,x3,y3,x4,y4){
+  var d=(x2-x1)*(y4-y3)-(y2-y1)*(x4-x3);
+  if(d===0)return false; // parallel
+  var t=((x3-x1)*(y4-y3)-(y3-y1)*(x4-x3))/d;
+  var u=((x3-x1)*(y2-y1)-(y3-y1)*(x2-x1))/d;
+  return t>=0&&t<=1&&u>=0&&u<=1;
 }
 function distToPath(x,y){
   var min=99999;
@@ -657,15 +773,25 @@ function allUnits(){
   return u;
 }
 function isDetected(x,y){
+  // reveal feature zones auto-detect
+  if(G.features){for(var i=0;i<G.features.length;i++){var f=G.features[i];
+    if(f.type!=='reveal')continue;
+    if(x>=f.c*TILE&&x<=(f.c+f.w)*TILE&&y>=f.r*TILE&&y<=(f.r+f.h)*TILE)return true;}}
+  // ...existing unit-based detection unchanged...
   var units=allUnits();
-  for(var i=0;i<units.length;i++){var t=units[i];var st=t.stats();
+  for(var j=0;j<units.length;j++){var t=units[j];var st=t.stats();
     if(st.detect){var rng=st.detectRange||st.range;if(Math.hypot(x-t.x,y-t.y)<=rng)return true;}}
   return false;
 }
 function buffMultiplierAt(x,y){
-  var best=1;var units=allUnits();
-  for(var i=0;i<units.length;i++){var t=units[i];var st=t.stats();if(!st.buffMul)continue;
-    if(Math.hypot(x-t.x,y-t.y)<=st.range)best=Math.max(best,st.buffMul);} // only strongest applies
+  var best=1;
+  if(G.features){for(var i=0;i<G.features.length;i++){var f=G.features[i];
+    if(f.type!=='boost')continue;
+    if(x>=f.c*TILE&&x<=(f.c+f.w)*TILE&&y>=f.r*TILE&&y<=(f.r+f.h)*TILE)best=Math.max(best,1.25);}}
+  // ...existing booster-tower logic unchanged...
+  var units=allUnits();
+  for(var j=0;j<units.length;j++){var t=units[j];var st=t.stats();if(!st.buffMul)continue;
+    if(Math.hypot(x-t.x,y-t.y)<=st.range)best=Math.max(best,st.buffMul);}
   return best;
 }
 
@@ -747,6 +873,7 @@ Tower.prototype.selectTarget=function(st){
   for(var i=0;i<G.enemies.length;i++){var e=G.enemies[i];if(e.dead||e.reached)continue;
     if(Math.hypot(e.x-this.x,e.y-this.y)>st.range)continue;
     if(!e.targetable(this.x,this.y,st.detect))continue;
+    if(lineHitsWall(this.x,this.y,e.x,e.y))continue; // ← walls block ALL towers' line of fire
     candidates.push(e);}
   if(!candidates.length)return null;
   if(this.targetMode==='first')candidates.sort(function(a,b){return pathProgress(b)-pathProgress(a);});
@@ -771,7 +898,7 @@ Tower.prototype.fire=function(){
   if(this.typeKey==='sniper'){t.takeDamage(dmg);G.particles.push({chain:[{x:t.x,y:t.y}],src:{x:this.x,y:this.y},life:.12,maxLife:.12,tesla:true});spawnParticles(t.x,t.y,'#fff',12,true);screenShakeAmt=4;sfx.beam();return;}
   if(this.typeKey==='venom'){t.takeDamage(dmg);t.dotDmg=st.dot*dmgMul;t.dotTimer=st.dotDur;spawnParticles(t.x,t.y,'#7cff5f',6,false);sfx.viral();return;}
   if(this.typeKey==='flak'){var dx0=t.x-this.x,dy0=t.y-this.y,base=Math.atan2(dy0,dx0);for(var p=0;p<st.pellets;p++){var spread=base+(rnd()-.5)*0.9;var spd=600;G.projectiles.push({x:this.x,y:this.y,vx:Math.cos(spread)*spd,vy:Math.sin(spread)*spd,dmg:dmg,splash:0,color:this.def.color,dead:false,size:3,type:'flak',detect:st.detect,maxDist:st.range,traveled:0});}sfx.shoot();return;}
-  if(this.typeKey==='cryo'){var self=this;var doAoe=st.aoe||this.level>=2;var tg=doAoe?G.enemies.filter(function(e){if(e.dead||e.reached)return false;if(!e.targetable(self.x,self.y,st.detect))return false;return Math.hypot(e.x-self.x,e.y-self.y)<=st.range;}):[t];tg.forEach(function(e){e.takeDamage(dmg);e.slowFactor=st.slow;e.slowTimer=st.slowDur;});spawnParticles(this.x,this.y,'#48dbfb',8,false);sfx.shoot();return;}
+  if(this.typeKey==='cryo'){var self=this;var doAoe=st.aoe||this.level>=2;var tg=doAoe?G.enemies.filter(function(e){if(e.dead||e.reached)return false;if(!e.targetable(self.x,self.y,st.detect))return false;if(lineHitsWall(self.x,self.y,e.x,e.y))return false;return Math.hypot(e.x-self.x,e.y-self.y)<=st.range;}):[t];tg.forEach(function(e){e.takeDamage(dmg);e.slowFactor=st.slow;e.slowTimer=st.slowDur;});spawnParticles(this.x,this.y,'#48dbfb',8,false);sfx.shoot();return;}
   if(this.typeKey==='arc'){var self=this;var ch=st.chain;var chained=[t],cur=t;cur.takeDamage(dmg);for(var c=1;c<ch;c++){var nx=null,nd=130;for(var i=0;i<G.enemies.length;i++){var e=G.enemies[i];if(e.dead||e.reached||chained.indexOf(e)!==-1)continue;if(!e.targetable(self.x,self.y,st.detect))continue;var dist=Math.hypot(e.x-cur.x,e.y-cur.y);if(dist<nd){nd=dist;nx=e;}}if(!nx)break;nx.takeDamage(dmg*.8);chained.push(nx);cur=nx;}G.particles.push({chain:chained.map(function(e){return{x:e.x,y:e.y};}),src:{x:this.x,y:this.y},life:.16,maxLife:.16,tesla:true});sfx.beam();return;}
   var spd=this.typeKey==='mortar'?440:720;var dx=t.x-this.x,dy=t.y-this.y,dist=Math.hypot(dx,dy)||1;
   G.projectiles.push({x:this.x,y:this.y,vx:(dx/dist)*spd,vy:(dy/dist)*spd,dmg:dmg,splash:st.splash||0,color:this.def.color,dead:false,size:this.typeKey==='mortar'?7:4,type:this.typeKey,detect:st.detect});
@@ -872,6 +999,7 @@ Hero.prototype.activateAbility=function(){
 // ═══════════════════════════════════════════════════════════════
 function updateProjectiles(dt){
   for(var i=G.projectiles.length-1;i>=0;i--){var p=G.projectiles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;
+    if(inBlockedZone(p.x,p.y)){G.projectiles.splice(i,1);continue;} // ← projectile hits wall, dies
     if(p.maxDist){p.traveled+=Math.hypot(p.vx,p.vy)*dt;if(p.traveled>p.maxDist){G.projectiles.splice(i,1);continue;}}
     var hit=false;
     for(var j=0;j<G.enemies.length;j++){var e=G.enemies[j];if(e.dead||e.reached)continue;if(!e.targetable(p.x,p.y,p.detect))continue;
@@ -907,34 +1035,148 @@ function drawParticles(){
 // ═══════════════════════════════════════════════════════════════
 function drawBackground(){
   var th=curTheme();
-  ctx.fillStyle=th.bg;ctx.fillRect(0,0,1024,600);
+  // base gradient instead of flat fill
+  var grad=ctx.createRadialGradient(512,256,80,512,256,700);
+  grad.addColorStop(0,th.bg);
+  grad.addColorStop(1,'#000');
+  ctx.fillStyle=grad;ctx.fillRect(0,0,1024,600);
+
   G.gridPulse+=.02;
+
+  // ── faint base grid ──
   ctx.strokeStyle=th.grid;ctx.lineWidth=1;
   for(var c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(c*TILE,0);ctx.lineTo(c*TILE,ROWS*TILE);ctx.stroke();}
   for(var r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*TILE);ctx.lineTo(COLS*TILE,r*TILE);ctx.stroke();}
+
+  // ── glowing node dots at grid intersections (circuit-board look) ──
+  var pulse=(Math.sin(G.gridPulse)*.5+.5);
+  ctx.fillStyle=th.glow;
+  for(var c=0;c<=COLS;c+=2){
+    for(var r=0;r<=ROWS;r+=2){
+      ctx.globalAlpha=.06+pulse*.04;
+      ctx.beginPath();ctx.arc(c*TILE,r*TILE,2,0,6.28);ctx.fill();
+    }
+  }
+  ctx.globalAlpha=1;
+}
+function drawPlaceableZones(){
+  if(G.state!=='playing')return;
+  var th=curTheme();
+  for(var c=0;c<COLS;c++){
+    for(var r=0;r<ROWS;r++){
+      var cx=c*TILE+TILE/2, cy=r*TILE+TILE/2;
+      // is the CENTER of this tile a valid build spot? (cheap heuristic)
+      var buildable = distToPath(cx,cy)>=TILE*.45 && !inBlockedZone(cx,cy);
+      if(!buildable)continue;
+            // subtle fill so buildable area reads as "the board"
+            ctx.fillStyle=th.glow;ctx.globalAlpha=.025;
+      roundRectPath(c*TILE+4,r*TILE+4,TILE-8,TILE-8,8);ctx.fill();
+      // tiny corner brackets = "deployment slot"
+      ctx.globalAlpha=.18;ctx.strokeStyle=th.glow;ctx.lineWidth=1.5;
+      var x=c*TILE+5,y=r*TILE+5,s=8,e=TILE-10;
+      ctx.beginPath();
+      ctx.moveTo(x,y+s);ctx.lineTo(x,y);ctx.lineTo(x+s,y);                 // TL
+      ctx.moveTo(x+e-s,y);ctx.lineTo(x+e,y);ctx.lineTo(x+e,y+s);           // TR
+      ctx.moveTo(x+e,y+e-s);ctx.lineTo(x+e,y+e);ctx.lineTo(x+e-s,y+e);     // BR
+      ctx.moveTo(x+s,y+e);ctx.lineTo(x,y+e);ctx.lineTo(x,y+e-s);           // BL
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha=1;
 }
 function drawBlocked(){
-  if(!G.blocked||!G.blocked.length)return;var th=curTheme();
+  if(!G.blocked||!G.blocked.length)return;
+  var pulse=(Math.sin(Date.now()/400)*.5+.5);
   G.blocked.forEach(function(b){
     var x=b.c*TILE,y=b.r*TILE,w=b.w*TILE,h=b.h*TILE;
     ctx.save();
-    ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(x,y,w,h);
-    // glowing border
-    ctx.strokeStyle=th.glow;ctx.globalAlpha=.35;ctx.lineWidth=2;ctx.strokeRect(x+2,y+2,w-4,h-4);
-    // diagonal hazard hatch
-    ctx.globalAlpha=.12;ctx.beginPath();
-    for(var i=-h;i<w;i+=14){ctx.moveTo(x+i,y);ctx.lineTo(x+i+h,y+h);}
-    ctx.strokeStyle=th.glow;ctx.stroke();
+    // rounded armored body
+    var g=ctx.createLinearGradient(x,y,x,y+h);
+    g.addColorStop(0,'rgba(28,8,38,.96)');
+    g.addColorStop(1,'rgba(10,3,16,.98)');
+    ctx.fillStyle=g;roundRectPath(x+3,y+3,w-6,h-6,16);ctx.fill();
+    // inner panel
+    ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=1;roundRectPath(x+8,y+8,w-16,h-16,12);ctx.stroke();
+    // pulsing danger border
+    ctx.strokeStyle='#ff3b6b';ctx.globalAlpha=.35+pulse*.35;ctx.lineWidth=2.5;
+    ctx.shadowBlur=12;ctx.shadowColor='#ff3b6b';roundRectPath(x+3,y+3,w-6,h-6,16);ctx.stroke();
+    ctx.shadowBlur=0;ctx.globalAlpha=1;
+    // hazard stripes clipped to rounded shape
+    roundRectPath(x+3,y+3,w-6,h-6,16);ctx.clip();
+    ctx.globalAlpha=.07;ctx.strokeStyle='#ff3b6b';ctx.lineWidth=6;
+    for(var i=-h;i<w+h;i+=22){ctx.beginPath();ctx.moveTo(x+i,y);ctx.lineTo(x+i-h,y+h);ctx.stroke();}
+    ctx.globalAlpha=1;
+    ctx.restore();
+  });
+}
+function drawFeatures(){
+  if(!G.features||!G.features.length)return;
+  var t=Date.now()/1000;
+  G.features.forEach(function(f){
+    var x=f.c*TILE,y=f.r*TILE,w=f.w*TILE,h=f.h*TILE;
+    ctx.save();
+    if(f.type==='reveal'){
+      var p=Math.sin(t*2)*.5+.5;
+      ctx.fillStyle='rgba(0,255,170,'+(0.05+p*0.06)+')';roundRectPath(x+4,y+4,w-8,h-8,12);ctx.fill();
+      ctx.strokeStyle='#00ffaa';ctx.globalAlpha=.4;ctx.lineWidth=2;ctx.setLineDash([6,6]);roundRectPath(x+4,y+4,w-8,h-8,12);ctx.stroke();ctx.setLineDash([]);
+      // sweeping radar line
+      ctx.globalAlpha=.5;ctx.strokeStyle='#00ffaa';ctx.lineWidth=1.5;
+      var cx=x+w/2,cy=y+h/2,ang=t*1.5,rr=Math.min(w,h)/2-6;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(ang)*rr,cy+Math.sin(ang)*rr);ctx.stroke();
+    }
+    else if(f.type==='boost'){
+      var p=Math.sin(t*3)*.5+.5;
+      ctx.fillStyle='rgba(232,95,212,'+(0.06+p*0.06)+')';roundRectPath(x+4,y+4,w-8,h-8,12);ctx.fill();
+      ctx.strokeStyle='#e85fd4';ctx.globalAlpha=.5;ctx.lineWidth=2;roundRectPath(x+4,y+4,w-8,h-8,12);ctx.stroke();
+      // upward chevrons
+      ctx.globalAlpha=.5;ctx.strokeStyle='#e85fd4';ctx.lineWidth=2;
+      var cx=x+w/2,off=(t*20)%20;
+      for(var cy2=y+h-6;cy2>y+4;cy2-=12){var yy=cy2-off;ctx.beginPath();ctx.moveTo(cx-7,yy+5);ctx.lineTo(cx,yy);ctx.lineTo(cx+7,yy+5);ctx.stroke();}
+    }
+    else if(f.type==='nobuild'){
+      var col=f.kind==='lava'?'#ff6b35':'#48dbfb';
+      var g=ctx.createLinearGradient(x,y,x,y+h);
+      g.addColorStop(0,f.kind==='lava'?'rgba(80,20,0,.85)':'rgba(0,40,70,.8)');
+      g.addColorStop(1,f.kind==='lava'?'rgba(40,8,0,.9)':'rgba(0,20,40,.85)');
+      ctx.fillStyle=g;roundRectPath(x+2,y+2,w-4,h-4,14);ctx.fill();
+      // organic wavy liquid surface (clipped to rounded shape)
+      roundRectPath(x+2,y+2,w-4,h-4,14);ctx.clip();
+      ctx.strokeStyle=col;ctx.globalAlpha=.35;ctx.lineWidth=1.5;
+      for(var wy=y+10;wy<y+h;wy+=11){ctx.beginPath();for(var wx=x;wx<=x+w;wx+=6){var o=Math.sin((wx*.06)+(t*2)+wy*.3)*2.5;if(wx===x)ctx.moveTo(wx,wy+o);else ctx.lineTo(wx,wy+o);}ctx.stroke();}
+      // bubbles
+      ctx.fillStyle=col;ctx.globalAlpha=.3;
+      for(var bi=0;bi<3;bi++){var bx=x+((bi*53+t*30)%w),by=y+h-((t*25+bi*40)%h);ctx.beginPath();ctx.arc(bx,by,2,0,6.28);ctx.fill();}
+    }
+    else if(f.type==='hazard'){
+      var th=curTheme();var p=Math.sin(t*4)*.5+.5;
+      ctx.fillStyle=th.glow;ctx.globalAlpha=.04+p*.06;roundRectPath(x+3,y+3,w-6,h-6,14);ctx.fill();
+      ctx.strokeStyle=th.glow;ctx.globalAlpha=.25+p*.2;ctx.lineWidth=2;ctx.setLineDash([4,10]);roundRectPath(x+3,y+3,w-6,h-6,14);ctx.stroke();ctx.setLineDash([]);
+    }
     ctx.globalAlpha=1;ctx.restore();
   });
 }
 function drawPath(){
   var th=curTheme();
-  ctx.strokeStyle=th.path;ctx.lineWidth=TILE*.5;ctx.lineCap='round';ctx.lineJoin='round';
+  // outer glow channel
+  ctx.strokeStyle=th.path;ctx.lineWidth=TILE*.55;ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.shadowBlur=18;ctx.shadowColor=th.glow;
   ctx.beginPath();G.pathPoints.forEach(function(p,i){if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);});ctx.stroke();
-  ctx.strokeStyle=th.dash;ctx.lineWidth=3;ctx.setLineDash([8,16]);ctx.lineDashOffset=-(Date.now()/30)%24;
-  ctx.beginPath();G.pathPoints.forEach(function(p,i){if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);});ctx.stroke();ctx.setLineDash([]);
+  ctx.shadowBlur=0;
+
+  // dark inner channel
+  ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=TILE*.34;
+  ctx.beginPath();G.pathPoints.forEach(function(p,i){if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);});ctx.stroke();
+
+  // flowing data dashes
+  ctx.strokeStyle=th.dash;ctx.lineWidth=3;ctx.setLineDash([10,18]);ctx.lineDashOffset=-(Date.now()/22)%28;
+  ctx.shadowBlur=8;ctx.shadowColor=th.dash;
+  ctx.beginPath();G.pathPoints.forEach(function(p,i){if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);});ctx.stroke();
+  ctx.setLineDash([]);ctx.shadowBlur=0;
+
+  // ── spawn portal (your existing ⊳) ──
   var s=G.pathPoints[0];ctx.fillStyle='#ff3b6b';ctx.shadowBlur=15;ctx.shadowColor='#ff3b6b';ctx.font='22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('⊳',Math.max(20,s.x),s.y);ctx.shadowBlur=0;
+
+  // ── core (your existing ⬢ — unchanged) ──
   var end=G.pathPoints[G.pathPoints.length-1];var pulse=1+Math.sin(Date.now()/250)*.12;
   ctx.save();ctx.translate(end.x,end.y);
   var coreCol=G.health>30?th.glow:'#ff3b6b';
@@ -949,6 +1191,7 @@ function canPlaceAt(x,y,radius){
   if(x<radius||x>1024-radius||y<radius||y>ROWS*TILE-radius)return false;
   if(distToPath(x,y)<TILE*.45)return false;
   if(inBlockedZone(x,y))return false; // ← NEW: can't build on obstacles
+  if(inNobuildZone(x,y))return false;   // ← can't build on water/lava
   var units=allUnits();
   for(var i=0;i<units.length;i++){var t=units[i];if(Math.hypot(x-t.x,y-t.y)<radius+(t.def.radius||30))return false;}
   return true;
@@ -972,6 +1215,17 @@ function drawSelectedRange(){
   if(st.range>0){ctx.strokeStyle='rgba(254,202,87,.5)';ctx.lineWidth=2;ctx.setLineDash([6,6]);ctx.beginPath();ctx.arc(t.x,t.y,st.range,0,6.28);ctx.stroke();ctx.setLineDash([]);}
   if(st.detect){ctx.strokeStyle='rgba(0,255,170,.4)';ctx.setLineDash([4,8]);ctx.beginPath();ctx.arc(t.x,t.y,st.detectRange||st.range,0,6.28);ctx.stroke();ctx.setLineDash([]);}
   ctx.strokeStyle=t.isHero?'#ffd700':'#feca57';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,(t.def.radius||30)+4,0,6.28);ctx.stroke();
+}
+// rounded-rect path helper
+function roundRectPath(x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1193,6 +1447,50 @@ function canvasCoords(clientX,clientY){
 }
 canvas.addEventListener('mousemove',function(e){var p=canvasCoords(e.clientX,e.clientY);G.mouseX=p.x;G.mouseY=p.y;});
 canvas.addEventListener('contextmenu',function(e){e.preventDefault();G.selectedTowerType=null;G.selectedTower=null;G.placingHero=false;drag.active=false;hideTowerInfo();refreshShopUI();});
+// ═══════ TOUCH SUPPORT (mobile) ═══════
+var touchPlacing=false;
+
+// Unlock audio on first interaction (mobile autoplay policy)
+['touchstart','click'].forEach(function(ev){
+  document.body.addEventListener(ev,function _unlock(){
+    initAudio();
+    document.body.removeEventListener(ev,_unlock);
+  },{once:true});
+});
+
+canvas.addEventListener('touchstart',function(e){
+  e.preventDefault();
+  if(G.state!=='playing')return;
+  var t=e.touches[0];
+  var p=canvasCoords(t.clientX,t.clientY);
+  G.mouseX=p.x;G.mouseY=p.y;
+  if(G.placingHero){ placeHero(p.x,p.y); return; }
+  if(G.selectedTowerType){ drag.active=true; touchPlacing=true; return; }
+  var ex=towerAtPoint(p.x,p.y);
+  if(ex){ selectPlacedTower(ex); return; }
+  G.selectedTower=null; hideTowerInfo();
+},{passive:false});
+
+canvas.addEventListener('touchmove',function(e){
+  e.preventDefault();
+  var t=e.touches[0];
+  var p=canvasCoords(t.clientX,t.clientY);
+  G.mouseX=p.x;G.mouseY=p.y;
+},{passive:false});
+
+canvas.addEventListener('touchend',function(e){
+  e.preventDefault();
+  if(G.state!=='playing')return;
+  if(touchPlacing && G.selectedTowerType){
+    placeTower(G.mouseX,G.mouseY);
+  }
+  drag.active=false; touchPlacing=false;
+},{passive:false});
+
+canvas.addEventListener('touchcancel',function(e){
+  drag.active=false; touchPlacing=false;
+});
+// ═══════ END TOUCH SUPPORT ═══════
 canvas.addEventListener('mousedown',function(e){
   if(G.state!=='playing')return;var p=canvasCoords(e.clientX,e.clientY);G.mouseX=p.x;G.mouseY=p.y;
   if(G.placingHero){placeHero(p.x,p.y);return;}
@@ -1315,7 +1613,13 @@ function loop(timestamp){
   ctx.fillStyle='#04010a';ctx.fillRect(0,0,1024,600); // clear full canvas (UI reserve area)
   ctx.save();var sx=0,sy=0;if(screenShakeAmt>0){sx=(Math.random()-.5)*screenShakeAmt;sy=(Math.random()-.5)*screenShakeAmt;screenShakeAmt*=.9;if(screenShakeAmt<.5)screenShakeAmt=0;}ctx.translate(sx,sy);
   ctx.translate(WORLD.offX,WORLD.offY);ctx.scale(WORLD.scale,WORLD.scale); // ← world view transform
-  drawBackground();drawBlocked();drawPath();drawSelectedRange();drawHover();
+  drawBackground();
+drawPlaceableZones();   // ← NEW
+drawBlocked();
+drawFeatures();
+drawPath();
+drawSelectedRange();
+drawHover();
   for(var i=0;i<G.towers.length;i++)G.towers[i].draw();
   if(G.hero)G.hero.draw();
 if(G.allyHero)G.allyHero.draw();  // ← ADD
@@ -1347,7 +1651,9 @@ function fitGameToScreen(){
   wrapper.style.transform='scale('+scale+')';
 }
 window.addEventListener('resize',function(){fitGameToScreen();computeWorldView();});
-window.addEventListener('orientationchange',function(){fitGameToScreen();computeWorldView();});
+window.addEventListener('orientationchange',function(){
+  setTimeout(function(){fitGameToScreen();computeWorldView();},300);
+});
 fitGameToScreen();computeWorldView();
 // ── Clean up coop room if the player closes/refreshes the tab mid-game ──
 window.addEventListener('beforeunload',function(){
@@ -1399,6 +1705,17 @@ function drawMapPreview(cnv,mapKey){
     c.fillStyle='rgba(0,0,0,.5)';c.fillRect(pad+b.c*sx,pad+b.r*sy,b.w*sx,b.h*sy);
     c.strokeStyle=th.glow;c.globalAlpha=.4;c.lineWidth=1;c.strokeRect(pad+b.c*sx+1,pad+b.r*sy+1,b.w*sx-2,b.h*sy-2);c.globalAlpha=1;
   });
+    // features (reveal/boost/water/lava/hazard)
+    if(m.features)m.features.forEach(function(f){
+    var fx=pad+f.c*sx,fy=pad+f.r*sy,fw=f.w*sx,fh=f.h*sy;
+    var col=f.type==='reveal'?'#00ffaa':
+            f.type==='boost'?'#e85fd4':
+            f.type==='nobuild'?(f.kind==='lava'?'#ff6b35':'#48dbfb'):
+            th.glow;
+    c.fillStyle=col;c.globalAlpha=.18;c.fillRect(fx,fy,fw,fh);
+    c.strokeStyle=col;c.globalAlpha=.5;c.lineWidth=1;c.strokeRect(fx+1,fy+1,fw-2,fh-2);
+    c.globalAlpha=1;
+  });
   // path
   c.strokeStyle=th.glow;c.lineWidth=4;c.lineCap='round';c.lineJoin='round';c.globalAlpha=.35;
   c.beginPath();m.path.forEach(function(p,i){var q=px(p);if(i===0)c.moveTo(q.x,q.y);else c.lineTo(q.x,q.y);});c.stroke();
@@ -1418,7 +1735,8 @@ function buildMapGrid(){
     var stars='★'.repeat(ti.stars)+'☆'.repeat(4-ti.stars);
     card.innerHTML='<canvas width="184" height="90"></canvas>'+
       '<div class="m-name">'+m.name+'</div>'+
-      '<div class="m-tier" style="color:'+ti.color+'">'+stars+' '+ti.label+'</div>';
+      '<div class="m-tier" style="color:'+ti.color+'">'+stars+' '+ti.label+'</div>'+
+      '<div style="font-size:.6em;color:#a98bc4;text-align:center;margin-top:4px;line-height:1.3;min-height:24px;">'+(m.gimmick||'')+'</div>';
     card.onclick=function(){G.mapChoice=key;sfx.click();buildMapGrid();};
     grid.appendChild(card);
     drawMapPreview(card.querySelector('canvas'),key);
@@ -1537,6 +1855,23 @@ TDCoop.onAction=function(a){
   }
   else if(a.type==='cash'){ if(a.by!==TDCoop.role){ G.myCredits+=a.amount; spawnFloat(512,260,'ALLY SENT +'+a.amount+' ◈','#5fffd4'); sfx.cash(); updateHUD(); } }
   else if(a.type==='speed'){ _applySpeed(a.speed); spawnFloat(512,260,'SPEED → '+a.speed+'×','#e85fd4'); } // ← both clients lock to same speed
+  else if(a.type==='freeplay'){
+    document.getElementById('end-screen').style.display='none';
+    if(a.decision==='continue'){
+      claimCampaignRewards();
+      G.endless=true;G.maxWave=Infinity;
+      document.getElementById('ui-maxwave').innerText='∞';
+      document.getElementById('startWaveBtn').disabled=false;
+      announce('FREEPLAY UNLOCKED','#feca57');
+      if(G.state!=='playing'){
+        G.state='playing';G.running=true;G.lastTime=performance.now();
+        requestAnimationFrame(loop);
+      }
+      music.start();
+    }else{ // finish
+      endGame(true);   // now safe — both clients end together, leaveRoom fires
+    }
+  }
 };
 function _coopApplyHeroPlace(heroKey,x,y,by){
   var h=new Hero(heroKey,x,y);
@@ -1623,6 +1958,35 @@ function showCoopWaitingRoom(){
   document.getElementById('coop-menu').style.display='flex';
 }
 function offerFreeplay(){
+  // ── CO-OP: only the HOST decides; guest waits ──
+  if(G.coop){
+    if(TDCoop.role==='host'){
+      sfx.win();
+      var es=document.getElementById('end-screen');
+      es.className='menu-overlay win';es.style.display='flex';
+      document.getElementById('end-title').innerText='GRID SECURED';
+      document.getElementById('end-stats').innerHTML=
+        'Nodes Defended: <b>'+G.wave+' / 20</b><br>'+
+        'Intruders Purged: <b>'+G.kills+'</b><br>'+
+        'Score: <b>'+G.score.toLocaleString()+'</b><br><br>'+
+        '<span style="color:#feca57;">Campaign complete! Host decides — keep defending?</span>';
+      var actions=es.querySelector('.end-actions');
+      actions.innerHTML=
+        '<button class="menu-btn" style="color:#feca57;" onclick="coopContinueFreeplay()">[ Keep Defending ]</button>'+
+        '<button class="menu-btn" style="color:#5fffd4;" onclick="coopFinishCampaign()">[ Claim Victory ]</button>';
+    }else{
+      // GUEST: show a waiting message, no buttons
+      var es=document.getElementById('end-screen');
+      es.className='menu-overlay win';es.style.display='flex';
+      document.getElementById('end-title').innerText='GRID SECURED';
+      document.getElementById('end-stats').innerHTML=
+        '<span style="color:#feca57;">Campaign complete! Waiting for host\'s decision...</span>';
+      es.querySelector('.end-actions').innerHTML='';
+    }
+    return;
+  }
+
+  // ── SOLO ──
   sfx.win();
   var es=document.getElementById('end-screen');
   es.className='menu-overlay win';es.style.display='flex';
@@ -1633,32 +1997,60 @@ function offerFreeplay(){
     'Intruders Purged: <b>'+G.kills+'</b><br>'+
     'Score: <b>'+G.score.toLocaleString()+'</b><br><br>'+
     '<span style="color:#feca57;">Campaign complete! Keep defending in FREEPLAY?</span>';
-  // inject buttons into the existing .end-actions row (no HTML changes needed)
   var actions=es.querySelector('.end-actions');
   actions.innerHTML=
     '<button class="menu-btn" style="color:#feca57;" onclick="continueFreeplay()">[ Keep Defending ]</button>'+
     '<button class="menu-btn" style="color:#5fffd4;" onclick="finishCampaign()">[ Claim Victory ]</button>';
 }
+// Award the campaign-win rewards WITHOUT ending the game / leaving coop
+function claimCampaignRewards(){
+  if(G._rewarded) return;   // pay only once
+  var dmm={easy:1,normal:1.6,hard:2.5,omega:4};
+  var diff=document.getElementById('difficulty').value;
+  var dm=(dmm[diff]||1);
+  var finalScore=Math.floor(G.score*dm);
+  recordHubScore(finalScore);
+  bumpStat('nhs_total_kills',G.kills);
+  bumpStat('nhs_games_played');
+  bumpStat('nhs_wins');
+  if(diff==='omega')bumpStat('nhs_omega_wins');
+  if(G.health===G.maxHealth)bumpStat('nhs_perfect_wins');
+  var s=getArcadeScores();s.nhs_best_node=Math.max(s.nhs_best_node||0,G.wave);saveArcadeScores(s);
+  var tok=Math.floor((150+G.wave*15)*dm);
+  awardTokens(tok);
+  G._rewarded=true;G._lastTokens=tok;
+}
 
+// SOLO: keep playing
 function continueFreeplay(){
   sfx.click();
-  finishCampaign(true);                 // award win-rewards now, but keep playing
-  G.endless=true;G.maxWave=Infinity;    // flip to endless mode
+  claimCampaignRewards();                // pay win-rewards, DON'T end game
+  G.endless=true;G.maxWave=Infinity;
   document.getElementById('ui-maxwave').innerText='∞';
   document.getElementById('end-screen').style.display='none';
   document.getElementById('startWaveBtn').disabled=false;
   announce('FREEPLAY UNLOCKED','#feca57');
-  G.state='playing';
+  // re-arm the loop cleanly (it was never truly ended)
+  if(G.state!=='playing'){
+    G.state='playing';G.running=true;G.lastTime=performance.now();
+    requestAnimationFrame(loop);
+  }
+  music.start();
 }
 
-function finishCampaign(keepPlaying){
-  endGame(true);
-  if(keepPlaying){
-    // re-arm the game state that endGame() shut down
-    G.running=true;G.state='playing';G.lastTime=performance.now();
-    document.getElementById('gameWrapper').classList.add('playing');
-    music.start();requestAnimationFrame(loop);
-  }
+// SOLO: claim victory and stop
+function finishCampaign(){
+  sfx.click();
+  endGame(true);   // proper end — awards handled inside (G._rewarded guards double-pay)
+}
+// HOST presses a freeplay button → tell BOTH clients what to do
+function coopContinueFreeplay(){
+  sfx.click();
+  TDCoop.proposeAction({type:'freeplay',decision:'continue'});
+}
+function coopFinishCampaign(){
+  sfx.click();
+  TDCoop.proposeAction({type:'freeplay',decision:'finish'});
 }
 </script>
 <link rel="stylesheet" href="chat.css">

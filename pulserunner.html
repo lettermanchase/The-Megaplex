@@ -284,7 +284,7 @@ makeLevel("Inversion",3,8,6.8,0,[
   {beat:17,type:'ceilSpike'},{beat:20,type:'ceilSpike'},{beat:23,type:'saw',air:true},
   {beat:26,type:'flip'},{beat:29,type:'spike3'},{beat:33,type:'turret',fireBeat:2},
   {beat:37,type:'orb',oy:110},{beat:37.5,type:'saw'},{beat:41,type:'movingSpike',ay:90},
-  {beat:45,type:'flip'},{beat:48,type:'ceilSpike'},{beat:51,type:'laser',orient:'v',gap:'mid'},{beat:54,type:'ceilSpike'},
+  {beat:45,type:'flip'},{beat:48,type:'ceilSpike'},{beat:51,type:'saw',air:true},{beat:54,type:'ceilSpike'},
   {beat:57,type:'flip'},{beat:61,type:'spike3'},{beat:65,type:'flip'},
   {beat:68,type:'ceilSpike'},{beat:71,type:'saw',air:true},{beat:74,type:'flip'},
   {beat:78,type:'movingSpike',ay:90},{beat:82,type:'turret',fireBeat:1.8},{beat:86,type:'orb',oy:100},{beat:86.5,type:'saw'},
@@ -303,7 +303,7 @@ makeLevel("Event Horizon",3,9,7.1,0,[
   {beat:100,type:'flip'},{beat:104,type:'shipStart'},...corridorB(107,12,1.3),
   {beat:123,type:'laser',orient:'v',gap:'bot'},{beat:126,type:'movingSpike',ay:70,ceil:true},{beat:129,type:'shipEnd'},
   {beat:133,type:'flip'},{beat:136,type:'orb',oy:110},{beat:136.5,type:'saw'},{beat:140,type:'movingSpike',ay:90},
-  {beat:144,type:'turret',fireBeat:1.8},{beat:148,type:'spike3'},{beat:152,type:'saw'},{beat:155,type:'spike'},{beat:157,type:'spike'}
+  {beat:144,type:'ceilSpike'},{beat:148,type:'spike3'},{beat:152,type:'saw'},{beat:155,type:'spike'},{beat:157,type:'spike'}
 ]),
 makeLevel("Singularity",4,10,7.4,0,[
   {beat:4,type:'spike'},{beat:6.5,type:'spike'},{beat:9,type:'saw'},
@@ -315,11 +315,11 @@ makeLevel("Singularity",4,10,7.4,0,[
   {beat:69,type:'shipEnd'},{beat:73,type:'flip'},{beat:76,type:'ceilSpike'},{beat:79,type:'saw',air:true},
   {beat:82,type:'flip'},{beat:86,type:'orb',oy:110},{beat:86.5,type:'spike3'},{beat:90,type:'turret',fireBeat:1.5},
   {beat:94,type:'movingSpike',ay:100},{beat:97,type:'pad'},{beat:101,type:'orb',oy:120},{beat:101.5,type:'saw'},
-  {beat:105,type:'flip'},{beat:108,type:'laser',orient:'v',gap:'top'},{beat:111,type:'saw',air:true},
+  {beat:105,type:'flip'},{beat:108,type:'ceilSpike'},{beat:108.5,type:'saw',air:true},{beat:111,type:'saw',air:true},
   {beat:114,type:'flip'},{beat:118,type:'shipStart'},...corridorB(121,14,1.15),
   {beat:140,type:'laser',orient:'v',gap:'bot'},{beat:143,type:'movingSpike',ay:75,ceil:true},{beat:146,type:'shipEnd'},
-  {beat:150,type:'flip'},{beat:153,type:'orb',oy:110},{beat:153.5,type:'saw'},{beat:157,type:'turret',fireBeat:1.5},
-  {beat:161,type:'movingSpike',ay:100},{beat:165,type:'spike3'},{beat:169,type:'saw'},
+  {beat:150,type:'flip'},{beat:153,type:'orb',oy:110},{beat:153.5,type:'saw'},{beat:157,type:'ceilSpike'},
+  {beat:161,type:'movingSpike',ay:100,ceil:true},{beat:165,type:'spike3'},{beat:169,type:'saw'},
   {beat:172,type:'spike'},{beat:174,type:'spike'},{beat:176,type:'spike'}
 ]),
 makeLevel("Final Pulse",4,10,7.7,0,[
@@ -332,14 +332,14 @@ makeLevel("Final Pulse",4,10,7.7,0,[
   {beat:71,type:'shipEnd'},{beat:75,type:'flip'},{beat:78,type:'saw',air:true},{beat:81,type:'flip'},
   {beat:85,type:'orb',oy:110},{beat:85.5,type:'spike3'},{beat:89,type:'turret',fireBeat:1.4},
   {beat:93,type:'movingSpike',ay:100},{beat:96,type:'movingSpike',ay:100,ceil:true},{beat:100,type:'pad'},
-  {beat:103,type:'orb',oy:120},{beat:103.5,type:'saw'},{beat:107,type:'flip'},{beat:110,type:'laser',orient:'v',gap:'top'},
+  {beat:103,type:'orb',oy:120},{beat:103.5,type:'saw'},{beat:107,type:'flip'},{beat:110,type:'ceilSpike'},{beat:110.5,type:'saw',air:true},
   {beat:113,type:'saw',air:true},{beat:116,type:'flip'},{beat:120,type:'shipStart'},...corridorB(123,18,1.1),
   {beat:147,type:'laser',orient:'v',gap:'bot'},{beat:150,type:'movingSpike',ay:75,ceil:true},{beat:153,type:'shipEnd'},
-  {beat:157,type:'flip'},{beat:160,type:'turret',fireBeat:1.4},{beat:164,type:'movingSpike',ay:100},
+  {beat:157,type:'flip'},{beat:160,type:'ceilSpike'},{beat:164,type:'movingSpike',ay:100,ceil:true},
   {beat:168,type:'orb',oy:110},{beat:168.5,type:'saw'},{beat:172,type:'pad'},{beat:175,type:'orb',oy:120},{beat:175.5,type:'spike3'},
   {beat:179,type:'movingSpike',ay:100},{beat:183,type:'saw'},{beat:186,type:'flip'},{beat:189,type:'spike3'},
   {beat:193,type:'saw'},{beat:196,type:'spike'},{beat:198,type:'spike'},{beat:200,type:'spike'},{beat:202,type:'spike'}
-])
+]),
 ];
 
 // =================== STATE ===================
@@ -514,9 +514,9 @@ function checkObstacle(o,ox){
     }
     else if(t==='laser'){
         // vertical sweeping laser with a safe gap zone (top/mid/bot)
-        let gapY, gapH=80;
+        let gapY, gapH=110;
         if(o.gap==='top') gapY=CEIL_Y+10;
-        else if(o.gap==='bot') gapY=GROUND_Y-90;
+        else if(o.gap==='bot') gapY=GROUND_Y-CUBE-30;
         else gapY=(GROUND_Y+CEIL_Y)/2-gapH/2; // mid
         if(pr>ox+6 && pl<ox+18){
             // dangerous everywhere EXCEPT inside the gap
@@ -630,7 +630,7 @@ function drawObstacle(o,ox,bord){
     else if(t==='movingSpike'){ let maxH=o.ceil?CUBE+6:CUBE+18; let ph=Math.min(Math.abs(Math.sin((scrollX*0.02)+o.x*0.01))*(o.ay||60), maxH); ctx.fillStyle='#feca57'; ctx.shadowBlur=beatGlow; ctx.shadowColor='#feca57'; if(o.ceil){ ctx.beginPath();ctx.moveTo(ox+CUBE/2,CEIL_Y+ph);ctx.lineTo(ox+CUBE-2,CEIL_Y);ctx.lineTo(ox+2,CEIL_Y);ctx.fill(); } else { ctx.beginPath();ctx.moveTo(ox+CUBE/2,GROUND_Y-ph);ctx.lineTo(ox+CUBE-2,GROUND_Y);ctx.lineTo(ox+2,GROUND_Y);ctx.fill(); } ctx.shadowBlur=0; }
     else if(t==='laser'){
         let gapY,gapH=80;
-        if(o.gap==='top') gapY=CEIL_Y+10; else if(o.gap==='bot') gapY=GROUND_Y-90; else gapY=(GROUND_Y+CEIL_Y)/2-gapH/2;
+        if(o.gap==='top') gapY=CEIL_Y+10; else if(o.gap==='bot') gapY=GROUND_Y-CUBE-30; else gapY=(GROUND_Y+CEIL_Y)/2-gapH/2;
         let flick=0.55+0.45*Math.abs(Math.sin(scrollX*0.3));
         ctx.save(); ctx.globalAlpha=flick; ctx.fillStyle='#ff6b9d'; ctx.shadowBlur=18;ctx.shadowColor='#ff6b9d';
         // beam above gap

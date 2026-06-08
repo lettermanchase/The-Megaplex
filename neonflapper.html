@@ -307,17 +307,24 @@ function update() {
     pipes = pipes.filter(p => p.x + PIPE_W > -20);
 
     // scoring + collision
-    for(let p of pipes) {
-        if(!p.passed && p.x + PIPE_W < bird.x) {
-            p.passed = true; score++; sfx.score();
-            spawnParticles(bird.x, bird.y, '#f1c40f', 6);
-        }
-        // collision check
-        let bx = bird.x - bird.w/2, by = bird.y - bird.h/2;
-        if(bx + bird.w > p.x && bx < p.x + PIPE_W) {
-            if(by < p.gapY || by + bird.h > p.gapY + GAP) { endGame(); return; }
-        }
+for(let p of pipes) {
+    if(!p.passed && p.x + PIPE_W < bird.x) {
+        p.passed = true; score++; sfx.score();
+        spawnParticles(bird.x, bird.y, '#f1c40f', 6);
     }
+
+    // --- Forgiving hitbox: shrink the box from the visible sprite ---
+    const padX = 8;   // trim left/right (tail + tip are empty space)
+    const padY = 5;   // trim top/bottom
+    let bx = bird.x - bird.w/2 + padX;
+    let bw = bird.w - padX * 2;
+    let by = bird.y - bird.h/2 + padY;
+    let bh = bird.h - padY * 2;
+
+    if(bx + bw > p.x && bx < p.x + PIPE_W) {
+        if(by < p.gapY || by + bh > p.gapY + GAP) { endGame(); return; }
+    }
+}
 
     // stars
     stars.forEach(s => { s.x -= s.sp * speedMult; if(s.x < 0){ s.x = W; s.y = Math.random()*H; } });
