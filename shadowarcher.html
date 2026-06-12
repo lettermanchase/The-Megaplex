@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <title>Shadow Archer - The Citadel Tavern</title>
 <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
+<script src="tavern-score-helper.js"></script>
+
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; }
@@ -1331,7 +1337,7 @@ function update() {
                 }
                 ally.cooldown = 75;
                 ally.attackAnim = 15;
-                playTone(700, 'triangle', 0.05, 0.025);
+                playTone({ freq: 700, type: 'triangle', dur: 0.05, vol: 0.025 });
             } else if (ally.id === 'morrok' && minDist < 900) {
                 const dx = closest.x - ally.x, dy = closest.y - ally.y;
                 const d = Math.hypot(dx, dy);
@@ -3917,17 +3923,22 @@ function endGame() {
     document.getElementById('finalAccuracy').textContent = acc + '%';
     document.getElementById('finalKills').textContent = game.kills;
     
+    // Save all three Shadow Archer stats to localStorage + cloud
+if (typeof window.saveTavernScore === 'function') {
+    window.saveTavernScore('shadow_archer_waves', game.wave, true);
+    window.saveTavernScore('shadow_archer_score', game.score, true);
+    window.saveTavernScore('shadow_archer_accuracy', acc, true);
+} else {
+    // Fallback if helper isn't loaded
     let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-    if (!scores.shadow_archer_waves || game.wave > scores.shadow_archer_waves) {
-        scores.shadow_archer_waves = game.wave;
-    }
-    if (!scores.shadow_archer_score || game.score > scores.shadow_archer_score) {
-        scores.shadow_archer_score = game.score;
-    }
-    if (!scores.shadow_archer_accuracy || acc > scores.shadow_archer_accuracy) {
-        scores.shadow_archer_accuracy = acc;
-    }
+    if (!scores.shadow_archer_waves || game.wave > scores.shadow_archer_waves) scores.shadow_archer_waves = game.wave;
+    if (!scores.shadow_archer_score || game.score > scores.shadow_archer_score) scores.shadow_archer_score = game.score;
+    if (!scores.shadow_archer_accuracy || acc > scores.shadow_archer_accuracy) scores.shadow_archer_accuracy = acc;
     localStorage.setItem('arcadeScores', JSON.stringify(scores));
+    if (window.MegaplexCloud && window.MegaplexCloud.saveToCloud) {
+        window.MegaplexCloud.saveToCloud();
+    }
+}
     
     document.getElementById('gameOverScreen').style.display = 'flex';
     

@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Wandering Merchant</title>
 <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
+<script src="tavern-score-helper.js"></script>
 <style>
 :root{
   --bg-900:#1a1209;--bg-800:#241a0d;--surface:rgba(255,235,200,0.05);
@@ -608,7 +613,22 @@ function closeAllPanels(){document.querySelectorAll('.panel').forEach(p=>p.class
    WIN / LOSE
    ============================================================ */
 function checkEnd(){if(S.health<=0){endGame(false,'Your cart splintered apart on a lonely stretch of road. Stranded and penniless, your venture ends in the mud.');return true;}if(S.food<=0&&S.gold<22){endGame(false,'Your provisions ran dry and your purse with them. You can travel no further.');return true;}if(S.day>=S.maxDays){if(S.gold>=S.goal)endGame(true,'You return home a triumphant merchant prince! Your name is toasted in every tavern from Oakvale to Highspire.');else endGame(false,`The days ran out with ${S.gold} gold — short of your ${S.goal} goal. A respectable run, but not yet a legend.`);return true;}return false;}
-function endGame(won,text){if(won)sfx.win();else sfx.bad();stopMusic();try{const sc=JSON.parse(localStorage.getItem('arcadeScores'))||{};if(!sc.merchant_gold||S.gold>sc.merchant_gold){sc.merchant_gold=S.gold;localStorage.setItem('arcadeScores',JSON.stringify(sc));}}catch(e){}closeDialogue();document.getElementById('hud').classList.add('hide');document.getElementById('dock').classList.add('hide');document.getElementById('panelScrim').classList.remove('show');document.getElementById('dock').style.pointerEvents='auto';document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));document.getElementById('endArt').textContent=won?'🏆':'💀';document.getElementById('endTitle').textContent=won?"A Merchant's Triumph!":"Journey's End";document.getElementById('endText').textContent=text;document.getElementById('endStats').innerHTML=`<div class="end-stat"><div class="v">🪙${S.gold}</div><div class="l">Final Gold</div></div><div class="end-stat"><div class="v">📈${S.peak}</div><div class="l">Peak Gold</div></div><div class="end-stat"><div class="v">🤝${S.deals}</div><div class="l">Deals Made</div></div><div class="end-stat"><div class="v">⚔️${S.banditsBeaten}</div><div class="l">Bandits Beaten</div></div>`;document.getElementById('endScreen').classList.add('show');}
+function endGame(won,text){if(won)sfx.win();else sfx.bad();stopMusic();try {
+    if (typeof window.saveTavernScore === 'function') {
+        // Writes arcadeScores.merchant_gold + pushes to cloud (best-only)
+        window.saveTavernScore('merchant_gold', S.gold, true);
+    } else {
+        // Fallback if helper isn't loaded
+        const sc = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+        if (!sc.merchant_gold || S.gold > sc.merchant_gold) {
+            sc.merchant_gold = S.gold;
+            localStorage.setItem('arcadeScores', JSON.stringify(sc));
+        }
+        if (window.MegaplexCloud && window.MegaplexCloud.saveToCloud) {
+            window.MegaplexCloud.saveToCloud();
+        }
+    }
+} catch(e) {}closeDialogue();document.getElementById('hud').classList.add('hide');document.getElementById('dock').classList.add('hide');document.getElementById('panelScrim').classList.remove('show');document.getElementById('dock').style.pointerEvents='auto';document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));document.getElementById('endArt').textContent=won?'🏆':'💀';document.getElementById('endTitle').textContent=won?"A Merchant's Triumph!":"Journey's End";document.getElementById('endText').textContent=text;document.getElementById('endStats').innerHTML=`<div class="end-stat"><div class="v">🪙${S.gold}</div><div class="l">Final Gold</div></div><div class="end-stat"><div class="v">📈${S.peak}</div><div class="l">Peak Gold</div></div><div class="end-stat"><div class="v">🤝${S.deals}</div><div class="l">Deals Made</div></div><div class="end-stat"><div class="v">⚔️${S.banditsBeaten}</div><div class="l">Bandits Beaten</div></div>`;document.getElementById('endScreen').classList.add('show');}
 </script>
 </body>
 </html>

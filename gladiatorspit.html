@@ -6,6 +6,11 @@
 <title>Gladiator's Pit — The Citadel Tavern</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
+<script src="tavern-score-helper.js"></script>
 <style>
 :root{
     --bg-900:#1a1209; --surface:rgba(255,235,200,0.05); --border:rgba(212,175,110,0.35);
@@ -1011,8 +1016,26 @@ function tickSpellCD(){ const now=performance.now(); for(let i=0;i<3;i++){ const
     const s=state.spells[i]; if(!s){ el.className='spell-key cd'; continue; }
     el.className=(now<state.spellCD[i]||state.mana<s.mana)?'spell-key cd':'spell-key ready'; } }
 
-function saveBest(){ try{ let sc=JSON.parse(localStorage.getItem('arcadeScores'))||{};
-    if((sc.gladiator_pit||0)<state.round) sc.gladiator_pit=state.round; localStorage.setItem('arcadeScores',JSON.stringify(sc)); }catch(e){} }
+    function saveBest(){
+    const finalScore = computeGladiatorScore();
+
+    // Use the tavern helper if it loaded (writes arcadeScores + pushes to Firebase)
+    if (typeof window.saveTavernScore === 'function') {
+        window.saveTavernScore('gladiator_score', finalScore, true);
+    } else {
+        // Fallback: write locally with the CORRECT key
+        try {
+            let sc = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+            if ((sc.gladiator_score || 0) < finalScore) {
+                sc.gladiator_score = finalScore;
+                localStorage.setItem('arcadeScores', JSON.stringify(sc));
+            }
+            if (window.MegaplexCloud && window.MegaplexCloud.saveToCloud) {
+                window.MegaplexCloud.saveToCloud();
+            }
+        } catch(e) { console.warn('saveBest failed:', e); }
+    }
+}
 
 /* ============================================================
    INPUT + LOOP + API
@@ -1042,6 +1065,16 @@ const Game={ begin(){ freshState(); updateLoadout(); Sound.ensure(); startRound(
     shopTab(c){ shopTab(c); }, buy(k,id){ buy(k,id); }, equip(k,id){ equip(k,id); } };
 window.Game=Game;
 updateLoadout(); updateBars(); loop();
+
+/* Compute a final score from this run's performance.
+   Tuned so deep runs hit the achievement thresholds
+   (1k / 2.5k / 5k / 10k). */
+   function computeGladiatorScore(){
+    const roundBonus = state.round * 500;       // 500 per round survived
+    const killBonus  = state.totalKills * 50;   // 50 per foe slain
+    const goldBonus  = state.runGold;           // gold amassed counts 1:1
+    return roundBonus + killBonus + goldBonus;
+}
 </script>
 </body>
 </html>

@@ -93,6 +93,8 @@ window.MegaplexCloud.registeredGameKeys = [
 
     // ----- Per-game keys -----
     { key: 'nj2_times',                 type: 'json'   },
+    { key: 'eldrathScores',             type: 'json'   },   // ← ADD THIS
+    { key: 'goblinGoldScores',          type: 'json'   },
     { key: 'clickerFrenzy_save_v2',     type: 'json'   },
     { key: 'arcadeScores_v2',           type: 'json'   },
     { key: 'cb_achievements',           type: 'json'   },

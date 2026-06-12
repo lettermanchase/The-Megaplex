@@ -5,6 +5,11 @@
 <title>Goblin Gold Rush</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
+<script src="tavern-score-helper.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -2823,6 +2828,7 @@ function fillStats(elId) {
 }
 
 function saveScore() {
+    // 1) Save to the goblinGoldScores ARRAY (tavern reads this for nightmare best)
     let scores = JSON.parse(localStorage.getItem('goblinGoldScores')) || [];
     scores.push({
         gold: game.totalGold,
@@ -2834,12 +2840,18 @@ function saveScore() {
     scores.sort((a, b) => b.gold - a.gold);
     scores = scores.slice(0, 10);
     localStorage.setItem('goblinGoldScores', JSON.stringify(scores));
-    
+
+    // 2) Also keep arcadeScores.goblin_<difficulty> in sync
     let arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
     const key = 'goblin_' + game.difficulty;
     if (!arcadeScores[key] || game.totalGold > arcadeScores[key]) {
         arcadeScores[key] = game.totalGold;
         localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
+    }
+
+    // 3) ✅ PUSH EVERYTHING TO THE CLOUD (this is what was missing)
+    if (window.MegaplexCloud && typeof window.MegaplexCloud.saveToCloud === 'function') {
+        window.MegaplexCloud.saveToCloud();
     }
 }
 

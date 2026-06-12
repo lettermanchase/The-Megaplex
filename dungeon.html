@@ -5,6 +5,12 @@
 <title>Shadows of Eldrath - Dungeon Crawler</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
+<script src="tavern-score-helper.js"></script>
+
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -3525,51 +3531,60 @@ function fillEndStats(elId) {
         '<strong>🪙 Gold Earned:</strong> ' + p.gold;
 }
 
+/* Saves the Eldrath Nightmare score to localStorage AND the cloud.
+   Uses the shared helper if loaded, else writes directly. */
+   function saveEldrathNightmareScore() {
+    if (game.difficulty !== 'nightmare') return;
+
+    // A meaningful score: kills + gold + level bonus, scaled to hit achievement tiers
+const playerScore =
+      (game.player.kills * 50) +      // 50 per kill (~100 enemies = 5000)
+      (game.player.gold) +            // gold counts 1:1
+      (game.player.level * 100);      // 100 per level
+
+    // Preferred path: shared helper (writes eldrathScores + cloud)
+    if (typeof window.saveEldrathScore === 'function') {
+        window.saveEldrathScore('nightmare', playerScore);
+    }
+
+    // Also keep arcadeScores.eldrath_nightmare in sync (tavern reads this)
+    if (typeof window.saveTavernScore === 'function') {
+        window.saveTavernScore('eldrath_nightmare', playerScore, true);
+    } else {
+        // Fallback if helper isn't present
+        let eldrathScores = JSON.parse(localStorage.getItem('eldrathScores')) || {};
+        if (!eldrathScores.nightmare || playerScore > eldrathScores.nightmare) {
+            eldrathScores.nightmare = playerScore;
+            localStorage.setItem('eldrathScores', JSON.stringify(eldrathScores));
+        }
+        let arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+        if (!arcadeScores.eldrath_nightmare || playerScore > arcadeScores.eldrath_nightmare) {
+            arcadeScores.eldrath_nightmare = playerScore;
+            localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
+        }
+        if (window.MegaplexCloud && window.MegaplexCloud.saveToCloud) {
+            window.MegaplexCloud.saveToCloud();
+        }
+    }
+}
+
 function triggerDeath() {
     game.state = 'dead';
     fillEndStats('deathStats');
     setTimeout(() => document.getElementById('deathScreen').classList.add('active'), 500);
-    // --- BEGIN: Save Nightmare score for leaderboard ---
-if (game.difficulty === 'nightmare') {
-    let eldrathScores = JSON.parse(localStorage.getItem('eldrathScores')) || {};
-    // Use final level as score (you can change to gold, time, etc)
-    const playerScore = game.player.level;
-    if (!eldrathScores.nightmare || playerScore > eldrathScores.nightmare) {
-        eldrathScores.nightmare = playerScore;
-        localStorage.setItem('eldrathScores', JSON.stringify(eldrathScores));
-    }
-    // Also update arcadeScores for leaderboard compatibility
-    let arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-    if (!arcadeScores.eldrath_nightmare || playerScore > arcadeScores.eldrath_nightmare) {
-        arcadeScores.eldrath_nightmare = playerScore;
-        localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
-    }
+    saveEldrathNightmareScore();   // ← replaces the old inline block
 }
 // --- END: Save Nightmare score for leaderboard ---
-}
+
 
 function triggerVictory() {
     game.state = 'victory';
     fillEndStats('victoryStats');
     setTimeout(() => document.getElementById('victoryScreen').classList.add('active'), 1000);
-    // --- BEGIN: Save Nightmare score for leaderboard ---
-if (game.difficulty === 'nightmare') {
-    let eldrathScores = JSON.parse(localStorage.getItem('eldrathScores')) || {};
-    // Use final level as score (you can change to gold, time, etc)
-    const playerScore = game.player.level;
-    if (!eldrathScores.nightmare || playerScore > eldrathScores.nightmare) {
-        eldrathScores.nightmare = playerScore;
-        localStorage.setItem('eldrathScores', JSON.stringify(eldrathScores));
-    }
-    // Also update arcadeScores for leaderboard compatibility
-    let arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
-    if (!arcadeScores.eldrath_nightmare || playerScore > arcadeScores.eldrath_nightmare) {
-        arcadeScores.eldrath_nightmare = playerScore;
-        localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
-    }
+    saveEldrathNightmareScore();   // ← replaces the old inline block
 }
 // --- END: Save Nightmare score for leaderboard ---
-}
+
 
 // ============================================================
 // INPUT
