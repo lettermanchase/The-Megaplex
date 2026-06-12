@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Companions — The Citadel</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* ===== FULL PAGE LOADING SCREEN ===== */
+        #friendsLoadingScreen {
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #1a1209, #241a0d, #322310);
+            z-index: 9999; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 28px;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+            font-family: 'MedievalSharp', 'Cinzel', serif; overflow: hidden;
+        }
+        #friendsLoadingScreen.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+        #friendsLoadingScreen::before {
+            content: ''; position: absolute; inset: 0;
+            background-image:
+                radial-gradient(2px 2px at 20% 30%, #ffb347, transparent),
+                radial-gradient(1px 1px at 60% 70%, #d4af6e, transparent),
+                radial-gradient(2px 2px at 80% 20%, #ffb347, transparent),
+                radial-gradient(1px 1px at 30% 80%, #f0c75e, transparent),
+                radial-gradient(2px 2px at 90% 60%, #ffb347, transparent),
+                radial-gradient(1px 1px at 10% 50%, #d4af6e, transparent);
+            background-size: 200% 200%; animation: starsDrift 20s linear infinite; opacity: 0.45;
+        }
+        @keyframes starsDrift { from { background-position: 0% 0%; } to { background-position: 100% 100%; } }
+        .loading-logo {
+            font-size: 2.9em; color: #d4af6e; letter-spacing: 4px;
+            text-shadow: 0 0 10px #ff8c00, 0 0 24px rgba(212,175,110,0.6);
+            animation: logoPulse 1.8s infinite alternate; z-index: 1; text-align: center;
+        }
+        @keyframes logoPulse {
+            from { text-shadow: 0 0 10px #d4af6e, 0 0 20px rgba(212,175,110,0.5); }
+            to   { text-shadow: 0 0 20px #ff8c00, 0 0 45px rgba(212,175,110,0.8); }
+        }
+        .full-loading-spinner {
+            width: 70px; height: 70px; border: 4px solid rgba(212,175,110,0.15);
+            border-top-color: #d4af6e; border-right-color: #8b2e2e; border-radius: 50%;
+            animation: spin 1s linear infinite; box-shadow: 0 0 24px rgba(212,175,110,0.4); z-index: 1;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-status {
+            color: #d4af6e; font-size: 0.95em; letter-spacing: 3px; text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(212,175,110,0.6); z-index: 1; min-height: 24px; text-align: center;
+            animation: statusPulse 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes statusPulse { from { opacity: 0.65; } to { opacity: 1; } }
+        .loading-bar-container {
+            width: 320px; max-width: 80%; height: 5px; background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(212,175,110,0.35); border-radius: 3px; overflow: hidden; z-index: 1;
+        }
+        .loading-bar-fill {
+            height: 100%; width: 0%; background: linear-gradient(90deg, #8b2e2e, #d4af6e, #f0c75e);
+            box-shadow: 0 0 12px rgba(212,175,110,0.7); transition: width 0.4s ease; border-radius: 3px;
+        }
+        .loading-tip {
+            position: absolute; bottom: 30px; color: #b09b76; font-family: 'Cinzel', serif;
+            font-size: 0.85em; letter-spacing: 1px; opacity: 0.75; z-index: 1;
+            text-align: center; padding: 0 20px; transition: opacity 0.3s; font-style: italic;
+        }
+
+        * { box-sizing: border-box; }
+        :root {
+            --bg-card: rgba(26, 18, 9, 0.82);
+            --bg-card-soft: rgba(255,235,200,0.03);
+            --accent: #d4af6e;
+            --accent-soft: rgba(212,175,110,0.12);
+            --border: rgba(212,175,110,0.18);
+            --border-hover: rgba(212,175,110,0.55);
+            --gold: #f0c75e;
+            --pink: #9b59b6;
+            --purple: #a55eea;
+            --red: #a83232;
+            --green: #5a8c3a;
+            --text-dim: #8a7350;
+        }
+        body {
+            font-family: 'Cinzel', 'Times New Roman', Georgia, serif;
+            background: linear-gradient(135deg, #1a1209, #241a0d, #322310);
+            background-attachment: fixed;
+            color: #f0e6d2; margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden;
+            letter-spacing: 0.3px;
+        }
+
+        /* Floating embers (replaces starfield) */
+        .starfield { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .star { position: absolute; background: #ffb347; border-radius: 50%; box-shadow: 0 0 6px #ff8c00; animation: emberRise linear infinite; }
+        @keyframes emberRise {
+            0%   { opacity: 0; transform: translateY(0) translateX(0); }
+            20%  { opacity: 1; }
+            80%  { opacity: 0.8; }
+            100% { opacity: 0; transform: translateY(-120px) translateX(20px); }
+        }
+
+        /* Parchment overlay — toned down for readability */
+        body::before {
+            content: " "; display: block; position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 10%, rgba(255,200,120,0.05), transparent 40%),
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 3px);
+            z-index: 100; pointer-events: none; opacity: 0.45;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            background: rgba(13, 9, 4, 0.85); border-bottom: 2px solid var(--border);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+            padding: 14px 28px; display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 50; flex-wrap: wrap; gap: 14px;
+        }
+        .header-left { display: flex; align-items: center; gap: 18px; }
+        .back-btn {
+            background: transparent; border: 1px solid var(--border); color: var(--accent);
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;
+            text-decoration: none; transition: 0.2s; font-size: 0.88em; font-family: 'Cinzel', serif;
+        }
+        .back-btn:hover { background: var(--accent-soft); border-color: var(--border-hover); transform: translateX(-2px); }
+        .page-title {
+            font-family: 'MedievalSharp', serif; color: var(--accent); font-size: 1.6em;
+            letter-spacing: 3px; text-shadow: 0 0 14px rgba(255,140,0,0.5); margin: 0;
+        }
+        .header-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .pill {
+            background: rgba(255,235,200,0.04); border: 1px solid var(--border); color: var(--accent);
+            padding: 7px 13px; border-radius: 8px; font-weight: 600; font-size: 0.85em;
+            display: inline-flex; align-items: center; gap: 5px;
+        }
+        .pill.gold { border-color: rgba(240,199,94,0.4); color: var(--gold); }
+        .pill.pink { border-color: rgba(155,89,182,0.4); color: var(--pink); }
+        .pill.purple { border-color: rgba(165,94,234,0.4); color: var(--purple); }
+        .pill.red { border-color: rgba(168,50,50,0.4); color: #c75e5e; }
+
+        /* ===== LAYOUT ===== */
+        .friends-container {
+            max-width: 1340px; margin: 26px auto; padding: 0 22px;
+            position: relative; z-index: 10;
+            display: grid; grid-template-columns: 380px 1fr; gap: 24px;
+        }
+        @media (max-width: 920px) { .friends-container { grid-template-columns: 1fr; } }
+
+        .sidebar {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px); position: sticky; top: 90px;
+            max-height: calc(100vh - 115px); display: flex; flex-direction: column; overflow: hidden;
+        }
+        @media (max-width: 920px) { .sidebar { position: static; max-height: none; } }
+
+        /* ===== SEARCH ===== */
+        .search-section { padding: 18px 18px 12px; border-bottom: 1px solid var(--border); position: relative; }
+        .search-input {
+            width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.4); color: #f0e6d2;
+            border: 1px solid var(--border); border-radius: 8px;
+            font-family: 'Cinzel', serif; font-size: 0.95em; outline: none; transition: 0.25s;
+        }
+        .search-input::placeholder { color: var(--text-dim); }
+        .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+        .search-results {
+            position: absolute; left: 18px; right: 18px; top: calc(100% - 4px);
+            max-height: 280px; overflow-y: auto; z-index: 40;
+            background: #1a1209; border-radius: 8px;
+            border: 1px solid var(--border-hover); box-shadow: 0 10px 30px rgba(0,0,0,0.6); display: none;
+        }
+        .search-results.show { display: block; }
+        .search-result-item {
+            padding: 11px 14px; cursor: pointer; display: flex; align-items: center;
+            gap: 11px; transition: 0.15s; border-bottom: 1px solid rgba(255,235,200,0.05);
+        }
+        .search-result-item:last-child { border-bottom: none; }
+        .search-result-item:hover { background: var(--accent-soft); }
+        .search-result-empty { padding: 16px; text-align: center; color: var(--text-dim); font-size: 0.9em; font-style: italic; }
+
+        /* ===== TABS ===== */
+        .sidebar-tabs {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+            padding: 12px 12px 0; border-bottom: 1px solid var(--border);
+        }
+        .tab-btn {
+            position: relative; background: transparent; border: none; cursor: pointer;
+            color: var(--text-dim); font-family: 'MedievalSharp', serif; font-size: 0.72em;
+            letter-spacing: 1px; text-transform: uppercase; padding: 10px 4px 12px;
+            border-bottom: 2px solid transparent; transition: 0.2s; display: flex;
+            flex-direction: column; align-items: center; gap: 4px; border-radius: 8px 8px 0 0;
+        }
+        .tab-btn .tab-icon { font-size: 1.4em; }
+        .tab-btn:hover { color: #d4af6e; background: rgba(255,235,200,0.03); }
+        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab-badge {
+            position: absolute; top: 4px; right: 50%; transform: translateX(22px);
+            min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+            background: var(--red); color: #fff; font-family: 'Cinzel', serif;
+            font-size: 0.78em; font-weight: 700; display: none; align-items: center;
+            justify-content: center; line-height: 1; box-shadow: 0 0 8px rgba(168,50,50,0.6);
+        }
+        .tab-badge.show { display: flex; }
+        .tab-badge.purple { background: var(--purple); box-shadow: 0 0 8px rgba(165,94,234,0.6); }
+        .tab-badge.accent { background: var(--accent); color: #1a1209; box-shadow: 0 0 8px rgba(212,175,110,0.6); }
+
+        /* ===== TAB PANELS ===== */
+        .tab-panels { flex: 1; overflow-y: auto; padding: 14px; }
+        .tab-panels::-webkit-scrollbar { width: 7px; }
+        .tab-panels::-webkit-scrollbar-thumb { background: rgba(212,175,110,0.4); border-radius: 4px; }
+        .tab-panels::-webkit-scrollbar-track { background: transparent; }
+        .tab-panel { display: none; animation: panelFade 0.25s ease; }
+        .tab-panel.active { display: block; }
+        @keyframes panelFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .panel-section-label {
+            font-family: 'MedievalSharp', serif; color: var(--text-dim); font-size: 0.78em;
+            letter-spacing: 2px; text-transform: uppercase; margin: 4px 2px 10px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .panel-section-label:not(:first-child) { margin-top: 22px; }
+
+        /* ===== CARDS ===== */
+        .friend-card, .pending-card {
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            background: var(--bg-card-soft); border: 1px solid var(--border);
+            border-radius: 10px; margin-bottom: 9px; cursor: pointer; transition: 0.2s; position: relative;
+        }
+        .friend-card:hover { border-color: var(--border-hover); background: rgba(212,175,110,0.06); transform: translateX(3px); }
+        .friend-card.active { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
+        .pending-card { border-color: rgba(168,50,50,0.25); background: rgba(168,50,50,0.04); }
+        .pending-card:hover { border-color: var(--red); }
+
+        .c4-invite-card {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            background: rgba(168,50,50,0.06); border: 1px solid rgba(168,50,50,0.35);
+            border-radius: 10px; padding: 13px 14px; margin-bottom: 9px; cursor: pointer; transition: 0.2s;
+        }
+        .c4-invite-card:hover { border-color: var(--red); background: rgba(168,50,50,0.1); transform: translateX(3px); }
+        .c4-invite-card .c4-from { color: #f0e6d2; font-weight: 600; font-size: 0.9em; }
+        .c4-invite-card .c4-tag { color: #c75e5e; font-family: 'MedievalSharp', serif; font-size: 0.68em; letter-spacing: 1px; margin-top: 3px; }
+        .c4-invite-card .c4-amt { background: rgba(240,199,94,0.15); color: var(--gold); padding: 3px 9px; border-radius: 8px; font-size: 0.75em; font-weight: 700; border: 1px solid rgba(240,199,94,0.35); white-space: nowrap; }
+
+        .mini-avatar {
+            width: 48px; height: 48px; border-radius: 8px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; position: relative; flex-shrink: 0;
+            overflow: hidden; background: #3a2a14; border: 1px solid rgba(255,235,200,0.12);
+        }
+        .mini-avatar .mini-head { width: 22px; height: 18px; border-radius: 5px; background: #e8c9a0; position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; }
+        .mini-avatar .mini-eyes { width: 14px; height: 6px; background: #2a1d0a; border-radius: 2px; display: flex; justify-content: space-around; align-items: center; }
+        .mini-avatar .mini-eye { width: 3px; height: 3px; background: #f0c75e; border-radius: 50%; }
+        .mini-avatar .mini-body { width: 18px; height: 14px; background: #8b6914; border-radius: 3px; margin-top: 2px; }
+        .mini-avatar .mini-hat { position: absolute; top: 2px; font-size: 0.85em; z-index: 3; }
+
+        .friend-info { flex: 1; min-width: 0; }
+        .friend-name { color: #f0e6d2; font-weight: 600; font-size: 0.95em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .friend-meta { color: var(--text-dim); font-size: 0.78em; margin-top: 3px; }
+        .friend-prestige-tag { display: inline-block; background: linear-gradient(135deg, #9b59b6, #6c5ce7); color: #fff; padding: 1px 6px; border-radius: 8px; font-size: 0.72em; font-weight: 700; margin-left: 5px; box-shadow: 0 0 6px rgba(155,89,182,0.5); }
+        .friend-actions { display: flex; gap: 5px; flex-shrink: 0; }
+        .btn-small { border: none; padding: 6px 11px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.85em; transition: 0.15s; font-family: 'Cinzel', serif; }
+        .btn-accept { background: var(--green); color: #fff; }
+        .btn-accept:hover { background: #3a6b2a; transform: scale(1.08); }
+        .btn-decline { background: rgba(168,50,50,0.85); color: #fff; }
+        .btn-decline:hover { background: var(--red); transform: scale(1.08); }
+
+        .empty-state { text-align: center; padding: 34px 18px; color: var(--text-dim); font-style: italic; font-size: 0.9em; line-height: 1.6; }
+        .empty-state .empty-icon { font-size: 2.4em; opacity: 0.4; display: block; margin-bottom: 10px; }
+
+        /* ===== PROFILE VIEW ===== */
+        .profile-view {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 32px; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px); min-height: 600px;
+        }
+        .profile-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 520px; text-align: center; color: var(--text-dim); }
+        .profile-empty .big-icon { font-size: 5em; opacity: 0.25; margin-bottom: 22px; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .profile-empty h2 { font-family: 'MedievalSharp', serif; color: var(--accent); margin-bottom: 12px; letter-spacing: 2px; }
+        .profile-empty p { max-width: 380px; line-height: 1.6; font-style: italic; }
+
+        .profile-header { display: grid; grid-template-columns: 220px 1fr; gap: 28px; margin-bottom: 26px; align-items: center; }
+        @media (max-width: 700px) { .profile-header { grid-template-columns: 1fr; text-align: center; } }
+
+        .profile-avatar-stage {
+            width: 220px; height: 220px; border-radius: 14px; border: 2px solid #d4af6e;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; background: #3a2a14; overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5); margin: 0 auto;
+        }
+        .profile-avatar-stage.has-prestige { box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 0 25px rgba(155,89,182,0.6), 0 0 50px rgba(108,92,231,0.4), 0 10px 30px rgba(0,0,0,0.5); animation: prestigeAuraPulse 2.5s ease-in-out infinite; }
+        @keyframes prestigeAuraPulse { 0%,100% { box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 0 25px rgba(155,89,182,0.6), 0 0 50px rgba(108,92,231,0.4), 0 10px 30px rgba(0,0,0,0.5); } 50% { box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 0 40px rgba(155,89,182,1), 0 0 80px rgba(108,92,231,0.8), 0 10px 30px rgba(0,0,0,0.5); } }
+        .bot-head { width: 90px; height: 70px; background: #e8c9a0; border-radius: 16px 16px 13px 13px; position: relative; display: flex; justify-content: center; align-items: center; z-index: 2; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .bot-eyes { width: 50px; height: 25px; background: #2a1d0a; border-radius: 5px; display: flex; justify-content: space-around; align-items: center; padding: 0 5px; }
+        .eye { width: 12px; height: 12px; background: #f0c75e; border-radius: 50%; box-shadow: 0 0 10px #f0c75e; animation: eyeBlink 4s infinite; }
+        @keyframes eyeBlink { 0%,95%,100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+        .bot-body { width: 70px; height: 60px; background: #8b6914; border-radius: 11px; margin-top: 5px; position: relative; z-index: 1; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .bot-hat { position: absolute; top: -38px; left: 50%; transform: translateX(-50%); font-size: 3em; z-index: 3; line-height: 1; }
+
+        @keyframes holoShift { 0% { background-position: 0% 50%; filter: hue-rotate(0deg); } 50% { background-position: 100% 50%; filter: hue-rotate(60deg); } 100% { background-position: 0% 50%; filter: hue-rotate(0deg); } }
+        .bot-head.holo, .bot-body.holo { background: linear-gradient(135deg, #9b59b6, #f0c75e, #d4af6e, #6c5ce7, #9b59b6) !important; background-size: 200% 200% !important; animation: holoShift 5s ease-in-out infinite; }
+        .bot-hat.holo { filter: drop-shadow(0 0 8px #9b59b6) drop-shadow(0 0 14px #d4af6e) drop-shadow(0 0 20px #f0c75e); animation: holoHueRotate 4s linear infinite; }
+        @keyframes holoHueRotate { to { filter: drop-shadow(0 0 8px #9b59b6) drop-shadow(0 0 14px #d4af6e) drop-shadow(0 0 20px #f0c75e) hue-rotate(360deg); } }
+
+        .profile-bg-anim { background-size: 200% 200%; }
+        .profile-bg-anim.bg-anim-holo { animation: holoShift 6s ease-in-out infinite; }
+        .profile-bg-anim.bg-anim-glitch { animation: bgGlitch 2s steps(8) infinite; }
+        .profile-bg-anim.bg-anim-aurora { animation: bgAurora 8s ease-in-out infinite; }
+        @keyframes bgGlitch { 0%,100% { background-position: 0% 0%; } 25% { background-position: 50% 0%; } 50% { background-position: 0% 50%; } 75% { background-position: 50% 50%; } }
+        @keyframes bgAurora { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+        .profile-nameplate { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); padding: 3px 10px; border-radius: 8px; font-family: 'MedievalSharp', serif; font-size: 0.58em; font-weight: 700; letter-spacing: 1px; white-space: nowrap; z-index: 5; text-shadow: 0 0 5px rgba(0,0,0,0.8); color: #fff; border: 1px solid rgba(240,230,210,0.4); background-size: 200% 200%; display: none; }
+        .profile-nameplate.show { display: inline-block; }
+        .profile-nameplate.np-rainbow { background: linear-gradient(90deg, #8b2e2e, #ff6b00, #f0c75e, #9b59b6, #4a6b8a, #8b2e2e); animation: npRainbow 4s linear infinite; }
+        .profile-nameplate.np-fire { background: linear-gradient(90deg, #8b2e2e, #ff6b00, #f0c75e, #ff6b00, #8b2e2e); animation: npRainbow 2s linear infinite; box-shadow: 0 0 8px #ff6b00; }
+        .profile-nameplate.np-ice { background: linear-gradient(90deg, #6ba3c7, #4a6b8a, #b8dce8, #4a6b8a, #6ba3c7); animation: npRainbow 3.5s linear infinite; box-shadow: 0 0 8px #6ba3c7; }
+        .profile-nameplate.np-void { background: linear-gradient(90deg, #1a1209, #6c5ce7, #1a1209, #9b59b6, #1a1209); animation: npRainbow 5s linear infinite; box-shadow: 0 0 10px #6c5ce7; }
+        .profile-nameplate.np-galaxy { background: linear-gradient(90deg, #1a1227, #3a2b53, #24203e, #3a2b53, #1a1227); animation: npRainbow 7s linear infinite; box-shadow: 0 0 10px #3a2b53; }
+        .profile-nameplate.np-godcore { background: linear-gradient(90deg, #f0c75e, #fff, #f0c75e, #ff8a00, #f0c75e); animation: npRainbow 2.5s linear infinite; box-shadow: 0 0 12px #f0c75e; color: #1a1209; }
+        .profile-nameplate.np-pulse { background: linear-gradient(90deg, #5a8c3a, #3a6b2a, #5a8c3a); animation: npPulse 1.5s ease-in-out infinite; }
+
+        /* ===== DAILY CHAMPION — REAL FLAMES TITLE PLATE ===== */
+        .profile-nameplate.np-inferno-daily {
+            background: linear-gradient(0deg, #8b2e2e 0%, #ff6b00 40%, #1a0500 100%);
+            color: #fff; text-shadow: 0 0 4px #ff9f1a, 0 0 8px #8b2e2e;
+            box-shadow: 0 0 12px #ff6b00, 0 -4px 14px #8b2e2e; border-color: #ff9f1a; overflow: visible;
+        }
+        .profile-nameplate.np-inferno-daily::before,
+        .profile-nameplate.np-inferno-daily::after {
+            content: '🔥🔥🔥🔥🔥'; position: absolute; left: 0; right: 0;
+            text-align: center; font-size: 1.1em; letter-spacing: -2px;
+            pointer-events: none; line-height: 1; filter: drop-shadow(0 0 4px #ff6b00);
+        }
+        .profile-nameplate.np-inferno-daily::before { top: -0.75em; animation: profFlameDance 0.45s steps(2) infinite; }
+        .profile-nameplate.np-inferno-daily::after { top: -0.55em; opacity: 0.7; font-size: 0.85em; animation: profFlameDance 0.6s steps(2) infinite reverse; }
+        @keyframes profFlameDance { 0%, 100% { transform: translateX(-1px) scaleY(1); } 50% { transform: translateX(1px) scaleY(1.25); } }
+        @keyframes npRainbow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+        @keyframes npPulse { 0%,100% { box-shadow: 0 0 4px #5a8c3a; } 50% { box-shadow: 0 0 18px #5a8c3a; } }
+
+        .profile-aura-container { position: absolute; inset: 0; pointer-events: none; z-index: 1; display: none; }
+        .profile-aura-container.show { display: block; }
+        .profile-aura-particle { position: absolute; width: 6px; height: 6px; border-radius: 50%; top: 50%; left: 50%; transform-origin: 0 0; opacity: 0; }
+        .aura-fire .profile-aura-particle { background: radial-gradient(circle, #ffeb3b, #ff5722 60%, transparent); box-shadow: 0 0 10px #ff5722; animation: profOrbit 3s linear infinite; }
+        .aura-ice .profile-aura-particle { background: radial-gradient(circle, #fff, #6ba3c7 60%, transparent); box-shadow: 0 0 8px #6ba3c7; animation: profOrbit 4.5s linear infinite; }
+        .aura-electric .profile-aura-particle { background: radial-gradient(circle, #fff, #f0c75e 60%, transparent); box-shadow: 0 0 6px #f0c75e; animation: profOrbit 1.5s linear infinite; }
+        .aura-dark .profile-aura-particle { background: radial-gradient(circle, #6c5ce7, #2a1d0a 70%, transparent); box-shadow: 0 0 8px #6c5ce7; animation: profOrbit 3.5s linear infinite reverse; }
+        .aura-rainbow .profile-aura-particle { background: conic-gradient(from 0deg, #8b2e2e, #ff6b00, #f0c75e, #9b59b6, #4a6b8a, #8b2e2e); box-shadow: 0 0 8px #fff; animation: profOrbit 4s linear infinite; }
+        .aura-godcore .profile-aura-particle { background: radial-gradient(circle, #fff, #f0c75e 50%, #ff8a00 90%, transparent); box-shadow: 0 0 14px #f0c75e; width: 8px; height: 8px; animation: profOrbit 2.5s linear infinite; }
+        .aura-leaves .profile-aura-particle { background: radial-gradient(circle, #5a8c3a, #3a6b2a 60%, transparent); box-shadow: 0 0 6px #5a8c3a; border-radius: 0 100% 0 100%; animation: profOrbit 5s linear infinite; }
+        @keyframes profOrbit { 0% { transform: rotate(0deg) translateX(70px) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: rotate(360deg) translateX(70px) rotate(-360deg); opacity: 0; } }
+        .profile-aura-container.aura-godcore {
+            background: radial-gradient(circle at center, rgba(255,255,255,0.5) 0%, rgba(240,199,94,0.35) 20%, rgba(255,138,0,0.2) 40%, transparent 70%);
+            animation: profDivineCorePulse 2.2s ease-in-out infinite; filter: drop-shadow(0 0 18px #f0c75e);
+        }
+        @keyframes profDivineCorePulse { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.15); } }
+        .aura-godcore .profile-aura-particle {
+            background: radial-gradient(circle, #fff 0%, #fffacd 30%, #f0c75e 60%, #ff8a00 90%, transparent);
+            box-shadow: 0 0 8px #fff, 0 0 16px #f0c75e, 0 0 28px #ff8a00; width: 10px; height: 10px;
+            animation: profDivineOuter 4s linear infinite, profDivineFade 4s ease-in-out infinite;
+        }
+        .aura-godcore .profile-aura-particle:nth-child(odd) {
+            width: 6px; height: 6px; background: radial-gradient(circle, #fff 0%, #fffacd 50%, #f0c75e 100%);
+            box-shadow: 0 0 8px #fff, 0 0 16px #f0c75e;
+            animation: profDivineInner 2.2s linear infinite reverse, profDivineFade 2.2s ease-in-out infinite;
+        }
+        @keyframes profDivineOuter { 0% { transform: rotate(0deg) translateX(72px) rotate(0deg) scale(1); opacity: 0; } 10% { opacity: 1; } 50% { transform: rotate(180deg) translateX(72px) rotate(-180deg) scale(1.3); opacity: 1; } 90% { opacity: 1; } 100% { transform: rotate(360deg) translateX(72px) rotate(-360deg) scale(1); opacity: 0; } }
+        @keyframes profDivineInner { 0% { transform: rotate(0deg) translateX(48px) rotate(0deg); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: rotate(360deg) translateX(48px) rotate(-360deg); opacity: 0; } }
+        @keyframes profDivineFade { 0%, 100% { opacity: 0; } 50% { opacity: 1; filter: brightness(1.5); } }
+
+        .profile-info { display: flex; flex-direction: column; gap: 9px; }
+        .profile-username { font-family: 'MedievalSharp', serif; font-size: 2.2em; color: var(--accent); text-shadow: 0 0 15px rgba(255,140,0,0.5); margin: 0; letter-spacing: 2px; word-break: break-all; }
+        .profile-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+        .profile-badge { padding: 5px 12px; border-radius: 8px; font-weight: 700; font-size: 0.88em; display: inline-flex; align-items: center; gap: 4px; }
+        .badge-level { background: linear-gradient(135deg, #f0c75e, #d4870e); color: #1a1209; box-shadow: 0 0 10px rgba(240,199,94,0.4); }
+        .badge-prestige { background: linear-gradient(135deg, #9b59b6, #6c5ce7, #d4af6e); background-size: 200% 200%; color: #fff; box-shadow: 0 0 12px rgba(155,89,182,0.5); animation: prestigeShimmer 3s ease-in-out infinite; }
+        @keyframes prestigeShimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .badge-member { background: rgba(255,235,200,0.04); border: 1px solid rgba(212,175,110,0.15); color: #b09b76; }
+
+        .profile-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+        .btn-action { padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; font-family: 'Cinzel', serif; transition: 0.2s; font-size: 0.9em; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-add-friend { background: linear-gradient(135deg, #d4af6e, #8b6914); color: #1a1209; box-shadow: 0 0 12px rgba(212,175,110,0.35); }
+        .btn-add-friend:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(212,175,110,0.5); }
+        .btn-pending { background: rgba(240,199,94,0.12); color: var(--gold); border: 1px solid rgba(240,199,94,0.5); cursor: default; }
+        .btn-friends { background: rgba(90,140,58,0.12); color: var(--green); border: 1px solid rgba(90,140,58,0.5); cursor: default; }
+        .btn-remove { background: rgba(168,50,50,0.1); color: #c75e5e; border: 1px solid rgba(168,50,50,0.5); }
+        .btn-remove:hover { background: rgba(168,50,50,0.25); }
+
+        .stats-section { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 26px; }
+        .stats-section-title { font-family: 'MedievalSharp', serif; color: var(--accent); font-size: 1.15em; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .stat-tile { background: linear-gradient(135deg, rgba(212,175,110,0.08), rgba(0,0,0,0.25)); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; transition: 0.2s; }
+        .stat-tile:hover { border-color: var(--border-hover); box-shadow: 0 0 15px rgba(212,175,110,0.2); transform: translateY(-2px); }
+        .stat-tile.gold { border-color: rgba(240,199,94,0.35); background: linear-gradient(135deg, rgba(240,199,94,0.08), rgba(0,0,0,0.25)); }
+        .stat-tile.gold .stat-tile-value { color: var(--gold); }
+        .stat-tile.pink { border-color: rgba(155,89,182,0.35); background: linear-gradient(135deg, rgba(155,89,182,0.08), rgba(0,0,0,0.25)); }
+        .stat-tile.pink .stat-tile-value { color: var(--pink); }
+        .stat-tile.green { border-color: rgba(90,140,58,0.35); background: linear-gradient(135deg, rgba(90,140,58,0.08), rgba(0,0,0,0.25)); }
+        .stat-tile.green .stat-tile-value { color: var(--green); }
+        .stat-tile-label { font-size: 0.72em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .stat-tile-value { font-family: 'MedievalSharp', serif; font-size: 1.7em; font-weight: 700; color: var(--accent); text-shadow: 0 0 10px currentColor; }
+        .stat-tile-sub { font-size: 0.72em; color: #b09b76; margin-top: 5px; }
+
+        .top-scores-list { display: flex; flex-direction: column; gap: 8px; }
+        .top-score-row { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card-soft); padding: 11px 14px; border-radius: 8px; border-left: 3px solid var(--accent); }
+        .top-score-game { color: #f0e6d2; font-weight: 600; }
+        .top-score-value { color: var(--green); font-family: monospace; font-weight: 700; }
+        .top-score-medal { font-size: 1.2em; margin-right: 8px; }
+
+        .trophy-bar-bg { width: 100%; height: 14px; background: rgba(0,0,0,0.4); border-radius: 7px; overflow: hidden; margin-top: 8px; border: 1px solid rgba(155,89,182,0.3); }
+        .trophy-bar-fill { height: 100%; background: linear-gradient(90deg, #9b59b6, #f0c75e); transition: width 0.8s ease; box-shadow: 0 0 10px rgba(155,89,182,0.5); }
+
+        .loading-spinner { width: 50px; height: 50px; border: 4px solid rgba(212,175,110,0.2); border-top-color: #d4af6e; border-radius: 50%; animation: spin 1s linear infinite; margin: 60px auto; }
+
+        #toastContainer { position: fixed; top: 20px; right: 20px; z-index: 9000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: rgba(26,18,9,0.97); color: #f0e6d2; border-left: 4px solid var(--accent); padding: 15px 22px; border-radius: 8px; min-width: 250px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); animation: slideIn 0.4s ease, fadeOut 0.4s ease 3.6s forwards; display: flex; align-items: center; gap: 12px; font-family: 'Cinzel', serif; }
+        .toast.success { border-color: var(--green); }
+        .toast.error { border-color: var(--red); }
+        .toast.warning { border-color: var(--gold); }
+        .toast.c4 { border-color: var(--red); }
+        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateX(120%); } }
+
+        .needs-login { text-align: center; padding: 60px 20px; color: #b09b76; }
+        .needs-login h2 { color: var(--accent); font-family: 'MedievalSharp', serif; }
+        .needs-login a { color: var(--gold); }
+
+        /* ===== WAGER (DUEL) STYLES ===== */
+        .wager-card { background: linear-gradient(135deg, rgba(165,94,234,0.06), rgba(0,0,0,0.25)); border: 1px solid rgba(165,94,234,0.35); border-radius: 10px; padding: 13px; margin-bottom: 9px; cursor: pointer; transition: 0.2s; position: relative; }
+        .wager-card:hover { border-color: var(--purple); transform: translateX(3px); }
+        .wager-card.pending { border-color: rgba(240,199,94,0.45); background: linear-gradient(135deg, rgba(240,199,94,0.06), rgba(0,0,0,0.25)); }
+        .wager-card.ready-claim { border-color: var(--green); background: linear-gradient(135deg, rgba(90,140,58,0.12), rgba(0,0,0,0.25)); animation: claimReadyPulse 1.6s ease-in-out infinite alternate; }
+        @keyframes claimReadyPulse { from { box-shadow: 0 0 6px rgba(90,140,58,0.3); } to { box-shadow: 0 0 18px rgba(90,140,58,0.6); } }
+        .wager-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .wager-vs { color: #f0e6d2; font-weight: 600; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .wager-vs .vs-tag { color: var(--purple); font-family: 'MedievalSharp', serif; font-size: 0.75em; padding: 0 4px; }
+        .wager-amount { background: rgba(240,199,94,0.15); color: var(--gold); padding: 3px 9px; border-radius: 8px; font-size: 0.75em; font-weight: 700; border: 1px solid rgba(240,199,94,0.35); white-space: nowrap; }
+        .wager-game-line { color: #d4af6e; font-size: 0.8em; margin-top: 3px; }
+        .wager-status-line { font-size: 0.74em; margin-top: 5px; color: var(--text-dim); font-family: 'MedievalSharp', serif; letter-spacing: 1px; text-transform: uppercase; }
+        .wager-status-line.urgent { color: #c75e5e; animation: urgent 1.2s alternate infinite; }
+        @keyframes urgent { from { opacity: 0.7; } to { opacity: 1; } }
+        .wager-status-line.win { color: var(--green); }
+        .wager-status-line.lose { color: #c75e5e; }
+        .wager-status-line.tie { color: var(--gold); }
+
+        /* ===== DUEL MODAL ===== */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(13,9,4,0.88); display: none; align-items: center; justify-content: center; z-index: 8000; backdrop-filter: blur(8px); }
+        .modal-overlay.show { display: flex; animation: fadeInModal 0.25s; }
+        @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+        .wager-modal { background: linear-gradient(135deg, #241a0d, #2a1545); border: 1px solid #a55eea; border-radius: 14px; padding: 30px; max-width: 540px; width: 92%; box-shadow: 0 0 40px rgba(165,94,234,0.4); position: relative; max-height: 90vh; overflow-y: auto; }
+        .wager-modal h2 { color: var(--purple); font-family: 'MedievalSharp', serif; margin: 0 0 8px; text-align: center; letter-spacing: 2px; }
+        .wager-modal-sub { text-align: center; color: #d4af6e; font-size: 0.9em; margin-bottom: 22px; font-style: italic; }
+        .wager-modal-close { position: absolute; top: 14px; right: 18px; background: none; border: none; color: #f0e6d2; font-size: 1.6em; cursor: pointer; opacity: 0.6; }
+        .wager-modal-close:hover { opacity: 1; }
+        .wager-info-btn { background: rgba(165,94,234,0.15); border: 1px solid #a55eea; color: var(--purple); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-weight: 700; font-size: 0.9em; font-family: 'MedievalSharp', serif; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+        .wager-info-btn:hover { background: var(--purple); color: #fff; transform: scale(1.1); }
+        .wager-info-section { background: rgba(0,0,0,0.3); border-left: 3px solid var(--purple); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; text-align: left; }
+        .wager-info-title { font-family: 'MedievalSharp', serif; color: var(--purple); font-size: 0.95em; letter-spacing: 1.5px; margin-bottom: 8px; text-transform: uppercase; }
+        .wager-info-list { color: #d4af6e; font-size: 0.9em; line-height: 1.6; margin: 0; padding-left: 20px; }
+        .wager-info-list li { margin-bottom: 6px; }
+        .wager-info-list b { color: #f0e6d2; }
+        .wager-info-list i { color: var(--gold); font-style: normal; font-weight: 700; }
+        .wager-modal-section { margin-bottom: 18px; }
+        .wager-modal-label { font-family: 'MedievalSharp', serif; color: var(--purple); font-size: 0.85em; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 9px; }
+        .wager-game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; max-height: 220px; overflow-y: auto; padding: 4px; background: rgba(0,0,0,0.25); border-radius: 8px; }
+        .wager-game-pick { background: rgba(0,0,0,0.35); border: 1px solid rgba(165,94,234,0.3); border-radius: 8px; padding: 11px; text-align: center; cursor: pointer; transition: 0.15s; color: #f0e6d2; font-size: 0.85em; }
+        .wager-game-pick:hover { border-color: var(--purple); background: rgba(165,94,234,0.12); }
+        .wager-game-pick.selected { border-color: var(--purple); background: rgba(165,94,234,0.25); box-shadow: 0 0 15px rgba(165,94,234,0.35); }
+        .wager-game-pick-type { font-size: 0.7em; color: var(--text-dim); margin-top: 4px; }
+        .wager-game-pick.selected .wager-game-pick-type { color: #d4af6e; }
+        .wager-amount-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+        .wager-amount-pick { background: rgba(0,0,0,0.35); border: 1px solid rgba(240,199,94,0.3); border-radius: 8px; padding: 11px; text-align: center; cursor: pointer; transition: 0.15s; color: var(--gold); font-weight: 700; font-family: 'MedievalSharp', serif; font-size: 0.85em; }
+        .wager-amount-pick:hover { border-color: var(--gold); background: rgba(240,199,94,0.1); }
+        .wager-amount-pick.selected { border-color: var(--gold); background: rgba(240,199,94,0.22); box-shadow: 0 0 15px rgba(240,199,94,0.35); }
+        .wager-amount-pick.disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+        .wager-summary { background: rgba(0,0,0,0.35); border-radius: 10px; padding: 16px; margin: 16px 0; border: 1px dashed rgba(165,94,234,0.4); }
+        .wager-summary-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 0.95em; }
+        .wager-summary-row.big { border-top: 1px solid rgba(165,94,234,0.3); padding-top: 10px; margin-top: 6px; font-size: 1.1em; font-weight: 700; }
+        .wager-summary-label { color: #b09b76; }
+        .wager-summary-value { color: var(--gold); font-weight: 700; font-family: monospace; }
+        .wager-summary-value.win { color: var(--green); }
+        .btn-wager-send { width: 100%; padding: 14px; background: linear-gradient(135deg, #a55eea, #6c5ce7); color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 1em; cursor: pointer; font-family: 'MedievalSharp', serif; letter-spacing: 2px; transition: 0.2s; box-shadow: 0 4px 15px rgba(165,94,234,0.35); }
+        .btn-wager-send:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(165,94,234,0.6); }
+        .btn-wager-send:disabled { background: #2a2415; color: #6b5836; cursor: not-allowed; box-shadow: none; }
+        .btn-action.btn-challenge { background: linear-gradient(135deg, #a55eea, #6c5ce7); color: #fff; box-shadow: 0 0 12px rgba(165,94,234,0.35); }
+        .btn-action.btn-challenge:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(165,94,234,0.5); }
+
+        /* ===== ACTIVE DUEL DETAIL CARDS ===== */
+        .active-wager-card { background: linear-gradient(135deg, rgba(165,94,234,0.08), rgba(0,0,0,0.25)); border: 1px solid rgba(165,94,234,0.4); border-radius: 12px; padding: 18px; margin-bottom: 14px; position: relative; }
+        .active-wager-card.ready { border-color: var(--green); background: linear-gradient(135deg, rgba(90,140,58,0.1), rgba(0,0,0,0.25)); }
+        .active-wager-card.pending { border-color: var(--gold); background: linear-gradient(135deg, rgba(240,199,94,0.06), rgba(0,0,0,0.25)); }
+        .active-wager-card.completed { opacity: 0.85; border-color: #4a3a20; background: rgba(0,0,0,0.3); }
+        .aw-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(165,94,234,0.3); padding-bottom: 10px; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; }
+        .aw-title { color: var(--purple); font-family: 'MedievalSharp', serif; letter-spacing: 1px; font-size: 1.05em; }
+        .aw-pot { background: linear-gradient(135deg, #f0c75e, #d4870e); color: #1a1209; font-weight: 700; padding: 4px 12px; border-radius: 8px; font-family: 'MedievalSharp', serif; font-size: 0.85em; }
+        .aw-vs-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; margin: 12px 0; }
+        .aw-side { background: rgba(0,0,0,0.35); border-radius: 10px; padding: 11px; text-align: center; border: 1px solid rgba(255,235,200,0.08); }
+        .aw-side.me { border-color: var(--accent); }
+        .aw-side.them { border-color: var(--red); }
+        .aw-side.winner { border-color: var(--green); box-shadow: 0 0 15px rgba(90,140,58,0.4); }
+        .aw-side-label { font-size: 0.7em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .aw-side-name { color: #f0e6d2; font-weight: 700; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .aw-side-score { margin-top: 6px; font-family: 'MedievalSharp', serif; font-size: 1.4em; font-weight: 700; color: var(--green); }
+        .aw-side-score.hidden-score { color: #5a4423; }
+        .aw-side-score.no-submit { color: #6b5836; font-size: 0.9em; font-style: italic; }
+        .aw-vs { color: var(--purple); font-family: 'MedievalSharp', serif; font-weight: 700; }
+        .aw-timer { text-align: center; color: var(--gold); font-family: 'MedievalSharp', serif; font-size: 0.85em; letter-spacing: 1px; margin: 8px 0; }
+        .aw-timer.urgent { color: #c75e5e; animation: urgent 1.2s alternate infinite; }
+        .aw-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .aw-actions button, .aw-actions a { flex: 1; padding: 11px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; transition: 0.2s; font-size: 0.9em; text-decoration: none; text-align: center; font-family: 'Cinzel', serif; }
+        .btn-play-wager { background: linear-gradient(135deg, #d4af6e, #8b6914); color: #1a1209; }
+        .btn-play-wager:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(212,175,110,0.4); }
+        .btn-submit-wager { background: linear-gradient(135deg, #a55eea, #6c5ce7); color: #fff; }
+        .btn-submit-wager:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(165,94,234,0.4); }
+        .btn-submit-wager:disabled { background: #2a2415; color: #6b5836; cursor: not-allowed; }
+        .btn-claim-wager { background: linear-gradient(135deg, #5a8c3a, #3a6b2a); color: #fff; animation: claimReadyPulse 1.6s ease-in-out infinite alternate; }
+        .btn-cancel-wager { background: rgba(168,50,50,0.1); color: #c75e5e; border: 1px solid var(--red) !important; }
+        .aw-result-banner { text-align: center; padding: 11px; border-radius: 8px; margin: 8px 0; font-family: 'MedievalSharp', serif; font-weight: 700; letter-spacing: 2px; font-size: 0.95em; }
+        .aw-result-banner.win { background: rgba(90,140,58,0.12); color: var(--green); border: 1px solid var(--green); }
+        .aw-result-banner.lose { background: rgba(168,50,50,0.12); color: #c75e5e; border: 1px solid var(--red); }
+        .aw-result-banner.tie { background: rgba(240,199,94,0.12); color: var(--gold); border: 1px solid var(--gold); }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="megaplex-firebase.js"></script>
+</head>
+<body>
+
+<div id="friendsLoadingScreen">
+    <div class="loading-logo">🤝 COMPANIONS</div>
+    <div class="full-loading-spinner"></div>
+    <div class="loading-status" id="friendsLoadingStatus">SENDING RAVENS...</div>
+    <div class="loading-bar-container"><div class="loading-bar-fill" id="friendsLoadingBar"></div></div>
+    <div class="loading-tip" id="friendsLoadingTip">💡 Tip: Recruit companions by searching their name</div>
+</div>
+
+<div class="starfield" id="starfield"></div>
+<div id="toastContainer"></div>
+
+<header>
+    <div class="header-left">
+        <a href="index.html" class="back-btn">← Back to the Hall</a>
+        <h1 class="page-title">🤝 COMPANIONS</h1>
+    </div>
+    <div class="header-right">
+        <span class="pill" id="pillUsername">🧙 Loading...</span>
+        <span class="pill gold">🪙 <span id="pillTokens">0</span></span>
+        <span class="pill gold">⭐ <span id="pillFriendCount">0</span> Party</span>
+        <span class="pill purple">⚔️ <span id="pillWagerCount">0</span> Duels</span>
+        <span class="pill red">🔴 <span id="pillC4Count">0</span> C4</span>
+    </div>
+</header>
+
+<div class="friends-container" id="mainContent">
+    <aside class="sidebar">
+        <!-- SEARCH -->
+        <div class="search-section">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search adventurers by name..." maxlength="20">
+            <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <!-- TABS -->
+        <div class="sidebar-tabs">
+            <button class="tab-btn active" data-tab="friends" onclick="switchTab('friends')">
+                <span class="tab-icon">⭐</span>Party
+                <span class="tab-badge accent" id="tabBadgeFriends"></span>
+            </button>
+            <button class="tab-btn" data-tab="requests" onclick="switchTab('requests')">
+                <span class="tab-icon">📨</span>Requests
+                <span class="tab-badge" id="tabBadgeRequests"></span>
+            </button>
+            <button class="tab-btn" data-tab="wagers" onclick="switchTab('wagers')">
+                <span class="tab-icon">⚔️</span>Duels
+                <span class="tab-badge purple" id="tabBadgeWagers"></span>
+            </button>
+            <button class="tab-btn" data-tab="c4" onclick="switchTab('c4')">
+                <span class="tab-icon">🔴</span>Conn4
+                <span class="tab-badge" id="tabBadgeC4"></span>
+            </button>
+        </div>
+
+        <!-- TAB PANELS -->
+        <div class="tab-panels">
+
+            <!-- PARTY PANEL -->
+            <div class="tab-panel active" data-panel="friends">
+                <div class="panel-section-label">⭐ Your Party (<span id="friendCountSidebar">0</span>)</div>
+                <div class="friend-list" id="friendsList"></div>
+            </div>
+
+            <!-- REQUESTS PANEL -->
+            <div class="tab-panel" data-panel="requests">
+                <div class="panel-section-label">📨 Party Requests (<span id="pendingCount">0</span>)</div>
+                <div id="pendingList"></div>
+            </div>
+
+            <!-- DUELS PANEL -->
+            <div class="tab-panel" data-panel="wagers">
+                <div class="panel-section-label">⚔️ Duel Challenges (<span id="wagerInviteCount">0</span>)</div>
+                <div id="wagerInviteList"></div>
+                <div class="panel-section-label">🎯 Active Duels (<span id="wagerActiveCount">0</span>)</div>
+                <div id="wagerActiveList"></div>
+            </div>
+
+            <!-- CONNECT 4 PANEL -->
+            <div class="tab-panel" data-panel="c4">
+                <div class="panel-section-label">🔴 Connect 4 Challenges (<span id="c4InviteCount">0</span>)</div>
+                <div id="c4InviteList"><div class="empty-state">No Connect 4 challenges</div></div>
+            </div>
+
+        </div>
+    </aside>
+
+    <main class="profile-view" id="profileView">
+        <div class="profile-empty">
+            <div class="big-icon">🤝</div>
+            <h2>SELECT AN ADVENTURER</h2>
+            <p>Choose a companion on the left or search for an adventurer to view their full stats, trophies, and gear.</p>
+        </div>
+    </main>
+</div>
+
+<!-- DUEL CHALLENGE MODAL -->
+<div class="modal-overlay" id="wagerModal" onclick="if(event.target===this) closeWagerModal()">
+    <div class="wager-modal">
+        <button class="wager-modal-close" onclick="closeWagerModal()">×</button>
+        <h2 style="display:flex; align-items:center; justify-content:center; gap:10px;">
+            ⚔️ CHALLENGE TO A DUEL
+            <button class="wager-info-btn" onclick="openWagerInfo()" title="How duels work">ℹ</button>
+        </h2>
+        <div class="wager-modal-sub" id="wagerModalSub">vs OPPONENT</div>
+        <div class="wager-modal-section">
+            <div class="wager-modal-label">1. Pick a Trial</div>
+            <div class="wager-game-grid" id="wagerGameGrid"></div>
+        </div>
+        <div class="wager-modal-section">
+            <div class="wager-modal-label">2. Pick a Wager Amount</div>
+            <div class="wager-amount-grid" id="wagerAmountGrid"></div>
+        </div>
+        <div class="wager-summary" id="wagerSummary" style="display:none;"></div>
+        <button class="btn-wager-send" id="btnSendWager" onclick="confirmSendWager()" disabled>SELECT TRIAL & AMOUNT</button>
+    </div>
+</div>
+
+<!-- HOW DUELS WORK MODAL -->
+<div class="modal-overlay" id="wagerInfoModal" onclick="if(event.target===this) closeWagerInfo()">
+    <div class="wager-modal" style="max-width:600px;">
+        <button class="wager-modal-close" onclick="closeWagerInfo()">×</button>
+        <h2>ℹ️ HOW DUELS WORK</h2>
+        <div class="wager-modal-sub">Read this before you challenge!</div>
+        <div class="wager-info-section">
+            <div class="wager-info-title">⚔️ The Basics</div>
+            <ul class="wager-info-list">
+                <li>Both adventurers wager the same amount of gold.</li>
+                <li>You and your opponent each undertake the chosen trial.</li>
+                <li>Highest score (or lowest, for time-based trials) claims the pot.</li>
+                <li>You have <b>24 hours</b> after the duel is accepted to play and submit.</li>
+            </ul>
+        </div>
+        <div class="wager-info-section">
+            <div class="wager-info-title">🔴 Connect 4 Battles</div>
+            <ul class="wager-info-list">
+                <li>Connect 4 is a <b>live head-to-head</b> game — both adventurers play on the same board in real time.</li>
+                <li>The first to connect 4 discs claims the pot (minus 10% house cut).</li>
+                <li>If the board fills with no winner, it is a draw and both are refunded (minus 5% each).</li>
+                <li>Games expire after <b>1 hour</b> if incomplete — the player whose turn it was forfeits.</li>
+            </ul>
+        </div>
+        <div class="wager-info-section">
+            <div class="wager-info-title">🏆 Spoils</div>
+            <ul class="wager-info-list">
+                <li><b>Victor:</b> Takes the full pot minus a 10% house cut.</li>
+                <li><b>Tie / Draw:</b> Both adventurers refunded minus 5% each.</li>
+                <li><b>No-show / expired:</b> The one who did not act forfeits.</li>
+                <li>You must click <b>"CLAIM"</b> on this page to collect your spoils.</li>
+            </ul>
+        </div>
+        <div class="wager-info-section">
+            <div class="wager-info-title">⛔ Other Rules</div>
+            <ul class="wager-info-list">
+                <li>You can only challenge party members — send a request first.</li>
+                <li>Gold is held in escrow the moment you challenge or accept.</li>
+                <li>Cancelling a pending challenge refunds you immediately.</li>
+            </ul>
+        </div>
+        <button onclick="closeWagerInfo()" style="background:linear-gradient(135deg,#a55eea,#6c5ce7); color:#fff; padding:12px 30px; border-radius:10px; border:none; font-weight:bold; cursor:pointer; font-family:'MedievalSharp',serif; letter-spacing:2px; margin-top:10px;">GOT IT</button>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// Shorthand alias
+// ============================================================
+const MC = window.MegaplexCloud;
+
+/* ===== TAB SWITCHING ===== */
+window.switchTab = function(tabName) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === tabName));
+};
+
+/* Helper to update a tab badge count */
+function setTabBadge(id, count) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (count > 0) { el.textContent = count > 99 ? '99+' : count; el.classList.add('show'); }
+    else { el.classList.remove('show'); }
+}
+
+/* Kept for backwards-compat */
+window.toggleSection = function(headerEl) {
+    const section = headerEl.closest('.sidebar-section');
+    if (!section) return;
+    section.classList.toggle('collapsed');
+    headerEl.classList.toggle('collapsed');
+};
+
+/* ===== LOADING SCREEN ===== */
+const loadingTips = [
+    '💡 Tip: Recruit companions by searching their name',
+    '💡 Tip: Click a companion to view their profile and stats',
+    '💡 Tip: Your party can be unlimited in size!',
+    '💡 Tip: Challenge companions to Connect 4 via the duel button!',
+    '💡 Tip: Ascension rank is shown on every profile card',
+    '💡 Tip: Compare your top scores with your party'
+];
+let loadingTipInterval = null;
+
+function setLoadingStatus(text, pct) {
+    const s = document.getElementById('friendsLoadingStatus');
+    const b = document.getElementById('friendsLoadingBar');
+    if (s) s.innerText = text;
+    if (b && pct !== undefined) b.style.width = pct + '%';
+}
+function rotateTips() {
+    const tipEl = document.getElementById('friendsLoadingTip');
+    if (!tipEl) return;
+    let i = 0;
+    loadingTipInterval = setInterval(() => {
+        i = (i + 1) % loadingTips.length;
+        tipEl.style.opacity = '0';
+        setTimeout(() => { tipEl.innerText = loadingTips[i]; tipEl.style.opacity = '0.75'; }, 300);
+    }, 3000);
+}
+rotateTips();
+function hideLoadingScreen() {
+    if (loadingTipInterval) clearInterval(loadingTipInterval);
+    setLoadingStatus('READY', 100);
+    setTimeout(() => {
+        const screen = document.getElementById('friendsLoadingScreen');
+        if (screen) { screen.classList.add('hide'); setTimeout(() => screen.remove(), 600); }
+    }, 300);
+}
+setTimeout(() => {
+    const screen = document.getElementById('friendsLoadingScreen');
+    if (screen && !screen.classList.contains('hide')) hideLoadingScreen();
+}, 10000);
+
+/* ===== EMBERS (starfield) ===== */
+function generateStars() {
+    const sf = document.getElementById('starfield');
+    for (let i = 0; i < 60; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        const size = Math.random() * 3 + 1;
+        star.style.width = size + 'px'; star.style.height = size + 'px';
+        star.style.left = Math.random() * 100 + '%'; star.style.top = (Math.random() * 60 + 40) + '%';
+        star.style.animationDuration = (Math.random() * 4 + 3) + 's';
+        star.style.animationDelay = Math.random() * 4 + 's';
+        sf.appendChild(star);
+    }
+}
+generateStars();
+
+/* ===== TOAST ===== */
+function toast(message, type = 'info', icon = '✨') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.innerHTML = '<span style="font-size:1.5em;">' + icon + '</span><span>' + message + '</span>';
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+}
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+}
+function updateTokenPill() {
+    const tokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+    const el = document.getElementById('pillTokens');
+    if (el) el.textContent = tokens.toLocaleString();
+}
+
+/* ===== AVATAR DATABASE ===== */
+const shopDatabase = {
+    colors: [
+        { id: 'color_default', hex: '#e8c9a0', bodyHex: '#8b6914' },
+        { id: 'color_red', hex: '#a83232', bodyHex: '#6e1e1e' },
+        { id: 'color_green', hex: '#5a8c3a', bodyHex: '#3a6b2a' },
+        { id: 'color_pink', hex: '#d6849f', bodyHex: '#b05878' },
+        { id: 'color_gold', hex: '#f0c75e', bodyHex: '#d4870e' },
+        { id: 'color_ghost', hex: '#e8e0d0', bodyHex: '#c8bca8' },
+        { id: 'color_cyber', hex: '#6ba3c7', bodyHex: '#4a6b8a' },
+        { id: 'color_void', hex: '#3a2d18', bodyHex: '#1e1810' },
+        { id: 'color_blood', hex: '#8e0e00', bodyHex: '#3d0000' },
+        { id: 'color_neon', hex: '#7ac74f', bodyHex: '#4a9b2a' },
+        { id: 'color_royal', hex: '#6c5ce7', bodyHex: '#341f97' },
+        { id: 'color_chrome', hex: '#b8b0a0', bodyHex: '#7f7868' },
+        { id: 'color_inferno', hex: '#ff6b00', bodyHex: '#ff9f1a' },
+        { id: 'color_omega', hex: '#1a1209', bodyHex: '#a83232' },
+        { id: 'color_godcore', hex: '#f0c75e', bodyHex: '#ff8a00', holo: true }
+    ],
+    hats: [
+        { id: 'hat_none', icon: '' },
+        { id: 'hat_cap', icon: '🧢' }, { id: 'hat_party', icon: '🥳' }, { id: 'hat_headphones', icon: '🎧' },
+        { id: 'hat_cowboy', icon: '🤠' }, { id: 'hat_vr', icon: '🥽' }, { id: 'hat_ninja', icon: '🥷' },
+        { id: 'hat_pirate', icon: '🏴‍☠️' }, { id: 'hat_alien', icon: '👾' }, { id: 'hat_wizard', icon: '🧙' },
+        { id: 'hat_robot', icon: '🤖' }, { id: 'hat_fire', icon: '🔥' }, { id: 'hat_dragon', icon: '🐉' },
+        { id: 'hat_crown', icon: '👑' }, { id: 'hat_halo', icon: '👼' }, { id: 'hat_trophy', icon: '🏆' },
+        { id: 'hat_unicorn', icon: '🦄', holo: true }, { id: 'hat_galaxy', icon: '🌌', holo: true }
+    ],
+    bgs: [
+        { id: 'bg_default', css: '#3a2a14' },
+        { id: 'bg_neon', css: 'linear-gradient(135deg, #8b2e2e, #6c5ce7)' },
+        { id: 'bg_matrix', css: 'repeating-linear-gradient(0deg, #1a1209, #1a1209 10px, #2a3a1a 10px, #2a3a1a 20px)' },
+        { id: 'bg_sunset', css: 'linear-gradient(180deg, #3a2a14, #a83232, #f0c75e)' },
+        { id: 'bg_ocean', css: 'linear-gradient(180deg, #1a2a3a, #2a4a5a, #4a6b8a, #6ba3c7)' },
+        { id: 'bg_synth', css: 'linear-gradient(0deg, #6c5ce7 0%, #a83232 50%, #f0c75e 100%)' },
+        { id: 'bg_lava', css: 'radial-gradient(circle at bottom, #a83232, #1a1209)' },
+        { id: 'bg_aurora', css: 'linear-gradient(135deg, #6ba3c7, #5a8c3a, #6c5ce7, #8b2e2e)', anim: 'aurora' },
+        { id: 'bg_galaxy', css: 'radial-gradient(circle at center, #341f97, #1a1209)' },
+        { id: 'bg_glitch', css: 'repeating-linear-gradient(45deg, #9b59b6, #9b59b6 8px, #d4af6e 8px, #d4af6e 16px, #1a1209 16px, #1a1209 24px)', anim: 'glitch' },
+        { id: 'bg_holo', css: 'linear-gradient(135deg, #9b59b6, #f0c75e, #d4af6e, #6c5ce7, #9b59b6)', anim: 'holo' }
+    ],
+    nameplates: [
+        { id: 'np_inferno_daily', animClass: 'np-inferno-daily' },
+        { id: 'np_pulse', animClass: 'np-pulse' }, { id: 'np_ice', animClass: 'np-ice' },
+        { id: 'np_fire', animClass: 'np-fire' }, { id: 'np_rainbow', animClass: 'np-rainbow' },
+        { id: 'np_void', animClass: 'np-void' }, { id: 'np_galaxy', animClass: 'np-galaxy' },
+        { id: 'np_godcore', animClass: 'np-godcore' }
+    ],
+    auras: [
+        { id: 'aura_leaves', animClass: 'aura-leaves' }, { id: 'aura_ice', animClass: 'aura-ice' },
+        { id: 'aura_fire', animClass: 'aura-fire' }, { id: 'aura_electric', animClass: 'aura-electric' },
+        { id: 'aura_dark', animClass: 'aura-dark' }, { id: 'aura_rainbow', animClass: 'aura-rainbow' },
+        { id: 'aura_godcore', animClass: 'aura-godcore' }
+    ]
+};
+
+const gameTitles = {
+    glitch_score:      '💥 Arena Brawler',
+    glitch_strikers:   '⚔️ The Brawl',
+    asteroids:         '☄️ Quantum Asteroids',
+    tanks_score:       '💣 Plasma Tanks',
+    cyberrunner:       '🏃‍♂️ The Run',
+    fps:               '🔫 The Siege',
+    racer_best_time:   '🏎️ The Race',
+    platformer_deaths: '🦘 Castle Jumper',
+    nj2_score:         '⚡ Castle Jumper 2',
+    pr_score:          '🎵 Bard Trial',
+    nf_score:          '🐦 Sky Flapper',
+    nethacksiege:      '🛡️ Keep Siege',
+    snake:             '🐍 Serpent',
+    clicker:           '👆 Click Frenzy',
+    reaction:          '⚡ Reaction Time',
+    math:              '🧠 Quick Math',
+    ttt:               '⭕ Tic-Tac-Toe',
+    memory:            '👁️ Memory Match',
+    guesser:           '🔐 Code Breaker',
+    connect4_score:    '🔴 Connect 4'
+};
+
+/* ===== STATE ===== */
+let socialState = { friends: [], incoming: [], outgoing: [] };
+let activeProfileUid = null;
+let socialUnsubscribe = null;
+let wagerUnsubscribe = null;
+let c4Unsubscribe = null;
+let lastC4InviteIds = new Set();
+let searchDebounceTimer = null;
+let wagerList = [];
+let pendingWagerOpponentUid = null;
+let wagerSelection = { game: null, amount: null };
+let wagerTimerInterval = null;
+
+/* ===== AVATAR RENDERER ===== */
+function renderAvatarPreview(targetEl, equipped, opts = {}) {
+    const isMini = opts.mini === true;
+    equipped = equipped || {};
+    const cur = {
+        color: equipped.color || 'color_default',
+        hat: equipped.hat || 'hat_none',
+        bg: equipped.bg || 'bg_default',
+        nameplate: equipped.nameplate || null,
+        aura: equipped.aura || null
+    };
+    const colorObj = shopDatabase.colors.find(c => c.id === cur.color) || shopDatabase.colors[0];
+    const hatObj = shopDatabase.hats.find(h => h.id === cur.hat) || shopDatabase.hats[0];
+    const bgObj = shopDatabase.bgs.find(b => b.id === cur.bg) || shopDatabase.bgs[0];
+
+    if (isMini) {
+        const headStyle = colorObj.holo ? '' : 'background:' + colorObj.hex + ';';
+        const bodyStyle = colorObj.holo ? '' : 'background:' + colorObj.bodyHex + ';';
+        targetEl.style.background = bgObj.css;
+        targetEl.innerHTML = (hatObj.icon ? '<div class="mini-hat ' + (hatObj.holo ? 'holo' : '') + '">' + hatObj.icon + '</div>' : '') +
+            '<div class="mini-head ' + (colorObj.holo ? 'holo' : '') + '" style="' + headStyle + '"><div class="mini-eyes"><div class="mini-eye"></div><div class="mini-eye"></div></div></div>' +
+            '<div class="mini-body ' + (colorObj.holo ? 'holo' : '') + '" style="' + bodyStyle + '"></div>';
+        return;
+    }
+
+    targetEl.style.background = bgObj.css;
+    targetEl.classList.remove('bg-anim-holo', 'bg-anim-glitch', 'bg-anim-aurora');
+    targetEl.classList.add('profile-bg-anim');
+    if (bgObj.anim) targetEl.classList.add('bg-anim-' + bgObj.anim);
+
+    const headClass = colorObj.holo ? 'bot-head holo' : 'bot-head';
+    const bodyClass = colorObj.holo ? 'bot-body holo' : 'bot-body';
+    const headStyle = colorObj.holo ? '' : 'style="background:' + colorObj.hex + ';"';
+    const bodyStyle = colorObj.holo ? '' : 'style="background:' + colorObj.bodyHex + ';"';
+    const hatClass = hatObj.holo ? 'bot-hat holo' : 'bot-hat';
+
+    let auraHTML = '';
+    const auraItem = shopDatabase.auras.find(a => a.id === cur.aura);
+    if (auraItem) {
+        const N = (auraItem.id === 'aura_godcore') ? 14 : 8;
+        const cycle = (auraItem.id === 'aura_godcore') ? 4 : 3;
+        let particles = '';
+        for (let i = 0; i < N; i++) particles += '<div class="profile-aura-particle" style="animation-delay:' + (-i * (cycle / N)) + 's"></div>';
+        auraHTML = '<div class="profile-aura-container show ' + auraItem.animClass + '">' + particles + '</div>';
+    }
+    let npHTML = '';
+    const npItem = shopDatabase.nameplates.find(n => n.id === cur.nameplate);
+    if (npItem) npHTML = '<div class="profile-nameplate show ' + npItem.animClass + '">' + escapeHtml((opts.username || 'HERO').toUpperCase()) + '</div>';
+
+    targetEl.innerHTML = auraHTML + npHTML +
+        '<div class="' + headClass + '" ' + headStyle + '><div class="' + hatClass + '">' + hatObj.icon + '</div><div class="bot-eyes"><div class="eye"></div><div class="eye"></div></div></div>' +
+        '<div class="' + bodyClass + '" ' + bodyStyle + '></div>';
+}
+
+/* ===== SEARCH ===== */
+function setupSearch() {
+    const input = document.getElementById('searchInput');
+    const results = document.getElementById('searchResults');
+    input.addEventListener('input', (e) => {
+        clearTimeout(searchDebounceTimer);
+        const term = e.target.value.trim();
+        if (term.length < 2) { results.classList.remove('show'); return; }
+        searchDebounceTimer = setTimeout(() => doSearch(term), 280);
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-section')) results.classList.remove('show');
+    });
+}
+async function doSearch(term) {
+    const resultsEl = document.getElementById('searchResults');
+    resultsEl.innerHTML = '<div class="search-result-empty">⏳ Searching...</div>';
+    resultsEl.classList.add('show');
+    const players = await MC.searchPlayers(term, 10);
+    if (!players.length) { resultsEl.innerHTML = '<div class="search-result-empty">No adventurers found</div>'; return; }
+    resultsEl.innerHTML = players.map(p => {
+        const lvl = p.publicProfile?.level || calcLevelFromXp(p.publicProfile?.lifetimeXp || 0);
+        return '<div class="search-result-item" data-uid="' + p.uid + '"><div class="mini-avatar" data-mini-avatar=\'' + JSON.stringify(p.publicProfile?.avatar || {}) + '\'></div><div style="flex:1;"><div class="friend-name">' + escapeHtml(p.username) + '</div><div class="friend-meta">Lvl ' + lvl + ' · Click to view</div></div></div>';
+    }).join('');
+    resultsEl.querySelectorAll('.search-result-item').forEach(item => {
+        const miniEl = item.querySelector('.mini-avatar');
+        renderAvatarPreview(miniEl, JSON.parse(miniEl.dataset.miniAvatar || '{}'), { mini: true });
+        item.addEventListener('click', () => {
+            openProfile(item.dataset.uid);
+            resultsEl.classList.remove('show');
+            document.getElementById('searchInput').value = '';
+        });
+    });
+}
+
+function calcLevelFromXp(xp) {
+    xp = xp || 0; let lvl = 1;
+    while ((lvl + 1) * (lvl + 1) * 100 <= xp) lvl++;
+    return lvl;
+}
+
+/* ===== SOCIAL SUBSCRIPTION ===== */
+function startSocialSubscription() {
+    if (typeof socialUnsubscribe === 'function') socialUnsubscribe();
+    socialUnsubscribe = MC.subscribeToSocial((data) => {
+        socialState = data;
+        renderSidebar();
+        if (activeProfileUid) refreshProfileActions();
+    });
+}
+
+/* ===== CONNECT 4 SUBSCRIPTION ===== */
+function startC4Subscription() {
+    if (typeof c4Unsubscribe === 'function') { c4Unsubscribe(); c4Unsubscribe = null; }
+    const myUid = MC.currentFbUser?.uid;
+    if (!myUid) return;
+
+    c4Unsubscribe = MC.subscribeToC4(function(c4Games) {
+        const myUid = MC.currentFbUser?.uid;
+        const incoming = c4Games.filter(g => g.status === 'pending' && g.yellow.uid === myUid);
+
+        const newIds = new Set(incoming.map(g => g.id));
+        incoming.forEach(g => {
+            if (lastC4InviteIds.size > 0 && !lastC4InviteIds.has(g.id)) {
+                toast('New Connect 4 challenge from ' + escapeHtml(g.red.username) + '!', 'c4', '🔴');
+            }
+        });
+        lastC4InviteIds = newIds;
+
+        const c4InviteList = document.getElementById('c4InviteList');
+        const c4InviteCount = document.getElementById('c4InviteCount');
+        const pillC4 = document.getElementById('pillC4Count');
+
+        if (c4InviteCount) c4InviteCount.textContent = incoming.length;
+        if (pillC4) pillC4.textContent = incoming.length;
+        setTabBadge('tabBadgeC4', incoming.length);
+
+        if (!c4InviteList) return;
+        if (!incoming.length) {
+            c4InviteList.innerHTML = '<div class="empty-state">No Connect 4 challenges</div>';
+            return;
+        }
+        c4InviteList.innerHTML = incoming.map(g => `
+            <div class="c4-invite-card" onclick="window.location.href='connect4.html?game=${g.id}'">
+                <div>
+                    <div class="c4-from">${escapeHtml(g.red.username)}</div>
+                    <div class="c4-tag">🔴 CONNECT 4 CHALLENGE</div>
+                </div>
+                <span class="c4-amt">${MC.formatTokenAmount(g.amount)} 🪙</span>
+            </div>
+        `).join('');
+    });
+}
+
+/* ===== DUEL (WAGER) SUBSCRIPTION ===== */
+function startWagerSubscription() {
+    if (typeof wagerUnsubscribe === 'function') wagerUnsubscribe();
+    wagerUnsubscribe = MC.subscribeToWagers((wagers) => {
+        wagerList = wagers;
+        renderWagerSections();
+        if (activeProfileUid) renderActiveWagersForProfile(activeProfileUid);
+        updateTokenPill();
+    });
+    MC.checkExpiredWagers();
+    MC.checkExpiredC4();
+    if (wagerTimerInterval) clearInterval(wagerTimerInterval);
+    wagerTimerInterval = setInterval(tickWagerTimers, 1000);
+}
+
+function getMyUid() { return MC.currentFbUser?.uid || null; }
+function getMySide(w) {
+    const me = getMyUid();
+    if (w.challenger.uid === me) return 'challenger';
+    if (w.opponent.uid === me) return 'opponent';
+    return null;
+}
+function getOtherSide(w) { return getMySide(w) === 'challenger' ? 'opponent' : 'challenger'; }
+function formatWagerTime(ms) {
+    if (ms <= 0) return 'EXPIRED';
+    const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000);
+    if (h > 0) return h + 'h ' + m + 'm ' + s + 's';
+    if (m > 0) return m + 'm ' + s + 's';
+    return s + 's';
+}
+function canClaimWager(w) {
+    const side = getMySide(w);
+    if (!side) return false;
+    if (!['completed', 'tied'].includes(w.status)) return false;
+    const myPayout = (side === 'challenger') ? (w.challengerPayout || 0) : (w.opponentPayout || 0);
+    return myPayout > 0 && w[side].claimed !== true;
+}
+
+function renderWagerSections() {
+    const myUid = getMyUid();
+    const inviteList = document.getElementById('wagerInviteList');
+    const activeList = document.getElementById('wagerActiveList');
+    if (!inviteList || !activeList) return;
+
+    const invites = wagerList.filter(w => w.status === 'pending' && w.opponent.uid === myUid);
+    const outgoingPending = wagerList.filter(w => w.status === 'pending' && w.challenger.uid === myUid);
+    const active = wagerList.filter(w => w.status === 'active');
+    const claimable = wagerList.filter(w => canClaimWager(w));
+
+    document.getElementById('wagerInviteCount').textContent = invites.length;
+    const activeTotal = outgoingPending.length + active.length + claimable.length;
+    document.getElementById('wagerActiveCount').textContent = activeTotal;
+    document.getElementById('pillWagerCount').textContent = activeTotal + invites.length;
+    setTabBadge('tabBadgeWagers', activeTotal + invites.length);
+
+    inviteList.innerHTML = invites.length
+        ? invites.map(w => buildWagerCard(w, 'invite')).join('')
+        : '<div class="empty-state">No duel challenges</div>';
+
+    const combined = [...claimable, ...active, ...outgoingPending];
+    activeList.innerHTML = combined.length
+        ? combined.map(w => {
+            if (canClaimWager(w)) return buildWagerCard(w, 'claim');
+            if (w.status === 'pending') return buildWagerCard(w, 'pending');
+            return buildWagerCard(w, 'active');
+          }).join('')
+        : '<div class="empty-state">No active duels</div>';
+
+    document.querySelectorAll('[data-wager-id]').forEach(el => {
+        el.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') return;
+            const w = wagerList.find(x => x.id === el.dataset.wagerId);
+            if (w) { const otherUid = (getMySide(w) === 'challenger') ? w.opponent.uid : w.challenger.uid; openProfile(otherUid); }
+        });
+    });
+}
+
+function buildWagerCard(w, mode) {
+    const otherSide = getOtherSide(w);
+    const otherName = w[otherSide].username;
+    const amountStr = MC.formatTokenAmount(w.amount);
+    const cardClass = mode === 'claim' ? 'wager-card ready-claim' : (mode === 'invite' || mode === 'pending' ? 'wager-card pending' : 'wager-card');
+    let statusLine = '', statusCls = '';
+    if (mode === 'invite') { statusLine = '📨 Tap to view & accept'; }
+    else if (mode === 'pending') { statusLine = '⏳ Awaiting response'; }
+    else if (mode === 'active') {
+        const remaining = w.expiresAt - Date.now();
+        statusLine = '⏰ ' + formatWagerTime(remaining);
+        statusCls = remaining < 3600000 ? 'urgent' : '';
+    } else if (mode === 'claim') {
+        if (w.status === 'tied') { statusLine = '🤝 TIE — Tap to claim refund'; statusCls = 'tie'; }
+        else if (w.winner === getMyUid()) { statusLine = '🏆 YOU WON — Tap to claim'; statusCls = 'win'; }
+        else { statusLine = '💔 You lost'; statusCls = 'lose'; }
+    }
+    return '<div class="' + cardClass + '" data-wager-id="' + w.id + '"><div class="wager-card-header"><span class="wager-vs">' + escapeHtml(otherName) + ' <span class="vs-tag">VS</span></span><span class="wager-amount">' + amountStr + ' 🪙</span></div><div class="wager-game-line">' + w.game.title + '</div><div class="wager-status-line ' + statusCls + '">' + statusLine + '</div></div>';
+}
+
+function tickWagerTimers() {
+    document.querySelectorAll('.wager-status-line[data-wager-timer]').forEach(el => {
+        const remaining = parseInt(el.dataset.wagerTimer) - Date.now();
+        el.textContent = '⏰ ' + formatWagerTime(remaining);
+        if (remaining < 3600000) el.classList.add('urgent');
+        if (remaining <= 0) MC.checkExpiredWagers();
+    });
+    document.querySelectorAll('.aw-timer[data-wager-timer]').forEach(el => {
+        const remaining = parseInt(el.dataset.wagerTimer) - Date.now();
+        el.textContent = '⏰ ' + formatWagerTime(remaining) + ' remaining';
+        if (remaining < 3600000) el.classList.add('urgent');
+    });
+}
+
+/* ===== DUEL DETAIL CARDS (profile view) ===== */
+function renderActiveWagersForProfile(opponentUid) {
+    const container = document.getElementById('profileActiveWagers');
+    if (!container) return;
+    const myUid = getMyUid();
+    const relevant = wagerList.filter(w => {
+        const pair = (w.challenger.uid === myUid && w.opponent.uid === opponentUid)
+                  || (w.challenger.uid === opponentUid && w.opponent.uid === myUid);
+        if (!pair) return false;
+        if (['cancelled', 'declined'].includes(w.status)) return false;
+        if (w.status === 'completed' || w.status === 'tied') {
+            if (canClaimWager(w)) return true;
+            if (w.completedAt && (Date.now() - w.completedAt < 86400000)) return true;
+            return false;
+        }
+        return true;
+    });
+    container.innerHTML = relevant.length
+        ? relevant.map(buildActiveWagerDetailCard).join('')
+        : '<div class="empty-state">No active duels with this adventurer.</div>';
+}
+
+function buildActiveWagerDetailCard(w) {
+    const myUid = getMyUid();
+    const side = getMySide(w);
+    const otherSide = getOtherSide(w);
+    const me = w[side], them = w[otherSide];
+    const isResolved = ['completed', 'tied'].includes(w.status);
+    const myScore = me.score, theirScore = them.score;
+    const showTheirScore = ((myScore !== null) && (theirScore !== null)) || isResolved;
+
+    let cardClass = 'active-wager-card';
+    if (canClaimWager(w)) cardClass += ' ready';
+    else if (w.status === 'pending') cardClass += ' pending';
+    else if (isResolved) cardClass += ' completed';
+
+    let mySideExtra = ' me', themSideExtra = ' them';
+    if (isResolved && w.winner) {
+        if (w.winner === myUid) mySideExtra += ' winner'; else themSideExtra += ' winner';
+    }
+    const renderScore = (val, hidden) => {
+        if (val === null) return '<div class="aw-side-score no-submit">No submission</div>';
+        if (hidden) return '<div class="aw-side-score hidden-score">●●●</div>';
+        return '<div class="aw-side-score">' + val.toLocaleString() + '</div>';
+    };
+
+    let actionsHTML = '';
+    if (w.status === 'pending') {
+        if (side === 'challenger') actionsHTML = '<button class="btn-cancel-wager" onclick="handleCancelWager(\'' + w.id + '\')">↩ CANCEL CHALLENGE</button>';
+        else actionsHTML = '<button class="btn-submit-wager" onclick="handleAcceptWager(\'' + w.id + '\')">⚔ ACCEPT — PAY ' + MC.formatTokenAmount(w.amount) + ' 🪙</button><button class="btn-cancel-wager" onclick="handleDeclineWager(\'' + w.id + '\')">✕ DECLINE</button>';
+    } else if (w.status === 'active') {
+        const sessions = JSON.parse(localStorage.getItem('megaplexSessionScores')) || {};
+        const haveSession = sessions[w.game.key] !== undefined;
+        if (myScore !== null) actionsHTML = '<div style="text-align:center;color:#5a8c3a;padding:8px;">✓ Score submitted: <strong>' + myScore + '</strong> — awaiting opponent...</div>';
+        else if (haveSession) actionsHTML = '<a href="' + w.game.link + '" class="btn-play-wager">▶ PLAY AGAIN</a><button class="btn-submit-wager" onclick="handleSubmitWager(\'' + w.id + '\')">📤 SUBMIT SCORE: ' + sessions[w.game.key] + '</button>';
+        else actionsHTML = '<a href="' + w.game.link + '" class="btn-play-wager">▶ UNDERTAKE ' + w.game.title + '</a>';
+    } else if (canClaimWager(w)) {
+        const myPayout = (side === 'challenger') ? w.challengerPayout : w.opponentPayout;
+        actionsHTML = '<button class="btn-claim-wager" onclick="handleClaimWager(\'' + w.id + '\')">🏆 CLAIM ' + myPayout.toLocaleString() + ' 🪙</button>';
+    } else if (isResolved) {
+        actionsHTML = '<div style="text-align:center;color:#6b5836;padding:8px;">✓ Resolved</div>';
+    }
+
+    let resultBanner = '';
+    if (isResolved) {
+        if (w.status === 'tied') resultBanner = '<div class="aw-result-banner tie">🤝 TIE — BOTH REFUNDED (5% CUT)</div>';
+        else if (w.winner === myUid) resultBanner = '<div class="aw-result-banner win">🏆 YOU CLAIMED THE POT!</div>';
+        else resultBanner = '<div class="aw-result-banner lose">💔 YOU LOST</div>';
+    }
+    let timerHTML = '';
+    if (w.status === 'active') {
+        const remaining = w.expiresAt - Date.now();
+        timerHTML = '<div class="aw-timer ' + (remaining < 3600000 ? 'urgent' : '') + '" data-wager-timer="' + w.expiresAt + '">⏰ ' + formatWagerTime(remaining) + ' remaining</div>';
+    }
+
+    return '<div class="' + cardClass + '"><div class="aw-header"><span class="aw-title">⚔️ ' + w.game.title + '</span><span class="aw-pot">POT: ' + w.pot.toLocaleString() + ' 🪙</span></div><div class="aw-vs-row"><div class="aw-side' + mySideExtra + '"><div class="aw-side-label">YOU</div><div class="aw-side-name">' + escapeHtml(me.username) + '</div>' + renderScore(myScore, false) + '</div><div class="aw-vs">VS</div><div class="aw-side' + themSideExtra + '"><div class="aw-side-label">' + (otherSide === 'challenger' ? 'CHALLENGER' : 'OPPONENT') + '</div><div class="aw-side-name">' + escapeHtml(them.username) + '</div>' + renderScore(theirScore, !showTheirScore) + '</div></div>' + timerHTML + resultBanner + '<div class="aw-actions">' + actionsHTML + '</div></div>';
+}
+
+/* ===== DUEL CHALLENGE MODAL ===== */
+function openWagerModal(opponentUid) {
+    pendingWagerOpponentUid = opponentUid;
+    wagerSelection = { game: null, amount: null };
+    const friend = socialState.friends.find(f => f.uid === opponentUid);
+    document.getElementById('wagerModalSub').textContent = '⚔️ vs ' + (friend?.username || 'ADVENTURER');
+
+    const gameGrid = document.getElementById('wagerGameGrid');
+    const c4Pick = '<div class="wager-game-pick" data-game-key="connect4_live" style="border-color:#a83232;"><div>🔴 Connect 4 Battle</div><div class="wager-game-pick-type" style="color:#f0c75e;">⚡ Live 1v1 — victor takes pot</div></div>';
+    gameGrid.innerHTML = c4Pick + MC.WAGER_GAMES.map(g =>
+        '<div class="wager-game-pick" data-game-key="' + g.key + '"><div>' + g.title + '</div><div class="wager-game-pick-type">' + (g.scoreType === 'higher' ? '↑ Higher wins' : '↓ Lower wins') + '</div></div>'
+    ).join('');
+    gameGrid.querySelectorAll('.wager-game-pick').forEach(el => {
+        el.addEventListener('click', () => {
+            gameGrid.querySelectorAll('.wager-game-pick').forEach(x => x.classList.remove('selected'));
+            el.classList.add('selected');
+            wagerSelection.game = el.dataset.gameKey;
+            refreshWagerSummary();
+        });
+    });
+
+    const amtGrid = document.getElementById('wagerAmountGrid');
+    const myTokens = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+    amtGrid.innerHTML = MC.WAGER_AMOUNTS.map(amt => {
+        const disabled = myTokens < amt;
+        return '<div class="wager-amount-pick ' + (disabled ? 'disabled' : '') + '" data-amount="' + amt + '">' + MC.formatTokenAmount(amt) + ' 🪙</div>';
+    }).join('');
+    amtGrid.querySelectorAll('.wager-amount-pick:not(.disabled)').forEach(el => {
+        el.addEventListener('click', () => {
+            amtGrid.querySelectorAll('.wager-amount-pick').forEach(x => x.classList.remove('selected'));
+            el.classList.add('selected');
+            wagerSelection.amount = parseInt(el.dataset.amount);
+            refreshWagerSummary();
+        });
+    });
+
+    document.getElementById('wagerSummary').style.display = 'none';
+    document.getElementById('btnSendWager').disabled = true;
+    document.getElementById('btnSendWager').textContent = 'SELECT TRIAL & AMOUNT';
+    document.getElementById('wagerModal').classList.add('show');
+}
+
+function closeWagerModal() {
+    document.getElementById('wagerModal').classList.remove('show');
+    pendingWagerOpponentUid = null;
+    wagerSelection = { game: null, amount: null };
+}
+function openWagerInfo() { document.getElementById('wagerInfoModal').classList.add('show'); }
+function closeWagerInfo() { document.getElementById('wagerInfoModal').classList.remove('show'); }
+window.openWagerInfo = openWagerInfo;
+window.closeWagerInfo = closeWagerInfo;
+
+function refreshWagerSummary() {
+    const sumEl = document.getElementById('wagerSummary');
+    const btn = document.getElementById('btnSendWager');
+    if (!wagerSelection.game || !wagerSelection.amount) {
+        sumEl.style.display = 'none'; btn.disabled = true; btn.textContent = 'SELECT TRIAL & AMOUNT'; return;
+    }
+    const isC4 = wagerSelection.game === 'connect4_live';
+    const gameInfo = isC4 ? { title: '🔴 Connect 4 Battle' } : MC.getWagerGameInfo(wagerSelection.game);
+    const amt = wagerSelection.amount;
+    const pot = amt * 2;
+    const cut = Math.floor(pot * MC.WAGER_HOUSE_CUT_WIN);
+    const winnings = pot - cut;
+    sumEl.style.display = 'block';
+    sumEl.innerHTML = '<div class="wager-summary-row"><span class="wager-summary-label">Trial:</span><span class="wager-summary-value">' + gameInfo.title + '</span></div><div class="wager-summary-row"><span class="wager-summary-label">Your wager:</span><span class="wager-summary-value">-' + amt.toLocaleString() + ' 🪙</span></div><div class="wager-summary-row"><span class="wager-summary-label">Total pot:</span><span class="wager-summary-value">' + pot.toLocaleString() + ' 🪙</span></div><div class="wager-summary-row"><span class="wager-summary-label">House cut (10%):</span><span class="wager-summary-value">-' + cut.toLocaleString() + ' 🪙</span></div><div class="wager-summary-row big"><span class="wager-summary-label">If you WIN:</span><span class="wager-summary-value win">+' + winnings.toLocaleString() + ' 🪙</span></div>';
+    btn.disabled = false;
+    btn.textContent = isC4 ? '🔴 START CONNECT 4 BATTLE' : '⚔ SEND CHALLENGE';
+}
+
+async function confirmSendWager() {
+    if (!pendingWagerOpponentUid || !wagerSelection.game || !wagerSelection.amount) return;
+    const btn = document.getElementById('btnSendWager');
+    btn.disabled = true; btn.textContent = '⏳ SENDING...';
+
+    if (wagerSelection.game === 'connect4_live') {
+        const c4 = await MC.createC4Challenge(pendingWagerOpponentUid, wagerSelection.amount);
+        if (c4.success) {
+            toast('Connect 4 challenge sent! Opening board...', 'success', '🔴');
+            updateTokenPill(); closeWagerModal();
+            setTimeout(() => { window.location.href = 'connect4.html?game=' + c4.gameId; }, 800);
+        } else {
+            let msg = 'Failed to create Connect 4 game';
+            if (c4.reason === 'insufficient_tokens') msg = 'Not enough gold!';
+            else if (c4.reason === 'not_friends') msg = 'You must be in the same party first.';
+            toast(msg, 'error', '❌');
+            btn.disabled = false; btn.textContent = '🔴 START CONNECT 4 BATTLE';
+        }
+        return;
+    }
+
+    const r = await MC.sendWagerChallenge(pendingWagerOpponentUid, wagerSelection.game, wagerSelection.amount);
+    if (r.success) {
+        toast('Duel challenge sent!', 'success', '⚔️');
+        closeWagerModal(); updateTokenPill();
+    } else {
+        let msg = 'Failed to send duel';
+        if (r.reason === 'insufficient_tokens') msg = 'Not enough gold!';
+        else if (r.reason === 'not_friends') msg = 'You must be in the same party first.';
+        else if (r.reason === 'self') msg = "You can't duel yourself!";
+        toast(msg, 'error', '❌');
+        btn.disabled = false; btn.textContent = '⚔ SEND CHALLENGE';
+    }
+}
+
+/* ===== DUEL ACTION HANDLERS ===== */
+window.handleAcceptWager = async function(wagerId) {
+    const r = await MC.acceptWager(wagerId);
+    if (r.success) { toast('Duel accepted! Go forth and win!', 'success', '⚔️'); updateTokenPill(); }
+    else toast(r.reason === 'insufficient_tokens' ? 'Not enough gold!' : 'Failed to accept', 'error', '❌');
+};
+window.handleDeclineWager = async function(wagerId) {
+    if (!confirm('Decline this duel? The challenger will be refunded.')) return;
+    const r = await MC.declineWager(wagerId);
+    if (r.success) toast('Duel declined', 'info', '👋');
+};
+window.handleCancelWager = async function(wagerId) {
+    if (!confirm('Cancel this duel? You will be refunded.')) return;
+    const r = await MC.cancelWager(wagerId);
+    if (r.success) { toast('Duel cancelled — gold refunded', 'info', '↩️'); updateTokenPill(); }
+};
+window.handleSubmitWager = async function(wagerId) {
+    const r = await MC.submitWagerScore(wagerId);
+    if (r.success) { toast('Score submitted! Awaiting opponent...', 'success', '📤'); await MC.resolveWager(wagerId); }
+    else {
+        if (r.reason === 'no_session_score') toast('You must undertake the trial first!', 'warning', '🎮');
+        else if (r.reason === 'already_submitted') toast('You already submitted!', 'warning', '⚠️');
+        else toast('Failed to submit', 'error', '❌');
+    }
+};
+window.handleClaimWager = async function(wagerId) {
+    const r = await MC.markWagerClaimed(wagerId);
+    if (r.success) { if (r.newTokens !== undefined) localStorage.setItem('megaplexTokens', String(r.newTokens)); updateTokenPill(); toast('Spoils claimed! 🪙', 'success', '🏆'); }
+};
+
+/* ===== SIDEBAR RENDER ===== */
+function renderSidebar() {
+    document.getElementById('pillFriendCount').textContent = socialState.friends.length;
+    document.getElementById('friendCountSidebar').textContent = socialState.friends.length;
+    document.getElementById('pendingCount').textContent = socialState.incoming.length;
+    setTabBadge('tabBadgeFriends', socialState.friends.length);
+    setTabBadge('tabBadgeRequests', socialState.incoming.length);
+
+    // Pending party requests
+    const pendingList = document.getElementById('pendingList');
+    if (!socialState.incoming.length) {
+        pendingList.innerHTML = '<div class="empty-state"><span class="empty-icon">📭</span>No pending requests</div>';
+    } else {
+        pendingList.innerHTML = '';
+        socialState.incoming.forEach(uid => {
+            MC.getPlayerProfile(uid).then(p => {
+                if (!p) return;
+                const lvl = p.publicProfile?.level || calcLevelFromXp(p.publicProfile?.lifetimeXp || 0);
+                const card = document.createElement('div');
+                card.className = 'pending-card';
+                card.innerHTML = '<div class="mini-avatar"></div><div class="friend-info"><div class="friend-name">' + escapeHtml(p.username) + '</div><div class="friend-meta">Lvl ' + lvl + ' · seeks to join your party</div></div><div class="friend-actions"><button class="btn-small btn-accept" title="Accept">✓</button><button class="btn-small btn-decline" title="Decline">✕</button></div>';
+                renderAvatarPreview(card.querySelector('.mini-avatar'), p.publicProfile?.avatar, { mini: true });
+                card.querySelector('.friend-info').style.cursor = 'pointer';
+                card.querySelector('.friend-info').addEventListener('click', () => openProfile(uid));
+                card.querySelector('.btn-accept').addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const r = await MC.acceptFriendRequest(uid);
+                    if (r.success) toast(p.username + ' joined your party!', 'success', '🎉');
+                    else toast('Failed to accept request', 'error', '❌');
+                });
+                card.querySelector('.btn-decline').addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const r = await MC.declineFriendRequest(uid);
+                    if (r.success) toast('Request declined', 'info', '👋');
+                });
+                pendingList.appendChild(card);
+            });
+        });
+    }
+
+    // Party list
+    const friendsList = document.getElementById('friendsList');
+    if (!socialState.friends.length) {
+        friendsList.innerHTML = '<div class="empty-state"><span class="empty-icon">😶</span>No companions yet!<br>Use search above to find adventurers.</div>';
+        return;
+    }
+    const sorted = [...socialState.friends].sort((a, b) => (b.publicProfile?.level || 0) - (a.publicProfile?.level || 0));
+    friendsList.innerHTML = '';
+    sorted.forEach(f => {
+        const lvl = f.publicProfile?.level || calcLevelFromXp(f.publicProfile?.lifetimeXp || 0);
+        const prestige = f.publicProfile?.prestigeRank || 0;
+        const card = document.createElement('div');
+        card.className = 'friend-card' + (activeProfileUid === f.uid ? ' active' : '');
+        card.dataset.uid = f.uid;
+        card.innerHTML = '<div class="mini-avatar"></div><div class="friend-info"><div class="friend-name">' + escapeHtml(f.username) + (prestige > 0 ? '<span class="friend-prestige-tag">★' + prestige + '</span>' : '') + '</div><div class="friend-meta">Level ' + lvl + '</div></div>';
+        renderAvatarPreview(card.querySelector('.mini-avatar'), f.publicProfile?.avatar, { mini: true });
+        card.addEventListener('click', () => openProfile(f.uid));
+        friendsList.appendChild(card);
+    });
+}
+
+/* ===== PROFILE VIEW ===== */
+async function openProfile(uid) {
+    activeProfileUid = uid;
+    document.querySelectorAll('.friend-card').forEach(c => c.classList.toggle('active', c.dataset.uid === uid));
+    const view = document.getElementById('profileView');
+    view.innerHTML = '<div class="loading-spinner"></div>';
+    const profile = await MC.getPlayerProfile(uid);
+    if (!profile) {
+        view.innerHTML = '<div class="profile-empty"><div class="big-icon">⚠️</div><h2>ADVENTURER NOT FOUND</h2><p>This adventurer\'s profile could not be loaded.</p></div>';
+        return;
+    }
+    renderProfile(profile);
+}
+
+function renderProfile(profile) {
+    const p = profile.publicProfile || {};
+    const username = profile.username;
+    const level = p.level || calcLevelFromXp(p.lifetimeXp || 0);
+    const prestige = p.prestigeRank || 0;
+    const tokens = p.totalTokensEarned || 0;
+    const xp = p.lifetimeXp || 0;
+    const trophies = p.trophiesClaimed || 0;
+    const memberSince = p.memberSince ? new Date(p.memberSince) : null;
+    const lastSeen = p.lastSeen ? new Date(p.lastSeen) : null;
+    const topScores = p.topScores || {};
+    const scoreEntries = Object.entries(topScores).sort(([, a], [, b]) => b - a).slice(0, 5);
+    const view = document.getElementById('profileView');
+
+    view.innerHTML =
+        '<div class="profile-header">' +
+            '<div class="profile-avatar-stage ' + (prestige > 0 ? 'has-prestige' : '') + '" id="profAvatar"></div>' +
+            '<div class="profile-info">' +
+                '<h1 class="profile-username">' + escapeHtml(username) + '</h1>' +
+                '<div class="profile-badges">' +
+                    '<span class="profile-badge badge-level">⚔️ LV.' + level + '</span>' +
+                    (prestige > 0 ? '<span class="profile-badge badge-prestige">★ Ascension ' + prestige + '</span>' : '') +
+                    (memberSince ? '<span class="profile-badge badge-member">📅 Joined ' + memberSince.toLocaleDateString() + '</span>' : '') +
+                '</div>' +
+                '<div class="profile-actions" id="profActions"></div>' +
+                (lastSeen ? '<div style="color:#6b5836;font-size:0.8em;margin-top:4px;">Last active: ' + formatLastSeen(lastSeen) + '</div>' : '') +
+            '</div>' +
+        '</div>' +
+        '<div class="stats-section"><div class="stats-section-title">📊 Lifetime Deeds</div><div class="stats-grid">' +
+            '<div class="stat-tile gold"><div class="stat-tile-label">Total Gold</div><div class="stat-tile-value">' + tokens.toLocaleString() + '</div><div class="stat-tile-sub">🪙 earned</div></div>' +
+            '<div class="stat-tile"><div class="stat-tile-label">Lifetime XP</div><div class="stat-tile-value">' + xp.toLocaleString() + '</div><div class="stat-tile-sub">⚔️ Level ' + level + '</div></div>' +
+            '<div class="stat-tile pink"><div class="stat-tile-label">Trophies</div><div class="stat-tile-value">' + trophies + '</div><div class="stat-tile-sub">🎖️ claimed</div></div>' +
+            '<div class="stat-tile green"><div class="stat-tile-label">Ascension Rank</div><div class="stat-tile-value">★' + prestige + '</div><div class="stat-tile-sub">' + (prestige > 0 ? '+' + (prestige * 5) + '% Gold Bonus' : 'Not yet ascended') + '</div></div>' +
+        '</div></div>' +
+        '<div class="stats-section"><div class="stats-section-title">⚔️ Duels With This Adventurer</div><div id="profileActiveWagers"></div></div>' +
+        '<div class="stats-section"><div class="stats-section-title">🎖️ Trophy Progress</div><div style="background:rgba(155,89,182,0.08);border:1px solid rgba(155,89,182,0.3);border-radius:8px;padding:14px;"><div style="display:flex;justify-content:space-between;align-items:center;"><strong style="color:#c79bd6;">' + trophies + ' / 30 trophies claimed</strong><span style="color:#b09b76;">' + Math.floor((trophies / 30) * 100) + '%</span></div><div class="trophy-bar-bg"><div class="trophy-bar-fill" style="width:' + Math.min((trophies / 30) * 100, 100) + '%"></div></div></div></div>' +
+        '<div class="stats-section"><div class="stats-section-title">🏆 Top Trial Scores</div>' +
+            (scoreEntries.length > 0
+                ? '<div class="top-scores-list">' + scoreEntries.map(([gameKey, score], idx) => {
+                    const medal = ['🥇','🥈','🥉','4️⃣','5️⃣'][idx] || '🎮';
+                    const title = gameTitles[gameKey] || prettifyGameKey(gameKey);
+                    return '<div class="top-score-row"><span><span class="top-score-medal">' + medal + '</span><span class="top-score-game">' + title + '</span></span><span class="top-score-value">' + score.toLocaleString() + '</span></div>';
+                }).join('') + '</div>'
+                : '<div class="empty-state">No scores recorded yet.</div>') +
+        '</div>';
+
+    renderAvatarPreview(document.getElementById('profAvatar'), p.avatar, { username });
+    refreshProfileActions();
+    renderActiveWagersForProfile(activeProfileUid);
+}
+
+function refreshProfileActions() {
+    const container = document.getElementById('profActions');
+    if (!container) return;
+    const uid = activeProfileUid;
+    if (!uid) return;
+    const me = MC.currentFbUser;
+    if (!me) { container.innerHTML = ''; return; }
+    if (uid === me.uid) { container.innerHTML = '<span class="btn-action btn-friends">🧙 This is YOU</span>'; return; }
+
+    const isFriend = socialState.friends.some(f => f.uid === uid);
+    const isOutgoing = socialState.outgoing.includes(uid);
+    const isIncoming = socialState.incoming.includes(uid);
+
+    let html = '';
+    if (isFriend) {
+        html = '<span class="btn-action btn-friends">✓ In Your Party</span>' +
+               '<button class="btn-action btn-challenge" onclick="openWagerModal(\'' + uid + '\')">⚔️ Challenge to Duel</button>' +
+               '<button class="btn-action btn-remove" onclick="handleRemoveFriend(\'' + uid + '\')">✕ Remove from Party</button>';
+    } else if (isOutgoing) {
+        html = '<span class="btn-action btn-pending">⏳ Request Sent</span><button class="btn-action btn-remove" onclick="handleCancelRequest(\'' + uid + '\')">Cancel Request</button>';
+    } else if (isIncoming) {
+        html = '<button class="btn-action btn-add-friend" onclick="handleAccept(\'' + uid + '\')">✓ Accept Request</button><button class="btn-action btn-remove" onclick="handleDecline(\'' + uid + '\')">Decline</button>';
+    } else {
+        html = '<button class="btn-action btn-add-friend" onclick="handleSendRequest(\'' + uid + '\')">+ Recruit to Party</button>';
+    }
+    container.innerHTML = html;
+}
+
+window.handleSendRequest = async function(uid) { const r = await MC.sendFriendRequest(uid); if (r.success) toast('Party request sent!', 'success', '📨'); else toast('Failed to send request', 'error', '❌'); };
+window.handleAccept = async function(uid) { const r = await MC.acceptFriendRequest(uid); if (r.success) toast("They joined your party!", 'success', '🎉'); };
+window.handleDecline = async function(uid) { const r = await MC.declineFriendRequest(uid); if (r.success) toast('Request declined', 'info', '👋'); };
+window.handleCancelRequest = async function(uid) { const r = await MC.cancelFriendRequest(uid); if (r.success) toast('Request cancelled', 'info', '↩️'); };
+window.handleRemoveFriend = async function(uid) { if (!confirm('Remove this companion from your party?')) return; const r = await MC.removeFriend(uid); if (r.success) toast('Companion removed', 'info', '👋'); };
+
+window.openWagerModal = openWagerModal;
+window.closeWagerModal = closeWagerModal;
+window.confirmSendWager = confirmSendWager;
+
+function formatLastSeen(date) {
+    const ms = Date.now() - date.getTime();
+    const mins = Math.floor(ms / 60000);
+    if (mins < 5) return '🟢 Online now';
+    if (mins < 60) return mins + 'm ago';
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return days + 'd ago';
+    return date.toLocaleDateString();
+}
+
+/* ===== INIT ===== */
+function showLoginRequired() {
+    document.getElementById('mainContent').innerHTML = '<div class="needs-login" style="grid-column:1/-1;"><h2>🔒 ENTRY REQUIRED</h2><p>You must enter the hall to gather a party.</p><p><a href="index.html">← Return to the Hall to enter</a></p></div>';
+}
+
+setLoadingStatus('SENDING RAVENS...', 15);
+
+MC.onReady((user) => {
+    setLoadingStatus('CHECKING CREDENTIALS...', 35);
+    if (!user) {
+        setLoadingStatus('ENTRY REQUIRED', 100);
+        showLoginRequired();
+        setTimeout(hideLoadingScreen, 400);
+        return;
+    }
+
+    setLoadingStatus('LOADING PROFILE...', 55);
+    document.getElementById('pillUsername').textContent = '🧙 ' + (localStorage.getItem('megaplexUsername') || 'HERO');
+
+    setLoadingStatus('PREPARING SEARCH...', 70);
+    setupSearch();
+
+    setLoadingStatus('GATHERING YOUR PARTY...', 80);
+    startSocialSubscription();
+
+    setLoadingStatus('SYNCING DUELS...', 88);
+    startWagerSubscription();
+
+    setLoadingStatus('SYNCING CONNECT 4...', 94);
+    startC4Subscription();
+
+    updateTokenPill();
+    setTimeout(() => { setLoadingStatus('READY', 100); hideLoadingScreen(); }, 600);
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && activeProfileUid) renderActiveWagersForProfile(activeProfileUid);
+});
+window.addEventListener('megaplex-auth-changed', (e) => {
+    if (!e.detail.user) { toast('Departed — returning to the hall', 'warning', '🚪'); setTimeout(() => window.location.href = 'index.html', 1500); }
+});
+
+function prettifyGameKey(key) {
+    if (!key) return '🎮 Unknown Trial';
+    const cleaned = String(key)
+        .replace(/_(score|best_time|best|deaths|time|high|highscore)$/i, '')
+        .replace(/_/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const titled = cleaned.replace(/\b\w/g, c => c.toUpperCase());
+    return '🎮 ' + (titled || 'Unknown Trial');
+}
+</script>
+
+<link rel="stylesheet" href="chat-medieval.css">
+<script src="chat.js"></script>
+</body>
+</html>

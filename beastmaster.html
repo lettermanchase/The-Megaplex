@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beastmaster's Arena — The Citadel Tavern</title>
+<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
+<style>
+/* ============================================================
+   ===== THEME TOKENS (matches Citadel Tavern) ===============
+   ============================================================ */
+:root {
+    --bg-900: #1a1209;
+    --bg-800: #241a0d;
+    --bg-700: #322310;
+    --surface: rgba(255,235,200,0.04);
+    --surface-hover: rgba(255,235,200,0.08);
+    --border: rgba(212,175,110,0.18);
+    --border-strong: rgba(212,175,110,0.35);
+    --accent: #d4af6e;
+    --accent-2: #8b2e2e;
+    --gold: #f0c75e;
+    --text: #f0e6d2;
+    --text-dim: #b09b76;
+    --radius: 8px;
+    --shadow: 0 8px 24px rgba(0,0,0,0.55);
+    --health: #5a8c3a;
+    --mana: #4a6b8a;
+    --rage: #a83232;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Cinzel', serif;
+    background:
+        radial-gradient(1200px 600px at 50% -10%, #3a2a14 0%, var(--bg-900) 60%) fixed,
+        #1a1209;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    letter-spacing: 0.3px;
+}
+
+body::before {
+    content: " ";
+    display: block;
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 20% 10%, rgba(255,200,120,0.06), transparent 40%),
+        radial-gradient(ellipse at 80% 90%, rgba(255,180,100,0.05), transparent 40%),
+        repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px);
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.embers { position: fixed; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; }
+.ember {
+    position: absolute;
+    background: #ffb347;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #ff8c00;
+    animation: emberRise linear infinite;
+}
+@keyframes emberRise {
+    0%   { opacity: 0; transform: translateY(0) translateX(0); }
+    20%  { opacity: 1; }
+    80%  { opacity: 0.8; }
+    100% { opacity: 0; transform: translateY(-120px) translateX(20px); }
+}
+
+/* ============================================================
+   ===== HEADER ===============================================
+   ============================================================ */
+header {
+    position: sticky; top: 0; z-index: 50;
+    background: linear-gradient(180deg, rgba(36,26,13,0.96), rgba(26,18,9,0.85));
+    border-bottom: 2px solid var(--border-strong);
+    box-shadow: 0 2px 20px rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.logo {
+    font-family: 'MedievalSharp', serif;
+    font-size: 1.8em;
+    color: var(--accent);
+    text-shadow: 0 0 16px rgba(255,140,0,0.4);
+    letter-spacing: 2px;
+}
+
+.header-stats {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.stat-pill {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-weight: 700;
+    font-size: 0.9em;
+    display: flex; align-items: center; gap: 6px;
+}
+.stat-pill.gold { color: var(--gold); border-color: rgba(240,199,94,0.4); }
+.stat-pill.wave { color: var(--accent-2); border-color: rgba(168,50,50,0.4); }
+.stat-pill.beasts { color: #9b59b6; border-color: rgba(155,89,182,0.4); }
+
+.header-btns { display: flex; gap: 10px; }
+
+.back-btn, .help-btn {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.back-btn:hover, .help-btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+.help-btn {
+    background: linear-gradient(135deg, rgba(155,89,182,0.2), rgba(108,92,231,0.2));
+    border-color: #9b59b6;
+    color: #c79bd6;
+}
+
+/* ============================================================
+   ===== MAIN LAYOUT ==========================================
+   ============================================================ */
+.game-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+    position: relative;
+    z-index: 10;
+}
+
+.title-section {
+    text-align: center;
+    margin-bottom: 24px;
+}
+.game-title {
+    font-family: 'MedievalSharp', serif;
+    font-size: 3em;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(255,140,0,0.5);
+    letter-spacing: 3px;
+}
+.game-subtitle {
+    color: var(--text-dim);
+    font-style: italic;
+    margin-top: 6px;
+    letter-spacing: 1px;
+}
+
+/* ============================================================
+   ===== ARENA (BATTLEFIELD) ==================================
+   ============================================================ */
+.arena {
+    background:
+        radial-gradient(ellipse at center, rgba(139,46,46,0.15), transparent 70%),
+        linear-gradient(180deg, #2a1d0a 0%, #1a1209 100%);
+    border: 2px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6), inset 0 0 60px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+    min-height: 380px;
+}
+
+.arena::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        repeating-linear-gradient(0deg, transparent 0, transparent 39px, rgba(212,175,110,0.05) 39px, rgba(212,175,110,0.05) 40px),
+        repeating-linear-gradient(90deg, transparent 0, transparent 39px, rgba(212,175,110,0.05) 39px, rgba(212,175,110,0.05) 40px);
+    pointer-events: none;
+}
+
+.arena-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 2;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.wave-info {
+    font-family: 'MedievalSharp', serif;
+    font-size: 1.4em;
+    color: var(--gold);
+    text-shadow: 0 0 10px rgba(240,199,94,0.5);
+}
+
+.battle-status {
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 0.95em;
+}
+
+/* Row labels */
+.row-labels {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 8px;
+    color: var(--text-dim);
+    font-size: 0.75em;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 2;
+}
+.row-labels span { font-family: 'MedievalSharp', serif; }
+
+.battlefield {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    min-height: 280px;
+}
+
+.team-side {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 8px;
+    min-height: 280px;
+    position: relative;
+}
+
+.team-side.player {
+    background: radial-gradient(ellipse at right center, rgba(90,140,58,0.1), transparent 70%);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.team-side.enemy {
+    background: radial-gradient(ellipse at left center, rgba(168,50,50,0.1), transparent 70%);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.team-label {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-800);
+    padding: 2px 12px;
+    border-radius: 10px;
+    font-family: 'MedievalSharp', serif;
+    font-size: 0.75em;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+}
+.team-side.player .team-label { color: var(--health); border-color: var(--health); }
+.team-side.enemy .team-label { color: var(--accent-2); border-color: var(--accent-2); }
+
+.vs-divider {
+    font-family: 'MedievalSharp', serif;
+    font-size: 2.5em;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(212,175,110,0.7);
+    animation: vsPulse 2s ease-in-out infinite;
+    padding: 0 10px;
+}
+@keyframes vsPulse {
+    0%,100% { transform: scale(1); text-shadow: 0 0 20px rgba(212,175,110,0.7); }
+    50% { transform: scale(1.1); text-shadow: 0 0 30px rgba(255,140,0,1); }
+}
+
+/* ============================================================
+   ===== BATTLE SLOTS / UNITS =================================
+   ============================================================ */
+.battle-slot {
+    background: rgba(0,0,0,0.4);
+    border: 2px dashed rgba(212,175,110,0.2);
+    border-radius: 10px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+.battle-slot.drag-over {
+    border-color: var(--gold);
+    border-style: solid;
+    background: rgba(240,199,94,0.1);
+    box-shadow: inset 0 0 20px rgba(240,199,94,0.3);
+}
+.battle-slot.front { border-color: rgba(168,50,50,0.4); }
+.battle-slot.back { border-color: rgba(74,107,138,0.4); }
+
+.battle-slot::after {
+    content: attr(data-pos);
+    position: absolute;
+    top: 4px; left: 6px;
+    font-size: 0.65em;
+    color: rgba(212,175,110,0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.unit {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--unit-color, #3a2a14), #1a1209);
+    border: 2px solid var(--unit-border, var(--accent));
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    cursor: grab;
+    transition: transform 0.2s;
+    overflow: hidden;
+}
+.unit:hover { transform: translateY(-3px) scale(1.04); }
+.unit.dragging { opacity: 0.5; }
+.unit.attacking { animation: attackLunge 0.4s ease-out; }
+.unit.hit { animation: hitShake 0.3s; }
+.unit.dying { animation: dyingFade 0.6s forwards; }
+
+@keyframes attackLunge {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(var(--attack-dir, 20px)) scale(1.15); filter: brightness(1.5); }
+    100% { transform: translateX(0); }
+}
+@keyframes hitShake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); filter: brightness(2) hue-rotate(-30deg); }
+    75% { transform: translateX(6px); filter: brightness(2) hue-rotate(-30deg); }
+}
+@keyframes dyingFade {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.2) rotate(15deg); filter: brightness(2) blur(2px); }
+    100% { opacity: 0; transform: scale(0) rotate(180deg); }
+}
+
+.unit-icon {
+    font-size: 2em;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+    z-index: 2;
+}
+
+.unit-name {
+    font-size: 0.65em;
+    font-weight: 700;
+    color: var(--text);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+    text-align: center;
+    line-height: 1.1;
+    z-index: 2;
+}
+
+.unit-level {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    background: var(--gold);
+    color: #1a1209;
+    font-size: 0.6em;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 8px;
+    z-index: 3;
+}
+
+.unit-hp-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 2px;
+    z-index: 2;
+}
+.unit-hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--health), #7ac74f);
+    transition: width 0.4s;
+    box-shadow: 0 0 4px rgba(90,140,58,0.6);
+}
+.unit-hp-fill.low { background: linear-gradient(90deg, #d4870e, #f0c75e); }
+.unit-hp-fill.critical { background: linear-gradient(90deg, var(--rage), #ff6b6b); animation: critPulse 0.6s infinite; }
+@keyframes critPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.unit-rarity-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 1;
+}
+.unit.rarity-common .unit-rarity-glow { box-shadow: inset 0 0 10px rgba(184,176,160,0.3); }
+.unit.rarity-rare .unit-rarity-glow {
+    box-shadow: inset 0 0 15px rgba(74,107,138,0.5);
+    animation: rareShimmer 3s ease-in-out infinite;
+}
+.unit.rarity-epic .unit-rarity-glow {
+    box-shadow: inset 0 0 20px rgba(155,89,182,0.6);
+    animation: epicShimmer 2.5s ease-in-out infinite;
+}
+.unit.rarity-legendary .unit-rarity-glow {
+    box-shadow: inset 0 0 25px rgba(240,199,94,0.8);
+    animation: legendShimmer 2s ease-in-out infinite;
+}
+@keyframes rareShimmer { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes epicShimmer { 0%,100% { opacity: 0.7; filter: hue-rotate(0); } 50% { opacity: 1; filter: hue-rotate(20deg); } }
+@keyframes legendShimmer {
+    0%,100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.02); filter: brightness(1.3); }
+}
+
+.damage-popup {
+    position: absolute;
+    color: #fff;
+    font-family: 'MedievalSharp', serif;
+    font-weight: 900;
+    font-size: 1.3em;
+    text-shadow: 0 0 8px #000, 0 0 4px #000, 2px 2px 4px #000;
+    pointer-events: none;
+    animation: dmgFloat 1s ease-out forwards;
+    z-index: 100;
+}
+.damage-popup.crit { color: var(--gold); font-size: 1.7em; }
+.damage-popup.heal { color: #7ac74f; }
+@keyframes dmgFloat {
+    0% { opacity: 1; transform: translate(-50%, 0) scale(1.3); }
+    100% { opacity: 0; transform: translate(-50%, -60px) scale(1); }
+}
+
+/* ============================================================
+   ===== CONTROLS PANEL =======================================
+   ============================================================ */
+.controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1em;
+    transition: 0.2s;
+    letter-spacing: 1px;
+}
+.btn:hover:not(:disabled) {
+    background: var(--surface-hover);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn.primary {
+    background: linear-gradient(135deg, var(--accent-2), #c75e5e);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 15px rgba(168,50,50,0.4);
+}
+.btn.primary:hover:not(:disabled) {
+    box-shadow: 0 6px 25px rgba(168,50,50,0.7);
+}
+
+.btn.gold {
+    background: linear-gradient(135deg, var(--gold), #d4870e);
+    color: #1a1209;
+    border-color: transparent;
+}
+
+.btn.speed {
+    background: var(--surface);
+    padding: 12px 18px;
+}
+.btn.speed.active {
+    background: var(--accent);
+    color: #1a1209;
+}
+
+/* ============================================================
+   ===== ROSTER (Beast Collection) ============================
+   ============================================================ */
+.bottom-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.panel {
+    background: linear-gradient(180deg, rgba(50,35,16,0.92), rgba(36,26,13,0.92));
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.panel-title {
+    font-family: 'MedievalSharp', serif;
+    font-size: 1.3em;
+    color: var(--gold);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-strong);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.panel-hint {
+    font-size: 0.7em;
+    color: var(--text-dim);
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.5px;
+    font-weight: 400;
+}
+
+.roster-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+    gap: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.roster-grid::-webkit-scrollbar { width: 8px; }
+.roster-grid::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
+.roster-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+
+.roster-card {
+    background: linear-gradient(135deg, var(--unit-color, #3a2a14), #1a1209);
+    border: 2px solid var(--unit-border, var(--accent));
+    border-radius: 8px;
+    padding: 6px;
+    cursor: grab;
+    transition: 0.2s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-height: 90px;
+}
+.roster-card:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+.roster-card.deployed { opacity: 0.4; cursor: not-allowed; }
+
+.roster-card .discard-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    background: linear-gradient(135deg, var(--accent-2), #6b1e1e);
+    color: #fff;
+    border: 2px solid var(--bg-800);
+    border-radius: 50%;
+    font-size: 0.85em;
+    font-weight: 900;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    z-index: 5;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    transition: 0.2s;
+}
+.roster-card:hover .discard-btn { display: flex; }
+.roster-card .discard-btn:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 12px rgba(168,50,50,0.8);
+}
+
+.roster-icon { font-size: 1.7em; line-height: 1; }
+.roster-name {
+    font-size: 0.6em;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1;
+    color: var(--text);
+}
+.roster-stats {
+    font-size: 0.55em;
+    color: var(--text-dim);
+    display: flex;
+    gap: 4px;
+}
+.roster-stats span { display: flex; align-items: center; gap: 1px; }
+
+.roster-sell-value {
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gold);
+    color: #1a1209;
+    font-size: 0.55em;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 6px;
+    white-space: nowrap;
+    display: none;
+}
+.roster-card:hover .roster-sell-value { display: block; }
+
+/* ============================================================
+   ===== SHOP =================================================
+   ============================================================ */
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+}
+
+.shop-card {
+    background: linear-gradient(135deg, var(--unit-color, #3a2a14), #1a1209);
+    border: 2px solid var(--unit-border, var(--accent));
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+    text-align: center;
+    position: relative;
+}
+.shop-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+}
+.shop-card.sold { opacity: 0.3; cursor: not-allowed; }
+.shop-card.cant-afford { opacity: 0.5; }
+.shop-card.cant-afford::after {
+    content: '🔒';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.shop-icon {
+    font-size: 2.4em;
+    line-height: 1;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));
+}
+.shop-name {
+    font-family: 'MedievalSharp', serif;
+    font-size: 0.85em;
+    color: var(--text);
+    margin: 4px 0;
+}
+.shop-rarity {
+    font-size: 0.65em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+.shop-rarity.common { color: #b8b0a0; }
+.shop-rarity.rare { color: #6ba3c7; }
+.shop-rarity.epic { color: #c79bd6; }
+.shop-rarity.legendary { color: var(--gold); text-shadow: 0 0 8px var(--gold); }
+
+.shop-cost {
+    background: rgba(240,199,94,0.15);
+    border: 1px solid var(--gold);
+    border-radius: 4px;
+    color: var(--gold);
+    font-weight: 700;
+    padding: 3px 8px;
+    margin-top: 6px;
+    font-size: 0.85em;
+}
+
+.shop-stats {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 0.7em;
+    color: var(--text-dim);
+}
+
+.shop-role-tag {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: rgba(0,0,0,0.7);
+    color: var(--text);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.55em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.shop-role-tag.front { color: var(--accent-2); border: 1px solid var(--accent-2); }
+.shop-role-tag.back { color: var(--mana); border: 1px solid var(--mana); }
+
+/* ============================================================
+   ===== SYNERGY DISPLAY ======================================
+   ============================================================ */
+.synergies-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    min-height: 50px;
+    align-items: center;
+}
+
+.synergy-empty {
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+.synergy-badge {
+    background: rgba(212,175,110,0.1);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 5px 12px;
+    border-radius: 14px;
+    font-size: 0.85em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: 0.2s;
+    cursor: help;
+}
+.synergy-badge.tier-1 { background: rgba(184,176,160,0.15); border-color: #b8b0a0; color: #b8b0a0; }
+.synergy-badge.tier-2 {
+    background: rgba(155,89,182,0.2);
+    border-color: #9b59b6;
+    color: #c79bd6;
+    box-shadow: 0 0 12px rgba(155,89,182,0.4);
+}
+.synergy-badge.tier-3 {
+    background: linear-gradient(135deg, rgba(240,199,94,0.25), rgba(212,135,14,0.25));
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 16px rgba(240,199,94,0.6);
+    animation: syngyPulse 2s ease-in-out infinite;
+}
+@keyframes syngyPulse {
+    0%,100% { box-shadow: 0 0 16px rgba(240,199,94,0.6); }
+    50% { box-shadow: 0 0 24px rgba(240,199,94,1); }
+}
+
+/* ============================================================
+   ===== MODALS ===============================================
+   ============================================================ */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(13,9,4,0.92);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+}
+.modal-overlay.show { display: flex; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+    background: linear-gradient(135deg, #241a0d, #3a2a14);
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    padding: 32px;
+    max-width: 620px;
+    width: 90%;
+    box-shadow: 0 0 50px rgba(240,199,94,0.5);
+    text-align: center;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal h2 {
+    font-family: 'MedievalSharp', serif;
+    color: var(--gold);
+    font-size: 2em;
+    margin-bottom: 12px;
+    text-shadow: 0 0 15px rgba(240,199,94,0.5);
+}
+
+.modal.victory { border-color: var(--health); box-shadow: 0 0 50px rgba(90,140,58,0.6); }
+.modal.victory h2 { color: var(--health); text-shadow: 0 0 15px rgba(90,140,58,0.6); }
+.modal.defeat { border-color: var(--accent-2); box-shadow: 0 0 50px rgba(168,50,50,0.6); }
+.modal.defeat h2 { color: var(--accent-2); text-shadow: 0 0 15px rgba(168,50,50,0.6); }
+
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 1.6em;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: 0.2s;
+}
+.modal-close:hover { opacity: 1; color: var(--accent-2); }
+
+.modal-stats {
+    background: rgba(0,0,0,0.4);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 18px 0;
+    line-height: 2;
+}
+.modal-stats .stat-row {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed var(--border);
+    padding: 4px 0;
+}
+.modal-stats .stat-row:last-child { border-bottom: none; }
+.modal-stats strong { color: var(--gold); }
+
+/* ============================================================
+   ===== HELP MODAL CONTENT ===================================
+   ============================================================ */
+.help-section {
+    text-align: left;
+    margin: 18px 0;
+    padding: 14px 18px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+}
+.help-section h3 {
+    font-family: 'MedievalSharp', serif;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-size: 1.15em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.help-section p,
+.help-section li {
+    color: var(--text-dim);
+    line-height: 1.6;
+    font-size: 0.92em;
+    margin-bottom: 6px;
+}
+.help-section ul { padding-left: 22px; }
+.help-section strong { color: var(--gold); }
+.help-section .hl-good { color: var(--health); font-weight: 700; }
+.help-section .hl-bad { color: var(--accent-2); font-weight: 700; }
+.help-section .hl-info { color: var(--mana); font-weight: 700; }
+
+.rarity-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    margin: 4px 0;
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+}
+.rarity-chip {
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.rarity-chip.common { background: rgba(184,176,160,0.2); color: #b8b0a0; border: 1px solid #b8b0a0; }
+.rarity-chip.rare { background: rgba(107,163,199,0.2); color: #6ba3c7; border: 1px solid #6ba3c7; }
+.rarity-chip.epic { background: rgba(155,89,182,0.2); color: #c79bd6; border: 1px solid #c79bd6; }
+.rarity-chip.legendary { background: rgba(240,199,94,0.2); color: var(--gold); border: 1px solid var(--gold); }
+
+/* ============================================================
+   ===== INTRO/TUTORIAL =======================================
+   ============================================================ */
+.intro-card {
+    background: linear-gradient(135deg, rgba(50,35,16,0.92), rgba(36,26,13,0.92));
+    border: 2px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.tutorial-step {
+    text-align: center;
+    padding: 10px;
+    position: relative;
+}
+.tutorial-step::before {
+    content: attr(data-step);
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gold);
+    color: #1a1209;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    box-shadow: 0 0 10px rgba(240,199,94,0.6);
+}
+.tutorial-icon { font-size: 2em; margin-top: 18px; margin-bottom: 6px; }
+.tutorial-title {
+    font-family: 'MedievalSharp', serif;
+    color: var(--accent);
+    font-size: 1.1em;
+    margin-bottom: 4px;
+}
+.tutorial-desc {
+    color: var(--text-dim);
+    font-size: 0.85em;
+    line-height: 1.4;
+    font-style: italic;
+}
+
+/* ============================================================
+   ===== TOASTS ===============================================
+   ============================================================ */
+#toastContainer { position: fixed; top: 80px; right: 20px; z-index: 900; display: flex; flex-direction: column; gap: 10px; }
+.toast {
+    background: rgba(26,18,9,0.97);
+    color: var(--text);
+    border-left: 4px solid var(--accent);
+    padding: 12px 20px;
+    border-radius: 6px;
+    min-width: 240px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+    animation: slideIn 0.3s, fadeOut 0.4s ease 2.6s forwards;
+    font-family: 'Cinzel', serif;
+}
+.toast.success { border-color: var(--health); }
+.toast.warning { border-color: var(--gold); }
+.toast.error { border-color: var(--accent-2); }
+.toast.info { border-color: var(--mana); }
+@keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+@keyframes fadeOut { to { opacity: 0; transform: translateX(120%); } }
+
+/* ============================================================
+   ===== RESPONSIVE ===========================================
+   ============================================================ */
+@media (max-width: 900px) {
+    header { padding: 10px 16px; flex-wrap: wrap; }
+    .logo { font-size: 1.3em; }
+    .game-title { font-size: 2em; }
+    .bottom-panels { grid-template-columns: 1fr; }
+    .battlefield { grid-template-columns: 1fr; gap: 10px; }
+    .vs-divider { display: none; }
+    .team-side { grid-template-columns: repeat(3, 1fr); min-height: 200px; }
+}
+</style>
+</head>
+<body>
+
+<div class="embers" id="embers"></div>
+<div id="toastContainer"></div>
+
+<header>
+    <div class="logo">🦁 Beastmaster's Arena</div>
+    <div class="header-stats">
+        <div class="stat-pill gold">🪙 <span id="goldDisplay">100</span></div>
+        <div class="stat-pill wave">⚔️ Wave <span id="waveDisplay">1</span></div>
+        <div class="stat-pill beasts">🐉 <span id="beastsDisplay">0</span>/12</div>
+    </div>
+    <div class="header-btns">
+        <button class="help-btn" onclick="openHelpModal()">📖 How to Play</button>
+        <a href="tavern.html" class="back-btn">← The Tavern</a>
+    </div>
+</header>
+
+<div class="game-container">
+
+    <div class="title-section">
+        <div class="game-title">⚔️ BEASTMASTER'S ARENA ⚔️</div>
+        <div class="game-subtitle">Summon mighty beasts, master positioning, defeat the endless horde!</div>
+    </div>
+
+    <!-- Tutorial card (shown only on wave 1) -->
+    <div class="intro-card" id="introCard">
+        <div class="tutorial-step" data-step="1">
+            <div class="tutorial-icon">🛒</div>
+            <div class="tutorial-title">RECRUIT</div>
+            <div class="tutorial-desc">Click beasts in the Bazaar to buy them with gold</div>
+        </div>
+        <div class="tutorial-step" data-step="2">
+            <div class="tutorial-icon">🎯</div>
+            <div class="tutorial-title">POSITION</div>
+            <div class="tutorial-desc">Drag from Menagerie to the arena. Front = Tank, Back = Ranged</div>
+        </div>
+        <div class="tutorial-step" data-step="3">
+            <div class="tutorial-icon">✨</div>
+            <div class="tutorial-title">SYNERGIZE</div>
+            <div class="tutorial-desc">Match types/classes for powerful bonuses (see top bar)</div>
+        </div>
+        <div class="tutorial-step" data-step="4">
+            <div class="tutorial-icon">⚔️</div>
+            <div class="tutorial-title">CONQUER</div>
+            <div class="tutorial-desc">Hit BATTLE! Win gold, buy stronger beasts, survive!</div>
+        </div>
+    </div>
+
+    <!-- Synergy display -->
+    <div class="synergies-bar" id="synergiesBar">
+        <span class="synergy-empty">⚡ Deploy beasts to activate synergies...</span>
+    </div>
+
+    <!-- Arena -->
+    <div class="arena">
+        <div class="arena-header">
+            <div class="wave-info">🏰 Wave <span id="waveNum">1</span> — <span id="waveName">The Goblin Patrol</span></div>
+            <div class="battle-status" id="battleStatus">Prepare thy team...</div>
+        </div>
+        <div class="row-labels">
+            <span>🛡️ Your Back Row (Ranged) ← → Your Front Row (Tanks) ⚔️</span>
+        </div>
+        <div class="battlefield">
+            <div class="team-side player" id="playerTeam">
+                <span class="team-label">⚔ YOUR ARMY</span>
+            </div>
+            <div class="vs-divider">⚔</div>
+            <div class="team-side enemy" id="enemyTeam">
+                <span class="team-label">💀 ENEMIES</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="btn primary" id="battleBtn" onclick="startBattle()">⚔️ BEGIN BATTLE</button>
+        <button class="btn gold" id="rerollBtn" onclick="rerollShop()">🎲 Reroll Shop (5🪙)</button>
+        <button class="btn speed" id="speed1" onclick="setSpeed(1)">▶ 1x</button>
+        <button class="btn speed active" id="speed2" onclick="setSpeed(2)">▶▶ 2x</button>
+        <button class="btn speed" id="speed4" onclick="setSpeed(4)">▶▶▶ 4x</button>
+    </div>
+
+    <!-- Bottom panels: Shop + Roster -->
+    <div class="bottom-panels">
+        <div class="panel">
+            <div class="panel-title">
+                <span>🛒 Beast Bazaar</span>
+                <span class="panel-hint">💡 Click a beast to recruit it</span>
+            </div>
+            <div class="shop-grid" id="shopGrid"></div>
+        </div>
+        <div class="panel">
+            <div class="panel-title">
+                <span>📜 Thy Menagerie</span>
+                <span class="panel-hint">💡 Drag to arena • Hover for ✖ to discard (refunds ½ gold)</span>
+            </div>
+            <div class="roster-grid" id="rosterGrid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- HELP / RULES MODAL -->
+<div class="modal-overlay" id="helpModal" onclick="if(event.target===this)closeHelpModal()">
+    <div class="modal" style="max-width:680px; text-align:left;">
+        <button class="modal-close" onclick="closeHelpModal()">×</button>
+        <h2 style="text-align:center;">📖 How to Play Beastmaster's Arena</h2>
+        <p style="text-align:center; color:var(--text-dim); font-style:italic; margin-bottom:8px;">
+            A strategic auto-battler — build the perfect team and survive endless waves!
+        </p>
+
+        <div class="help-section">
+            <h3>🎯 The Goal</h3>
+            <p>Defeat as many waves of enemies as possible. Each wave gets harder, but you earn <strong>more gold</strong> to buy <strong>stronger beasts</strong>. Your <strong class="hl-info">Highest Wave Reached</strong> is your score!</p>
+        </div>
+
+        <div class="help-section">
+            <h3>🛒 Step 1: Recruit Beasts</h3>
+            <ul>
+                <li>The <strong>Beast Bazaar</strong> shows 5 random beasts for sale</li>
+                <li><strong>Click any beast</strong> to buy it (if you have enough 🪙 gold)</li>
+                <li>Spend <strong>5 🪙</strong> to <strong>reroll</strong> the shop for new beasts</li>
+                <li>You can own up to <strong>12 beasts</strong> in your Menagerie</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>🗑️ Step 2: Discard (NEW!)</h3>
+            <ul>
+                <li><strong>Hover</strong> any beast in your Menagerie to see a red <strong class="hl-bad">✖ button</strong></li>
+                <li>Click it to <strong>sell the beast</strong> back to the bazaar</li>
+                <li>You get <strong>half the original cost</strong> back in gold 🪙</li>
+                <li>Useful when your roster is full or you found a better beast!</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>🎯 Step 3: Position Your Army</h3>
+            <ul>
+                <li><strong>Drag beasts</strong> from your Menagerie onto the 6 arena slots</li>
+                <li>You have <strong class="hl-bad">3 Front Row</strong> slots (Tanks — take hits)</li>
+                <li>You have <strong class="hl-info">3 Back Row</strong> slots (Ranged — deal damage safely)</li>
+                <li>Each beast has a <strong>preferred role</strong> (Front/Back) shown on shop cards</li>
+                <li><strong>Double-click</strong> a deployed beast to recall it back to the Menagerie</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>✨ Step 4: Build Synergies</h3>
+            <p>When multiple beasts share a <strong>Type</strong> or <strong>Class</strong>, they unlock powerful bonuses:</p>
+            <ul>
+                <li><strong>Goblin</strong> (2/4) → +20% / +50% Attack</li>
+                <li><strong>Beast</strong> (2/4) → +15% / +40% HP</li>
+                <li><strong>Undead</strong> (2/4) → 25% / 50% Lifesteal (heal on hit)</li>
+                <li><strong>Demon</strong> (2/4) → +30% / +70% Crit Chance</li>
+                <li><strong>Dragon</strong> (2) → +25% ALL stats 🐉</li>
+                <li><strong>Human</strong> (2) → +20% HP & Attack</li>
+                <li><strong>Warrior</strong> (2/4) → +30% / +60% Armor (reduces damage)</li>
+                <li><strong>Mage</strong> (2/4) → +30% / +70% Spell Power (Mage damage)</li>
+                <li><strong>Ranger</strong> (2) → +40% Crit Damage</li>
+            </ul>
+            <p>Look at the <strong class="hl-info">Synergy Bar</strong> above the arena to see what's active!</p>
+        </div>
+
+        <div class="help-section">
+            <h3>⚔️ Step 5: Combat</h3>
+            <ul>
+                <li>Click <strong>⚔️ BEGIN BATTLE</strong> to start the auto-battle</li>
+                <li>Beasts attack automatically based on their <strong>ATK</strong> stat</li>
+                <li><strong>Front-row beasts</strong> prioritize attacking enemy front row</li>
+                <li><strong>Ranged beasts</strong> can pick any target</li>
+                <li>Critical hits show in <strong style="color:var(--gold)">gold</strong>, healing in <strong class="hl-good">green</strong></li>
+                <li>If <strong>ALL your beasts die</strong>, the game ends</li>
+                <li>If <strong>ALL enemies die</strong>, you win the wave + gold!</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>💎 Beast Rarities</h3>
+            <div class="rarity-row"><span class="rarity-chip common">Common</span> <span>3🪙 — Basic stats, easy to find</span></div>
+            <div class="rarity-row"><span class="rarity-chip rare">Rare</span> <span>6🪙 — Solid mid-game beasts</span></div>
+            <div class="rarity-row"><span class="rarity-chip epic">Epic</span> <span>12🪙 — Strong synergy enablers</span></div>
+            <div class="rarity-row"><span class="rarity-chip legendary">Legendary</span> <span>24🪙 — Game-winning monsters 👑</span></div>
+            <p style="margin-top:8px;">Higher waves = better odds of rare/epic/legendary beasts appearing in the shop!</p>
+        </div>
+
+        <div class="help-section">
+            <h3>💡 Pro Tips</h3>
+            <ul>
+                <li><strong>Focus a synergy:</strong> 4 Goblins = +50% ATK is HUGE</li>
+                <li><strong>Mix front + back:</strong> Pure ranged dies to enemy frontline fast</li>
+                <li><strong>Save gold:</strong> Sometimes it's worth rerolling for a Legendary</li>
+                <li><strong>Discard weaklings:</strong> Free up roster space for stronger beasts</li>
+                <li><strong>Lifesteal Undead</strong> are amazing tanks in the back row</li>
+                <li><strong>Dragon Knight + Ancient Dragon</strong> = +25% to everything! 🔥</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>⌨️ Keyboard Shortcuts</h3>
+            <ul>
+                <li><strong>SPACE</strong> — Begin Battle</li>
+                <li><strong>R</strong> — Reroll Shop</li>
+                <li><strong>1 / 2 / 4</strong> — Battle Speed</li>
+                <li><strong>ESC</strong> — Close this menu</li>
+            </ul>
+        </div>
+
+        <div style="text-align:center; margin-top:20px;">
+            <button class="btn primary" onclick="closeHelpModal()">⚔️ Let's Play!</button>
+        </div>
+    </div>
+</div>
+
+<!-- Battle Result Modal -->
+<div class="modal-overlay" id="resultModal">
+    <div class="modal" id="resultModalContent">
+        <h2 id="resultTitle">VICTORY!</h2>
+        <div id="resultBody"></div>
+        <div class="modal-stats" id="resultStats"></div>
+        <button class="btn primary" onclick="nextWave()" id="nextWaveBtn" style="width:100%;">Next Wave →</button>
+    </div>
+</div>
+
+<!-- DISCARD CONFIRMATION MODAL -->
+<div class="modal-overlay" id="discardModal" onclick="if(event.target===this)closeDiscardModal()">
+    <div class="modal" style="max-width:420px;">
+        <button class="modal-close" onclick="closeDiscardModal()">×</button>
+        <h2 style="color:var(--accent-2);">🗑️ Discard Beast?</h2>
+        <div id="discardModalBody"></div>
+        <div style="display:flex; gap:10px; margin-top:18px;">
+            <button class="btn" style="flex:1;" onclick="closeDiscardModal()">Cancel</button>
+            <button class="btn primary" style="flex:1;" id="confirmDiscardBtn">🗑️ Discard</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   ===== BEAST DATABASE =======================================
+   ============================================================ */
+const BEAST_DATABASE = [
+    // COMMON
+    { id: 'goblin_warrior', name: 'Goblin Warrior', icon: '👹', rarity: 'common', cost: 3, hp: 60, atk: 12, role: 'front', types: ['Goblin','Warrior'], color: '#3a6b2a', border: '#5a8c3a' },
+    { id: 'forest_wolf', name: 'Forest Wolf', icon: '🐺', rarity: 'common', cost: 3, hp: 50, atk: 14, role: 'front', types: ['Beast','Warrior'], color: '#4a3a20', border: '#8b6914' },
+    { id: 'archer', name: 'Skeleton Archer', icon: '🏹', rarity: 'common', cost: 3, hp: 35, atk: 16, role: 'back', types: ['Undead','Ranger'], color: '#3a2a30', border: '#6b5b8c' },
+    { id: 'rat_king', name: 'Plague Rat', icon: '🐀', rarity: 'common', cost: 3, hp: 40, atk: 10, role: 'back', types: ['Beast','Mage'], color: '#3a3a3a', border: '#6b6b6b' },
+
+    // RARE
+    { id: 'orc_brute', name: 'Orc Brute', icon: '👺', rarity: 'rare', cost: 6, hp: 110, atk: 20, role: 'front', types: ['Goblin','Warrior'], color: '#2a5b4a', border: '#4a8c7a' },
+    { id: 'bear_warrior', name: 'War Bear', icon: '🐻', rarity: 'rare', cost: 6, hp: 130, atk: 18, role: 'front', types: ['Beast','Warrior'], color: '#5b3a20', border: '#8b6914' },
+    { id: 'wizard', name: 'Arcane Wizard', icon: '🧙', rarity: 'rare', cost: 6, hp: 55, atk: 28, role: 'back', types: ['Human','Mage'], color: '#1a2a5b', border: '#4a6b8a' },
+    { id: 'fire_imp', name: 'Fire Imp', icon: '🔥', rarity: 'rare', cost: 6, hp: 60, atk: 24, role: 'back', types: ['Demon','Mage'], color: '#8b2e2e', border: '#ff6b00' },
+    { id: 'eagle_scout', name: 'Sky Eagle', icon: '🦅', rarity: 'rare', cost: 6, hp: 50, atk: 26, role: 'back', types: ['Beast','Ranger'], color: '#5b4a20', border: '#d4af6e' },
+
+    // EPIC
+    { id: 'dragon_knight', name: 'Dragon Knight', icon: '🛡️', rarity: 'epic', cost: 12, hp: 200, atk: 32, role: 'front', types: ['Dragon','Warrior'], color: '#5b2a2a', border: '#a83232' },
+    { id: 'lich_lord', name: 'Lich Lord', icon: '💀', rarity: 'epic', cost: 12, hp: 90, atk: 42, role: 'back', types: ['Undead','Mage'], color: '#3a1a5b', border: '#9b59b6' },
+    { id: 'minotaur', name: 'Minotaur', icon: '🐂', rarity: 'epic', cost: 12, hp: 240, atk: 28, role: 'front', types: ['Beast','Warrior'], color: '#3a2a14', border: '#8b6914' },
+    { id: 'phoenix', name: 'Phoenix', icon: '🦃', rarity: 'epic', cost: 12, hp: 130, atk: 40, role: 'back', types: ['Beast','Mage'], color: '#8b2e2e', border: '#ff8c00' },
+
+    // LEGENDARY
+    { id: 'ancient_dragon', name: 'Ancient Dragon', icon: '🐉', rarity: 'legendary', cost: 24, hp: 350, atk: 55, role: 'front', types: ['Dragon','Mage'], color: '#5b1a5b', border: '#f0c75e' },
+    { id: 'paladin_king', name: 'Paladin King', icon: '👑', rarity: 'legendary', cost: 24, hp: 320, atk: 50, role: 'front', types: ['Human','Warrior'], color: '#8b6914', border: '#f0c75e' },
+    { id: 'demon_lord', name: 'Demon Lord', icon: '😈', rarity: 'legendary', cost: 24, hp: 280, atk: 65, role: 'back', types: ['Demon','Mage'], color: '#5b1a1a', border: '#ff0000' }
+];
+
+/* ============================================================
+   ===== SYNERGY DEFINITIONS ==================================
+   ============================================================ */
+const SYNERGIES = {
+    'Goblin':   { tiers: [{n:2,bonus:'+20% ATK'},{n:4,bonus:'+50% ATK'}], stat: 'atk', mult: [1.2, 1.5] },
+    'Beast':    { tiers: [{n:2,bonus:'+15% HP'},{n:4,bonus:'+40% HP'}], stat: 'hp', mult: [1.15, 1.4] },
+    'Undead':   { tiers: [{n:2,bonus:'Lifesteal 25%'},{n:4,bonus:'Lifesteal 50%'}], stat: 'lifesteal', mult: [0.25, 0.5] },
+    'Demon':    { tiers: [{n:2,bonus:'+30% Crit'},{n:4,bonus:'+70% Crit'}], stat: 'crit', mult: [0.3, 0.7] },
+    'Dragon':   { tiers: [{n:2,bonus:'+25% ALL Stats'}], stat: 'all', mult: [1.25] },
+    'Human':    { tiers: [{n:2,bonus:'+20% HP & ATK'}], stat: 'hpAtk', mult: [1.2] },
+    'Warrior':  { tiers: [{n:2,bonus:'+30% Armor'},{n:4,bonus:'+60% Armor'}], stat: 'armor', mult: [0.3, 0.6] },
+    'Mage':     { tiers: [{n:2,bonus:'+30% Spell Power'},{n:4,bonus:'+70% Spell Power'}], stat: 'spell', mult: [1.3, 1.7] },
+    'Ranger':   { tiers: [{n:2,bonus:'+40% Crit Damage'}], stat: 'critDmg', mult: [1.4] }
+};
+
+/* ============================================================
+   ===== WAVE DEFINITIONS =====================================
+   ============================================================ */
+const WAVE_NAMES = [
+    'The Goblin Patrol', 'Skeleton Crew', 'Forest Ambush', 'Bandit Raiders',
+    'Orc War Party', 'Crypt Wraiths', 'Cursed Knights', 'Dragon Spawn',
+    'Demon Incursion', 'The Lich\'s Army', 'Hellgate Opens', 'The Dragon Lord'
+];
+
+function generateEnemyWave(waveNum) {
+    const enemyCount = Math.min(2 + Math.floor(waveNum / 2), 6);
+    const enemies = [];
+    const difficulty = 1 + (waveNum - 1) * 0.35;
+
+    let pool;
+    if (waveNum <= 3) pool = BEAST_DATABASE.filter(b => b.rarity === 'common');
+    else if (waveNum <= 6) pool = BEAST_DATABASE.filter(b => ['common','rare'].includes(b.rarity));
+    else if (waveNum <= 10) pool = BEAST_DATABASE.filter(b => ['rare','epic'].includes(b.rarity));
+    else pool = BEAST_DATABASE.filter(b => ['epic','legendary'].includes(b.rarity));
+
+    for (let i = 0; i < enemyCount; i++) {
+        const template = pool[Math.floor(Math.random() * pool.length)];
+        enemies.push({
+            ...template,
+            uid: 'enemy_' + waveNum + '_' + i,
+            maxHp: Math.floor(template.hp * difficulty),
+            currentHp: Math.floor(template.hp * difficulty),
+            atk: Math.floor(template.atk * difficulty),
+            level: 1 + Math.floor(waveNum / 4),
+            isEnemy: true
+        });
+    }
+    return enemies;
+}
+
+/* ============================================================
+   ===== GAME STATE ===========================================
+   ============================================================ */
+let state = {
+    gold: 100,
+    wave: 1,
+    roster: [],
+    deployed: [null,null,null,null,null,null],
+    enemies: [],
+    shop: [],
+    battleSpeed: 2,
+    inBattle: false,
+    highestWave: parseInt(localStorage.getItem('beastArenaHighWave')) || 1,
+    totalKills: 0,
+    teamPower: 0,
+    pendingDiscardUid: null
+};
+
+let uidCounter = 0;
+function nextUid() { return 'beast_' + (++uidCounter); }
+
+/* ============================================================
+   ===== INIT & RENDER ========================================
+   ============================================================ */
+function init() {
+    spawnEmbers();
+    renderShop();
+    renderRoster();
+    renderArena();
+    updateHUD();
+    updateSynergies();
+    
+    // Auto-open help modal on first visit
+    if (!localStorage.getItem('beastArenaTutorialSeen')) {
+        setTimeout(() => openHelpModal(), 500);
+        localStorage.setItem('beastArenaTutorialSeen', '1');
+    }
+}
+
+function spawnEmbers() {
+    const c = document.getElementById('embers');
+    for (let i = 0; i < 40; i++) {
+        const e = document.createElement('div');
+        e.className = 'ember';
+        const size = Math.random() * 3 + 1;
+        e.style.width = size + 'px';
+        e.style.height = size + 'px';
+        e.style.left = Math.random() * 100 + '%';
+        e.style.top = (Math.random() * 60 + 40) + '%';
+        e.style.animationDuration = (Math.random() * 4 + 3) + 's';
+        e.style.animationDelay = Math.random() * 4 + 's';
+        c.appendChild(e);
+    }
+}
+
+function updateHUD() {
+    document.getElementById('goldDisplay').innerText = state.gold;
+    document.getElementById('waveDisplay').innerText = state.wave;
+    document.getElementById('beastsDisplay').innerText = state.roster.length;
+    document.getElementById('waveNum').innerText = state.wave;
+    document.getElementById('waveName').innerText = WAVE_NAMES[Math.min(state.wave-1, WAVE_NAMES.length-1)] || 'Endless Horde';
+    document.getElementById('rerollBtn').disabled = state.gold < 5 || state.inBattle;
+    document.getElementById('battleBtn').disabled = state.inBattle || state.deployed.every(s => !s);
+    
+    if (state.wave > 1) document.getElementById('introCard').style.display = 'none';
+}
+
+/* ============================================================
+   ===== HELP MODAL ===========================================
+   ============================================================ */
+function openHelpModal() {
+    document.getElementById('helpModal').classList.add('show');
+}
+function closeHelpModal() {
+    document.getElementById('helpModal').classList.remove('show');
+}
+
+/* ============================================================
+   ===== SHOP =================================================
+   ============================================================ */
+function rollShop() {
+    const shop = [];
+    for (let i = 0; i < 5; i++) {
+        const r = Math.random() * 100;
+        let pool;
+        if (state.wave <= 3) {
+            if (r < 70) pool = BEAST_DATABASE.filter(b => b.rarity === 'common');
+            else if (r < 95) pool = BEAST_DATABASE.filter(b => b.rarity === 'rare');
+            else pool = BEAST_DATABASE.filter(b => b.rarity === 'epic');
+        } else if (state.wave <= 7) {
+            if (r < 40) pool = BEAST_DATABASE.filter(b => b.rarity === 'common');
+            else if (r < 75) pool = BEAST_DATABASE.filter(b => b.rarity === 'rare');
+            else if (r < 95) pool = BEAST_DATABASE.filter(b => b.rarity === 'epic');
+            else pool = BEAST_DATABASE.filter(b => b.rarity === 'legendary');
+        } else {
+            if (r < 20) pool = BEAST_DATABASE.filter(b => b.rarity === 'common');
+            else if (r < 55) pool = BEAST_DATABASE.filter(b => b.rarity === 'rare');
+            else if (r < 85) pool = BEAST_DATABASE.filter(b => b.rarity === 'epic');
+            else pool = BEAST_DATABASE.filter(b => b.rarity === 'legendary');
+        }
+        const template = pool[Math.floor(Math.random() * pool.length)];
+        shop.push({ ...template, sold: false, shopId: nextUid() });
+    }
+    state.shop = shop;
+}
+
+function renderShop() {
+    if (state.shop.length === 0) rollShop();
+    const grid = document.getElementById('shopGrid');
+    grid.innerHTML = '';
+    state.shop.forEach(item => {
+        const card = document.createElement('div');
+        const canAfford = state.gold >= item.cost;
+        card.className = 'shop-card' + (item.sold ? ' sold' : '') + (!canAfford && !item.sold ? ' cant-afford' : '');
+        card.style.setProperty('--unit-color', item.color);
+        card.style.setProperty('--unit-border', item.border);
+        const roleLabel = item.role === 'front' ? 'TANK' : 'RANGED';
+        card.innerHTML = `
+            <div class="shop-role-tag ${item.role}">${roleLabel}</div>
+            <div class="shop-icon">${item.icon}</div>
+            <div class="shop-name">${item.name}</div>
+            <div class="shop-rarity ${item.rarity}">${item.rarity}</div>
+            <div class="shop-stats">
+                <span>❤️ ${item.hp}</span>
+                <span>⚔️ ${item.atk}</span>
+            </div>
+            <div class="shop-cost">${item.cost} 🪙</div>
+        `;
+        if (!item.sold) {
+            card.onclick = () => buyBeast(item);
+            card.title = `${item.name}\nTypes: ${item.types.join(', ')}\nRole: ${roleLabel}\nClick to buy for ${item.cost}🪙`;
+        }
+        grid.appendChild(card);
+    });
+}
+
+function buyBeast(item) {
+    if (state.inBattle) { toast('Cannot buy during battle!', 'warning'); return; }
+    if (state.gold < item.cost) { toast(`Need ${item.cost - state.gold} more gold! Tip: Try discarding weaker beasts.`, 'error'); return; }
+    if (state.roster.length >= 12) { toast('Menagerie full! Discard a beast first (hover for ✖)', 'warning'); return; }
+
+    state.gold -= item.cost;
+    item.sold = true;
+    const newBeast = {
+        ...item,
+        uid: nextUid(),
+        maxHp: item.hp,
+        currentHp: item.hp,
+        level: 1,
+        deployed: false,
+        originalCost: item.cost
+    };
+    delete newBeast.sold;
+    delete newBeast.shopId;
+    state.roster.push(newBeast);
+
+    toast(`Recruited ${item.name}!`, 'success');
+    renderShop();
+    renderRoster();
+    updateHUD();
+}
+
+function rerollShop() {
+    if (state.gold < 5 || state.inBattle) return;
+    state.gold -= 5;
+    rollShop();
+    renderShop();
+    updateHUD();
+}
+
+/* ============================================================
+   ===== ROSTER + DISCARD =====================================
+   ============================================================ */
+function renderRoster() {
+    const grid = document.getElementById('rosterGrid');
+    grid.innerHTML = '';
+    if (state.roster.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-dim); padding:20px; font-style:italic;">No beasts yet. Visit the bazaar! 🛒</div>';
+        return;
+    }
+    state.roster.forEach(beast => {
+        const card = document.createElement('div');
+        card.className = 'roster-card' + (beast.deployed ? ' deployed' : '');
+        card.style.setProperty('--unit-color', beast.color);
+        card.style.setProperty('--unit-border', beast.border);
+        card.draggable = !beast.deployed;
+        card.dataset.uid = beast.uid;
+        const sellValue = Math.floor((beast.originalCost || beast.cost) / 2);
+        card.title = `${beast.name}\nTypes: ${beast.types.join(', ')}\nRole: ${beast.role === 'front' ? 'TANK (Front Row)' : 'RANGED (Back Row)'}\nHover ✖ to discard for ${sellValue}🪙`;
+        card.innerHTML = `
+            <button class="discard-btn" title="Discard for ${sellValue}🪙" onclick="event.stopPropagation(); promptDiscard('${beast.uid}')">✖</button>
+            <div class="roster-icon">${beast.icon}</div>
+            <div class="roster-name">${beast.name}</div>
+            <div class="roster-stats">
+                <span>❤️${beast.maxHp}</span>
+                <span>⚔️${beast.atk}</span>
+            </div>
+            <div class="roster-sell-value">Sell: ${sellValue}🪙</div>
+        `;
+        card.addEventListener('dragstart', e => {
+            if (beast.deployed) { e.preventDefault(); return; }
+            // Don't initiate drag if the discard button is clicked
+            if (e.target.classList.contains('discard-btn')) { e.preventDefault(); return; }
+            e.dataTransfer.setData('text/plain', beast.uid);
+            card.style.opacity = '0.5';
+        });
+        card.addEventListener('dragend', () => { card.style.opacity = '1'; });
+        grid.appendChild(card);
+    });
+}
+
+/* ===== DISCARD FUNCTION ===== */
+function promptDiscard(uid) {
+    if (state.inBattle) {
+        toast('Cannot discard during battle!', 'warning');
+        return;
+    }
+    const beast = state.roster.find(b => b.uid === uid);
+    if (!beast) return;
+    
+    const sellValue = Math.floor((beast.originalCost || beast.cost) / 2);
+    state.pendingDiscardUid = uid;
+    
+    document.getElementById('discardModalBody').innerHTML = `
+        <div style="background:linear-gradient(135deg, ${beast.color}, #1a1209); border:2px solid ${beast.border}; border-radius:8px; padding:14px; margin:14px 0;">
+            <div style="font-size:2.5em; line-height:1;">${beast.icon}</div>
+            <div style="font-family:'MedievalSharp',serif; font-size:1.2em; color:var(--text); margin-top:4px;">${beast.name}</div>
+            <div style="color:var(--text-dim); font-size:0.85em; margin-top:4px;">${beast.types.join(' • ')}</div>
+            <div style="display:flex; justify-content:center; gap:14px; margin-top:8px; color:var(--text-dim); font-size:0.9em;">
+                <span>❤️ ${beast.maxHp} HP</span>
+                <span>⚔️ ${beast.atk} ATK</span>
+            </div>
+        </div>
+        <p style="color:var(--text-dim); margin-bottom:6px;">Are you sure you want to discard this beast?</p>
+        <p style="color:var(--gold); font-weight:700; font-size:1.1em;">You'll receive: <strong>${sellValue} 🪙</strong></p>
+        <p style="color:var(--text-dim); font-size:0.8em; margin-top:6px; font-style:italic;">(Half of original ${beast.originalCost || beast.cost}🪙 cost)</p>
+    `;
+    
+    document.getElementById('confirmDiscardBtn').onclick = () => confirmDiscard(uid);
+    document.getElementById('discardModal').classList.add('show');
+}
+
+function closeDiscardModal() {
+    document.getElementById('discardModal').classList.remove('show');
+    state.pendingDiscardUid = null;
+}
+
+function confirmDiscard(uid) {
+    const beastIdx = state.roster.findIndex(b => b.uid === uid);
+    if (beastIdx === -1) return;
+    
+    const beast = state.roster[beastIdx];
+    const sellValue = Math.floor((beast.originalCost || beast.cost) / 2);
+    
+    // If deployed, remove from arena slot
+    if (beast.deployed) {
+        const slotIdx = state.deployed.findIndex(d => d && d.uid === uid);
+        if (slotIdx !== -1) state.deployed[slotIdx] = null;
+    }
+    
+    // Remove from roster, refund gold
+    state.roster.splice(beastIdx, 1);
+    state.gold += sellValue;
+    
+    closeDiscardModal();
+    renderRoster();
+    renderArena();
+    updateSynergies();
+    updateHUD();
+    
+    toast(`Discarded ${beast.name} for +${sellValue}🪙`, 'info');
+}
+
+/* ============================================================
+   ===== ARENA / DEPLOYMENT ===================================
+   ============================================================ */
+function renderArena() {
+    const playerEl = document.getElementById('playerTeam');
+    const enemyEl = document.getElementById('enemyTeam');
+    
+    playerEl.innerHTML = '<span class="team-label">⚔ YOUR ARMY</span>';
+    enemyEl.innerHTML = '<span class="team-label">💀 ENEMIES</span>';
+
+    const playerOrder = [3,4,5, 0,1,2];
+    playerOrder.forEach(i => {
+        const slot = document.createElement('div');
+        const isFront = i < 3;
+        slot.className = 'battle-slot ' + (isFront ? 'front' : 'back');
+        slot.dataset.pos = isFront ? '⚔️ Front (Tank)' : '🛡️ Back (Ranged)';
+        slot.dataset.slot = i;
+        slot.dataset.side = 'player';
+        if (state.deployed[i]) {
+            const unitEl = buildUnitEl(state.deployed[i], 'player');
+            unitEl.style.setProperty('--attack-dir', '20px');
+            unitEl.ondblclick = () => recallBeast(i);
+            unitEl.title = state.deployed[i].name + ' — Double-click to recall to Menagerie';
+            slot.appendChild(unitEl);
+        } else {
+            slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+            slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+            slot.addEventListener('drop', e => {
+                e.preventDefault();
+                slot.classList.remove('drag-over');
+                const uid = e.dataTransfer.getData('text/plain');
+                deployBeast(uid, i);
+            });
+        }
+        playerEl.appendChild(slot);
+    });
+
+    const enemyOrder = [0,1,2, 3,4,5];
+    enemyOrder.forEach(i => {
+        const slot = document.createElement('div');
+        const isFront = i < 3;
+        slot.className = 'battle-slot ' + (isFront ? 'front' : 'back');
+        slot.dataset.pos = isFront ? 'Front' : 'Back';
+        slot.dataset.slot = i;
+        slot.dataset.side = 'enemy';
+        if (state.enemies[i]) {
+            const unitEl = buildUnitEl(state.enemies[i], 'enemy');
+            unitEl.style.setProperty('--attack-dir', '-20px');
+            slot.appendChild(unitEl);
+        }
+        enemyEl.appendChild(slot);
+    });
+}
+
+function buildUnitEl(beast, side) {
+    const el = document.createElement('div');
+    el.className = `unit rarity-${beast.rarity}`;
+    el.style.setProperty('--unit-color', beast.color);
+    el.style.setProperty('--unit-border', beast.border);
+    el.id = `unit_${side}_${beast.uid}`;
+    
+    const hpPct = (beast.currentHp / beast.maxHp) * 100;
+    let hpClass = '';
+    if (hpPct < 30) hpClass = 'critical';
+    else if (hpPct < 60) hpClass = 'low';
+
+    el.innerHTML = `
+        <div class="unit-rarity-glow"></div>
+        <div class="unit-level">${beast.level || 1}</div>
+        <div class="unit-icon">${beast.icon}</div>
+        <div class="unit-name">${beast.name}</div>
+        <div class="unit-hp-bar"><div class="unit-hp-fill ${hpClass}" style="width:${hpPct}%"></div></div>
+    `;
+    return el;
+}
+
+function deployBeast(uid, slot) {
+    if (state.inBattle) { toast('Cannot deploy during battle!', 'warning'); return; }
+    const beast = state.roster.find(b => b.uid === uid);
+    if (!beast || beast.deployed) return;
+    
+    const isFrontSlot = slot < 3;
+    if (beast.role === 'back' && isFrontSlot) {
+        toast(`${beast.name} prefers BACK row (ranged) but works anywhere!`, 'warning');
+    } else if (beast.role === 'front' && !isFrontSlot) {
+        toast(`${beast.name} prefers FRONT row (tank) but works anywhere!`, 'warning');
+    }
+    
+    beast.deployed = true;
+    state.deployed[slot] = beast;
+    renderArena();
+    renderRoster();
+    updateSynergies();
+    updateHUD();
+}
+
+function recallBeast(slot) {
+    if (state.inBattle) return;
+    const beast = state.deployed[slot];
+    if (!beast) return;
+    beast.deployed = false;
+    state.deployed[slot] = null;
+    renderArena();
+    renderRoster();
+    updateSynergies();
+    updateHUD();
+    toast(`${beast.name} recalled to Menagerie`, 'info');
+}
+
+/* ============================================================
+   ===== SYNERGIES ============================================
+   ============================================================ */
+function calculateSynergies() {
+    const counts = {};
+    state.deployed.forEach(beast => {
+        if (!beast) return;
+        beast.types.forEach(t => {
+            counts[t] = (counts[t] || 0) + 1;
+        });
+    });
+    const active = [];
+    Object.keys(counts).forEach(type => {
+        const syn = SYNERGIES[type];
+        if (!syn) return;
+        let tier = 0;
+        for (let i = syn.tiers.length - 1; i >= 0; i--) {
+            if (counts[type] >= syn.tiers[i].n) {
+                tier = i + 1;
+                active.push({
+                    type, count: counts[type], tier,
+                    required: syn.tiers[i].n,
+                    bonus: syn.tiers[i].bonus,
+                    mult: syn.mult[i],
+                    stat: syn.stat
+                });
+                break;
+            }
+        }
+    });
+    return active;
+}
+
+function updateSynergies() {
+    const bar = document.getElementById('synergiesBar');
+    const synergies = calculateSynergies();
+    if (synergies.length === 0) {
+        bar.innerHTML = '<span class="synergy-empty">⚡ Deploy beasts of the same Type or Class to activate synergies...</span>';
+        return;
+    }
+    bar.innerHTML = synergies.map(s => 
+        `<div class="synergy-badge tier-${s.tier}" title="${s.bonus} bonus applies to all ${s.type} units">
+            <span>${s.type}</span>
+            <span style="opacity:0.7;">(${s.count})</span>
+            <span style="font-size:0.8em;">▸ ${s.bonus}</span>
+        </div>`
+    ).join('');
+}
+
+function applySynergiesToTeam(team) {
+    const counts = {};
+    team.forEach(beast => {
+        if (!beast) return;
+        beast.types.forEach(t => counts[t] = (counts[t] || 0) + 1);
+    });
+    
+    team.forEach(beast => {
+        if (!beast) return;
+        beast.atkBonus = 1;
+        beast.hpBonus = 1;
+        beast.lifesteal = 0;
+        beast.critChance = 0.1;
+        beast.critDmgMult = 1.5;
+        
+        beast.types.forEach(type => {
+            const syn = SYNERGIES[type];
+            if (!syn) return;
+            for (let i = syn.tiers.length - 1; i >= 0; i--) {
+                if (counts[type] >= syn.tiers[i].n) {
+                    const mult = syn.mult[i];
+                    if (syn.stat === 'atk') beast.atkBonus *= mult;
+                    else if (syn.stat === 'hp') beast.hpBonus *= mult;
+                    else if (syn.stat === 'lifesteal') beast.lifesteal = Math.max(beast.lifesteal, mult);
+                    else if (syn.stat === 'crit') beast.critChance += mult;
+                    else if (syn.stat === 'critDmg') beast.critDmgMult = mult + 0.5;
+                    else if (syn.stat === 'all') { beast.atkBonus *= mult; beast.hpBonus *= mult; }
+                    else if (syn.stat === 'hpAtk') { beast.atkBonus *= mult; beast.hpBonus *= mult; }
+                    else if (syn.stat === 'armor') beast.armor = (beast.armor || 0) + mult;
+                    else if (syn.stat === 'spell') { if (beast.types.includes('Mage')) beast.atkBonus *= mult; }
+                    break;
+                }
+            }
+        });
+        
+        beast.effectiveAtk = Math.floor(beast.atk * beast.atkBonus);
+        beast.effectiveMaxHp = Math.floor(beast.maxHp * beast.hpBonus);
+        beast.currentHp = beast.effectiveMaxHp;
+    });
+}
+
+/* ============================================================
+   ===== BATTLE SYSTEM ========================================
+   ============================================================ */
+function startBattle() {
+    if (state.inBattle) return;
+    if (state.deployed.every(s => !s)) {
+        toast('Deploy at least one beast! Drag from Menagerie.', 'error');
+        return;
+    }
+    state.inBattle = true;
+    document.getElementById('battleStatus').innerText = '⚔️ Battle commences!';
+    document.getElementById('battleBtn').disabled = true;
+    
+    state.enemies = generateEnemyWave(state.wave);
+    
+    applySynergiesToTeam(state.deployed);
+    state.enemies.forEach(e => {
+        e.atkBonus = 1; e.hpBonus = 1; e.lifesteal = 0; e.critChance = 0.05; e.critDmgMult = 1.5;
+        e.effectiveAtk = e.atk; e.effectiveMaxHp = e.maxHp; e.currentHp = e.maxHp;
+    });
+    
+    renderArena();
+    updateHUD();
+    
+    setTimeout(battleTick, 800 / state.battleSpeed);
+}
+
+let battleTickCounter = 0;
+function battleTick() {
+    if (!state.inBattle) return;
+    
+    const playerAlive = state.deployed.filter(b => b && b.currentHp > 0);
+    const enemyAlive = state.enemies.filter(e => e && e.currentHp > 0);
+    
+    if (playerAlive.length === 0) { endBattle(false); return; }
+    if (enemyAlive.length === 0) { endBattle(true); return; }
+    
+    battleTickCounter++;
+    const attackPlayer = battleTickCounter % 2 === 1;
+    
+    if (attackPlayer) {
+        playerAlive.forEach((attacker, idx) => {
+            setTimeout(() => performAttack(attacker, 'player'), idx * 150);
+        });
+    } else {
+        enemyAlive.forEach((attacker, idx) => {
+            setTimeout(() => performAttack(attacker, 'enemy'), idx * 150);
+        });
+    }
+    
+    setTimeout(battleTick, 1200 / state.battleSpeed);
+}
+
+function performAttack(attacker, side) {
+    if (!state.inBattle || attacker.currentHp <= 0) return;
+    
+    const targets = side === 'player' 
+        ? state.enemies.filter(e => e && e.currentHp > 0)
+        : state.deployed.filter(b => b && b.currentHp > 0);
+    
+    if (targets.length === 0) return;
+    
+    let target;
+    const fronts = targets.filter(t => {
+        const arr = side === 'player' ? state.enemies : state.deployed;
+        const slot = arr.indexOf(t);
+        return slot < 3;
+    });
+    if (attacker.role === 'front' && fronts.length > 0) {
+        target = fronts[Math.floor(Math.random() * fronts.length)];
+    } else {
+        target = targets[Math.floor(Math.random() * targets.length)];
+    }
+    
+    let dmg = attacker.effectiveAtk || attacker.atk;
+    const isCrit = Math.random() < (attacker.critChance || 0.1);
+    if (isCrit) dmg = Math.floor(dmg * (attacker.critDmgMult || 1.5));
+    
+    const armor = target.armor || 0;
+    dmg = Math.max(1, Math.floor(dmg * (1 - armor * 0.3)));
+    
+    target.currentHp = Math.max(0, target.currentHp - dmg);
+    
+    if (attacker.lifesteal > 0) {
+        const heal = Math.floor(dmg * attacker.lifesteal);
+        attacker.currentHp = Math.min(
+            attacker.effectiveMaxHp || attacker.maxHp,
+            attacker.currentHp + heal
+        );
+        if (heal > 0) showDamagePopup(attacker, side, heal, false, true);
+    }
+    
+    const attackerEl = document.getElementById(`unit_${side}_${attacker.uid}`);
+    const targetSide = side === 'player' ? 'enemy' : 'player';
+    const targetEl = document.getElementById(`unit_${targetSide}_${target.uid}`);
+    
+    if (attackerEl) {
+        attackerEl.classList.add('attacking');
+        setTimeout(() => attackerEl.classList.remove('attacking'), 400);
+    }
+    if (targetEl) {
+        setTimeout(() => {
+            targetEl.classList.add('hit');
+            setTimeout(() => targetEl.classList.remove('hit'), 300);
+        }, 200);
+    }
+    
+    setTimeout(() => showDamagePopup(target, targetSide, dmg, isCrit), 250);
+    setTimeout(() => updateUnitHpBar(target, targetSide), 250);
+    
+    if (target.currentHp <= 0) {
+        setTimeout(() => {
+            if (targetEl) {
+                targetEl.classList.add('dying');
+                setTimeout(() => {
+                    if (targetEl.parentNode) targetEl.parentNode.removeChild(targetEl);
+                }, 600);
+            }
+            if (side === 'player') state.totalKills++;
+        }, 400);
+    }
+}
+
+function showDamagePopup(target, side, amount, isCrit, isHeal) {
+    const el = document.getElementById(`unit_${side}_${target.uid}`);
+    if (!el) return;
+    const popup = document.createElement('div');
+    popup.className = 'damage-popup' + (isCrit ? ' crit' : '') + (isHeal ? ' heal' : '');
+    popup.style.left = '50%';
+    popup.style.top = '20%';
+    popup.innerText = (isHeal ? '+' : '-') + amount + (isCrit ? '!' : '');
+    el.appendChild(popup);
+    setTimeout(() => popup.remove(), 1000);
+}
+
+function updateUnitHpBar(beast, side) {
+    const el = document.getElementById(`unit_${side}_${beast.uid}`);
+    if (!el) return;
+    const fill = el.querySelector('.unit-hp-fill');
+    if (!fill) return;
+    const maxHp = beast.effectiveMaxHp || beast.maxHp;
+    const pct = (beast.currentHp / maxHp) * 100;
+    fill.style.width = pct + '%';
+    fill.classList.remove('low', 'critical');
+    if (pct < 30) fill.classList.add('critical');
+    else if (pct < 60) fill.classList.add('low');
+}
+
+function endBattle(victory) {
+    state.inBattle = false;
+    const survivorsCount = state.deployed.filter(b => b && b.currentHp > 0).length;
+    const killsThisWave = state.enemies.length - state.enemies.filter(e => e.currentHp > 0).length;
+    
+    state.deployed.forEach(b => {
+        if (b) {
+            b.currentHp = b.maxHp;
+            b.deployed = true;
+        }
+    });
+    
+    const modal = document.getElementById('resultModal');
+    const modalContent = document.getElementById('resultModalContent');
+    const title = document.getElementById('resultTitle');
+    const body = document.getElementById('resultBody');
+    const stats = document.getElementById('resultStats');
+    const nextBtn = document.getElementById('nextWaveBtn');
+    
+    modalContent.className = 'modal ' + (victory ? 'victory' : 'defeat');
+    
+    if (victory) {
+        const goldReward = 30 + (state.wave * 10);
+        state.gold += goldReward;
+        
+        saveHighWaveToTavern(state.wave);
+        
+        title.innerText = '🏆 VICTORY!';
+        body.innerHTML = `<p style="font-style:italic; color:var(--text-dim);">The beasts cower before thy might!</p>`;
+        stats.innerHTML = `
+            <div class="stat-row"><span>Wave Cleared</span><strong>${state.wave}</strong></div>
+            <div class="stat-row"><span>Enemies Defeated</span><strong>${killsThisWave}</strong></div>
+            <div class="stat-row"><span>Survivors</span><strong>${survivorsCount}/${state.deployed.filter(b=>b).length}</strong></div>
+            <div class="stat-row"><span>Gold Earned</span><strong>+${goldReward} 🪙</strong></div>
+            <div class="stat-row"><span>Total Kills</span><strong>${state.totalKills}</strong></div>
+        `;
+        nextBtn.innerText = `Wave ${state.wave + 1} →`;
+        nextBtn.style.display = 'block';
+        nextBtn.onclick = nextWave;
+    } else {
+        if (state.wave > state.highestWave) {
+            state.highestWave = state.wave;
+            localStorage.setItem('beastArenaHighWave', state.wave);
+        }
+        saveHighWaveToTavern(state.wave);
+        
+        title.innerText = '💀 DEFEAT';
+        body.innerHTML = `<p style="font-style:italic; color:var(--text-dim);">Thy beasts have fallen... but legends never truly die.</p>`;
+        stats.innerHTML = `
+            <div class="stat-row"><span>Final Wave</span><strong>${state.wave}</strong></div>
+            <div class="stat-row"><span>Total Kills</span><strong>${state.totalKills}</strong></div>
+            <div class="stat-row"><span>Team Size</span><strong>${state.deployed.filter(b=>b).length}</strong></div>
+            <div class="stat-row"><span>🏆 Highest Wave Ever</span><strong style="color:var(--gold);">${state.highestWave}</strong></div>
+        `;
+        nextBtn.innerText = '⚔ NEW EXPEDITION';
+        nextBtn.onclick = resetGame;
+    }
+    
+    modal.classList.add('show');
+    renderArena();
+    updateHUD();
+}
+
+function nextWave() {
+    state.wave++;
+    state.enemies = [];
+    rollShop();
+    renderShop();
+    renderArena();
+    updateHUD();
+    document.getElementById('resultModal').classList.remove('show');
+    document.getElementById('battleStatus').innerText = 'Prepare thy team...';
+    toast(`⚔️ Wave ${state.wave} approaches!`, 'success');
+}
+
+function resetGame() {
+    state.gold = 100;
+    state.wave = 1;
+    state.roster = [];
+    state.deployed = [null,null,null,null,null,null];
+    state.enemies = [];
+    state.totalKills = 0;
+    state.shop = [];
+    rollShop();
+    renderShop();
+    renderRoster();
+    renderArena();
+    updateHUD();
+    updateSynergies();
+    document.getElementById('resultModal').classList.remove('show');
+    document.getElementById('introCard').style.display = 'grid';
+    toast('🦁 A new expedition begins!', 'success');
+}
+
+/* ============================================================
+   ===== SPEED CONTROL ========================================
+   ============================================================ */
+function setSpeed(s) {
+    state.battleSpeed = s;
+    document.querySelectorAll('.btn.speed').forEach(b => b.classList.remove('active'));
+    document.getElementById('speed' + s).classList.add('active');
+}
+
+/* ============================================================
+   ===== TOAST ================================================
+   ============================================================ */
+function toast(msg, type = 'success') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.innerText = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+
+/* ============================================================
+   ===== KEYBOARD =============================================
+   ============================================================ */
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        closeHelpModal();
+        closeDiscardModal();
+    }
+    if (e.key === ' ' && !state.inBattle) { e.preventDefault(); startBattle(); }
+    if (e.key === 'r' || e.key === 'R') rerollShop();
+    if (e.key === '1') setSpeed(1);
+    if (e.key === '2') setSpeed(2);
+    if (e.key === '4') setSpeed(4);
+    if (e.key === 'h' || e.key === 'H') openHelpModal();
+});
+
+/* ============================================================
+   ===== TAVERN LEADERBOARD INTEGRATION =======================
+   ============================================================ */
+function saveHighWaveToTavern(waveReached) {
+    let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    const currentBest = scores.beastmaster_wave || 0;
+    
+    if (waveReached > currentBest) {
+        scores.beastmaster_wave = waveReached;
+        localStorage.setItem('arcadeScores', JSON.stringify(scores));
+        
+        if (window.MegaplexCloud && typeof window.MegaplexCloud.saveToCloud === 'function') {
+            window.MegaplexCloud.saveToCloud();
+        }
+        
+        toast(`🏆 NEW RECORD! Wave ${waveReached} saved to Hall of Fame!`, 'success');
+    } else {
+        if (window.MegaplexCloud && typeof window.MegaplexCloud.saveToCloud === 'function') {
+            window.MegaplexCloud.saveToCloud();
+        }
+    }
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potion Panic - Medieval Alchemist</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-900: #1a1209;
+            --bg-800: #241a0d;
+            --surface: rgba(255,235,200,0.04);
+            --surface-hover: rgba(255,235,200,0.08);
+            --border: rgba(212,175,110,0.18);
+            --border-strong: rgba(212,175,110,0.35);
+            --accent: #d4af6e;
+            --accent-2: #8b2e2e;
+            --gold: #f0c75e;
+            --text: #f0e6d2;
+            --text-dim: #b09b76;
+            --radius: 8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Cinzel', serif;
+            background:
+                radial-gradient(1200px 600px at 50% -10%, #3a2a14 0%, var(--bg-900) 60%) fixed,
+                #1a1209;
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: " ";
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 10%, rgba(255,200,120,0.08), transparent 40%),
+                radial-gradient(ellipse at 80% 90%, rgba(255,180,100,0.06), transparent 40%),
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px);
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .embers { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+        .ember {
+            position: absolute;
+            background: #ffb347;
+            border-radius: 50%;
+            box-shadow: 0 0 6px #ff8c00;
+            animation: emberRise linear infinite;
+        }
+        @keyframes emberRise {
+            0%   { opacity: 0; transform: translateY(0) translateX(0); }
+            20%  { opacity: 1; }
+            80%  { opacity: 0.8; }
+            100% { opacity: 0; transform: translateY(-200px) translateX(30px); }
+        }
+
+        /* ============== HUD ============== */
+        .game-hud {
+            position: sticky; top: 0; z-index: 50;
+            background: linear-gradient(180deg, rgba(36,26,13,0.96), rgba(26,18,9,0.85));
+            border-bottom: 2px solid var(--border-strong);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .hud-title {
+            font-family: 'MedievalSharp', serif;
+            font-size: 1.6em;
+            color: var(--accent);
+            text-shadow: 0 0 12px rgba(255,140,0,0.4);
+            letter-spacing: 2px;
+        }
+
+        .hud-stats { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+        .hud-stat {
+            background: var(--surface);
+            border: 1px solid var(--border-strong);
+            border-radius: 6px;
+            padding: 7px 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+        .hud-stat.gold   { color: var(--gold);  border-color: rgba(240,199,94,0.4); }
+        .hud-stat.score  { color: #5a8c3a; border-color: rgba(90,140,58,0.4); }
+        .hud-stat.day    { color: var(--accent); }
+        .hud-stat.lives  { color: #c75e5e; border-color: rgba(199,94,94,0.4); }
+        .hud-stat.pop { animation: pop 0.4s; }
+        @keyframes pop { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+
+        .back-btn {
+            background: var(--surface);
+            border: 1px solid var(--border-strong);
+            color: var(--text);
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .back-btn:hover { background: var(--surface-hover); border-color: var(--accent); }
+
+        /* ============== DAY TIMER BAR ============== */
+        .day-timer-wrap {
+            background: rgba(26,18,9,0.95);
+            border-bottom: 2px solid var(--border-strong);
+            padding: 8px 24px;
+            position: sticky;
+            top: 56px;
+            z-index: 49;
+        }
+        .day-timer-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+            font-family: 'MedievalSharp', serif;
+            letter-spacing: 1px;
+        }
+        .day-timer-bg {
+            height: 14px;
+            background: #1a1209;
+            border: 1px solid var(--border-strong);
+            border-radius: 7px;
+            overflow: hidden;
+            position: relative;
+        }
+        .day-timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #5a8c3a, #f0c75e 60%, #a83232);
+            transition: width 0.5s linear;
+            box-shadow: 0 0 10px rgba(240,199,94,0.5);
+        }
+        .day-timer-fill.urgent { animation: urgentPulse 0.6s ease-in-out infinite alternate; }
+        @keyframes urgentPulse {
+            from { box-shadow: 0 0 8px rgba(168,50,50,0.6); }
+            to   { box-shadow: 0 0 20px rgba(168,50,50,1); }
+        }
+
+        /* ============== STAGE ============== */
+        .tavern-stage {
+            max-width: 1400px;
+            margin: 16px auto;
+            padding: 0 16px;
+            display: grid;
+            grid-template-columns: 280px 1fr 290px;
+            gap: 14px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .station {
+            background:
+                linear-gradient(180deg, rgba(50,35,16,0.92), rgba(36,26,13,0.92)),
+                repeating-linear-gradient(90deg, transparent 0, transparent 40px, rgba(0,0,0,0.15) 40px, rgba(0,0,0,0.15) 42px);
+            border: 2px solid var(--border-strong);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6), inset 0 0 30px rgba(0,0,0,0.3);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .station-title {
+            font-family: 'MedievalSharp', serif;
+            font-size: 1.15em;
+            color: var(--accent);
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed var(--border-strong);
+            letter-spacing: 1px;
+        }
+
+        /* ============== CUSTOMER QUEUE ============== */
+        .customer-queue {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            max-height: 75vh;
+        }
+        .customer-queue::-webkit-scrollbar { width: 6px; }
+        .customer-queue::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+        .customer-card {
+            background: rgba(0,0,0,0.4);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            position: relative;
+            flex-shrink: 0;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .customer-card:hover {
+            border-color: var(--accent);
+            background: rgba(212,175,110,0.05);
+        }
+
+        .customer-card.selected {
+            border-color: var(--gold);
+            box-shadow: 0 0 16px rgba(240,199,94,0.5);
+            background: rgba(240,199,94,0.08);
+        }
+
+        .customer-card.serving-mode {
+            cursor: grab;
+            border-color: #5a8c3a;
+            box-shadow: 0 0 14px rgba(90,140,58,0.5);
+            animation: serveTarget 1s ease-in-out infinite alternate;
+        }
+        @keyframes serveTarget {
+            from { box-shadow: 0 0 8px rgba(90,140,58,0.4); }
+            to   { box-shadow: 0 0 20px rgba(90,140,58,0.8); }
+        }
+
+        .customer-sprite {
+            width: 50px;
+            height: 50px;
+            font-size: 2.4em;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));
+            flex-shrink: 0;
+        }
+
+        .customer-info { flex: 1; min-width: 0; }
+        .customer-name {
+            font-family: 'MedievalSharp', serif;
+            font-size: 0.95em;
+            color: var(--text);
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .customer-patience {
+            height: 7px;
+            background: #1a1209;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid rgba(212,175,110,0.3);
+        }
+        .patience-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #5a8c3a, #f0c75e, #a83232);
+            transition: width 0.5s linear;
+        }
+        .customer-mood {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            font-size: 1.3em;
+            filter: drop-shadow(0 0 6px rgba(0,0,0,0.8));
+        }
+
+        /* ============== CURRENT ORDER TICKET ============== */
+        .order-ticket {
+            background: linear-gradient(135deg, #e8dcc0, #d4c19a);
+            color: #2a1d0a;
+            padding: 12px 14px;
+            border-radius: 4px;
+            position: relative;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+            font-family: 'MedievalSharp', serif;
+            border: 1px solid #8b6914;
+        }
+        .order-ticket::before,
+        .order-ticket::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            width: 10px;
+            height: 10px;
+            background: #8b2e2e;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .order-ticket::before { left: 12px; }
+        .order-ticket::after { right: 12px; }
+
+        .ticket-title {
+            font-size: 0.85em;
+            font-weight: 700;
+            text-align: center;
+            color: #8b2e2e;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .ticket-row {
+            font-size: 0.85em;
+            margin-top: 6px;
+        }
+        .ticket-ingredient {
+            display: inline-flex;
+            align-items: center;
+            margin: 3px 3px 0 0;
+            padding: 3px 7px;
+            background: rgba(139,46,46,0.15);
+            border: 1px solid rgba(139,46,46,0.3);
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        /* ============== CAULDRON (VISUAL!) ============== */
+        .potion-station {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .cauldron-area {
+            background: radial-gradient(ellipse at center bottom, rgba(139,46,46,0.25), transparent 70%);
+            padding: 10px;
+            text-align: center;
+            position: relative;
+            min-height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Custom SVG-like cauldron */
+        .cauldron-svg {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        /* Flames under cauldron */
+        .flames {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+        .flame {
+            font-size: 1.8em;
+            animation: flameFlicker 0.4s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 8px #ff6b00);
+        }
+        .flame:nth-child(2) { animation-delay: 0.1s; }
+        .flame:nth-child(3) { animation-delay: 0.2s; }
+        .flame:nth-child(4) { animation-delay: 0.15s; }
+        @keyframes flameFlicker {
+            from { transform: scale(1) translateY(0); opacity: 0.9; }
+            to   { transform: scale(1.15) translateY(-3px); opacity: 1; }
+        }
+
+        /* Cauldron pot */
+        .cauldron-pot {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 170px;
+            height: 130px;
+            background: linear-gradient(180deg, #2a1d0a 0%, #1a1209 50%, #0a0604 100%);
+            border-radius: 0 0 85px 85px / 0 0 60px 60px;
+            border: 3px solid #4a3a20;
+            box-shadow:
+                inset 0 -15px 25px rgba(0,0,0,0.7),
+                inset 0 6px 10px rgba(212,175,110,0.2),
+                0 8px 20px rgba(0,0,0,0.7);
+            overflow: hidden;
+        }
+
+        /* Cauldron rim */
+        .cauldron-rim {
+            position: absolute;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 22px;
+            background: linear-gradient(180deg, #4a3a20, #2a1d0a);
+            border: 2px solid #6b5836;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+            z-index: 2;
+        }
+
+        /* The liquid inside! */
+        .cauldron-liquid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70%;
+            background: var(--liquid-color, #4a3a20);
+            transition: background 0.6s ease, height 0.4s ease;
+            box-shadow: inset 0 8px 20px rgba(255,255,255,0.15);
+        }
+
+        /* Liquid surface ripples */
+        .cauldron-liquid::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 0; right: 0;
+            height: 14px;
+            background: var(--liquid-color, #4a3a20);
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: ripple 2s ease-in-out infinite;
+        }
+        @keyframes ripple {
+            0%,100% { transform: scaleY(1); }
+            50%     { transform: scaleY(1.3); }
+        }
+
+        /* Steam */
+        .steam {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 50px;
+            pointer-events: none;
+        }
+        .steam-puff {
+            position: absolute;
+            bottom: 0;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, rgba(255,255,255,0.5), transparent 70%);
+            border-radius: 50%;
+            animation: steamRise 2.5s ease-out infinite;
+        }
+        .steam-puff:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .steam-puff:nth-child(2) { left: 35%; animation-delay: 0.4s; }
+        .steam-puff:nth-child(3) { left: 60%; animation-delay: 0.8s; }
+        .steam-puff:nth-child(4) { left: 80%; animation-delay: 1.2s; }
+        @keyframes steamRise {
+            0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+            30%  { opacity: 0.7; }
+            100% { opacity: 0; transform: translateY(-80px) scale(1.5); }
+        }
+
+        /* Bubbles in liquid */
+        .liquid-bubble {
+            position: absolute;
+            bottom: 5px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 50%;
+            animation: bubbleFloat ease-out forwards;
+        }
+        @keyframes bubbleFloat {
+            0%   { opacity: 0; transform: translateY(0) scale(0.3); }
+            20%  { opacity: 0.8; }
+            100% { opacity: 0; transform: translateY(-60px) scale(1.2); }
+        }
+
+        /* Heating glow */
+        .cauldron-pot.cooking {
+            box-shadow:
+                inset 0 -15px 25px rgba(0,0,0,0.7),
+                inset 0 6px 10px rgba(212,175,110,0.2),
+                0 8px 20px rgba(0,0,0,0.7),
+                0 0 30px rgba(255, 107, 0, 0.6);
+        }
+        .cauldron-pot.cooking .cauldron-liquid {
+            animation: liquidBoil 0.6s ease-in-out infinite;
+        }
+        @keyframes liquidBoil {
+            0%,100% { filter: brightness(1); }
+            50%     { filter: brightness(1.4); }
+        }
+
+        /* Ingredients added float-in */
+        .ingredient-splash {
+            position: absolute;
+            font-size: 1.8em;
+            pointer-events: none;
+            animation: splashDrop 0.7s ease-in forwards;
+            z-index: 5;
+        }
+        @keyframes splashDrop {
+            0%   { transform: translateY(-80px) rotate(0deg); opacity: 1; }
+            70%  { transform: translateY(20px) rotate(360deg); opacity: 1; }
+            100% { transform: translateY(40px) rotate(540deg); opacity: 0; }
+        }
+
+        /* ============== CAULDRON CONTENT LABELS ============== */
+        .cauldron-contents {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
+            padding: 8px;
+            min-height: 40px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cauldron-ingredient {
+            background: rgba(240,199,94,0.15);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 700;
+        }
+
+        .cauldron-empty {
+            color: var(--text-dim);
+            font-style: italic;
+            font-size: 0.85em;
+        }
+
+        /* ============== ACTIONS ============== */
+        .action-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, var(--accent), #8b6914);
+            color: #1a1209;
+            border: none;
+            padding: 9px 14px;
+            border-radius: 6px;
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            font-size: 0.88em;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+        }
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 16px rgba(212,175,110,0.5);
+        }
+        .action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #3a2d18;
+            color: #6b5836;
+        }
+        .action-btn.danger { background: linear-gradient(135deg, #8b2e2e, #a83232); color: #fff; }
+        .action-btn.success {
+            background: linear-gradient(135deg, #5a8c3a, #3a6b2a);
+            color: #fff;
+            box-shadow: 0 0 14px rgba(90,140,58,0.4);
+        }
+        .action-btn.big { width: 100%; padding: 12px; font-size: 1em; }
+
+        /* ============== SHELF ============== */
+        .shelf {
+            background:
+                linear-gradient(180deg, rgba(60,40,20,0.6), rgba(40,28,14,0.6)),
+                repeating-linear-gradient(90deg, transparent 0, transparent 30px, rgba(0,0,0,0.2) 30px, rgba(0,0,0,0.2) 31px);
+            border: 1px solid var(--border-strong);
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .ingredient-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+        }
+
+        .ingredient-jar {
+            background: linear-gradient(180deg, rgba(255,235,200,0.08), rgba(0,0,0,0.4));
+            border: 2px solid var(--border-strong);
+            border-radius: 8px;
+            padding: 8px 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            user-select: none;
+        }
+        .ingredient-jar:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(212,175,110,0.4);
+            background: rgba(212,175,110,0.1);
+        }
+        .ingredient-jar:active { transform: translateY(-1px) scale(0.95); }
+
+        .jar-icon {
+            font-size: 1.8em;
+            line-height: 1;
+            display: block;
+            margin-bottom: 3px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+        }
+        .jar-name {
+            font-size: 0.62em;
+            color: var(--text-dim);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* ============== BOTTLE RACK ============== */
+        .bottle-rack {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .bottle-option {
+            position: relative;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .bottle-option svg { display: block; }
+        .bottle-option:hover { transform: scale(1.1); background: rgba(212,175,110,0.1); }
+        .bottle-option.selected {
+            background: rgba(240,199,94,0.2);
+            box-shadow: 0 0 14px rgba(240,199,94,0.6);
+        }
+        .bottle-option-label {
+            font-size: 0.7em;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* ============== FINISHED POTIONS ============== */
+        .finished-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .finished-potions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            min-height: 80px;
+        }
+
+        .finished-potion {
+            background: rgba(0,0,0,0.4);
+            border: 2px solid var(--border-strong);
+            border-radius: 8px;
+            padding: 10px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .finished-potion:hover {
+            border-color: var(--gold);
+            transform: scale(1.05);
+            box-shadow: 0 0 14px rgba(240,199,94,0.5);
+        }
+        .finished-potion.selected {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(240,199,94,0.8);
+            background: rgba(240,199,94,0.1);
+        }
+        .finished-potion svg { display: block; margin: 0 auto; }
+        .potion-label {
+            font-size: 0.7em;
+            color: var(--text-dim);
+            margin-top: 3px;
+        }
+
+        .help-box {
+            background: rgba(155,89,182,0.08);
+            border: 1px solid rgba(155,89,182,0.3);
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 0.78em;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+        .help-box strong { color: #c79bd6; }
+
+        /* ============== TOASTS ============== */
+        #toastContainer {
+            position: fixed;
+            top: 110px;
+            right: 20px;
+            z-index: 9000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            background: rgba(26,18,9,0.97);
+            color: var(--text);
+            border-left: 4px solid var(--accent);
+            padding: 12px 18px;
+            border-radius: 6px;
+            min-width: 220px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+            animation: slideIn 0.4s ease, fadeOut 0.4s ease 2.6s forwards;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Cinzel', serif;
+            font-size: 0.9em;
+        }
+        .toast.success { border-color: #5a8c3a; }
+        .toast.error   { border-color: #a83232; }
+        .toast.gold    { border-color: var(--gold); }
+        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateX(120%); } }
+
+        .reaction-popup {
+            position: absolute;
+            top: -32px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.2em;
+            animation: reactionFloat 1.5s ease-out forwards;
+            pointer-events: none;
+            filter: drop-shadow(0 0 8px rgba(0,0,0,0.8));
+            z-index: 100;
+        }
+        @keyframes reactionFloat {
+            0%   { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.5); }
+            30%  { opacity: 1; transform: translateX(-50%) translateY(-10px) scale(1.2); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-50px) scale(1); }
+        }
+
+        /* ============== MODAL ============== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(13,9,4,0.92);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 8000;
+            backdrop-filter: blur(8px);
+        }
+        .modal-overlay.show { display: flex; animation: fadeInModal 0.3s; }
+        @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal {
+            background: linear-gradient(135deg, #241a0d, #3a2a14);
+            border: 2px solid var(--gold);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 0 40px rgba(240,199,94,0.5);
+            text-align: center;
+        }
+        .modal h2 {
+            font-family: 'MedievalSharp', serif;
+            color: var(--gold);
+            font-size: 2em;
+            margin-bottom: 16px;
+        }
+        .modal-stat {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border-strong);
+            border-radius: 6px;
+            padding: 10px;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .modal-stat-label { color: var(--text-dim); }
+        .modal-stat-value { color: var(--gold); font-weight: 700; }
+
+        @media (max-width: 1100px) {
+            .tavern-stage { grid-template-columns: 1fr; }
+        }
+    </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="megaplex-firebase.js"></script>
+
+</head>
+<body>
+
+    <div class="embers" id="embers"></div>
+    <div id="toastContainer"></div>
+
+    <!-- HUD -->
+    <header class="game-hud">
+        <div class="hud-title">🧪 Potion Panic</div>
+        <div class="hud-stats">
+            <div class="hud-stat day">📜 Day <span id="dayNum">1</span></div>
+            <div class="hud-stat score" id="scoreBox">⭐ <span id="scoreVal">0</span></div>
+            <div class="hud-stat gold" id="goldBox">🪙 <span id="goldVal">0</span></div>
+            <div class="hud-stat lives" id="livesBox">❤️ <span id="livesVal">3</span></div>
+        </div>
+        <a href="tavern.html" class="back-btn">← Tavern</a>
+    </header>
+
+    <!-- DAY TIMER -->
+    <div class="day-timer-wrap">
+        <div class="day-timer-label">
+            <span>⏰ Day in Progress</span>
+            <span id="dayTimeText">2:00</span>
+        </div>
+        <div class="day-timer-bg">
+            <div class="day-timer-fill" id="dayTimerFill" style="width:100%"></div>
+        </div>
+    </div>
+
+    <!-- MAIN STAGE -->
+    <main class="tavern-stage">
+
+        <!-- LEFT: CUSTOMERS -->
+        <section class="station">
+            <h2 class="station-title">👥 Adventurers</h2>
+            <div class="customer-queue" id="customerQueue"></div>
+        </section>
+
+        <!-- CENTER: BREWING -->
+        <section class="station potion-station">
+            <h2 class="station-title">🔥 Brewing Cauldron</h2>
+
+            <div class="cauldron-area">
+                <div class="cauldron-svg" id="cauldronSvg">
+                    <div class="steam">
+                        <div class="steam-puff"></div>
+                        <div class="steam-puff"></div>
+                        <div class="steam-puff"></div>
+                        <div class="steam-puff"></div>
+                    </div>
+                    <div class="cauldron-rim"></div>
+                    <div class="cauldron-pot" id="cauldronPot">
+                        <div class="cauldron-liquid" id="cauldronLiquid" style="--liquid-color:#4a3a20"></div>
+                    </div>
+                    <div class="flames">
+                        <span class="flame">🔥</span>
+                        <span class="flame">🔥</span>
+                        <span class="flame">🔥</span>
+                        <span class="flame">🔥</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cauldron-contents" id="cauldronContents">
+                <span class="cauldron-empty">Add ingredients to brew...</span>
+            </div>
+
+            <div class="action-row">
+                <button class="action-btn" id="heatBtn" onclick="heatCauldron()">🔥 Heat & Stir</button>
+                <button class="action-btn danger" onclick="clearCauldron()">🗑️ Empty</button>
+            </div>
+
+            <h3 style="font-family:'MedievalSharp',serif; color:var(--accent); font-size:0.95em; text-align:center; margin-top:4px;">🧂 Ingredient Shelf</h3>
+            <div class="shelf">
+                <div class="ingredient-grid" id="ingredientGrid"></div>
+            </div>
+
+            <h3 style="font-family:'MedievalSharp',serif; color:var(--accent); font-size:0.95em; text-align:center;">🍾 Choose Bottle</h3>
+            <div class="bottle-rack" id="bottleRack"></div>
+
+            <button class="action-btn success big" id="bottleBtn" onclick="bottlePotion()">
+                ✨ Pour Into Bottle
+            </button>
+        </section>
+
+        <!-- RIGHT: ORDER & FINISHED -->
+        <section class="station finished-area">
+            <h2 class="station-title">📋 Current Order</h2>
+            <div id="currentOrderArea">
+                <p style="text-align:center; color:var(--text-dim); font-style:italic; padding:14px; font-size:0.85em;">
+                    Click a hero to view order
+                </p>
+            </div>
+
+            <h2 class="station-title" style="margin-top:10px;">🎯 Ready Potions</h2>
+            <div class="finished-potions" id="finishedPotions"></div>
+
+            <div class="help-box">
+                <strong>📖 How to Play:</strong><br>
+                1. Click a hero → see their scroll<br>
+                2. Add matching ingredients<br>
+                3. <strong>🔥 Heat & Stir</strong> the cauldron<br>
+                4. Pick matching bottle → <strong>✨ Pour</strong><br>
+                5. Click the finished potion → click the hero to serve!
+            </div>
+        </section>
+    </main>
+
+    <!-- GAME OVER MODAL -->
+    <div class="modal-overlay" id="gameOverModal">
+        <div class="modal">
+            <h2 id="gameOverTitle">🏆 Day Complete!</h2>
+            <div class="modal-stat"><span class="modal-stat-label">Potions Served</span><span class="modal-stat-value" id="finalServed">0</span></div>
+            <div class="modal-stat"><span class="modal-stat-label">Total Score</span><span class="modal-stat-value" id="finalScore">0</span></div>
+            <div class="modal-stat"><span class="modal-stat-label">Gold Earned</span><span class="modal-stat-value" id="finalGold">0</span></div>
+            <div class="modal-stat"><span class="modal-stat-label">Perfect Brews</span><span class="modal-stat-value" id="finalPerfect">0</span></div>
+            <button class="action-btn success big" style="margin-top:14px;" onclick="nextDay()">
+                ▶ Next Day
+            </button>
+            <a href="tavern.html" class="back-btn" style="display:inline-block; margin-top:8px; text-decoration:none;">
+                Return to Tavern
+            </a>
+        </div>
+    </div>
+
+    <script>
+        /* ============================================================
+           AUDIO
+        ============================================================ */
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        document.body.addEventListener('click', initAudio, { once: true });
+
+        function playTone(freq, type, dur, vol = 0.08) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + dur);
+        }
+        const sfx = {
+            click: () => playTone(400, 'triangle', 0.08),
+            add:   () => { playTone(600, 'sine', 0.1); setTimeout(() => playTone(400, 'sine', 0.1), 80); },
+            stir:  () => playTone(200, 'sawtooth', 0.3, 0.05),
+            pour:  () => { playTone(500, 'sine', 0.1); setTimeout(() => playTone(700, 'sine', 0.2), 100); },
+            win:   () => { playTone(523, 'triangle', 0.1); setTimeout(() => playTone(659, 'triangle', 0.1), 100); setTimeout(() => playTone(784, 'triangle', 0.2), 200); },
+            fail:  () => playTone(200, 'sawtooth', 0.3, 0.1),
+            coin:  () => { playTone(900, 'sine', 0.1); setTimeout(() => playTone(1200, 'sine', 0.15), 80); }
+        };
+
+        /* ============================================================
+           DATA
+        ============================================================ */
+        const INGREDIENTS = [
+            { id: 'mushroom', icon: '🍄', name: 'Mushroom', color: '#a83232' },
+            { id: 'herb',     icon: '🌿', name: 'Herb',     color: '#5a8c3a' },
+            { id: 'bone',     icon: '🦴', name: 'Bone',     color: '#e8dcc0' },
+            { id: 'eye',      icon: '👁️', name: 'Eye',      color: '#f0c75e' },
+            { id: 'flame',    icon: '🔥', name: 'Flame',    color: '#ff6b00' },
+            { id: 'drop',     icon: '💧', name: 'Water',    color: '#4a6b8a' },
+            { id: 'crystal',  icon: '💎', name: 'Crystal',  color: '#6ba3c7' },
+            { id: 'spider',   icon: '🕷️', name: 'Spider',   color: '#2a1d0a' },
+            { id: 'leaf',     icon: '🍃', name: 'Leaf',     color: '#7ac74f' },
+            { id: 'snake',    icon: '🐍', name: 'Venom',    color: '#9b59b6' },
+            { id: 'rose',     icon: '🌹', name: 'Rose',     color: '#d6849f' },
+            { id: 'moon',     icon: '🌙', name: 'Moonlight', color: '#b8b0a0' }
+        ];
+
+        const BOTTLES = [
+            { id: 'round', name: 'Round' },
+            { id: 'flask', name: 'Flask' },
+            { id: 'vial',  name: 'Vial' }
+        ];
+
+        const CUSTOMER_SPRITES = [
+            { sprite: '🧙‍♂️', names: ['Eldrin', 'Mordak', 'Zephyr'] },
+            { sprite: '🧝‍♀️', names: ['Aerith', 'Lyra', 'Sylvi'] },
+            { sprite: '🧝‍♂️', names: ['Faelar', 'Theron'] },
+            { sprite: '🧙‍♀️', names: ['Morgana', 'Cassandra'] },
+            { sprite: '🧌',    names: ['Grok', 'Thorg'] },
+            { sprite: '🥷',    names: ['Shadow', 'Whisper'] },
+            { sprite: '🧛',    names: ['Vlad', 'Carmilla'] },
+            { sprite: '🧟',    names: ['Brak', 'Grim'] }
+        ];
+
+        /* ============================================================
+           BOTTLE SVG (visual shapes)
+        ============================================================ */
+        function bottleSVG(type, fillColor, size = 50, isOption = false) {
+            const w = size, h = size * 1.2;
+            const stroke = isOption ? '#d4af6e' : '#8b6914';
+            const strokeW = 2;
+            // Each bottle has a different visual shape
+            if (type === 'round') {
+                return `<svg width="${w}" height="${h}" viewBox="0 0 50 60">
+                    <rect x="20" y="2" width="10" height="10" fill="${stroke}" rx="1"/>
+                    <rect x="18" y="10" width="14" height="4" fill="#6b5836"/>
+                    <path d="M 22 14 L 22 22 Q 8 25 8 40 Q 8 56 25 56 Q 42 56 42 40 Q 42 25 28 22 L 28 14 Z"
+                          fill="${fillColor}" stroke="${stroke}" stroke-width="${strokeW}"/>
+                    <ellipse cx="18" cy="36" rx="3" ry="6" fill="rgba(255,255,255,0.3)"/>
+                </svg>`;
+            }
+            if (type === 'flask') {
+                return `<svg width="${w}" height="${h}" viewBox="0 0 50 60">
+                    <rect x="21" y="2" width="8" height="8" fill="${stroke}" rx="1"/>
+                    <rect x="19" y="8" width="12" height="4" fill="#6b5836"/>
+                    <path d="M 21 12 L 21 26 L 6 54 Q 6 58 10 58 L 40 58 Q 44 58 44 54 L 29 26 L 29 12 Z"
+                          fill="${fillColor}" stroke="${stroke}" stroke-width="${strokeW}"/>
+                    <ellipse cx="16" cy="48" rx="3" ry="5" fill="rgba(255,255,255,0.3)"/>
+                </svg>`;
+            }
+            if (type === 'vial') {
+                return `<svg width="${w}" height="${h}" viewBox="0 0 50 60">
+                    <rect x="20" y="2" width="10" height="6" fill="${stroke}" rx="1"/>
+                    <rect x="18" y="6" width="14" height="4" fill="#6b5836"/>
+                    <path d="M 19 10 L 19 52 Q 19 58 25 58 Q 31 58 31 52 L 31 10 Z"
+                          fill="${fillColor}" stroke="${stroke}" stroke-width="${strokeW}"/>
+                    <ellipse cx="22" cy="40" rx="2" ry="6" fill="rgba(255,255,255,0.3)"/>
+                </svg>`;
+            }
+            return '';
+        }
+
+        /* ============================================================
+           STATE
+        ============================================================ */
+        const state = {
+            day: 1,
+            score: 0,
+            gold: 0,
+            lives: 3,
+            served: 0,
+            perfect: 0,
+            customers: [],
+            selectedCustomerId: null,
+            cauldron: [],
+            cauldronHeated: false,
+            selectedBottle: null,
+            finishedPotions: [],
+            selectedPotionId: null,
+            customerIdCounter: 0,
+            potionIdCounter: 0,
+            spawnInterval: null,
+            patienceInterval: null,
+            dayTimer: null,
+            dayDuration: 120,      // 2 minutes per day
+            dayTimeLeft: 120,
+            dayEnded: false
+        };
+
+        /* ============================================================
+           EMBERS
+        ============================================================ */
+        function makeEmbers() {
+            const container = document.getElementById('embers');
+            for (let i = 0; i < 30; i++) {
+                const e = document.createElement('div');
+                e.className = 'ember';
+                const size = Math.random() * 3 + 1;
+                e.style.width = size + 'px';
+                e.style.height = size + 'px';
+                e.style.left = Math.random() * 100 + '%';
+                e.style.top = (Math.random() * 50 + 50) + '%';
+                e.style.animationDuration = (Math.random() * 4 + 3) + 's';
+                e.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(e);
+            }
+        }
+        makeEmbers();
+
+        /* ============================================================
+           TOAST + POP
+        ============================================================ */
+        function toast(msg, type = 'info', icon = '✨') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = 'toast ' + type;
+            t.innerHTML = `<span style="font-size:1.3em">${icon}</span><span>${msg}</span>`;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+        function popStat(id) {
+            const el = document.getElementById(id);
+            el.classList.add('pop');
+            setTimeout(() => el.classList.remove('pop'), 400);
+        }
+
+        /* ============================================================
+           LIQUID COLOR (blend ingredient colors)
+        ============================================================ */
+        function getLiquidColor() {
+            if (state.cauldron.length === 0) return '#4a3a20';
+            let r = 0, g = 0, b = 0;
+            state.cauldron.forEach(id => {
+                const ing = INGREDIENTS.find(i => i.id === id);
+                const c = ing.color;
+                r += parseInt(c.substr(1, 2), 16);
+                g += parseInt(c.substr(3, 2), 16);
+                b += parseInt(c.substr(5, 2), 16);
+            });
+            r = Math.floor(r / state.cauldron.length);
+            g = Math.floor(g / state.cauldron.length);
+            b = Math.floor(b / state.cauldron.length);
+            return `rgb(${r},${g},${b})`;
+        }
+
+        function updateLiquidColor() {
+            const liquid = document.getElementById('cauldronLiquid');
+            liquid.style.setProperty('--liquid-color', getLiquidColor());
+            // Adjust liquid height based on # ingredients (50% → 85%)
+            const heightPct = 50 + (state.cauldron.length * 7);
+            liquid.style.height = Math.min(heightPct, 85) + '%';
+        }
+
+        /* ============================================================
+           SHELF / BOTTLES
+        ============================================================ */
+        function renderShelf() {
+            const grid = document.getElementById('ingredientGrid');
+            grid.innerHTML = '';
+            INGREDIENTS.forEach(ing => {
+                const jar = document.createElement('div');
+                jar.className = 'ingredient-jar';
+                jar.innerHTML = `<span class="jar-icon">${ing.icon}</span><div class="jar-name">${ing.name}</div>`;
+                jar.onclick = () => addIngredient(ing.id, ing.icon);
+                grid.appendChild(jar);
+            });
+        }
+
+        function renderBottleRack() {
+            const rack = document.getElementById('bottleRack');
+            rack.innerHTML = '';
+            const previewColor = state.cauldronHeated ? getLiquidColor() : '#5a4423';
+            BOTTLES.forEach(b => {
+                const el = document.createElement('div');
+                el.className = 'bottle-option' + (state.selectedBottle === b.id ? ' selected' : '');
+                el.innerHTML = bottleSVG(b.id, previewColor, 38, true) +
+                    `<div class="bottle-option-label">${b.name}</div>`;
+                el.title = b.name;
+                el.onclick = () => selectBottle(b.id);
+                rack.appendChild(el);
+            });
+        }
+
+        function selectBottle(id) {
+            sfx.click();
+            state.selectedBottle = id;
+            renderBottleRack();
+        }
+
+        /* ============================================================
+           CAULDRON
+        ============================================================ */
+        function addIngredient(id, icon) {
+            if (state.dayEnded) return;
+            if (state.cauldron.length >= 5) {
+                toast('Cauldron is full!', 'error', '⚠️');
+                return;
+            }
+            sfx.add();
+            state.cauldron.push(id);
+            state.cauldronHeated = false;
+            renderCauldron();
+            updateLiquidColor();
+            renderBottleRack();
+
+            // splash animation - drop the ingredient into the cauldron
+            const cauldronArea = document.querySelector('.cauldron-area');
+            const splash = document.createElement('div');
+            splash.className = 'ingredient-splash';
+            splash.textContent = icon;
+            splash.style.left = (45 + Math.random() * 10) + '%';
+            splash.style.top = '0';
+            cauldronArea.appendChild(splash);
+            setTimeout(() => splash.remove(), 700);
+
+            // bubble in liquid
+            spawnLiquidBubble();
+        }
+
+        function renderCauldron() {
+            const c = document.getElementById('cauldronContents');
+            if (state.cauldron.length === 0) {
+                c.innerHTML = '<span class="cauldron-empty">Add ingredients to brew...</span>';
+                return;
+            }
+            c.innerHTML = state.cauldron.map(id => {
+                const ing = INGREDIENTS.find(i => i.id === id);
+                return `<span class="cauldron-ingredient">${ing.icon} ${ing.name}</span>`;
+            }).join('');
+        }
+
+        function heatCauldron() {
+            if (state.dayEnded) return;
+            if (state.cauldron.length === 0) {
+                toast('Add ingredients first!', 'error', '⚠️');
+                return;
+            }
+            sfx.stir();
+            const pot = document.getElementById('cauldronPot');
+            pot.classList.add('cooking');
+            // Spawn lots of bubbles
+            for (let i = 0; i < 12; i++) setTimeout(spawnLiquidBubble, i * 80);
+            setTimeout(() => {
+                pot.classList.remove('cooking');
+                state.cauldronHeated = true;
+                renderBottleRack(); // refresh bottle preview color
+                toast('Potion brewed! Now pick a bottle.', 'success', '🔥');
+            }, 1200);
+        }
+
+        function clearCauldron() {
+            if (state.dayEnded) return;
+            sfx.click();
+            state.cauldron = [];
+            state.cauldronHeated = false;
+            state.selectedBottle = null;
+            renderCauldron();
+            updateLiquidColor();
+            renderBottleRack();
+        }
+
+        function spawnLiquidBubble() {
+            const liquid = document.getElementById('cauldronLiquid');
+            if (!liquid) return;
+            const b = document.createElement('div');
+            b.className = 'liquid-bubble';
+            const size = Math.random() * 8 + 4;
+            b.style.width = size + 'px';
+            b.style.height = size + 'px';
+            b.style.left = (10 + Math.random() * 80) + '%';
+            b.style.animationDuration = (Math.random() * 1 + 1.2) + 's';
+            liquid.appendChild(b);
+            setTimeout(() => b.remove(), 2500);
+        }
+        setInterval(spawnLiquidBubble, 700);
+
+        function bottlePotion() {
+            if (state.dayEnded) return;
+            if (state.cauldron.length === 0) { toast('Empty cauldron!', 'error', '⚠️'); return; }
+            if (!state.cauldronHeated)        { toast('Heat & Stir first!', 'error', '🔥'); return; }
+            if (!state.selectedBottle)        { toast('Pick a bottle!', 'error', '🍶'); return; }
+
+            sfx.pour();
+            const potion = {
+                id: ++state.potionIdCounter,
+                ingredients: [...state.cauldron].sort(),
+                bottleId: state.selectedBottle,
+                color: getLiquidColor()
+            };
+            state.finishedPotions.push(potion);
+            clearCauldron();
+            renderFinishedPotions();
+            toast('Potion bottled! Click it then a hero.', 'success', '✨');
+        }
+
+        function renderFinishedPotions() {
+            const area = document.getElementById('finishedPotions');
+            if (state.finishedPotions.length === 0) {
+                area.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:var(--text-dim); font-style:italic; font-size:0.8em; padding:10px;">No potions ready</p>';
+                return;
+            }
+            area.innerHTML = '';
+            state.finishedPotions.forEach(p => {
+                const el = document.createElement('div');
+                el.className = 'finished-potion' + (state.selectedPotionId === p.id ? ' selected' : '');
+                el.innerHTML = bottleSVG(p.bottleId, p.color, 42) +
+                    `<div class="potion-label">${state.selectedPotionId === p.id ? '✋ Selected!' : 'Click to grab'}</div>`;
+                el.onclick = () => selectPotion(p.id);
+                area.appendChild(el);
+            });
+        }
+
+        function selectPotion(id) {
+            sfx.click();
+            state.selectedPotionId = (state.selectedPotionId === id) ? null : id;
+            renderFinishedPotions();
+            renderCustomerQueue();
+            if (state.selectedPotionId) {
+                toast('Now click a hero to serve!', 'gold', '🤲');
+            }
+        }
+
+        /* ============================================================
+           CUSTOMERS
+        ============================================================ */
+        function randomOrder(difficulty) {
+            const ingredientCount = Math.min(2 + Math.floor(difficulty / 2), 4);
+            const picks = [...INGREDIENTS].sort(() => Math.random() - 0.5).slice(0, ingredientCount);
+            const bottle = BOTTLES[Math.floor(Math.random() * BOTTLES.length)];
+            return {
+                ingredients: picks.map(p => p.id).sort(),
+                bottleId: bottle.id
+            };
+        }
+
+        function spawnCustomer() {
+            if (state.dayEnded) return;
+            const activeCount = state.customers.filter(c => !c.served).length;
+            if (activeCount >= 4) return;
+
+            const sp = CUSTOMER_SPRITES[Math.floor(Math.random() * CUSTOMER_SPRITES.length)];
+            const name = sp.names[Math.floor(Math.random() * sp.names.length)];
+            const order = randomOrder(state.day);
+            const patience = Math.max(35 - state.day * 2, 18);
+
+            const customer = {
+                id: ++state.customerIdCounter,
+                name,
+                sprite: sp.sprite,
+                order,
+                patience,
+                maxPatience: patience,
+                served: false
+            };
+            state.customers.push(customer);
+            renderCustomerQueue();
+        }
+
+        function renderCustomerQueue() {
+            const q = document.getElementById('customerQueue');
+            const active = state.customers.filter(c => !c.served);
+            if (active.length === 0) {
+                q.innerHTML = '<p style="text-align:center; color:var(--text-dim); font-style:italic; padding:20px; font-size:0.85em;">No adventurers...</p>';
+                return;
+            }
+            q.innerHTML = '';
+            active.forEach(c => {
+                const pct = (c.patience / c.maxPatience) * 100;
+                const mood = pct > 60 ? '😊' : pct > 30 ? '😐' : '😠';
+                const el = document.createElement('div');
+                let cls = 'customer-card';
+                if (state.selectedCustomerId === c.id) cls += ' selected';
+                if (state.selectedPotionId !== null) cls += ' serving-mode';
+                el.className = cls;
+                el.innerHTML = `
+                    <div class="customer-mood">${mood}</div>
+                    <div class="customer-sprite">${c.sprite}</div>
+                    <div class="customer-info">
+                        <div class="customer-name">${c.name}</div>
+                        <div class="customer-patience"><div class="patience-fill" style="width:${pct}%"></div></div>
+                    </div>
+                `;
+                el.onclick = () => clickCustomer(c.id);
+                q.appendChild(el);
+            });
+        }
+
+        function clickCustomer(id) {
+            if (state.dayEnded) return;
+            sfx.click();
+            const customer = state.customers.find(c => c.id === id);
+            if (!customer || customer.served) return;
+
+            // If a potion is selected, serve it!
+            if (state.selectedPotionId !== null) {
+                servePotion(customer);
+                return;
+            }
+
+            // Otherwise, view their order
+            state.selectedCustomerId = id;
+            renderCustomerQueue();
+            renderCurrentOrder(customer);
+        }
+
+        function renderCurrentOrder(customer) {
+            const area = document.getElementById('currentOrderArea');
+            const bottle = BOTTLES.find(b => b.id === customer.order.bottleId);
+            const ingredientHTML = customer.order.ingredients.map(id => {
+                const ing = INGREDIENTS.find(i => i.id === id);
+                return `<span class="ticket-ingredient">${ing.icon} ${ing.name}</span>`;
+            }).join('');
+            const bottleIconHTML = `<span style="display:inline-block; vertical-align:middle;">${bottleSVG(bottle.id, '#8b2e2e', 26)}</span>`;
+
+            area.innerHTML = `
+                <div class="order-ticket">
+                    <div class="ticket-title">⚔️ ${customer.name}</div>
+                    <div class="ticket-row"><strong>Bottle:</strong> ${bottleIconHTML} <strong>${bottle.name}</strong></div>
+                    <div class="ticket-row"><strong>Ingredients:</strong></div>
+                    <div style="margin-top:4px;">${ingredientHTML}</div>
+                </div>
+            `;
+        }
+
+        /* ============================================================
+           SERVING
+        ============================================================ */
+        function servePotion(customer) {
+            const potion = state.finishedPotions.find(p => p.id === state.selectedPotionId);
+            if (!potion) return;
+
+            const ingredientsMatch = JSON.stringify(potion.ingredients) === JSON.stringify(customer.order.ingredients);
+            const bottleMatch = potion.bottleId === customer.order.bottleId;
+            const patiencePct = customer.patience / customer.maxPatience;
+
+            let scoreGain = 0, goldGain = 0, reaction = '😠';
+
+            if (ingredientsMatch && bottleMatch) {
+                if (patiencePct > 0.7) {
+                    scoreGain = 100; goldGain = 50; reaction = '🤩'; state.perfect++;
+                    toast(`Perfect potion! +${goldGain}🪙`, 'gold', '🏆');
+                    sfx.win();
+                } else if (patiencePct > 0.3) {
+                    scoreGain = 60; goldGain = 30; reaction = '😊';
+                    toast(`${customer.name} happy! +${goldGain}🪙`, 'success', '✨');
+                    sfx.coin();
+                } else {
+                    scoreGain = 30; goldGain = 15; reaction = '😐';
+                    toast(`Got their potion. +${goldGain}🪙`, 'info', '💰');
+                    sfx.coin();
+                }
+            } else if (ingredientsMatch || bottleMatch) {
+                scoreGain = 5; goldGain = 2; reaction = '😕';
+                toast(`Wrong ${bottleMatch ? 'ingredients' : 'bottle'}!`, 'error', '⚠️');
+                sfx.fail();
+                state.lives--;
+                popStat('livesBox');
+            } else {
+                reaction = '🤮';
+                toast(`${customer.name} hated it!`, 'error', '💀');
+                sfx.fail();
+                state.lives--;
+                popStat('livesBox');
+            }
+
+            // Find the card to attach reaction
+            const cards = document.querySelectorAll('.customer-card');
+            cards.forEach(card => {
+                const nameEl = card.querySelector('.customer-name');
+                if (nameEl && nameEl.textContent === customer.name) {
+                    const r = document.createElement('div');
+                    r.className = 'reaction-popup';
+                    r.textContent = reaction;
+                    card.appendChild(r);
+                    setTimeout(() => r.remove(), 1500);
+                }
+            });
+
+            // Clean up
+            state.finishedPotions = state.finishedPotions.filter(p => p.id !== potion.id);
+            state.selectedPotionId = null;
+            state.selectedCustomerId = null;
+            customer.served = true;
+            state.served++;
+            state.score += scoreGain;
+            state.gold += goldGain;
+
+            popStat('scoreBox');
+            popStat('goldBox');
+
+            updateHUD();
+            renderFinishedPotions();
+            renderCustomerQueue();
+            document.getElementById('currentOrderArea').innerHTML = `<p style="text-align:center; color:var(--text-dim); font-style:italic; padding:14px; font-size:0.85em;">Click a hero to view order</p>`;
+
+            if (state.lives <= 0) endDay(true);
+        }
+
+        /* ============================================================
+           TIMERS
+        ============================================================ */
+        function updateHUD() {
+            document.getElementById('dayNum').textContent = state.day;
+            document.getElementById('scoreVal').textContent = state.score;
+            document.getElementById('goldVal').textContent = state.gold;
+            document.getElementById('livesVal').textContent = state.lives;
+        }
+
+        function tickPatience() {
+            if (state.dayEnded) return;
+            state.customers.forEach(c => {
+                if (c.served) return;
+                c.patience -= 0.5;
+                if (c.patience <= 0) {
+                    c.served = true;
+                    state.lives--;
+                    toast(`${c.name} left in anger!`, 'error', '🚪');
+                    sfx.fail();
+                    popStat('livesBox');
+                    updateHUD();
+                    if (state.lives <= 0) endDay(true);
+                }
+            });
+            renderCustomerQueue();
+        }
+
+        function tickDayTimer() {
+            if (state.dayEnded) return;
+            state.dayTimeLeft--;
+            const pct = (state.dayTimeLeft / state.dayDuration) * 100;
+            const fill = document.getElementById('dayTimerFill');
+            fill.style.width = pct + '%';
+            if (pct < 25) fill.classList.add('urgent');
+            else fill.classList.remove('urgent');
+
+            const mins = Math.floor(state.dayTimeLeft / 60);
+            const secs = state.dayTimeLeft % 60;
+            document.getElementById('dayTimeText').textContent =
+                `${mins}:${String(secs).padStart(2, '0')}`;
+
+            if (state.dayTimeLeft <= 0) {
+                endDay(false);
+            }
+        }
+
+        function endDay(gameOver) {
+            if (state.dayEnded) return;
+            state.dayEnded = true;
+            clearInterval(state.spawnInterval);
+            clearInterval(state.patienceInterval);
+            clearInterval(state.dayTimer);
+
+            // Save to hub
+            const hubGold = parseInt(localStorage.getItem('megaplexTokens')) || 0;
+            localStorage.setItem('megaplexTokens', hubGold + state.gold);
+
+            const arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+            if (!arcadeScores.potion_panic || arcadeScores.potion_panic < state.score) {
+                arcadeScores.potion_panic = state.score;
+                localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
+            }
+            // ✅ ADD THIS: Sync to cloud so leaderboard updates
+    if (window.MegaplexCloud && typeof window.MegaplexCloud.saveToCloud === 'function') {
+        window.MegaplexCloud.saveToCloud();
+    }
+
+    document.getElementById('gameOverTitle').textContent = gameOver ? '💀 Out of Lives!' : '🏆 Day Complete!';
+            document.getElementById('finalServed').textContent = state.served;
+            document.getElementById('finalScore').textContent = state.score;
+            document.getElementById('finalGold').textContent = state.gold;
+            document.getElementById('finalPerfect').textContent = state.perfect;
+            document.getElementById('gameOverModal').classList.add('show');
+        }
+
+        function nextDay() {
+            state.day++;
+            state.lives = 3;
+            state.served = 0;
+            state.perfect = 0;
+            state.score = 0;
+            state.gold = 0;
+            state.customers = [];
+            state.cauldron = [];
+            state.finishedPotions = [];
+            state.selectedCustomerId = null;
+            state.selectedPotionId = null;
+            state.selectedBottle = null;
+            state.cauldronHeated = false;
+            state.dayTimeLeft = state.dayDuration;
+            state.dayEnded = false;
+
+            document.getElementById('gameOverModal').classList.remove('show');
+            document.getElementById('dayTimerFill').classList.remove('urgent');
+            startDay();
+        }
+
+        function startDay() {
+            updateHUD();
+            renderCauldron();
+            updateLiquidColor();
+            renderBottleRack();
+            renderFinishedPotions();
+            renderCustomerQueue();
+            document.getElementById('currentOrderArea').innerHTML = `<p style="text-align:center; color:var(--text-dim); font-style:italic; padding:14px; font-size:0.85em;">Click a hero to view order</p>`;
+
+            // First customer immediately
+            spawnCustomer();
+            // Then second one shortly after
+            setTimeout(() => spawnCustomer(), 2000);
+
+            const spawnRate = Math.max(7000 - state.day * 400, 4000);
+            state.spawnInterval = setInterval(spawnCustomer, spawnRate);
+            state.patienceInterval = setInterval(tickPatience, 500);
+            state.dayTimer = setInterval(tickDayTimer, 1000);
+        }
+
+        /* ============================================================
+           INIT
+        ============================================================ */
+        renderShelf();
+        renderBottleRack();
+        startDay();
+        
+    </script>
+</body>
+</html>

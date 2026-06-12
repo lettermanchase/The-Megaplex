@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Wandering Merchant</title>
+<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-900:#1a1209;--bg-800:#241a0d;--surface:rgba(255,235,200,0.05);
+  --surface-hover:rgba(255,235,200,0.1);--border:rgba(212,175,110,0.22);
+  --border-strong:rgba(212,175,110,0.4);--accent:#d4af6e;--accent-2:#8b2e2e;
+  --gold:#f0c75e;--text:#f0e6d2;--text-dim:#b09b76;--green:#5a8c3a;--red:#a83232;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Cinzel',Georgia,serif;background:#0d0904;color:var(--text);user-select:none;letter-spacing:.3px;}
+h1,h2,h3{font-family:'MedievalSharp',serif;}
+
+#stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0d0904;}
+#game{position:relative;width:1280px;height:720px;background:#1a1209;box-shadow:0 0 60px rgba(0,0,0,.8);border:1px solid var(--border-strong);overflow:hidden;}
+#scene{position:absolute;inset:0;display:block;}
+
+.frame-corner{position:absolute;width:54px;height:54px;border:3px solid var(--accent);opacity:.6;pointer-events:none;z-index:55;}
+.fc-tl{top:10px;left:10px;border-right:none;border-bottom:none;}
+.fc-tr{top:10px;right:10px;border-left:none;border-bottom:none;}
+.fc-bl{bottom:10px;left:10px;border-right:none;border-top:none;}
+.fc-br{bottom:10px;right:10px;border-left:none;border-top:none;}
+
+/* ---- top HUD ---- */
+#hud{position:absolute;top:0;left:0;right:0;height:64px;z-index:30;
+  display:flex;align-items:center;gap:8px;padding:0 70px;
+  background:linear-gradient(180deg,rgba(13,9,4,.96),rgba(26,18,9,.4));
+  border-bottom:2px solid var(--border-strong);}
+.hud-chip{display:flex;align-items:center;gap:7px;background:var(--surface);
+  border:1px solid var(--border-strong);border-radius:8px;padding:6px 13px;font-size:.92em;
+  white-space:nowrap;}
+.hud-chip .ic{font-size:1.2em;}
+.hud-chip b{color:var(--gold);font-family:'MedievalSharp',serif;font-size:1.12em;
+  display:inline-block;text-align:right;}
+.hud-chip.bad b{color:#e08a8a;}
+.hud-bar{width:54px;height:7px;background:#0d0904;border-radius:4px;overflow:hidden;border:1px solid var(--border);}
+.hud-bar>div{height:100%;transition:width .4s;}
+.hud-spacer{flex:1;}
+#dayChip b{color:var(--accent);}
+#goldChip b{min-width:54px;}#cargoChip b,#capNum{min-width:24px;}
+/* music toggle */
+#musicBtn{width:38px;height:38px;border-radius:50%;background:var(--surface);
+  border:1px solid var(--border-strong);color:var(--text);font-size:1.05em;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0;}
+#musicBtn:hover{border-color:var(--accent);background:var(--surface-hover);}
+#musicBtn.off{border-color:var(--red);color:var(--red);}
+
+/* ---- bottom dock ---- */
+#dock{position:absolute;bottom:0;left:0;right:0;z-index:30;height:90px;
+  display:flex;justify-content:center;align-items:center;gap:10px;padding:0 70px;
+  background:linear-gradient(0deg,rgba(13,9,4,.96),rgba(26,18,9,.2));
+  border-top:2px solid var(--border-strong);}
+.act-btn{background:var(--surface);color:var(--text);border:1px solid var(--border-strong);
+  border-radius:10px;padding:9px 16px;font-family:'Cinzel',serif;font-weight:700;font-size:.88em;
+  cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:92px;}
+.act-btn .ic{font-size:1.4em;line-height:1;}
+.act-btn small{font-size:.6em;color:var(--text-dim);font-weight:400;}
+.act-btn:hover:not(:disabled){background:var(--surface-hover);border-color:var(--accent);transform:translateY(-3px);box-shadow:0 6px 16px rgba(0,0,0,.5);}
+.act-btn:disabled{opacity:.35;cursor:not-allowed;}
+.act-btn.accent{background:linear-gradient(135deg,var(--accent),#8b6914);color:#1a1209;border-color:transparent;}
+
+/* ---- panel scrim ---- */
+#panelScrim{position:absolute;inset:0;z-index:48;background:rgba(13,9,4,.55);backdrop-filter:blur(3px);display:none;}
+#panelScrim.show{display:block;animation:fadein .2s ease;}
+@keyframes fadein{from{opacity:0;}to{opacity:1;}}
+
+/* ---- panels (clamped inside safe zone) ---- */
+.panel{position:absolute;z-index:50;left:50%;transform:translateX(-50%);
+  top:78px;max-height:calc(100% - 78px - 102px);
+  background:linear-gradient(160deg,#2a1d0a,#1a1209);
+  border:2px solid var(--accent);border-radius:14px;
+  box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 40px rgba(212,175,110,.15);
+  display:none;flex-direction:column;overflow:hidden;}
+.panel.show{display:flex;animation:pop .25s cubic-bezier(.22,1,.36,1);}
+@keyframes pop{from{opacity:0;transform:translateX(-50%) scale(.94);}to{opacity:1;transform:translateX(-50%) scale(1);}}
+#hagglePanel.show{animation:popc .25s cubic-bezier(.22,1,.36,1);}
+@keyframes popc{from{opacity:0;transform:translate(-50%,-50%) scale(.94);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;
+  border-bottom:1px solid var(--border);background:rgba(0,0,0,.25);flex-shrink:0;}
+.panel-head h2{color:var(--gold);font-size:1.3em;display:flex;align-items:center;gap:8px;}
+.x-btn{background:none;border:none;color:var(--text);font-size:1.5em;cursor:pointer;opacity:.6;line-height:1;}
+.x-btn:hover{opacity:1;}
+.panel-body{padding:16px 20px;overflow-y:auto;}
+.panel-body::-webkit-scrollbar{width:8px;}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:4px;}
+
+#marketPanel{width:760px;}
+#hagglePanel{width:520px;top:50%;transform:translate(-50%,-50%);max-height:none;}
+#upgradePanel{width:820px;}
+
+/* ---- market ---- */
+.mk-row{display:grid;grid-template-columns:46px 1fr 96px 100px;gap:12px;align-items:center;padding:11px 6px;border-top:1px solid var(--border);}
+.mk-row:first-child{border-top:none;}
+.mk-ic{width:42px;height:42px;border-radius:8px;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:1.5em;border:1px solid var(--border);}
+.mk-name{font-weight:700;}
+.mk-name small{display:block;font-size:.72em;color:var(--text-dim);font-weight:400;font-style:italic;}
+.mk-owned{font-size:.72em;color:var(--gold);}
+.mk-price{font-family:monospace;font-weight:700;text-align:right;font-size:1.05em;}
+.mk-price.up{color:#e08a8a;}.mk-price.down{color:#8fc070;}
+.mk-spark{display:block;margin-top:2px;}
+.mk-act{display:flex;gap:6px;justify-content:flex-end;}
+.sq-btn{width:38px;height:38px;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-weight:700;font-size:1.1em;cursor:pointer;transition:.12s;}
+.sq-btn.buy:hover:not(:disabled){border-color:var(--green);color:#8fc070;background:rgba(90,140,58,.15);}
+.sq-btn.sell:hover:not(:disabled){border-color:var(--red);color:#e08a8a;background:rgba(168,50,50,.15);}
+.sq-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+/* ---- haggle ---- */
+.haggle-stage{text-align:center;padding:6px 4px 4px;}
+.haggle-good{font-size:3em;}
+.haggle-track{position:relative;height:46px;margin:22px 0 8px;border-radius:23px;
+  background:linear-gradient(90deg,#8a4a2a 0%,#8a4a2a 26%,#b5852f 40%,#5a8c3a 50%,#b5852f 60%,#8a4a2a 74%,#8a4a2a 100%);
+  border:2px solid var(--border-strong);overflow:hidden;box-shadow:inset 0 2px 8px rgba(0,0,0,.5);}
+.haggle-sweet{position:absolute;top:0;bottom:0;background:rgba(240,199,94,.28);border-left:2px solid var(--gold);border-right:2px solid var(--gold);}
+.haggle-needle{position:absolute;top:-4px;bottom:-4px;width:5px;background:var(--text);box-shadow:0 0 12px var(--text),0 0 4px #fff;border-radius:3px;}
+.haggle-labels{display:flex;justify-content:space-between;font-size:.7em;color:var(--text-dim);margin-top:4px;}
+.haggle-result{min-height:26px;margin:10px 0;font-size:1.05em;color:var(--gold);font-weight:700;}
+.haggle-attempts{font-size:.8em;color:var(--text-dim);margin-bottom:8px;}
+
+/* ---- upgrades ---- */
+.up-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.up-card{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;gap:13px;align-items:flex-start;}
+.up-card.maxed{border-color:var(--green);background:rgba(90,140,58,.06);}
+.up-ic{width:50px;height:50px;border-radius:10px;background:rgba(212,175,110,.12);display:flex;align-items:center;justify-content:center;font-size:1.8em;flex-shrink:0;}
+.up-info{flex:1;min-width:0;}
+.up-info h3{font-size:1.05em;color:var(--text);}
+.up-info p{font-size:.78em;color:var(--text-dim);font-style:italic;margin:3px 0 7px;line-height:1.35;}
+.up-lvl{display:flex;gap:3px;margin-bottom:8px;}
+.up-pip{width:14px;height:6px;border-radius:3px;background:#3a2d18;}
+.up-pip.on{background:var(--gold);box-shadow:0 0 6px var(--gold);}
+.buy-up{background:linear-gradient(135deg,var(--accent),#8b6914);color:#1a1209;border:none;border-radius:7px;padding:7px 14px;font-family:'Cinzel',serif;font-weight:700;font-size:.82em;cursor:pointer;transition:.15s;}
+.buy-up:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(240,199,94,.4);}
+.buy-up:disabled{background:#3a2d18;color:#6b5836;cursor:not-allowed;}
+.buy-up.maxtag{background:transparent;border:1px solid var(--green);color:#8fc070;}
+
+/* ---- dialogue ---- */
+#dialogue{position:absolute;left:50%;bottom:104px;transform:translateX(-50%);z-index:52;width:720px;
+  background:linear-gradient(160deg,rgba(42,29,10,.98),rgba(20,14,7,.98));
+  border:2px solid var(--accent);border-radius:16px;padding:18px 22px 16px;display:none;
+  box-shadow:0 16px 50px rgba(0,0,0,.7);}
+#dialogue.show{display:block;animation:dlgIn .3s ease;}
+@keyframes dlgIn{from{opacity:0;transform:translate(-50%,16px);}to{opacity:1;transform:translate(-50%,0);}}
+#dialogue.danger{border-color:var(--red);box-shadow:0 16px 50px rgba(168,50,50,.4);}
+.dlg-name{color:var(--accent);font-family:'MedievalSharp',serif;font-size:1.15em;margin-bottom:6px;}
+#dialogue.danger .dlg-name{color:#e08a8a;}
+.dlg-text{color:var(--text);font-size:1.02em;line-height:1.55;min-height:48px;}
+.dlg-text .cursor{animation:blink .8s steps(1) infinite;}
+@keyframes blink{50%{opacity:0;}}
+.dlg-choices{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.choice{background:var(--surface);border:1px solid var(--border-strong);border-radius:9px;padding:10px 16px;font-family:'Cinzel',serif;font-weight:600;font-size:.9em;color:var(--text);cursor:pointer;transition:.13s;text-align:left;}
+.choice:hover{background:var(--surface-hover);border-color:var(--accent);transform:translateX(4px);}
+.choice.good:hover{border-color:var(--green);}
+.choice.danger:hover{border-color:var(--red);}
+
+/* ---- overlays ---- */
+.overlay-screen{position:absolute;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;background:radial-gradient(circle at center,rgba(58,42,20,.6),rgba(13,9,4,.97));}
+.overlay-screen.show{display:flex;animation:fadein .4s ease;}
+.big-title{font-size:3.4em;color:var(--accent);text-shadow:0 0 26px rgba(255,140,0,.5);margin:10px 0;}
+.lead{color:var(--text-dim);max-width:640px;line-height:1.7;font-style:italic;margin-bottom:26px;}
+.diff-row{display:flex;gap:14px;margin-bottom:28px;flex-wrap:wrap;justify-content:center;}
+.diff-card{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:18px 24px;cursor:pointer;transition:.18s;min-width:178px;}
+.diff-card:hover{transform:translateY(-5px);border-color:var(--accent);}
+.diff-card.sel{border-color:var(--gold);background:rgba(240,199,94,.1);box-shadow:0 0 22px rgba(240,199,94,.3);}
+.diff-card .dn{font-family:'MedievalSharp',serif;font-size:1.3em;color:var(--gold);}
+.diff-card .dd{font-size:.76em;color:var(--text-dim);margin-top:8px;line-height:1.45;}
+.big-btn{background:linear-gradient(135deg,var(--accent),#8b6914);color:#1a1209;border:none;border-radius:12px;padding:16px 44px;font-family:'MedievalSharp',serif;font-size:1.2em;letter-spacing:1px;cursor:pointer;transition:.18s;box-shadow:0 6px 22px rgba(212,175,110,.4);}
+.big-btn:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(212,175,110,.6);}
+.end-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:600px;margin-bottom:26px;}
+.end-stat{background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;padding:14px;}
+.end-stat .v{font-family:'MedievalSharp',serif;font-size:1.6em;color:var(--gold);}
+.end-stat .l{font-size:.68em;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-top:4px;}
+
+#toast{position:absolute;top:74px;right:22px;z-index:80;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+.tmsg{background:rgba(13,9,4,.97);border-left:4px solid var(--accent);padding:11px 18px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.6);font-size:.88em;animation:tin .3s;}
+.tmsg.good{border-color:var(--green);}.tmsg.bad{border-color:var(--red);}.tmsg.gold{border-color:var(--gold);color:var(--gold);}
+@keyframes tin{from{transform:translateX(120%);opacity:0;}to{transform:none;opacity:1;}}
+
+.back-link{position:absolute;bottom:100px;left:22px;z-index:46;text-decoration:none;color:var(--text-dim);font-size:.78em;background:rgba(13,9,4,.85);border:1px solid var(--border);border-radius:6px;padding:6px 12px;backdrop-filter:blur(4px);transition:.15s;}
+.back-link:hover{color:var(--accent);border-color:var(--accent);background:rgba(13,9,4,.95);}
+.hint{font-size:.72em;color:var(--text-dim);text-align:center;font-style:italic;}
+.hide{display:none !important;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="game">
+    <canvas id="scene" width="1280" height="720"></canvas>
+    <div id="panelScrim" onclick="closeAllPanels()"></div>
+
+    <div class="frame-corner fc-tl"></div><div class="frame-corner fc-tr"></div>
+    <div class="frame-corner fc-bl"></div><div class="frame-corner fc-br"></div>
+
+    <div id="hud" class="hide">
+      <div class="hud-chip" id="goldChip"><span class="ic">🪙</span><b id="hGold">0</b></div>
+      <div class="hud-chip" id="dayChip"><span class="ic">📅</span><b id="hDay">1</b><span style="color:var(--text-dim)">/<span id="hMax">40</span></span></div>
+      <div class="hud-chip" id="cargoChip"><span class="ic">📦</span><b id="hCargo">0</b><span style="color:var(--text-dim)">/<span id="capNum">60</span></span></div>
+      <div class="hud-spacer"></div>
+      <div class="hud-chip" id="hpChip"><span class="ic">🐎</span><div class="hud-bar"><div id="hpBar"></div></div></div>
+      <div class="hud-chip" id="foodChip"><span class="ic">🥖</span><b id="hFood">0</b></div>
+      <div class="hud-chip"><span class="ic">🎯</span><b id="hGoal">0</b></div>
+      <button id="musicBtn" onclick="toggleMusic()" title="Toggle music">🎵</button>
+    </div>
+
+    <div id="dock" class="hide">
+      <button class="act-btn accent" onclick="openMarket()"><span class="ic">⚖️</span>Market<small>buy & sell</small></button>
+      <button class="act-btn" onclick="openTravel()"><span class="ic">🧭</span>Travel<small>next town</small></button>
+      <button class="act-btn" onclick="openUpgrades()"><span class="ic">🛠️</span>Outfitter<small>upgrades</small></button>
+      <button class="act-btn" onclick="talkNPC()"><span class="ic">💬</span>Talk<small>townsfolk</small></button>
+      <button class="act-btn" onclick="restInn()"><span class="ic">🛏️</span>Inn<small>rest & heal</small></button>
+      <button class="act-btn" onclick="buyFood()"><span class="ic">🥖</span>Provisions<small>+15 food</small></button>
+    </div>
+
+    <div class="panel" id="marketPanel">
+      <div class="panel-head"><h2>⚖️ <span id="mkTown">Market</span></h2><button class="x-btn" onclick="closePanel('marketPanel')">×</button></div>
+      <div class="panel-body" id="mkBody"></div>
+      <div class="hint" style="padding:8px 0 12px;">Hold <b>Shift</b> to trade 5 at once.</div>
+    </div>
+
+    <div class="panel" id="hagglePanel">
+      <div class="panel-head"><h2>🤝 Haggle</h2><button class="x-btn" onclick="cancelHaggle()">×</button></div>
+      <div class="panel-body haggle-stage">
+        <div class="haggle-good" id="hgGood">📦</div>
+        <div id="hgPrompt" style="margin:6px 0;color:var(--text-dim);font-size:.9em;"></div>
+        <div class="haggle-track" id="hgTrack"><div class="haggle-sweet" id="hgSweet"></div><div class="haggle-needle" id="hgNeedle"></div></div>
+        <div class="haggle-labels"><span>Lowball</span><span>★ Fair Price ★</span><span>Insult</span></div>
+        <div class="haggle-attempts" id="hgAttempts"></div>
+        <div class="haggle-result" id="hgResult"></div>
+        <button class="big-btn" id="hgBtn" style="padding:12px 36px;font-size:1em;" onclick="haggleStrike()">STRIKE THE DEAL!</button>
+      </div>
+    </div>
+
+    <div class="panel" id="upgradePanel">
+      <div class="panel-head"><h2>🛠️ The Outfitter</h2><button class="x-btn" onclick="closePanel('upgradePanel')">×</button></div>
+      <div class="panel-body"><div class="up-grid" id="upGrid"></div></div>
+    </div>
+
+    <div id="dialogue">
+      <div class="dlg-name" id="dlgName"></div>
+      <div class="dlg-text" id="dlgText"></div>
+      <div class="dlg-choices" id="dlgChoices"></div>
+    </div>
+
+    <div class="overlay-screen show" id="titleScreen">
+      <h1 class="big-title">🛒 The Wandering Merchant</h1>
+      <p class="lead">Cross the seven free cities, reading the ebb and flow of every market. Buy where goods are cheap, brave bandit-haunted roads, and haggle your way to a fortune. Outfit your caravan, hire guards, and become a merchant prince — if the road doesn't break you first.</p>
+      <h3 style="color:var(--text-dim);margin-bottom:14px;">Choose your road</h3>
+      <div class="diff-row" id="diffRow"></div>
+      <button class="big-btn" onclick="startGame()">▶ Begin the Journey</button>
+      <a href="tavern.html" style="margin-top:24px;text-decoration:none;color:var(--text-dim);font-size:.85em;border:1px solid var(--border);border-radius:6px;padding:8px 16px;">🏰 Back to Tavern</a>
+    </div>
+
+    <div class="overlay-screen" id="endScreen">
+      <div id="endArt" style="font-size:5em;margin-bottom:6px;">🏆</div>
+      <h1 class="big-title" id="endTitle">Journey's End</h1>
+      <p class="lead" id="endText"></p>
+      <div class="end-stats" id="endStats"></div>
+      <button class="big-btn" onclick="location.reload()">🔄 Travel Again</button>
+    </div>
+
+    <div id="toast"></div>
+    <a href="tavern.html" class="back-link" id="backLink" style="display:none;">🏰 Tavern</a>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   THE WANDERING MERCHANT
+   ============================================================ */
+const GAME_W=1280,GAME_H=720;
+function fitStage(){const g=document.getElementById('game');
+  const s=Math.min(window.innerWidth/GAME_W,window.innerHeight/GAME_H);
+  g.style.transform=`scale(${s})`;}
+window.addEventListener('resize',fitStage);fitStage();
+
+/* ============================================================
+   AUDIO ENGINE  —  SFX + procedural medieval soundtrack
+   ============================================================ */
+let actx,masterGain,musicGain;
+function initAudio(){if(actx)return;
+  actx=new(window.AudioContext||window.webkitAudioContext)();
+  masterGain=actx.createGain();masterGain.gain.value=.9;masterGain.connect(actx.destination);
+  musicGain=actx.createGain();musicGain.gain.value=.0;musicGain.connect(masterGain);
+}
+function tone(f,t,d,v=.07){try{initAudio();const o=actx.createOscillator(),g=actx.createGain();
+  o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d);
+  o.connect(g);g.connect(masterGain);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+const sfx={
+  click:()=>tone(360,'triangle',.08),coin:()=>{tone(820,'sine',.09);setTimeout(()=>tone(1150,'sine',.16),80);},
+  buy:()=>tone(300,'triangle',.1),good:()=>{tone(500,'triangle',.1);setTimeout(()=>tone(660,'triangle',.18),110);},
+  bad:()=>{tone(170,'sawtooth',.2,.06);setTimeout(()=>tone(110,'sawtooth',.25,.06),110);},
+  win:()=>{[440,560,700,880].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',.25),i*130));},
+  haggle:()=>tone(640,'square',.06,.05)
+};
+
+/* ---- procedural lute-style soundtrack ---- */
+let musicOn=true, musicStarted=false, musicTimer=null, beatIdx=0;
+const NOTE={C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196,A3:220,B3:246.94,
+  C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,C5:523.25,D5:587.33,E5:659.25};
+// A wistful Dorian/Aeolian melody (medieval feel), looping phrase of plucked notes
+const MELODY=[
+  'A4','C5','B4','A4','G4','A4','E4','G4',
+  'A4','B4','C5','D5','C5','B4','A4','rest',
+  'E4','G4','A4','C5','B4','A4','G4','E4',
+  'F4','A4','G4','F4','E4','D4','E4','rest'
+];
+const BASS=['A3','A3','E3','E3','F3','F3','C3','E3','A3','A3','E3','E3','D3','D3','E3','A3'];
+function pluck(freq,dur,vol,when,type='triangle'){
+  const o=actx.createOscillator(),g=actx.createGain(),o2=actx.createOscillator();
+  o.type=type;o.frequency.value=freq;
+  o2.type='sine';o2.frequency.value=freq*2.001; // slight shimmer = lute-like
+  const g2=actx.createGain();g2.gain.value=vol*.25;
+  g.gain.setValueAtTime(0,when);
+  g.gain.linearRampToValueAtTime(vol,when+.012);          // sharp pluck attack
+  g.gain.exponentialRampToValueAtTime(.0001,when+dur);     // natural decay
+  o.connect(g);o2.connect(g2);g.connect(musicGain);g2.connect(g);
+  o.start(when);o.stop(when+dur);o2.start(when);o2.stop(when+dur);
+}
+function drum(when,vol){ // soft frame-drum thump
+  const o=actx.createOscillator(),g=actx.createGain();
+  o.type='sine';o.frequency.setValueAtTime(120,when);o.frequency.exponentialRampToValueAtTime(50,when+.12);
+  g.gain.setValueAtTime(vol,when);g.gain.exponentialRampToValueAtTime(.001,when+.14);
+  o.connect(g);g.connect(musicGain);o.start(when);o.stop(when+.15);
+}
+const BPM=96, BEAT=60/BPM/2; // eighth-note step
+function musicStep(){
+  if(!actx)return;
+  const t=actx.currentTime+.05;
+  const step=beatIdx%MELODY.length;
+  const n=MELODY[step];
+  if(n!=='rest')pluck(NOTE[n],BEAT*1.6,.16,t,'triangle');
+  // bass plucks on the half-beat
+  if(beatIdx%2===0){const b=BASS[(beatIdx/2)%BASS.length];pluck(NOTE[b]/1,BEAT*2.2,.13,t,'sawtooth');}
+  // gentle drum on beats 1 & 5 of each bar
+  if(step%8===0)drum(t,.16);
+  if(step%8===4)drum(t,.1);
+  beatIdx++;
+  musicTimer=setTimeout(musicStep,BEAT*1000);
+}
+function startMusic(){if(musicStarted||!musicOn)return;initAudio();musicStarted=true;beatIdx=0;
+  musicGain.gain.cancelScheduledValues(actx.currentTime);
+  musicGain.gain.linearRampToValueAtTime(.5,actx.currentTime+2);
+  musicStep();}
+function stopMusic(){musicStarted=false;if(musicTimer)clearTimeout(musicTimer);
+  if(musicGain)musicGain.gain.linearRampToValueAtTime(0,actx.currentTime+.5);}
+function toggleMusic(){musicOn=!musicOn;const b=document.getElementById('musicBtn');
+  if(musicOn){b.textContent='🎵';b.classList.remove('off');startMusic();}
+  else{b.textContent='🔇';b.classList.add('off');stopMusic();}}
+// resume on first interaction (browser autoplay policy)
+document.body.addEventListener('pointerdown',()=>{initAudio();if(actx.state==='suspended')actx.resume();},{once:true});
+
+function toast(msg,type='info'){const c=document.getElementById('toast');const t=document.createElement('div');
+  t.className='tmsg '+type;t.innerHTML=msg;c.appendChild(t);
+  setTimeout(()=>{t.style.transition='.4s';t.style.opacity=0;t.style.transform='translateX(120%)';},2400);
+  setTimeout(()=>t.remove(),2900);}
+
+/* ============================================================
+   DATA
+   ============================================================ */
+const DIFFS={
+  merchant:{name:'Merchant',desc:'50 days · calm roads · gentle markets.',days:50,bandit:.65,gold:350,goal:3000},
+  trader:  {name:'Trader',  desc:'40 days · fair risk & reward.',days:40,bandit:1,gold:250,goal:4000},
+  smuggler:{name:'Smuggler',desc:'32 days · lawless trails · wild prices.',days:32,bandit:1.6,gold:200,goal:5500}
+};
+let chosenDiff='trader';
+const GOODS=[
+  {id:'grain',ic:'🌾',name:'Grain',note:'cheap, bulky staple',base:8,vol:.22,col:'#e0c060'},
+  {id:'wool', ic:'🐑',name:'Wool', note:'steady everyday demand',base:18,vol:.3,col:'#d8d2c0'},
+  {id:'ale',  ic:'🍺',name:'Ale',  note:'always a thirsty crowd',base:26,vol:.34,col:'#c89030'},
+  {id:'iron', ic:'⛏️',name:'Iron', note:'heavy, dependable value',base:46,vol:.4,col:'#9aa0a8'},
+  {id:'furs', ic:'🦊',name:'Furs', note:'warm & sought in winter',base:70,vol:.45,col:'#a0623a'},
+  {id:'silk', ic:'🧵',name:'Silk', note:'luxury — swings wildly',base:115,vol:.55,col:'#d070a0'},
+  {id:'spice',ic:'🌶️',name:'Spices',note:'exotic, high reward',base:160,vol:.6,col:'#c0402a'},
+  {id:'gems', ic:'💎',name:'Gemstones',note:'the highest stakes',base:300,vol:.7,col:'#70d0e0'}
+];
+const TOWNS=[
+  {id:'oakvale',name:'Oakvale',  tag:'Farmland',cheap:['grain','ale'],   dear:['silk','gems','spice'], col:'#5a8c3a'},
+  {id:'hammer', name:'Hammerfall',tag:'Mining',  cheap:['iron'],          dear:['grain','spice','furs'],col:'#8a7060'},
+  {id:'frost',  name:'Frosthold', tag:'Mountains',cheap:['furs','iron'],  dear:['ale','silk','grain'],  col:'#7aa0c0'},
+  {id:'port',   name:'Saltport',  tag:'Harbor',  cheap:['spice','silk'],  dear:['iron','wool','furs'],  col:'#4a8090'},
+  {id:'shep',   name:'Shepford',  tag:'Pastures',cheap:['wool','ale'],    dear:['gems','spice','iron'], col:'#9aab5a'},
+  {id:'sands',  name:'Dunmar',    tag:'Desert',  cheap:['silk','spice'],  dear:['grain','ale','furs'],  col:'#c0a050'},
+  {id:'spire',  name:'Highspire', tag:'Capital', cheap:['gems'],          dear:['grain','wool','ale','iron'],col:'#9b59b6'}
+];
+const UPGRADES=[
+  {id:'cargo', ic:'📦',name:'Cargo Hold',desc:'+20 cargo capacity per level.',max:5,cost:l=>180+l*140,apply:(s,l)=>{s.capacity=60+l*20;}},
+  {id:'horse', ic:'🐎',name:'Sturdy Horses',desc:'Roads cost 1 less food & wear the cart less.',max:3,cost:l=>250+l*200},
+  {id:'armor', ic:'🛡️',name:'Reinforced Cart',desc:'Take less damage from hazards & failed fights.',max:4,cost:l=>220+l*180},
+  {id:'guard', ic:'⚔️',name:'Hired Guards',desc:'Greatly improves odds against bandits.',max:3,cost:l=>300+l*260},
+  {id:'haggle',ic:'🤝',name:'Silver Tongue',desc:'Wider sweet-spot & extra haggle attempt.',max:4,cost:l=>200+l*170},
+  {id:'map',   ic:'🗺️',name:'Cartographer',desc:'Reveals price-trend sparklines in the market.',max:1,cost:l=>240},
+  {id:'ledger',ic:'📒',name:"Trader's Ledger",desc:'Earn +4% gold on every sale per level.',max:5,cost:l=>200+l*160},
+  {id:'wagon', ic:'🛞',name:'Lighter Wagon',desc:'Long roads take 1 fewer day.',max:2,cost:l=>320+l*280}
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let S=null;
+function rollPrice(t,g){let p=g.base;
+  if(t.cheap.includes(g.id))p*=.5+Math.random()*.18;
+  else if(t.dear.includes(g.id))p*=1.4+Math.random()*.45;
+  else p*=.82+Math.random()*.5;
+  p*=1+(Math.random()*2-1)*g.vol*.22;return Math.max(1,Math.round(p));}
+function freshState(){const d=DIFFS[chosenDiff];const prices={},trend={},hist={};
+  TOWNS.forEach(t=>{prices[t.id]={};trend[t.id]={};hist[t.id]={};
+    GOODS.forEach(g=>{const p=rollPrice(t,g);prices[t.id][g.id]=p;trend[t.id][g.id]=0;hist[t.id][g.id]=[p,p,p,p,p,p];});});
+  const up={};UPGRADES.forEach(u=>up[u.id]=0);
+  return{gold:d.gold,day:1,maxDays:d.days,goal:d.goal,health:100,food:70,capacity:60,loc:0,inv:{},prices,trend,hist,up,banditBase:d.bandit,peak:d.gold,deals:0,traveled:0,banditsBeaten:0,perfectHaggles:0};}
+function invCount(){return Object.values(S.inv).reduce((a,b)=>a+b,0);}
+function curTown(){return TOWNS[S.loc];}
+function good(id){return GOODS.find(g=>g.id===id);}
+function upLvl(id){return S.up[id]||0;}
+
+/* ============================================================
+   SCENE RENDERER
+   ============================================================ */
+const cv=document.getElementById('scene'),cx=cv.getContext('2d');
+let frame=0,sceneMode='title',npcView=null,travelAnim=null;
+let clouds=[],birds=[];
+for(let i=0;i<5;i++)clouds.push({x:Math.random()*1280,y:60+Math.random()*120,s:.6+Math.random()*.8,v:.15+Math.random()*.2});
+for(let i=0;i<4;i++)birds.push({x:Math.random()*1280,y:90+Math.random()*80,v:.4+Math.random()*.5,p:Math.random()*6});
+const var_accent='#d4af6e';
+function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));return'#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
+function roundRect(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath();}
+function drawSky(top,bot){const g=cx.createLinearGradient(0,0,0,GAME_H);g.addColorStop(0,top);g.addColorStop(.6,bot);g.addColorStop(1,'#1a1209');cx.fillStyle=g;cx.fillRect(0,0,GAME_W,GAME_H);}
+function drawSun(){cx.save();const gx=1080,gy=150;const rg=cx.createRadialGradient(gx,gy,10,gx,gy,160);rg.addColorStop(0,'rgba(255,230,160,.9)');rg.addColorStop(.4,'rgba(240,199,94,.35)');rg.addColorStop(1,'rgba(240,199,94,0)');cx.fillStyle=rg;cx.beginPath();cx.arc(gx,gy,160,0,7);cx.fill();cx.fillStyle='#fff6d8';cx.beginPath();cx.arc(gx,gy,34,0,7);cx.fill();cx.restore();}
+function drawClouds(){clouds.forEach(c=>{c.x+=c.v;if(c.x>1380)c.x=-120;cx.save();cx.globalAlpha=.5;cx.fillStyle='#e8dcc0';cx.translate(c.x,c.y);cx.scale(c.s,c.s);[[0,0,34],[40,8,26],[-38,8,28],[10,-16,24]].forEach(b=>{cx.beginPath();cx.arc(b[0],b[1],b[2],0,7);cx.fill();});cx.restore();});}
+function drawBirds(){cx.strokeStyle='rgba(60,40,20,.6)';cx.lineWidth=2;birds.forEach(b=>{b.x+=b.v;b.p+=.08;if(b.x>1320)b.x=-30;const f=Math.sin(b.p)*5;cx.beginPath();cx.moveTo(b.x-8,b.y+f);cx.lineTo(b.x,b.y-2);cx.lineTo(b.x+8,b.y+f);cx.stroke();});}
+function drawGround(near){const g=cx.createLinearGradient(0,460,0,GAME_H);g.addColorStop(0,near||'#4a3a1e');g.addColorStop(1,'#241a0d');cx.fillStyle=g;cx.fillRect(0,460,GAME_W,GAME_H-460);}
+function drawHills(col,base,amp,off){cx.fillStyle=col;cx.beginPath();cx.moveTo(0,GAME_H);for(let x=0;x<=GAME_W;x+=20)cx.lineTo(x,base+Math.sin(x*.006+off)*amp);cx.lineTo(GAME_W,GAME_H);cx.fill();}
+
+function drawMerchant(x,y,s=1,walk=0){cx.save();cx.translate(x,y);cx.scale(s,s);const bob=Math.sin(walk)*2;
+  cx.fillStyle='rgba(0,0,0,.3)';cx.beginPath();cx.ellipse(0,46,26,7,0,0,7);cx.fill();
+  cx.strokeStyle='#3a2d18';cx.lineWidth=8;cx.lineCap='round';const ls=Math.sin(walk)*7;
+  cx.beginPath();cx.moveTo(-6,20);cx.lineTo(-8+ls,44);cx.stroke();cx.beginPath();cx.moveTo(6,20);cx.lineTo(8-ls,44);cx.stroke();
+  cx.fillStyle='#6b3f2a';cx.beginPath();cx.moveTo(-16,-14+bob);cx.quadraticCurveTo(-22,22,-14,26);cx.lineTo(14,26);cx.quadraticCurveTo(22,22,16,-14+bob);cx.quadraticCurveTo(0,-22+bob,-16,-14+bob);cx.fill();
+  cx.fillStyle='#d4af6e';cx.fillRect(-4,-10+bob,8,34);
+  cx.fillStyle='#4a3220';cx.beginPath();cx.ellipse(15,8,8,11,0,0,7);cx.fill();
+  cx.strokeStyle='#6b3f2a';cx.lineWidth=7;cx.beginPath();cx.moveTo(12,-6+bob);cx.lineTo(20,10);cx.stroke();
+  cx.fillStyle='#e8c9a0';cx.beginPath();cx.arc(0,-26+bob,12,0,7);cx.fill();
+  cx.fillStyle='#8a6a44';cx.beginPath();cx.arc(0,-21+bob,11,.15*Math.PI,.85*Math.PI);cx.fill();
+  cx.fillStyle='#7a4a30';cx.beginPath();cx.arc(0,-30+bob,13,Math.PI,2*Math.PI);cx.fill();
+  cx.beginPath();cx.moveTo(-13,-30+bob);cx.quadraticCurveTo(0,-46+bob,13,-30+bob);cx.lineTo(13,-26+bob);cx.quadraticCurveTo(0,-38+bob,-13,-26+bob);cx.fill();
+  cx.fillStyle='#2a1d0a';cx.beginPath();cx.arc(-4,-27+bob,1.6,0,7);cx.arc(4,-27+bob,1.6,0,7);cx.fill();cx.restore();}
+function drawCart(x,y,s=1,roll=0){cx.save();cx.translate(x,y);cx.scale(s,s);
+  cx.fillStyle='rgba(0,0,0,.3)';cx.beginPath();cx.ellipse(10,40,60,9,0,0,7);cx.fill();
+  function wheel(wx){cx.save();cx.translate(wx,30);cx.rotate(roll);cx.fillStyle='#3a2d18';cx.beginPath();cx.arc(0,0,18,0,7);cx.fill();cx.fillStyle='#5a4530';cx.beginPath();cx.arc(0,0,13,0,7);cx.fill();cx.strokeStyle='#2a1d0a';cx.lineWidth=2.5;for(let i=0;i<6;i++){cx.beginPath();cx.moveTo(0,0);cx.lineTo(Math.cos(i*1.05)*16,Math.sin(i*1.05)*16);cx.stroke();}cx.fillStyle='#1a1209';cx.beginPath();cx.arc(0,0,4,0,7);cx.fill();cx.restore();}
+  wheel(-26);wheel(40);
+  cx.fillStyle='#6b4226';cx.fillRect(-40,-6,82,30);cx.strokeStyle='#3a2415';cx.lineWidth=3;cx.strokeRect(-40,-6,82,30);
+  cx.fillStyle='#8a5a32';cx.fillRect(-34,-22,22,20);cx.fillRect(-8,-18,20,16);cx.fillRect(16,-24,22,22);
+  cx.strokeStyle='#5a3820';cx.lineWidth=2;cx.strokeRect(-34,-22,22,20);cx.strokeRect(16,-24,22,22);
+  cx.fillStyle='rgba(232,220,192,.85)';cx.beginPath();cx.moveTo(-42,-6);cx.quadraticCurveTo(0,-40,44,-6);cx.lineTo(44,-2);cx.quadraticCurveTo(0,-34,-42,-2);cx.fill();cx.restore();}
+
+function drawTownScene(){
+  drawSky('#5a7a9a','#b08a5a');drawSun();drawClouds();drawBirds();
+  drawHills('rgba(60,80,60,.4)',360,40,frame*.002);drawHills('rgba(70,55,30,.6)',410,30,frame*.003+2);
+  drawGround('#5a4528');
+  cx.fillStyle='#7a5e36';cx.beginPath();cx.moveTo(420,720);cx.lineTo(560,470);cx.lineTo(720,470);cx.lineTo(860,720);cx.fill();
+  cx.strokeStyle='rgba(90,70,40,.5)';cx.lineWidth=3;cx.setLineDash([22,30]);cx.beginPath();cx.moveTo(640,470);cx.lineTo(640,720);cx.stroke();cx.setLineDash([]);
+  const t=curTown();
+  drawBuilding(180,470,120,150,t.col);drawBuilding(310,470,90,120,shade(t.col,-15));
+  drawBuilding(980,470,130,160,shade(t.col,-8));drawBuilding(1110,470,80,110,shade(t.col,12));
+  drawStall(470,560);
+  cx.fillStyle='rgba(13,9,4,.7)';roundRect(520,86,240,52,12);cx.fill();
+  cx.fillStyle=t.col;cx.font="26px MedievalSharp";cx.textAlign='center';cx.fillText(t.name,640,116);
+  cx.fillStyle='#b09b76';cx.font="13px Cinzel";cx.fillText(t.tag+' · Day '+S.day,640,134);
+  drawCart(760,600,1.05,0);drawMerchant(640,560,1.15,frame*.04);
+  drawTownsfolk(250,610,1,frame*.05,'#8a5a3a');drawTownsfolk(1040,600,.9,frame*.05+2,'#5a6a8a');
+}
+function drawBuilding(x,y,w,h,col){cx.save();cx.fillStyle=shade(col,-20);cx.fillRect(x,y-h,w,h);cx.fillStyle=shade(col,-40);cx.beginPath();cx.moveTo(x-8,y-h);cx.lineTo(x+w/2,y-h-42);cx.lineTo(x+w+8,y-h);cx.fill();cx.fillStyle='rgba(240,199,94,.55)';for(let r=0;r<Math.floor(h/50);r++)for(let c=0;c<Math.floor(w/45);c++){cx.fillRect(x+14+c*44,y-h+18+r*48,20,26);}cx.fillStyle='#3a2415';cx.fillRect(x+w/2-14,y-40,28,40);cx.restore();}
+/* ---- period-correct medieval stall (solid dyed linen, wood shingles) ---- */
+function drawStall(x,y){cx.save();cx.translate(x,y);
+  cx.fillStyle='#5a3820';cx.fillRect(-6,-4,8,46);cx.fillRect(94,-4,8,46);
+  cx.fillStyle='#6b4226';cx.fillRect(-12,4,118,8);
+  cx.fillStyle='#b5852f';cx.beginPath();cx.moveTo(-16,-12);cx.lineTo(106,-12);cx.lineTo(98,2);cx.lineTo(-8,2);cx.closePath();cx.fill();
+  cx.fillStyle='rgba(0,0,0,.18)';cx.fillRect(-8,0,106,3);
+  cx.fillStyle='#4a3018';cx.fillRect(-16,-15,122,4);
+  cx.fillStyle='#9c6f28';cx.beginPath();cx.moveTo(-8,2);for(let i=0;i<10;i++){const sx=-8+i*11;cx.lineTo(sx+5,9);cx.lineTo(sx+11,2);}cx.lineTo(98,2);cx.fill();
+  ['🍎','🧀','🫓'].forEach((e,i)=>{cx.font='16px serif';cx.textAlign='left';cx.fillText(e,10+i*30,30);});cx.restore();}
+function drawTownsfolk(x,y,s,walk,col){cx.save();cx.translate(x+Math.sin(walk*.5)*20,y);cx.scale(s,s);cx.fillStyle='rgba(0,0,0,.25)';cx.beginPath();cx.ellipse(0,40,18,5,0,0,7);cx.fill();cx.strokeStyle='#3a2d18';cx.lineWidth=6;cx.lineCap='round';const ls=Math.sin(walk)*6;cx.beginPath();cx.moveTo(-4,18);cx.lineTo(-6+ls,38);cx.stroke();cx.beginPath();cx.moveTo(4,18);cx.lineTo(6-ls,38);cx.stroke();cx.fillStyle=col;cx.beginPath();cx.moveTo(-12,-10);cx.lineTo(12,-10);cx.lineTo(10,22);cx.lineTo(-10,22);cx.fill();cx.fillStyle='#e8c9a0';cx.beginPath();cx.arc(0,-20,10,0,7);cx.fill();cx.fillStyle=shade(col,-30);cx.beginPath();cx.arc(0,-24,11,Math.PI,2*Math.PI);cx.fill();cx.restore();}
+
+function drawPortrait(type){drawSky('#3a2a14','#241a0d');cx.fillStyle='rgba(0,0,0,.4)';cx.fillRect(0,0,GAME_W,GAME_H);const rg=cx.createRadialGradient(400,360,40,400,360,420);rg.addColorStop(0,'rgba(212,175,110,.18)');rg.addColorStop(1,'rgba(212,175,110,0)');cx.fillStyle=rg;cx.beginPath();cx.arc(400,360,420,0,7);cx.fill();const b=Math.sin(frame*.05)*3;cx.save();cx.translate(400,400+b);cx.scale(4.2,4.2);if(type==='seer')drawSeer();else if(type==='innkeep')drawInnkeep();else if(type==='captain')drawCaptain();else if(type==='goodwife')drawGoodwife();else if(type==='bandit')drawBanditFace();else drawSeer();cx.restore();}
+function face(skin){cx.fillStyle=skin;cx.beginPath();cx.arc(0,-20,22,0,7);cx.fill();cx.fillStyle='#2a1d0a';cx.beginPath();cx.arc(-8,-22,2.4,0,7);cx.arc(8,-22,2.4,0,7);cx.fill();}
+function shoulders(col){cx.fillStyle=col;cx.beginPath();cx.moveTo(-34,40);cx.quadraticCurveTo(-30,4,0,2);cx.quadraticCurveTo(30,4,34,40);cx.fill();}
+function drawSeer(){shoulders('#4a3a6a');cx.fillStyle='#5a4a7a';cx.beginPath();cx.moveTo(-26,8);cx.quadraticCurveTo(0,-58,26,8);cx.quadraticCurveTo(0,-6,-26,8);cx.fill();face('#e3c39a');cx.fillStyle='rgba(0,0,0,.25)';cx.beginPath();cx.arc(0,-26,22,Math.PI,2*Math.PI);cx.fill();cx.strokeStyle='#cfc4b0';cx.lineWidth=1.5;for(let i=-3;i<=3;i++){cx.beginPath();cx.moveTo(i*5,-6);cx.lineTo(i*6,18);cx.stroke();}cx.strokeStyle='#3a2d18';cx.lineWidth=1.4;cx.beginPath();cx.arc(0,-12,4,.1*Math.PI,.9*Math.PI);cx.stroke();const gl=cx.createRadialGradient(22,30,1,22,30,12);gl.addColorStop(0,'#b0f0ff');gl.addColorStop(1,'rgba(120,200,255,0)');cx.fillStyle=gl;cx.beginPath();cx.arc(22,30,12,0,7);cx.fill();}
+function drawInnkeep(){shoulders('#7a4a2a');cx.fillStyle='#e8dcc0';cx.fillRect(-14,4,28,36);face('#f0d0a8');cx.fillStyle='#a8763a';cx.beginPath();cx.arc(0,-30,20,Math.PI,2*Math.PI);cx.fill();cx.fillStyle='#8a5a30';cx.beginPath();cx.arc(0,-8,20,.05*Math.PI,.95*Math.PI);cx.fill();cx.fillStyle='#f0d0a8';cx.fillRect(-22,-22,8,4);cx.fillRect(14,-22,8,4);cx.fillStyle='rgba(200,90,70,.4)';cx.beginPath();cx.arc(-12,-16,4,0,7);cx.arc(12,-16,4,0,7);cx.fill();cx.fillStyle='#c89030';cx.beginPath();cx.ellipse(26,18,7,10,0,0,7);cx.fill();}
+function drawCaptain(){shoulders('#5a6a4a');cx.fillStyle='#9aa0a8';cx.beginPath();cx.moveTo(-30,40);cx.quadraticCurveTo(-26,8,0,4);cx.quadraticCurveTo(26,8,30,40);cx.fill();cx.strokeStyle='#6a7078';cx.lineWidth=2;cx.beginPath();cx.moveTo(0,6);cx.lineTo(0,40);cx.stroke();face('#e0b890');cx.fillStyle='#3a3a3a';cx.beginPath();cx.arc(0,-24,10,Math.PI,2*Math.PI);cx.fill();cx.fillStyle='#2a1d0a';cx.fillRect(-10,-12,20,2.5);cx.strokeStyle='#b06a5a';cx.lineWidth=1.4;cx.beginPath();cx.moveTo(10,-28);cx.lineTo(14,-16);cx.stroke();cx.fillStyle='#b8c0c8';cx.fillRect(-22,-34,44,5);}
+function drawGoodwife(){shoulders('#7a5a8a');face('#f0d0b0');cx.fillStyle='#d8c0a0';cx.beginPath();cx.arc(0,-26,22,Math.PI,2*Math.PI);cx.fill();cx.beginPath();cx.moveTo(-22,-22);cx.quadraticCurveTo(0,-2,22,-22);cx.lineTo(22,-30);cx.lineTo(-22,-30);cx.fill();cx.fillStyle='#c0a890';cx.beginPath();cx.arc(0,-30,21,Math.PI,2*Math.PI);cx.fill();cx.strokeStyle='#3a2d18';cx.lineWidth=1.2;cx.beginPath();cx.arc(0,-14,5,.1*Math.PI,.9*Math.PI);cx.stroke();cx.fillStyle='rgba(200,90,70,.35)';cx.beginPath();cx.arc(-11,-15,4,0,7);cx.arc(11,-15,4,0,7);cx.fill();}
+function drawBanditFace(){shoulders('#2a2420');face('#c8a880');cx.fillStyle='#1a1209';cx.beginPath();cx.arc(0,-28,20,Math.PI,2*Math.PI);cx.fill();cx.beginPath();cx.moveTo(-22,-26);cx.quadraticCurveTo(0,-44,22,-26);cx.lineTo(22,-22);cx.quadraticCurveTo(0,-36,-22,-22);cx.fill();cx.fillStyle='#3a2d2d';cx.beginPath();cx.moveTo(-20,-14);cx.quadraticCurveTo(0,2,20,-14);cx.lineTo(20,2);cx.quadraticCurveTo(0,14,-20,2);cx.fill();cx.fillStyle='#e08a3a';cx.beginPath();cx.arc(-8,-22,2.8,0,7);cx.arc(8,-22,2.8,0,7);cx.fill();cx.strokeStyle='#1a1209';cx.lineWidth=2;cx.beginPath();cx.moveTo(-13,-27);cx.lineTo(-4,-24);cx.moveTo(13,-27);cx.lineTo(4,-24);cx.stroke();}
+
+function drawTravelScene(){const t=travelAnim;drawSky('#6a82a2','#c0986a');drawSun();drawClouds();drawBirds();drawHills('rgba(60,80,60,.4)',360,46,t.scroll*.02);drawHills('rgba(70,55,30,.6)',420,34,t.scroll*.035+2);drawGround('#5a4528');cx.fillStyle='#7a5e36';cx.fillRect(0,520,GAME_W,80);cx.strokeStyle='rgba(90,70,40,.5)';cx.lineWidth=3;cx.setLineDash([30,40]);cx.lineDashOffset=-t.scroll*4;cx.beginPath();cx.moveTo(0,560);cx.lineTo(GAME_W,560);cx.stroke();cx.setLineDash([]);cx.lineDashOffset=0;t.trees.forEach(tr=>{const sx=((tr.x-t.scroll*tr.sp)%1500+1500)%1500-110;drawTree(sx,505,tr.s);});const bounce=Math.abs(Math.sin(frame*.18))*4;drawCart(540,540-bounce,1.25,frame*.25);drawMerchant(430,512-bounce*.6,1.2,frame*.12);cx.fillStyle='rgba(13,9,4,.75)';roundRect(440,80,400,60,14);cx.fill();cx.fillStyle=var_accent;cx.font="22px MedievalSharp";cx.textAlign='center';cx.fillText('→ '+TOWNS[t.dest].name,640,108);cx.fillStyle='#b09b76';cx.font="13px Cinzel";cx.fillText(t.msg||'On the road...',640,128);}
+function drawTree(x,y,s){cx.save();cx.translate(x,y);cx.scale(s,s);cx.fillStyle='#4a3220';cx.fillRect(-6,0,12,34);cx.fillStyle='#3a6b2a';[[0,-20,30],[-18,-4,22],[18,-4,22],[0,-40,24]].forEach(c=>{cx.beginPath();cx.arc(c[0],c[1],c[2],0,7);cx.fill();});cx.fillStyle='#4a7b3a';cx.beginPath();cx.arc(-6,-26,16,0,7);cx.fill();cx.restore();}
+function drawTitleBg(){drawSky('#5a7a9a','#9a7a4a');drawSun();drawClouds();drawBirds();drawHills('rgba(60,80,60,.4)',380,44,frame*.002);drawHills('rgba(70,55,30,.6)',440,30,frame*.003+2);drawGround('#5a4528');drawTree(180,560,1.3);drawTree(1080,560,1.5);drawTree(950,540,1.1);cx.fillStyle='#7a5e36';cx.fillRect(0,580,GAME_W,40);drawCart(780,580,1.3,frame*.12);drawMerchant(640,540,1.4,frame*.06);}
+
+function loop(){frame++;cx.clearRect(0,0,GAME_W,GAME_H);
+  if(sceneMode==='title')drawTitleBg();
+  else if(sceneMode==='town')drawTownScene();
+  else if(sceneMode==='npc')drawPortrait(npcView);
+  else if(sceneMode==='travel'){travelAnim.scroll+=travelAnim.speed;drawTravelScene();}
+  requestAnimationFrame(loop);}
+loop();
+
+/* ============================================================
+   START
+   ============================================================ */
+function renderDiffs(){const r=document.getElementById('diffRow');r.innerHTML='';Object.entries(DIFFS).forEach(([k,d])=>{const c=document.createElement('div');c.className='diff-card'+(k===chosenDiff?' sel':'');c.innerHTML=`<div class="dn">${d.name}</div><div class="dd">${d.desc}<br><b style="color:var(--gold)">Goal: ${d.goal}🪙</b></div>`;c.onclick=()=>{chosenDiff=k;sfx.click();renderDiffs();};r.appendChild(c);});}
+renderDiffs();
+function startGame(){sfx.good();S=freshState();initAudio();if(actx.state==='suspended')actx.resume();startMusic();
+  document.getElementById('titleScreen').classList.remove('show');
+  document.getElementById('hud').classList.remove('hide');document.getElementById('dock').classList.remove('hide');
+  document.getElementById('backLink').style.display='block';sceneMode='town';
+  if(typeof trackPlayed==='function'){try{trackPlayed({dataset:{name:'wandering merchant'}});}catch(e){}}
+  refreshHUD();toast('Your journey begins in '+curTown().name+'!','gold');}
+
+/* ============================================================
+   HUD
+   ============================================================ */
+function refreshHUD(){document.getElementById('hGold').textContent=S.gold;document.getElementById('hDay').textContent=S.day;document.getElementById('hMax').textContent=S.maxDays;document.getElementById('hCargo').textContent=invCount();document.getElementById('capNum').textContent=S.capacity;document.getElementById('hFood').textContent=S.food;document.getElementById('hGoal').textContent=S.goal;const hp=Math.max(0,S.health);const bar=document.getElementById('hpBar');bar.style.width=hp+'%';bar.style.background=hp<30?'#a83232':'linear-gradient(90deg,#8b2e2e,#5a8c3a)';document.getElementById('hpChip').classList.toggle('bad',hp<30);document.getElementById('foodChip').classList.toggle('bad',S.food<15);}
+
+/* ============================================================
+   MARKET
+   ============================================================ */
+let shiftHeld=false;
+window.addEventListener('keydown',e=>{if(e.key==='Shift')shiftHeld=true;});
+window.addEventListener('keyup',e=>{if(e.key==='Shift')shiftHeld=false;});
+function openMarket(){sfx.click();sceneMode='town';renderMarket();showPanel('marketPanel');}
+function renderMarket(){document.getElementById('mkTown').textContent=curTown().name+' Market';const b=document.getElementById('mkBody');b.innerHTML='';const showSpark=upLvl('map')>0;GOODS.forEach(g=>{const t=curTown();const price=S.prices[t.id][g.id];const tr=S.trend[t.id][g.id];const owned=S.inv[g.id]||0;const cls=tr>0?'up':tr<0?'down':'';const arrow=tr>0?'▲':tr<0?'▼':'■';const canBuy=S.gold>=price&&invCount()<S.capacity;const row=document.createElement('div');row.className='mk-row';row.innerHTML=`<div class="mk-ic" style="color:${g.col}">${g.ic}</div><div class="mk-name">${g.name}${owned?` <span class="mk-owned">×${owned}</span>`:''}<small>${g.note}</small></div><div><div class="mk-price ${cls}">${price}🪙 <span style="font-size:.7em">${arrow}</span></div>${showSpark?sparkline(S.hist[t.id][g.id],g.col):''}</div><div class="mk-act"><button class="sq-btn buy" ${canBuy?'':'disabled'} onclick="buy('${g.id}')">+</button><button class="sq-btn sell" ${owned?'':'disabled'} onclick="sell('${g.id}')">−</button></div>`;b.appendChild(row);});}
+function sparkline(arr,col){const w=84,h=18,mn=Math.min(...arr),mx=Math.max(...arr),rg=(mx-mn)||1;let pts=arr.map((v,i)=>`${(i/(arr.length-1)*w).toFixed(1)},${(h-((v-mn)/rg)*h).toFixed(1)}`).join(' ');return`<svg class="mk-spark" width="${w}" height="${h}"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" opacity=".8"/></svg>`;}
+function buy(id){const t=curTown();const qty=shiftHeld?5:1;for(let i=0;i<qty;i++){const p=S.prices[t.id][id];if(S.gold<p){if(i===0)toast('Not enough gold','bad');break;}if(invCount()>=S.capacity){if(i===0)toast('Cart is full','bad');break;}S.gold-=p;S.inv[id]=(S.inv[id]||0)+1;S.prices[t.id][id]=Math.round(p*1.012);}sfx.buy();refreshHUD();renderMarket();}
+function sell(id){const t=curTown();const owned=S.inv[id]||0;if(!owned)return;if(good(id).base>=46){startHaggle(id);return;}const qty=shiftHeld?Math.min(5,owned):1;let total=0;for(let i=0;i<qty;i++){if(!S.inv[id])break;const p=S.prices[t.id][id];total+=p;S.inv[id]--;if(S.inv[id]<=0)delete S.inv[id];S.prices[t.id][id]=Math.max(1,Math.round(p*.988));}const bonus=1+upLvl('ledger')*.04;total=Math.round(total*bonus);S.gold+=total;S.deals+=qty;if(S.gold>S.peak)S.peak=S.gold;sfx.coin();toast('Sold for '+total+'🪙'+(bonus>1?' (ledger bonus!)':''),'good');refreshHUD();renderMarket();}
+
+/* ============================================================
+   HAGGLE
+   ============================================================ */
+let hg=null;
+function startHaggle(id){sfx.click();const t=curTown();const g=good(id);const base=S.prices[t.id][id];const sellQty=shiftHeld?Math.min(5,S.inv[id]||1):1;const sweetW=18+upLvl('haggle')*5;const sweetPos=30+Math.random()*40;const speed=2.0+Math.random()*1.4+(DIFFS[chosenDiff].bandit-1)*.3;hg={id,g,base,sellQty,sweetPos,sweetW,pos:0,dir:1,speed,attempts:1+upLvl('haggle'),done:false,best:0};document.getElementById('hgGood').textContent=g.ic;document.getElementById('hgPrompt').innerHTML=`Selling <b style="color:${g.col}">${sellQty}× ${g.name}</b> · base offer ${base}🪙 each`;document.getElementById('hgSweet').style.left=sweetPos+'%';document.getElementById('hgSweet').style.width=sweetW+'%';document.getElementById('hgSweet').style.transform='translateX(-50%)';document.getElementById('hgResult').textContent='';document.getElementById('hgBtn').disabled=false;document.getElementById('hgBtn').textContent='STRIKE THE DEAL!';updateHgAttempts();showPanel('hagglePanel');runHaggle();}
+function updateHgAttempts(){document.getElementById('hgAttempts').textContent='Attempts: '+'●'.repeat(hg.attempts)+'○'.repeat((1+upLvl('haggle'))-hg.attempts);}
+function runHaggle(){if(!hg||hg.done)return;hg.pos+=hg.dir*hg.speed;if(hg.pos>=100){hg.pos=100;hg.dir=-1;}if(hg.pos<=0){hg.pos=0;hg.dir=1;}document.getElementById('hgNeedle').style.left=hg.pos+'%';hg.raf=requestAnimationFrame(runHaggle);}
+function haggleStrike(){if(!hg||hg.done)return;const dist=Math.abs(hg.pos-hg.sweetPos);const half=hg.sweetW/2;let mult,label,type;if(dist<=half*.33){mult=1.5;label='✦ PERFECT DEAL! +50%';type='gold';S.perfectHaggles++;sfx.win();}else if(dist<=half){mult=1.25;label='Great deal! +25%';type='good';sfx.good();}else if(dist<=half*1.8){mult=1.05;label='Fair deal +5%';type='good';sfx.coin();}else{mult=.85;label='Poor deal −15%';type='bad';sfx.bad();}hg.best=Math.max(hg.best,mult);document.getElementById('hgResult').innerHTML=`<span style="color:${type==='bad'?'#e08a8a':'var(--gold)'}">${label}</span>`;sfx.haggle();hg.attempts--;updateHgAttempts();if(hg.attempts<=0||mult>=1.5){finalizeHaggle();}else{document.getElementById('hgBtn').textContent='Try again for better!';}}
+function finalizeHaggle(){if(hg.done)return;hg.done=true;cancelAnimationFrame(hg.raf);document.getElementById('hgBtn').disabled=true;const t=curTown();const mult=hg.best;let total=0;for(let i=0;i<hg.sellQty;i++){if(!S.inv[hg.id])break;const p=S.prices[t.id][hg.id];total+=p;S.inv[hg.id]--;if(S.inv[hg.id]<=0)delete S.inv[hg.id];S.prices[t.id][hg.id]=Math.max(1,Math.round(p*.985));}const ledger=1+upLvl('ledger')*.04;total=Math.round(total*mult*ledger);S.gold+=total;S.deals+=hg.sellQty;if(S.gold>S.peak)S.peak=S.gold;setTimeout(()=>{closePanel('hagglePanel');toast('Sold '+hg.sellQty+'× '+hg.g.name+' for '+total+'🪙','gold');refreshHUD();renderMarket();hg=null;},900);}
+function cancelHaggle(){if(hg){cancelAnimationFrame(hg.raf);hg=null;}closePanel('hagglePanel');}
+
+/* ============================================================
+   TRAVEL
+   ============================================================ */
+function openTravel(){sfx.click();const options=[];TOWNS.forEach((t,i)=>{if(i===S.loc)return;const dist=Math.max(1,Math.abs(i-S.loc));let days=dist+1;if(upLvl('wagon')>0&&dist>=2)days=Math.max(1,days-1);let food=dist+1-upLvl('horse');food=Math.max(1,food);options.push({t,i,days,food,dist});});options.sort((a,b)=>a.dist-b.dist);const choices=options.slice(0,4).map(o=>({label:`${o.t.name} — ${o.t.tag} · ${o.days}d, ${o.food}🥖`,fn:()=>{closeDialogue();travelTo(o.i,o.days,o.food);}}));choices.push({label:'Stay here',fn:closeDialogue});openDialogue('seer','The Road Awaits','Where shall the caravan journey next, merchant?',choices,false);}
+function travelTo(dest,days,food){if(S.food<food){toast('Not enough provisions!','bad');return;}sfx.click();sceneMode='travel';travelAnim={dest,scroll:0,speed:3.2,trees:[],msg:'On the road...'};for(let i=0;i<10;i++)travelAnim.trees.push({x:Math.random()*1500,s:.7+Math.random()*.9,sp:1+Math.random()*.6});document.getElementById('dock').classList.add('hide');const t0=performance.now();(function watch(){const k=Math.min(1,(performance.now()-t0)/2200);travelAnim.speed=3.2*(1-k*.6);if(k<1)requestAnimationFrame(watch);else arriveTravel(dest,days,food);})();}
+function arriveTravel(dest,days,food){S.loc=dest;S.day+=days;S.food-=food;S.traveled+=days;const wear=Math.round(days*(3+Math.random()*3)*(1-upLvl('horse')*.12)*(1-upLvl('armor')*.1));S.health=Math.max(0,S.health-wear);for(let i=0;i<days;i++)driftEconomy();document.getElementById('dock').classList.remove('hide');sceneMode='town';refreshHUD();if(checkEnd())return;const roll=Math.random();const bChance=(.16+days*.03)*S.banditBase*(1-upLvl('guard')*.12);if(roll<bChance)banditEncounter();else if(roll<bChance+.34)randomEvent();else{toast('Arrived safely at '+curTown().name,'good');}}
+
+/* ============================================================
+   ECONOMY
+   ============================================================ */
+function driftEconomy(){TOWNS.forEach(t=>{GOODS.forEach(g=>{const target=rollPrice(t,g);const cur=S.prices[t.id][g.id];const next=Math.max(1,Math.round(cur+(target-cur)*(.22+Math.random()*.28)));S.trend[t.id][g.id]=Math.sign(next-cur);S.prices[t.id][g.id]=next;const h=S.hist[t.id][g.id];h.push(next);if(h.length>6)h.shift();});});}
+
+/* ============================================================
+   EVENTS & BANDITS
+   ============================================================ */
+const EVENTS=[
+ {ic:'🌧️',n:'A Sudden Storm',txt:'Rain turns the trail to mud and batters your wagon.',fx:()=>{const d=Math.max(4,12-upLvl('armor')*2);S.health=Math.max(0,S.health-d);return`The storm cost you ${d} cart health.`;},type:'bad'},
+ {ic:'🍂',n:'Generous Farmers',txt:'Roadside farmers share their surplus harvest with you.',fx:()=>{S.food+=14;return'You gained 14 provisions!';},type:'good'},
+ {ic:'💰',n:'Abandoned Strongbox',txt:'Half-buried in the ditch lies a forgotten coin chest!',fx:()=>{const g=30+Math.floor(Math.random()*70);S.gold+=g;if(S.gold>S.peak)S.peak=S.gold;return`You found ${g} gold!`;},type:'gold'},
+ {ic:'🐺',n:'Wolves in the Night',txt:'A pack stalks your camp, spooking the horses.',fx:()=>{const d=Math.max(3,9-upLvl('guard')*2);S.health=Math.max(0,S.health-d);S.food=Math.max(0,S.food-5);return`Wolves cost you ${d} health and 5 food.`;},type:'bad'},
+ {ic:'🧝',n:'A Fellow Trader',txt:'A jovial merchant cuts you in on a quick, profitable swap.',fx:()=>{const g=20+Math.floor(Math.random()*50);S.gold+=g;return`You earned ${g} gold from the deal.`;},type:'gold'},
+ {ic:'🌉',n:"Baron's Toll",txt:'A petty baron demands coin to cross his bridge.',fx:()=>{const g=Math.min(S.gold,12+Math.floor(Math.random()*28));S.gold-=g;return`You paid ${g} gold in tolls.`;},type:'bad'},
+ {ic:'🎻',n:'Wandering Minstrel',txt:'A bard travels with you, lifting morale on the long road.',fx:()=>{S.food+=4;return'The company was pleasant. (+4 food)';},type:'good'},
+ {ic:'🛞',n:'Broken Axle',txt:'A wheel cracks badly on a rut in the road.',fx:()=>{const d=Math.max(6,16-upLvl('armor')*3);S.health=Math.max(0,S.health-d);return`Repairs on the spot cost ${d} health.`;},type:'bad'}
+];
+function randomEvent(){const e=EVENTS[Math.floor(Math.random()*EVENTS.length)];const result=e.fx();refreshHUD();if(checkEnd())return;openDialogue('',e.ic+' '+e.n,e.txt+'\n\n'+result,[{label:'Continue',fn:closeDialogue}],e.type==='bad');}
+function banditEncounter(){sfx.bad();sceneMode='npc';npcView='bandit';const demand=Math.max(20,Math.round(S.gold*(.18+Math.random()*.18)));const guardBonus=upLvl('guard')*.13;openDialogue('bandit','🗡️ Highway Bandits!',`A masked brigand blocks the road, blade gleaming.\n\n"Your coin or your cargo, merchant. ${demand} gold buys your safe passage."`,[{label:`💰 Pay ${demand} gold`,cls:'good',fn:()=>{const g=Math.min(S.gold,demand);S.gold-=g;endBandit(`You paid ${g} gold and were let through.`,'bad');}},{label:'🏃 Flee down the road',fn:()=>{if(Math.random()<.5+guardBonus){endBandit('You whipped the horses and escaped clean!','good');}else{const d=Math.max(8,18-upLvl('armor')*3);S.health=Math.max(0,S.health-d);endBandit(`They struck your wagon as you fled (−${d} health).`,'bad');}}},{label:'⚔️ Stand and fight',cls:'danger',fn:()=>{const winChance=.4+guardBonus+(upLvl('armor')*.04);if(Math.random()<winChance){const loot=30+Math.floor(Math.random()*60);S.gold+=loot;S.banditsBeaten++;if(S.gold>S.peak)S.peak=S.gold;endBandit(`Your guards drove them off — you looted ${loot} gold!`,'gold');}else{const d=Math.max(12,26-upLvl('armor')*4);S.health=Math.max(0,S.health-d);const ks=Object.keys(S.inv);let msg=`The fight went badly (−${d} health).`;if(ks.length&&Math.random()<.5){const k=ks[Math.floor(Math.random()*ks.length)];S.inv[k]--;if(S.inv[k]<=0)delete S.inv[k];msg+=` They snatched some ${good(k).name}!`;}endBandit(msg,'bad');}}}],true);}
+function endBandit(msg,type){refreshHUD();sceneMode='town';if(checkEnd())return;openDialogue('',type==='gold'?'⚔️ Victory':'🗡️ The Ambush',msg,[{label:'Continue',fn:closeDialogue}],type==='bad');}
+
+/* ============================================================
+   NPC
+   ============================================================ */
+const NPCS=[
+ {type:'seer',name:'Old Mirelle the Seer',lines:['Markets move like tides, child. What is dear today drifts cheap by week\'s end.','I sense great demand stirring in the harbor... for metal, perhaps. My visions blur.','Travel light when the roads run thick with thieves. A heavy cart is a slow cart.']},
+ {type:'innkeep',name:'Borin the Innkeep',lines:['Ale sells like wildfire in the mines — those folk drink like fish!','Rest here and I\'ll have a smith glance at your wheels. Cheaper than a broken axle.','Word is Highspire pays a king\'s ransom for grain this season!']},
+ {type:'captain',name:'Captain Aldric',lines:['Hire guards before the long roads. A blade beside you turns bandits cautious.','A well-armored cart shrugs off ambushes. Don\'t rattle about on bare boards.','Spices fetch a fortune inland — if the highwaymen don\'t smell them first.']},
+ {type:'goodwife',name:'Goodwife Hessa',lines:['Buy where they make it, sell where they crave it. Simple as baking bread.','Gemstones are dearest in the capital — but oh, the cutthroats on that road.','Keep your larder full. A starving horse pulls no cart.']}
+];
+function talkNPC(){sfx.click();const n=NPCS[Math.floor(Math.random()*NPCS.length)];const line=n.lines[Math.floor(Math.random()*n.lines.length)];sceneMode='npc';npcView=n.type;openDialogue(n.type,n.name,'"'+line+'"',[{label:'Thank them and return',fn:()=>{closeDialogue();sceneMode='town';}}]);}
+
+/* ============================================================
+   ACTIONS / UPGRADES
+   ============================================================ */
+function restInn(){if(S.gold<15)return toast('Not enough gold','bad');S.gold-=15;S.day+=1;S.health=Math.min(100,S.health+22);driftEconomy();sfx.good();toast('Rested at the inn (+22 cart health)','good');refreshHUD();if(checkEnd())return;}
+function buyFood(){if(S.gold<22)return toast('Not enough gold','bad');S.gold-=22;S.food+=15;sfx.coin();toast('Bought provisions (+15 food)','good');refreshHUD();}
+function openUpgrades(){sfx.click();sceneMode='town';renderUpgrades();showPanel('upgradePanel');}
+function renderUpgrades(){const grid=document.getElementById('upGrid');grid.innerHTML='';UPGRADES.forEach(u=>{const lvl=upLvl(u.id);const maxed=lvl>=u.max;const cost=u.cost(lvl);const can=!maxed&&S.gold>=cost;let pips='';for(let i=0;i<u.max;i++)pips+=`<div class="up-pip ${i<lvl?'on':''}"></div>`;const c=document.createElement('div');c.className='up-card'+(maxed?' maxed':'');c.innerHTML=`<div class="up-ic">${u.ic}</div><div class="up-info"><h3>${u.name}</h3><p>${u.desc}</p><div class="up-lvl">${pips}</div>${maxed?`<button class="buy-up maxtag" disabled>✓ MAXED</button>`:`<button class="buy-up" ${can?'':'disabled'} onclick="buyUpgrade('${u.id}')">${can?`Upgrade · ${cost}🪙`:`Need ${cost}🪙`}</button>`}</div>`;grid.appendChild(c);});}
+function buyUpgrade(id){const u=UPGRADES.find(x=>x.id===id);const lvl=upLvl(id);if(lvl>=u.max)return;const cost=u.cost(lvl);if(S.gold<cost)return toast('Not enough gold','bad');S.gold-=cost;S.up[id]=lvl+1;if(u.apply)u.apply(S,S.up[id]);sfx.good();toast(u.name+' upgraded to Lv.'+(lvl+1)+'!','gold');refreshHUD();renderUpgrades();}
+
+/* ============================================================
+   DIALOGUE / PANELS
+   ============================================================ */
+let typeTimer=null;
+function openDialogue(npcType,name,text,choices,danger){const d=document.getElementById('dialogue');d.classList.toggle('danger',!!danger);document.getElementById('dlgName').textContent=name;if(npcType){sceneMode='npc';npcView=npcType;}const txtEl=document.getElementById('dlgText');txtEl.innerHTML='';const ch=document.getElementById('dlgChoices');ch.innerHTML='';d.classList.add('show');clearTimeout(typeTimer);let i=0;const full=text;(function type(){if(i<=full.length){txtEl.innerHTML=full.slice(0,i).replace(/\n/g,'<br>')+'<span class="cursor">▌</span>';i++;typeTimer=setTimeout(type,14);}else{txtEl.innerHTML=full.replace(/\n/g,'<br>');choices.forEach(c=>{const b=document.createElement('button');b.className='choice '+(c.cls||'');b.textContent=c.label;b.onclick=()=>{sfx.click();c.fn();};ch.appendChild(b);});}})();}
+function closeDialogue(){document.getElementById('dialogue').classList.remove('show');clearTimeout(typeTimer);if(sceneMode==='npc')sceneMode='town';}
+function showPanel(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));document.getElementById('panelScrim').classList.add('show');document.getElementById('dock').style.pointerEvents='none';document.getElementById(id).classList.add('show');}
+function closePanel(id){sfx.click();document.getElementById(id).classList.remove('show');document.getElementById('panelScrim').classList.remove('show');document.getElementById('dock').style.pointerEvents='auto';}
+function closeAllPanels(){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));document.getElementById('panelScrim').classList.remove('show');document.getElementById('dock').style.pointerEvents='auto';if(hg){cancelAnimationFrame(hg.raf);hg=null;}}
+
+/* ============================================================
+   WIN / LOSE
+   ============================================================ */
+function checkEnd(){if(S.health<=0){endGame(false,'Your cart splintered apart on a lonely stretch of road. Stranded and penniless, your venture ends in the mud.');return true;}if(S.food<=0&&S.gold<22){endGame(false,'Your provisions ran dry and your purse with them. You can travel no further.');return true;}if(S.day>=S.maxDays){if(S.gold>=S.goal)endGame(true,'You return home a triumphant merchant prince! Your name is toasted in every tavern from Oakvale to Highspire.');else endGame(false,`The days ran out with ${S.gold} gold — short of your ${S.goal} goal. A respectable run, but not yet a legend.`);return true;}return false;}
+function endGame(won,text){if(won)sfx.win();else sfx.bad();stopMusic();try{const sc=JSON.parse(localStorage.getItem('arcadeScores'))||{};if(!sc.merchant_gold||S.gold>sc.merchant_gold){sc.merchant_gold=S.gold;localStorage.setItem('arcadeScores',JSON.stringify(sc));}}catch(e){}closeDialogue();document.getElementById('hud').classList.add('hide');document.getElementById('dock').classList.add('hide');document.getElementById('panelScrim').classList.remove('show');document.getElementById('dock').style.pointerEvents='auto';document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));document.getElementById('endArt').textContent=won?'🏆':'💀';document.getElementById('endTitle').textContent=won?"A Merchant's Triumph!":"Journey's End";document.getElementById('endText').textContent=text;document.getElementById('endStats').innerHTML=`<div class="end-stat"><div class="v">🪙${S.gold}</div><div class="l">Final Gold</div></div><div class="end-stat"><div class="v">📈${S.peak}</div><div class="l">Peak Gold</div></div><div class="end-stat"><div class="v">🤝${S.deals}</div><div class="l">Deals Made</div></div><div class="end-stat"><div class="v">⚔️${S.banditsBeaten}</div><div class="l">Bandits Beaten</div></div>`;document.getElementById('endScreen').classList.add('show');}
+</script>
+</body>
+</html>

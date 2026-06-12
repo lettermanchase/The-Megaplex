@@ -326,6 +326,7 @@ let mines = [];
 let score = 0;
 let wave = 1;
 let spawnTimer = 0;
+let deathTimer = 0;
 let waveAnnouncement = { text: '', timer: 0 };
 
 // =====================================================================
@@ -1171,6 +1172,7 @@ function spawnWave() {
 }
 
 function gameOver() {
+    if (gameState === 'gameover') return;
     gameState = 'gameover';
     tokens += sessionTokensEarned;
     localStorage.setItem('megaplexTokens', tokens);
@@ -1330,10 +1332,15 @@ function gameLoop(now) {
         const p1dead = !player1 || player1.hp <= 0;
         const p2dead = !player2 || player2.hp <= 0;
         if (p1dead && (gameMode === 'pve-solo' || p2dead)) {
-            if(particles.length < 5) gameOver();
+            // Failsafe: wait for particles OR a max delay, then always end
+            deathTimer += dt;
+            if (particles.length < 5 || deathTimer > 1.5) gameOver();
         }
     } else {
-        if ((player1.hp <= 0 || player2.hp <= 0) && particles.length < 5) gameOver();
+        if (player1.hp <= 0 || player2.hp <= 0) {
+            deathTimer += dt;
+            if (particles.length < 5 || deathTimer > 1.5) gameOver();
+        }
     }
     
     requestAnimationFrame(gameLoop);

@@ -1,0 +1,3963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shadow Archer - The Citadel Tavern</title>
+<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
+body {
+    font-family: 'Cinzel', serif;
+    background: #000;
+    color: #f0e6d2;
+    display: flex;
+    flex-direction: column;
+}
+
+.top-bar {
+    width: 100%;
+    padding: 8px 20px;
+    background: linear-gradient(180deg, rgba(36,26,13,0.95), rgba(26,18,9,0.9));
+    border-bottom: 2px solid rgba(212,175,110,0.4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    flex-shrink: 0;
+    height: 48px;
+}
+.top-title {
+    font-family: 'MedievalSharp', serif;
+    font-size: 1.3em;
+    color: #d4af6e;
+    text-shadow: 0 0 12px rgba(255,140,0,0.5);
+    letter-spacing: 2px;
+}
+.top-btn {
+    background: rgba(255,235,200,0.06);
+    border: 1px solid rgba(212,175,110,0.4);
+    color: #f0e6d2;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-family: 'Cinzel', serif;
+    cursor: pointer;
+    text-decoration: none;
+    transition: 0.2s;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+.top-btn:hover { background: rgba(212,175,110,0.2); border-color: #d4af6e; }
+
+#gameContainer {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+}
+#gameCanvas {
+    display: block;
+    cursor: crosshair;
+    width: 100%;
+    height: 100%;
+}
+
+#hud {
+    position: absolute;
+    top: 12px; left: 12px; right: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+    z-index: 10;
+    font-family: 'MedievalSharp', serif;
+    gap: 12px;
+}
+.hud-panel {
+    background: linear-gradient(135deg, rgba(15,8,3,0.95), rgba(36,26,13,0.92));
+    border: 1px solid rgba(212,175,110,0.5);
+    border-radius: 6px;
+    padding: 8px 14px;
+    color: #f0e6d2;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(212,175,110,0.2);
+    backdrop-filter: blur(6px);
+}
+.hud-label {
+    font-size: 0.7em;
+    color: #b09b76;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.hud-value {
+    font-size: 1.2em;
+    color: #f0c75e;
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(240,199,94,0.5);
+}
+.hud-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.health-bar {
+    width: 220px;
+    height: 16px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid #8b2e2e;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    margin-top: 3px;
+}
+.health-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8b2e2e, #c74545, #ff6b6b);
+    transition: width 0.3s;
+    box-shadow: 0 0 10px rgba(199,69,69,0.6);
+}
+.health-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.75em;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 2px #000;
+    font-family: 'Cinzel', serif;
+}
+
+.gold-display {
+    color: #f0c75e;
+    font-size: 1.3em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wave-indicator { text-align: center; }
+.wave-num {
+    font-size: 1.6em;
+    color: #d4af6e;
+    text-shadow: 0 0 15px rgba(212,175,110,0.8);
+    line-height: 1;
+}
+
+#arrowSlots {
+    position: absolute;
+    bottom: 12px; left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 10;
+}
+.arrow-slot {
+    width: 56px; height: 64px;
+    background: linear-gradient(180deg, rgba(15,8,3,0.95), rgba(36,26,13,0.9));
+    border: 2px solid rgba(212,175,110,0.4);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.7em;
+    color: #d4af6e;
+    transition: 0.2s;
+    position: relative;
+    cursor: pointer;
+}
+.arrow-slot:hover { border-color: #d4af6e; transform: translateY(-2px); }
+.arrow-slot.active {
+    border-color: #f0c75e;
+    box-shadow: 0 0 18px rgba(240,199,94,0.7);
+    transform: translateY(-4px) scale(1.05);
+    background: linear-gradient(180deg, rgba(240,199,94,0.2), rgba(36,26,13,0.9));
+}
+.arrow-slot .arrow-count {
+    position: absolute;
+    bottom: 2px;
+    font-size: 0.5em;
+    color: #fff;
+    background: rgba(139,46,46,0.95);
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    border: 1px solid #c74545;
+}
+.arrow-slot .arrow-count.inf { background: rgba(90,140,58,0.95); border-color: #5a8c3a; }
+.arrow-slot .arrow-key {
+    position: absolute;
+    top: 2px; left: 4px;
+    font-size: 0.42em;
+    color: #b09b76;
+    background: #1a1209;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+    border: 1px solid #4a3a20;
+}
+.arrow-slot .arrow-name {
+    position: absolute;
+    bottom: -16px;
+    font-size: 0.32em;
+    color: #b09b76;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+}
+
+#shopBtn {
+    position: absolute;
+    bottom: 12px; right: 12px;
+    background: linear-gradient(135deg, #8b2e2e, #d4af6e);
+    border: 2px solid #f0c75e;
+    color: #1a1209;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'MedievalSharp', serif;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 15;
+    box-shadow: 0 4px 18px rgba(212,175,110,0.5);
+    letter-spacing: 1px;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#shopBtn:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(212,175,110,0.8); }
+#shopBtn.pulse { animation: shopPulse 1.5s infinite; }
+@keyframes shopPulse {
+    0%,100% { box-shadow: 0 4px 18px rgba(212,175,110,0.5); }
+    50% { box-shadow: 0 4px 30px rgba(240,199,94,1); }
+}
+
+#alliesPanel {
+    position: absolute;
+    top: 80px; left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 10;
+    pointer-events: none;
+}
+.ally-icon {
+    background: rgba(15,8,3,0.92);
+    border: 1px solid rgba(212,175,110,0.4);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.8em;
+    color: #f0c75e;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'MedievalSharp', serif;
+}
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(8,5,2,0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    overflow-y: auto;
+}
+.overlay-content {
+    max-width: 720px;
+    width: 100%;
+    text-align: center;
+    padding: 20px;
+}
+.overlay h1 {
+    font-family: 'MedievalSharp', serif;
+    font-size: clamp(2em, 5vw, 3.5em);
+    color: #d4af6e;
+    text-shadow: 0 0 25px rgba(255,140,0,0.6), 0 0 50px rgba(139,46,46,0.4);
+    margin-bottom: 8px;
+    animation: titleGlow 2s ease-in-out infinite alternate;
+}
+@keyframes titleGlow {
+    from { text-shadow: 0 0 25px rgba(255,140,0,0.6), 0 0 50px rgba(139,46,46,0.4); }
+    to   { text-shadow: 0 0 40px rgba(255,140,0,0.9), 0 0 80px rgba(139,46,46,0.7); }
+}
+.overlay h2 {
+    font-family: 'MedievalSharp', serif;
+    font-size: clamp(0.9em, 2vw, 1.3em);
+    color: #b09b76;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.stat-box {
+    background: rgba(36,26,13,0.8);
+    border: 1px solid rgba(212,175,110,0.4);
+    border-radius: 6px;
+    padding: 10px;
+}
+.stat-box-label {
+    font-size: 0.7em;
+    color: #b09b76;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.stat-box-value {
+    font-size: 1.4em;
+    color: #f0c75e;
+    font-family: 'MedievalSharp', serif;
+    font-weight: bold;
+}
+.btn-big {
+    background: linear-gradient(135deg, #8b2e2e, #d4af6e);
+    color: #1a1209;
+    border: none;
+    padding: 14px 32px;
+    font-family: 'MedievalSharp', serif;
+    font-size: 1.2em;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    box-shadow: 0 6px 20px rgba(139,46,46,0.5);
+    transition: 0.2s;
+    margin: 5px;
+}
+.btn-big:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(139,46,46,0.7); }
+.btn-big.secondary {
+    background: rgba(255,235,200,0.1);
+    color: #d4af6e;
+    border: 1px solid #d4af6e;
+}
+.instructions {
+    background: rgba(36,26,13,0.6);
+    border: 1px solid rgba(212,175,110,0.3);
+    border-radius: 8px;
+    padding: 14px 22px;
+    margin-bottom: 18px;
+    font-size: 0.85em;
+    line-height: 1.6;
+    color: #d4af6e;
+    text-align: left;
+}
+.instructions strong { color: #f0c75e; }
+.instructions kbd {
+    background: rgba(212,175,110,0.2);
+    border: 1px solid #d4af6e;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: monospace;
+    color: #f0c75e;
+    font-size: 0.9em;
+}
+
+#shopModal {
+    position: absolute;
+    inset: 0;
+    background: rgba(8,5,2,0.94);
+    z-index: 60;
+    display: none;
+    overflow-y: auto;
+    padding: 20px;
+    backdrop-filter: blur(8px);
+}
+#shopModal.show { display: block; }
+.shop-content {
+    max-width: 900px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #241a0d, #1a1209);
+    border: 2px solid #d4af6e;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 0 50px rgba(212,175,110,0.4);
+}
+.shop-header {
+    text-align: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(212,175,110,0.3);
+    padding-bottom: 14px;
+}
+.shop-header h2 {
+    font-family: 'MedievalSharp', serif;
+    color: #d4af6e;
+    font-size: 2em;
+    text-shadow: 0 0 15px rgba(255,140,0,0.5);
+}
+.shop-header .gold-banner {
+    color: #f0c75e;
+    font-size: 1.2em;
+    margin-top: 8px;
+    font-weight: bold;
+}
+.shop-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.shop-tab {
+    background: rgba(255,235,200,0.05);
+    border: 1px solid rgba(212,175,110,0.3);
+    color: #b09b76;
+    padding: 8px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    transition: 0.2s;
+}
+.shop-tab.active { background: #d4af6e; color: #1a1209; border-color: #f0c75e; }
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+}
+.shop-item {
+    background: rgba(36,26,13,0.7);
+    border: 1px solid rgba(212,175,110,0.3);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.shop-item.maxed { border-color: #5a8c3a; background: rgba(90,140,58,0.1); }
+.shop-item-header { display: flex; align-items: center; gap: 10px; }
+.shop-item-icon {
+    font-size: 2em;
+    width: 48px;
+    height: 48px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.shop-item-title { font-family: 'MedievalSharp', serif; color: #f0c75e; font-size: 1.05em; }
+.shop-item-level { font-size: 0.75em; color: #b09b76; margin-top: 2px; }
+.shop-item-desc { font-size: 0.82em; color: #d4af6e; line-height: 1.4; font-style: italic; flex: 1; }
+.shop-item-effect { font-size: 0.8em; color: #5a8c3a; font-weight: bold; }
+.shop-buy-btn {
+    background: linear-gradient(135deg, #8b2e2e, #d4af6e);
+    color: #1a1209;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.shop-buy-btn:hover:not(:disabled) { transform: scale(1.03); }
+.shop-buy-btn:disabled { background: #3a2d18; color: #6b5836; cursor: not-allowed; }
+.shop-buy-btn.maxed { background: #5a8c3a; color: #fff; }
+.shop-close {
+    position: absolute;
+    top: 30px; right: 30px;
+    background: #8b2e2e;
+    color: #fff;
+    border: none;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    font-size: 1.3em;
+    cursor: pointer;
+    z-index: 70;
+}
+
+#waveBanner {
+    position: absolute;
+    top: 40%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 40;
+    pointer-events: none;
+    opacity: 0;
+    text-align: center;
+    font-family: 'MedievalSharp', serif;
+}
+#waveBanner.show { animation: bannerPulse 2.5s ease-out; }
+@keyframes bannerPulse {
+    0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+    20% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0; }
+}
+.banner-title {
+    font-size: clamp(2.5em, 6vw, 5em);
+    color: #d4af6e;
+    text-shadow: 0 0 30px rgba(255,140,0,0.9), 0 0 60px rgba(139,46,46,0.7);
+}
+.banner-sub {
+    font-size: clamp(1em, 2.5vw, 1.8em);
+    color: #f0c75e;
+    margin-top: 8px;
+    letter-spacing: 4px;
+}
+.banner-title.boss { color: #ff3030; text-shadow: 0 0 30px rgba(255,48,48,0.9), 0 0 60px rgba(139,46,46,1); }
+
+#damageFlash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, transparent 40%, rgba(139,46,46,0.7) 100%);
+    pointer-events: none;
+    opacity: 0;
+    z-index: 30;
+    transition: opacity 0.15s;
+}
+#damageFlash.flash { opacity: 1; }
+
+#comboIndicator {
+    position: absolute;
+    top: 70px; right: 12px;
+    background: linear-gradient(135deg, #8b2e2e, #ff6b00);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-family: 'MedievalSharp', serif;
+    font-size: 1.1em;
+    box-shadow: 0 0 20px rgba(255,107,0,0.6);
+    z-index: 15;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+#comboIndicator.show { opacity: 1; }
+
+.power-notif {
+    position: absolute;
+    top: 35%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #d4af6e, #f0c75e);
+    color: #1a1209;
+    padding: 12px 26px;
+    border-radius: 30px;
+    font-family: 'MedievalSharp', serif;
+    font-size: 1.2em;
+    box-shadow: 0 0 30px rgba(240,199,94,0.8);
+    z-index: 25;
+    pointer-events: none;
+    animation: powerNotifAnim 1.8s ease-out forwards;
+    white-space: nowrap;
+    font-weight: bold;
+}
+@keyframes powerNotifAnim {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    20% { transform: translate(-50%, -120%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -220%) scale(1); opacity: 0; }
+}
+
+/* Cooldown indicator */
+#cooldownBar {
+    position: absolute;
+    bottom: 90px; left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 6px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(212,175,110,0.4);
+    border-radius: 3px;
+    overflow: hidden;
+    z-index: 10;
+    display: none;
+}
+#cooldownBar.show { display: block; }
+#cooldownFill {
+    height: 100%;
+    background: linear-gradient(90deg, #d4af6e, #f0c75e);
+    transition: width 0.05s linear;
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+    <a href="tavern.html" class="top-btn">🏰 ← Tavern</a>
+    <div class="top-title">🏹 SHADOW ARCHER</div>
+    <button class="top-btn" id="pauseBtn">⏸ Pause</button>
+</div>
+
+<div id="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="hud">
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <div class="hud-panel">
+                <div class="hud-label">🏰 Citadel HP</div>
+                <div class="health-bar">
+                    <div class="health-fill" id="healthFill" style="width:100%"></div>
+                    <div class="health-text" id="healthText">100 / 100</div>
+                </div>
+            </div>
+            <div class="hud-panel gold-display">
+                <span>🪙</span>
+                <span id="goldVal">0</span>
+            </div>
+        </div>
+        
+        <div class="hud-panel wave-indicator">
+            <div class="hud-label">⚔️ Wave</div>
+            <div class="wave-num" id="waveNum">1</div>
+            <div class="hud-label" id="waveSubLabel">Approaching</div>
+        </div>
+        
+        <div class="hud-row">
+            <div class="hud-panel">
+                <div class="hud-label">🎯 Score</div>
+                <div class="hud-value" id="scoreVal">0</div>
+            </div>
+            <div class="hud-panel">
+                <div class="hud-label">🎯 Accuracy</div>
+                <div class="hud-value" id="accuracyVal">100%</div>
+            </div>
+            <div class="hud-panel">
+                <div class="hud-label">💀 Kills</div>
+                <div class="hud-value" id="killsVal">0</div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="alliesPanel"></div>
+    <div id="comboIndicator">🔥 COMBO x<span id="comboNum">2</span></div>
+    <div id="arrowSlots"></div>
+    <div id="cooldownBar"><div id="cooldownFill"></div></div>
+    <button id="shopBtn">🛒 ARMORY (B)</button>
+    
+    <div id="waveBanner">
+        <div class="banner-title" id="bannerTitle">WAVE 1</div>
+        <div class="banner-sub" id="bannerSub">SHADOWS APPROACH</div>
+    </div>
+    
+    <div id="damageFlash"></div>
+    
+    <div class="overlay" id="startScreen">
+        <div class="overlay-content">
+            <h1>🏹 SHADOW ARCHER</h1>
+            <h2>"Defend the Citadel from the Endless Dark..."</h2>
+            <div class="instructions">
+                <strong>📜 The Tale:</strong> Atop the Citadel ramparts, you are the last archer. Shadow creatures rise from the cursed forest to lay siege to the fortress. Survive the waves, earn gold, and recruit shadow-touched warriors to defend the gate.<br><br>
+                <strong>🎮 Controls:</strong> <kbd>MOUSE</kbd> aim • <kbd>HOLD CLICK</kbd> charge for power shot • <kbd>RELEASE</kbd> fire • <kbd>1-5</kbd> arrow type • <kbd>B</kbd> armory • <kbd>P</kbd> pause<br><br>
+                <strong>⚡ Strategy:</strong> Hold longer for stronger shots! Quick shots are weaker. Earn gold to recruit Shadow Wardens who defend the gate in front of the wall.
+            </div>
+            <button class="btn-big" onclick="startGame()">⚔️ BEGIN THE SIEGE</button>
+        </div>
+    </div>
+    
+    <div class="overlay" id="gameOverScreen" style="display:none;">
+        <div class="overlay-content">
+            <h1 id="endTitle">💀 THE CITADEL HAS FALLEN</h1>
+            <h2 id="endSub">"Your bow falls silent..."</h2>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-box-label">Waves Survived</div>
+                    <div class="stat-box-value" id="finalWave">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Final Score</div>
+                    <div class="stat-box-value" id="finalScore">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Accuracy</div>
+                    <div class="stat-box-value" id="finalAccuracy">0%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Enemies Slain</div>
+                    <div class="stat-box-value" id="finalKills">0</div>
+                </div>
+            </div>
+            <div>
+                <button class="btn-big" onclick="startGame()">🔄 FIGHT AGAIN</button>
+                <a href="tavern.html" class="btn-big secondary" style="text-decoration:none; display:inline-block;">🏰 Return to Tavern</a>
+            </div>
+        </div>
+    </div>
+    
+    <div id="shopModal">
+        <button class="shop-close" onclick="closeShop()">×</button>
+        <div class="shop-content">
+            <div class="shop-header">
+                <h2>⚒️ The Armory</h2>
+                <div class="gold-banner">🪙 <span id="shopGold">0</span> Gold</div>
+            </div>
+            <div class="shop-tabs">
+                <button class="shop-tab active" onclick="setShopTab('upgrades', event)">⚔️ Upgrades</button>
+                <button class="shop-tab" onclick="setShopTab('arrows', event)">🏹 Arrows</button>
+                <button class="shop-tab" onclick="setShopTab('allies', event)">🛡️ Recruit Wardens</button>
+            </div>
+            <div class="shop-grid" id="shopGrid"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SHADOW ARCHER - EPIC EDITION v3
+// ═══════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let W = window.innerWidth;
+let H = window.innerHeight - 48;
+
+const CASTLE = {
+    wallWalkY: 0,
+    wallRightX: 0,
+    towerX: 0,
+    towerTopY: 0,
+    gateLineX: 0  // where allies stand defending IN FRONT
+};
+
+function resizeCanvas() {
+    W = window.innerWidth;
+    H = window.innerHeight - 48;
+    canvas.width = W;
+    canvas.height = H;
+    
+    CASTLE.wallRightX = Math.max(220, W * 0.18);
+    CASTLE.wallWalkY = H - 260;
+    CASTLE.towerX = CASTLE.wallRightX - 90;
+    CASTLE.towerTopY = H - 420;
+    CASTLE.gateLineX = CASTLE.wallRightX + 80;  // wardens stand here
+    
+    archer.x = 90;
+    archer.y = CASTLE.wallWalkY - 24;
+    
+    initStars();
+}
+window.addEventListener('resize', resizeCanvas);
+
+// ═══════════ GAME STATE ═══════════
+let game = {
+    running: false, paused: false,
+    wave: 1, score: 0, gold: 100,
+    health: 100, maxHealth: 100,
+    shots: 0, hits: 0, kills: 0,
+    combo: 0, comboTimer: 0,
+    waveEnemiesLeft: 0, waveInProgress: false,
+    waveDelay: 0, spawnTimer: 0,
+    currentArrow: 0,
+    arrows: { normal: Infinity, fire: 0, ice: 0, lightning: 0, explosive: 0 },
+    charging: false, chargePower: 0, chargeMax: 50,
+    shotCooldown: 0,  // ← NEW: enforces minimum time between shots
+    upgrades: {
+        damage: 0, chargeSpeed: 0, critChance: 0,
+        maxHealth: 0, regen: 0, goldFind: 0, fireRate: 0
+    },
+    allies: [],
+    lastRegenTick: 0
+};
+
+let arrows = [];
+let enemies = [];
+let particles = [];
+let powerUps = [];
+let floatingTexts = [];
+let allySpells = [];
+let mouseX = 0, mouseY = 0;
+
+const archer = { x: 90, y: 400 };
+
+// Base shot cooldown (frames). Min ~150ms feels good. Upgrades reduce it.
+const BASE_SHOT_COOLDOWN = 18;
+const MIN_CHARGE_FOR_DAMAGE = 0.15; // quick shots do less damage
+
+// ═══════════ ARROW TYPES ═══════════
+const ARROW_TYPES = [
+    { name: 'Iron', icon: '🏹', color: '#c0c0c0', trail: '#a0a0a0', damage: 1.2, key: '1', effect: null, desc: 'Standard arrow' },
+    { name: 'Fire', icon: '🔥', color: '#ff6b00', trail: '#ffaa00', damage: 2, key: '2', effect: 'burn', desc: 'Burns for 3s' },
+    { name: 'Frost', icon: '❄️', color: '#6ba3c7', trail: '#b8dce8', damage: 1.5, key: '3', effect: 'slow', desc: 'Slows enemies 70%' },
+    { name: 'Storm', icon: '⚡', color: '#f0c75e', trail: '#fff', damage: 2.5, key: '4', effect: 'chain', desc: 'Chains to 3 enemies' },
+    { name: 'Bomb', icon: '💥', color: '#c74545', trail: '#ff8800', damage: 5, key: '5', effect: 'aoe', desc: 'Explodes on impact' }
+];
+
+// ═══════════ ENEMY TYPES (more variety, boss tier) ═══════════
+const ENEMY_TYPES = {
+    shade:    { hp: 2, speed: 0.7, size: 22, color: '#3a1a4a', glow: '#6b3a8c', score: 10, gold: 3, name: 'Shade', tier: 1 },
+    wraith:   { hp: 3, speed: 1.1, size: 26, color: '#4a2c5a', glow: '#9b59b6', score: 20, gold: 6, name: 'Wraith', tier: 1 },
+    ghoul:    { hp: 5, speed: 0.55, size: 32, color: '#2a1a1a', glow: '#8b2e2e', score: 35, gold: 12, name: 'Ghoul', tier: 2 },
+    spectre:  { hp: 2, speed: 1.8, size: 18, color: '#6b8ca3', glow: '#b8dce8', score: 25, gold: 8, name: 'Spectre', tier: 2 },
+    fiend:    { hp: 8, speed: 0.5, size: 38, color: '#5a1a1a', glow: '#c74545', score: 60, gold: 20, name: 'Fiend', tier: 3 },
+    revenant: { hp: 12, speed: 0.4, size: 42, color: '#1a0a2a', glow: '#9b59b6', score: 100, gold: 35, name: 'Revenant', tier: 3 },
+    // ═══ BOSSES (each appears at scaling wave intervals) ═══
+    voidlord: { hp: 60, speed: 0.3, size: 65, color: '#0a0518', glow: '#c79bd6', score: 800, gold: 250, name: 'VOID LORD', tier: 4, boss: true, bossType: 'voidlord' },
+    bloodking:{ hp: 120, speed: 0.4, size: 75, color: '#3a0a0a', glow: '#ff3030', score: 1500, gold: 500, name: 'BLOOD KING', tier: 5, boss: true, bossType: 'bloodking' },
+    necrotitan:{ hp: 200, speed: 0.25, size: 90, color: '#1a2a1a', glow: '#5a8c3a', score: 2500, gold: 800, name: 'NECRO TITAN', tier: 6, boss: true, bossType: 'necrotitan' },
+    abysslord:{ hp: 350, speed: 0.35, size: 100, color: '#000', glow: '#9b59b6', score: 4000, gold: 1500, name: 'ABYSS LORD', tier: 7, boss: true, bossType: 'abysslord' },
+    eternaldragon:{ hp: 600, speed: 0.3, size: 120, color: '#1a0000', glow: '#ff6b00', score: 8000, gold: 3000, name: 'ETERNAL DRAGON', tier: 8, boss: true, bossType: 'eternaldragon' }
+};
+
+const BOSS_ORDER = ['voidlord', 'bloodking', 'necrotitan', 'abysslord', 'eternaldragon'];
+
+const SHOP_UPGRADES = [
+    { id: 'damage', icon: '⚔️', name: 'Bowstring Mastery', desc: '+25% damage per level', max: 8, baseCost: 80, costMult: 1.7 },
+    { id: 'chargeSpeed', icon: '💨', name: 'Swift Draw', desc: 'Charge bow 20% faster per level', max: 5, baseCost: 100, costMult: 1.8 },
+    { id: 'fireRate', icon: '🏹', name: 'Quick Hands', desc: 'Reduce shot cooldown 15% per level', max: 5, baseCost: 120, costMult: 1.7 },
+    { id: 'critChance', icon: '💢', name: 'Eagle Eye', desc: '+8% crit chance (2x damage) per level', max: 6, baseCost: 120, costMult: 1.8 },
+    { id: 'maxHealth', icon: '🛡️', name: 'Reinforced Walls', desc: '+25 max HP per level', max: 6, baseCost: 90, costMult: 1.6 },
+    { id: 'regen', icon: '💚', name: 'Stonemason\'s Touch', desc: '+1 HP regen/sec per level', max: 5, baseCost: 150, costMult: 1.9 },
+    { id: 'goldFind', icon: '💰', name: 'Treasure Hunter', desc: '+15% gold from kills per level', max: 5, baseCost: 100, costMult: 1.7 },
+];
+
+const SHOP_ARROWS = [
+    { id: 'fire',      icon: '🔥', name: 'Flame Arrows', desc: 'Bundle of 10 fire arrows', amount: 10, cost: 60 },
+    { id: 'ice',       icon: '❄️', name: 'Frost Arrows', desc: 'Bundle of 10 ice arrows', amount: 10, cost: 60 },
+    { id: 'lightning', icon: '⚡', name: 'Storm Arrows', desc: 'Bundle of 8 lightning arrows', amount: 8, cost: 90 },
+    { id: 'explosive', icon: '💥', name: 'Bomb Arrows', desc: 'Bundle of 5 explosive arrows', amount: 5, cost: 120 },
+];
+
+// ═══════════ SHADOW WARDENS (re-themed allies) ═══════════
+const SHOP_ALLIES = [
+    { id: 'vex',     icon: '🗡️', name: 'Vex', title: 'The Shadeblade', desc: 'Hooded warrior — slashes enemies that approach', cost: 250, role: 'tank' },
+    { id: 'nyra',    icon: '🏹', name: 'Nyra', title: 'The Nightstalker', desc: 'Twin-bow archer — fires twin arrows rapidly', cost: 400, role: 'ranged' },
+    { id: 'morrok',  icon: '🔮', name: 'Morrok', title: 'The Voidmage', desc: 'Hurls dark fireballs every 3 seconds', cost: 600, role: 'mage' },
+    { id: 'thane',   icon: '⚒️', name: 'Thane', title: 'The Soulreaver', desc: 'Cursed axe cleaves all nearby foes', cost: 800, role: 'melee' },
+    { id: 'sylphine',icon: '🌙', name: 'Sylphine', title: 'The Moonpriestess', desc: 'Channels moonlight — heals citadel 2 HP/sec', cost: 1000, role: 'support' },
+    { id: 'zharaak', icon: '⚡', name: 'Zharaak', title: 'The Stormwraith', desc: 'Calls cursed lightning every 4 seconds', cost: 1500, role: 'storm' },
+];
+
+// ═══════════ AUDIO ═══════════
+let audioCtx;
+function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+// Helper: a richer tone with envelope, optional filter
+function playTone(opts) {
+    if (!audioCtx) return;
+    try {
+        const {
+            freq = 440, type = 'sine', dur = 0.1, vol = 0.05,
+            freqEnd = null, filter = null, attack = 0.005, release = null
+        } = opts;
+        
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        if (freqEnd !== null) {
+            osc.frequency.exponentialRampToValueAtTime(Math.max(20, freqEnd), now + dur);
+        }
+        
+        // Soft attack + smooth release (no harsh clicks)
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(vol, now + attack);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        
+        let lastNode = osc;
+        if (filter) {
+            const f = audioCtx.createBiquadFilter();
+            f.type = filter.type || 'lowpass';
+            f.frequency.value = filter.freq || 1200;
+            f.Q.value = filter.q || 1;
+            lastNode.connect(f);
+            lastNode = f;
+        }
+        lastNode.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start(now);
+        osc.stop(now + dur + 0.02);
+    } catch(e) {}
+}
+
+// Noise burst (for impacts, explosions)
+function playNoise(opts) {
+    if (!audioCtx) return;
+    try {
+        const { dur = 0.1, vol = 0.05, filterFreq = 1000, filterType = 'lowpass', sweep = false } = opts;
+        const now = audioCtx.currentTime;
+        const bufSize = audioCtx.sampleRate * dur;
+        const buffer = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        
+        const src = audioCtx.createBufferSource();
+        src.buffer = buffer;
+        
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = filterType;
+        filter.frequency.value = filterFreq;
+        if (sweep) filter.frequency.exponentialRampToValueAtTime(Math.max(60, filterFreq * 0.1), now + dur);
+        filter.Q.value = 1;
+        
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        src.start(now);
+        src.stop(now + dur + 0.02);
+    } catch(e) {}
+}
+
+const sfx = {
+    // Bow draw — soft creaking wood + tension
+    bowDraw: () => {
+        playNoise({ dur: 0.25, vol: 0.025, filterFreq: 400, filterType: 'lowpass' });
+        playTone({ freq: 90, freqEnd: 140, type: 'sine', dur: 0.3, vol: 0.04, attack: 0.05 });
+    },
+    
+    // Bow release — quick snap + whoosh
+    bowRelease: () => {
+        playTone({ freq: 320, freqEnd: 80, type: 'triangle', dur: 0.12, vol: 0.06 });
+        playNoise({ dur: 0.15, vol: 0.04, filterFreq: 2500, filterType: 'bandpass', sweep: true });
+    },
+    
+    // Arrow hits enemy — soft thud
+    hit: () => {
+        playNoise({ dur: 0.08, vol: 0.05, filterFreq: 600, filterType: 'lowpass' });
+        playTone({ freq: 180, freqEnd: 90, type: 'sine', dur: 0.08, vol: 0.04 });
+    },
+    
+    // Critical hit — bright metallic ring
+    crit: () => {
+        playTone({ freq: 1200, freqEnd: 800, type: 'triangle', dur: 0.18, vol: 0.05 });
+        playTone({ freq: 1600, freqEnd: 1100, type: 'sine', dur: 0.2, vol: 0.04 });
+    },
+    
+    // Enemy dies — eerie descending tone
+    enemyDie: () => {
+        playTone({ freq: 280, freqEnd: 60, type: 'sawtooth', dur: 0.35, vol: 0.04,
+                   filter: { type: 'lowpass', freq: 800, q: 2 } });
+        playNoise({ dur: 0.2, vol: 0.025, filterFreq: 400, sweep: true });
+    },
+    
+    // Citadel takes damage — deep bass thud
+    damage: () => {
+        playTone({ freq: 60, freqEnd: 30, type: 'sine', dur: 0.5, vol: 0.1 });
+        playNoise({ dur: 0.3, vol: 0.06, filterFreq: 200, filterType: 'lowpass', sweep: true });
+    },
+    
+    // Power-up collected — chime
+    powerUp: () => {
+        playTone({ freq: 600, type: 'sine', dur: 0.15, vol: 0.05 });
+        setTimeout(() => playTone({ freq: 900, type: 'sine', dur: 0.18, vol: 0.045 }), 60);
+        setTimeout(() => playTone({ freq: 1200, type: 'sine', dur: 0.22, vol: 0.04 }), 130);
+    },
+    
+    // Wave start — horn call
+    wave: () => {
+        playTone({ freq: 220, type: 'sawtooth', dur: 0.4, vol: 0.05,
+                   filter: { type: 'lowpass', freq: 800, q: 3 } });
+        setTimeout(() => playTone({ freq: 330, type: 'sawtooth', dur: 0.5, vol: 0.05,
+                   filter: { type: 'lowpass', freq: 1000, q: 3 } }), 250);
+    },
+    
+    // Boss wave — deep ominous war drum
+    bossWave: () => {
+        playTone({ freq: 55, type: 'sine', dur: 0.8, vol: 0.1,
+                   filter: { type: 'lowpass', freq: 200 } });
+        playNoise({ dur: 0.6, vol: 0.06, filterFreq: 150, sweep: true });
+        setTimeout(() => {
+            playTone({ freq: 45, type: 'sine', dur: 0.7, vol: 0.09 });
+            playNoise({ dur: 0.4, vol: 0.05, filterFreq: 120, sweep: true });
+        }, 400);
+        setTimeout(() => {
+            playTone({ freq: 38, type: 'sine', dur: 1.0, vol: 0.1 });
+        }, 800);
+    },
+    
+    // Combo milestone — pleasant ascending notes
+    combo: () => {
+        playTone({ freq: 800, type: 'triangle', dur: 0.1, vol: 0.04 });
+        setTimeout(() => playTone({ freq: 1000, type: 'triangle', dur: 0.12, vol: 0.04 }), 70);
+    },
+    
+    // Gold pickup — coin clink
+    coin: () => {
+        playTone({ freq: 1400, type: 'sine', dur: 0.08, vol: 0.045 });
+        setTimeout(() => playTone({ freq: 1900, type: 'sine', dur: 0.12, vol: 0.04 }), 50);
+    },
+    
+    // Explosion — deep boom + crackle
+    explosion: () => {
+        playTone({ freq: 80, freqEnd: 30, type: 'sine', dur: 0.4, vol: 0.1 });
+        playNoise({ dur: 0.35, vol: 0.08, filterFreq: 600, sweep: true });
+    },
+    
+    // Lightning — sharp crackle
+    lightning: () => {
+        playNoise({ dur: 0.18, vol: 0.06, filterFreq: 3000, filterType: 'highpass' });
+        playTone({ freq: 1800, freqEnd: 400, type: 'sawtooth', dur: 0.12, vol: 0.04 });
+    },
+    
+    // Mage spell — magical hum
+    spellCast: () => {
+        playTone({ freq: 400, freqEnd: 700, type: 'sine', dur: 0.25, vol: 0.05,
+                   filter: { type: 'lowpass', freq: 1500, q: 4 } });
+        playTone({ freq: 600, freqEnd: 900, type: 'triangle', dur: 0.3, vol: 0.035 });
+    },
+    
+    // Sword slash — clean swoosh
+    swordSlash: () => {
+        playNoise({ dur: 0.12, vol: 0.045, filterFreq: 2500, filterType: 'bandpass', sweep: true });
+        playTone({ freq: 600, freqEnd: 200, type: 'triangle', dur: 0.1, vol: 0.04 });
+    }
+};
+
+// ═══════════ INPUT ═══════════
+canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+});
+
+canvas.addEventListener('mousedown', e => {
+    if (!game.running || game.paused) return;
+    if (game.shotCooldown > 0) return;  // can't even start charging during cooldown
+    initAudio();
+    game.charging = true;
+    game.chargePower = 0;
+    sfx.bowDraw();
+});
+
+canvas.addEventListener('mouseup', e => {
+    if (!game.running || game.paused || !game.charging) return;
+    fireArrow();
+    game.charging = false;
+});
+
+canvas.addEventListener('mouseleave', () => {
+    if (game.charging) { fireArrow(); game.charging = false; }
+});
+
+document.addEventListener('keydown', e => {
+    if (e.key >= '1' && e.key <= '5') {
+        const idx = parseInt(e.key) - 1;
+        const typeKey = Object.keys(game.arrows)[idx];
+        if (idx === 0 || game.arrows[typeKey] > 0) {
+            game.currentArrow = idx;
+            updateArrowSlots();
+        }
+    }
+    if (e.key === 'b' || e.key === 'B') { if (game.running) openShop(); }
+    if (e.key === 'p' || e.key === 'P') togglePause();
+    if (e.key === 'Escape') closeShop();
+});
+
+document.getElementById('pauseBtn').addEventListener('click', togglePause);
+document.getElementById('shopBtn').addEventListener('click', openShop);
+
+function togglePause() {
+    if (!game.running) return;
+    game.paused = !game.paused;
+    document.getElementById('pauseBtn').textContent = game.paused ? '▶ Resume' : '⏸ Pause';
+}
+
+// ═══════════ FIRE ARROW ═══════════
+function fireArrow() {
+    if (game.shotCooldown > 0) return;
+    
+    const bowX = archer.x + 5;
+    const bowY = archer.y - 15;
+    const dx = mouseX - bowX;
+    const dy = mouseY - bowY;
+    const dist = Math.hypot(dx, dy) || 1;
+    const chargePct = Math.min(1, game.chargePower / game.chargeMax);
+    
+    // Quick spam shots are weak; charged shots are strong
+    const power = MIN_CHARGE_FOR_DAMAGE + chargePct * (1 - MIN_CHARGE_FOR_DAMAGE);
+    const speed = 8 + power * 12;
+    
+    const typeKey = Object.keys(game.arrows)[game.currentArrow];
+    const type = ARROW_TYPES[game.currentArrow];
+    
+    if (game.currentArrow > 0) {
+        if (game.arrows[typeKey] <= 0) {
+            game.currentArrow = 0;
+            updateArrowSlots();
+            return;
+        }
+        game.arrows[typeKey]--;
+    }
+    
+    // Damage scales with charge (quick shots do ~20% of full damage)
+    let damage = type.damage * power;
+    damage *= (1 + game.upgrades.damage * 0.25);
+    
+    const critChance = game.upgrades.critChance * 0.08;
+    const isCrit = Math.random() < critChance;
+    if (isCrit) { damage *= 2; sfx.crit(); }
+    
+    arrows.push({
+        x: bowX + 20, y: bowY,
+        vx: (dx/dist) * speed,
+        vy: (dy/dist) * speed,
+        type: game.currentArrow,
+        damage: damage,
+        crit: isCrit,
+        trail: [],
+        alive: true,
+        gravity: 0.18,
+    });
+    
+    // Cooldown reduced by Fire Rate upgrade
+    const cooldownMult = 1 - (game.upgrades.fireRate * 0.15);
+    game.shotCooldown = Math.max(6, Math.floor(BASE_SHOT_COOLDOWN * cooldownMult));
+    
+    game.shots++;
+    sfx.bowRelease();
+    
+    if (game.currentArrow > 0 && game.arrows[typeKey] === 0) {
+        game.currentArrow = 0;
+    }
+    updateArrowSlots();
+    updateHUD();
+}
+
+// ═══════════ UPDATE ═══════════
+function update() {
+    if (!game.running || game.paused) return;
+    
+    // Cooldown ticks down
+    if (game.shotCooldown > 0) {
+        game.shotCooldown--;
+        const cdBar = document.getElementById('cooldownBar');
+        const cdMult = 1 - (game.upgrades.fireRate * 0.15);
+        const cdMax = Math.max(6, Math.floor(BASE_SHOT_COOLDOWN * cdMult));
+        cdBar.classList.add('show');
+        document.getElementById('cooldownFill').style.width = ((cdMax - game.shotCooldown) / cdMax * 100) + '%';
+        if (game.shotCooldown === 0) {
+            setTimeout(() => cdBar.classList.remove('show'), 100);
+        }
+    }
+    
+    if (game.charging && game.chargePower < game.chargeMax) {
+        game.chargePower += 1 + game.upgrades.chargeSpeed * 0.2;
+    }
+    
+    game.lastRegenTick++;
+    if (game.lastRegenTick >= 60 && game.upgrades.regen > 0) {
+        game.health = Math.min(game.maxHealth, game.health + game.upgrades.regen);
+        game.lastRegenTick = 0;
+        updateHUD();
+    }
+    
+    if (game.allies.some(a => a.id === 'sylphine')) {
+        if (game.lastRegenTick % 30 === 0) {
+            game.health = Math.min(game.maxHealth, game.health + 1);
+            updateHUD();
+        }
+    }
+    
+    if (game.combo > 0) {
+        game.comboTimer--;
+        if (game.comboTimer <= 0) {
+            game.combo = 0;
+            document.getElementById('comboIndicator').classList.remove('show');
+        }
+    }
+    
+    arrows.forEach(a => {
+        if (!a.alive) return;
+        a.trail.push({x: a.x, y: a.y});
+        if (a.trail.length > 10) a.trail.shift();
+        a.x += a.vx;
+        a.y += a.vy;
+        a.vy += a.gravity;
+        
+        if (a.x > W + 50 || a.y > H + 50 || a.x < -50) a.alive = false;
+        
+        enemies.forEach(e => {
+            if (!e.alive || !a.alive) return;
+            const dx = e.x - a.x, dy = e.y - a.y;
+            if (Math.hypot(dx, dy) < e.size + 6) {
+                hitEnemy(e, a);
+                a.alive = false;
+            }
+        });
+    });
+    arrows = arrows.filter(a => a.alive);
+    
+    // Ally spells
+    allySpells.forEach(s => {
+        if (!s.alive) return;
+        s.x += s.vx;
+        s.y += s.vy;
+        s.life--;
+        if (s.life <= 0) s.alive = false;
+        
+        enemies.forEach(e => {
+            if (!e.alive || !s.alive) return;
+            const dx = e.x - s.x, dy = e.y - s.y;
+            if (Math.hypot(dx, dy) < e.size + s.radius) {
+                e.hp -= s.damage;
+                spawnParticles(s.x, s.y, s.color, 12);
+                if (s.aoe) {
+                    enemies.forEach(other => {
+                        if (other.alive && other !== e) {
+                            const d = Math.hypot(other.x - s.x, other.y - s.y);
+                            if (d < 70) other.hp -= s.damage * 0.6;
+                        }
+                    });
+                    spawnParticles(s.x, s.y, '#9b59b6', 30);
+                    sfx.explosion();
+                }
+                if (e.hp <= 0) killEnemy(e);
+                s.alive = false;
+            }
+        });
+    });
+    allySpells = allySpells.filter(s => s.alive);
+    
+        // ═══════ ALLY AI — Melee allies now MOVE to engage ═══════
+        game.allies.forEach(ally => {
+        ally.cooldown--;
+        ally.bob = (ally.bob || Math.random() * Math.PI * 2) + 0.05;
+        ally.homeX = ally.homeX || ally.x;  // remember spawn point
+        ally.homeY = ally.homeY || ally.y;
+        
+        if (ally.attackAnim > 0) ally.attackAnim--;
+        
+        const targets = enemies.filter(e => e.alive);
+        let closest = null, minDist = Infinity;
+        targets.forEach(e => {
+            const d = Math.hypot(e.x - ally.x, e.y - ally.y);
+            if (d < minDist) { minDist = d; closest = e; }
+        });
+        
+                                // ═══ MELEE ALLIES ═══
+        const isMelee = (ally.id === 'vex' || ally.id === 'thane');
+        if (isMelee) {
+            const engageRange = ally.id === 'thane' ? 120 : 80;
+            const moveSpeed = ally.id === 'vex' ? 1.8 : 1.2;
+            
+            // Initialize home position on first frame
+            if (ally.homeX === undefined) {
+                ally.homeX = ally.x;
+                ally.homeY = ally.y;
+            }
+            
+            // Apply jump physics (Vex only) — modifies y directly
+            if (ally.jumpVel !== undefined) {
+                ally.y += ally.jumpVel;
+                ally.jumpVel += 0.7; // gravity
+                if (ally.y >= ally.homeY) {
+                    ally.y = ally.homeY;
+                    ally.jumpVel = undefined; // landed
+                }
+            }
+            
+            if (closest && minDist < 500) {
+                const dx = closest.x - ally.x;
+                const horizDist = Math.abs(dx);
+                
+                // Move horizontally toward enemy
+                if (horizDist > engageRange * 0.6) {
+                    ally.x += Math.sign(dx) * moveSpeed;
+                }
+                
+                // Attack if in range (uses Y of homeY for distance, so jumps don't break it)
+                const attackD = Math.hypot(closest.x - ally.x, closest.y - ally.homeY);
+                if (attackD < engageRange + 60 && ally.cooldown <= 0) {
+                    if (ally.id === 'vex') {
+                        // VEX LEAP — only jump if not already airborne
+                        if (ally.jumpVel === undefined) {
+                            const heightDiff = ally.homeY - closest.y;
+                            const jumpStrength = Math.min(14, 5 + heightDiff * 0.06);
+                            ally.jumpVel = -jumpStrength;
+                        }
+                        closest.hp -= 3;
+                        spawnParticles(closest.x, closest.y, '#c79bd6', 14);
+                        for (let i = 0; i < 8; i++) {
+                            particles.push({
+                                x: closest.x + (Math.random() - 0.5) * 20,
+                                y: closest.y + (Math.random() - 0.5) * 20,
+                                vx: (Math.random() - 0.5) * 2,
+                                vy: (Math.random() - 0.5) * 2,
+                                color: '#c79bd6',
+                                life: 18, maxLife: 18, alpha: 1,
+                                size: 1.5, noGravity: true
+                            });
+                        }
+                        ally.cooldown = 32;
+                        ally.attackAnim = 18;
+                        sfx.swordSlash();
+                        if (closest.hp <= 0) killEnemy(closest);
+                    } else if (ally.id === 'thane') {
+                        let hitAny = false;
+                        enemies.forEach(e => {
+                            if (e.alive && Math.hypot(e.x - ally.x, e.y - ally.homeY) < engageRange + 40) {
+                                e.hp -= 5;
+                                spawnParticles(e.x, e.y, '#c74545', 14);
+                                hitAny = true;
+                                if (e.hp <= 0) killEnemy(e);
+                            }
+                        });
+                        if (hitAny) {
+                            ally.cooldown = 55;
+                            ally.attackAnim = 22;
+                            sfx.swordSlash();
+                        }
+                    }
+                }
+            } else {
+                // Retreat home — only walk back when grounded
+                if (ally.jumpVel === undefined) {
+                    const hdx = ally.homeX - ally.x;
+                    if (Math.abs(hdx) > 5) {
+                        ally.x += Math.sign(hdx) * moveSpeed * 0.7;
+                    }
+                }
+            }
+            return;
+        }
+        
+        // ═══ RANGED ALLIES: stay in place, fire from afar ═══
+        if (ally.cooldown <= 0 && closest) {
+            if (ally.id === 'nyra' && minDist < 900) {
+                const dx = closest.x - ally.x, dy = closest.y - ally.y;
+                const d = Math.hypot(dx, dy);
+                for (let i = 0; i < 2; i++) {
+                    allySpells.push({
+                        x: ally.x, y: ally.y - 20 + i * 4,
+                        vx: (dx/d) * 13, vy: (dy/d) * 13,
+                        damage: 2, color: '#9b59b6', radius: 4,
+                        life: 80, alive: true, type: 'arrow'
+                    });
+                }
+                ally.cooldown = 75;
+                ally.attackAnim = 15;
+                playTone(700, 'triangle', 0.05, 0.025);
+            } else if (ally.id === 'morrok' && minDist < 900) {
+                const dx = closest.x - ally.x, dy = closest.y - ally.y;
+                const d = Math.hypot(dx, dy);
+                allySpells.push({
+                    x: ally.x, y: ally.y - 30,
+                    vx: (dx/d) * 8, vy: (dy/d) * 8,
+                    damage: 4, color: '#9b59b6', radius: 10,
+                    life: 120, alive: true, type: 'darkfire', aoe: true
+                });
+                ally.cooldown = 140;
+                ally.attackAnim = 20;
+                sfx.spellCast();
+            } else if (ally.id === 'zharaak' && minDist < 1000) {
+                closest.hp -= 8;
+                spawnLightningBolt(closest.x, 0, closest.x, closest.y);
+                if (closest.hp <= 0) killEnemy(closest);
+                ally.cooldown = 180;
+                ally.attackAnim = 25;
+                sfx.lightning();
+            }
+        }
+    });
+    
+    enemies.forEach(e => {
+        if (!e.alive) return;
+        
+        const speedMod = e.slowed > 0 ? 0.3 : 1;
+        if (e.slowed > 0) e.slowed--;
+        
+        // Enemies target whatever they encounter first: ally or wall
+        let target = null, minDist = Infinity;
+        game.allies.forEach(a => {
+            const d = Math.hypot(a.x - e.x, a.y - e.y);
+            if (d < minDist && a.x > CASTLE.wallRightX) {
+                minDist = d;
+                target = { x: a.x, y: a.y - 10, type: 'ally', ref: a };
+            }
+        });
+        
+        // If no ally close enough, target wall
+        if (!target || minDist > 150) {
+            target = { x: CASTLE.wallRightX - 10, y: e.baseY, type: 'wall' };
+        }
+        
+        const dx = target.x - e.x;
+        const dy = target.y - e.y;
+        const dist = Math.hypot(dx, dy);
+        
+        // Attack target if close
+        if (target.type === 'ally' && dist < 35) {
+            // Enemy hits ally
+            e.attackCooldown = (e.attackCooldown || 0) - 1;
+            if (e.attackCooldown <= 0) {
+                target.ref.hp -= e.maxHp * 0.5;
+                spawnParticles(target.ref.x, target.ref.y, '#8b2e2e', 8);
+                e.attackCooldown = 40;
+                if (target.ref.hp <= 0) {
+                    game.allies = game.allies.filter(a => a !== target.ref);
+                    spawnParticles(target.ref.x, target.ref.y, '#9b59b6', 30);
+                    showPowerNotif(`${target.ref.name} has fallen!`);
+                }
+            }
+        } else if (dist > 5) {
+            e.x += (dx/dist) * e.speed * speedMod;
+            e.y += (dy/dist) * e.speed * speedMod * 0.4;
+        }
+        
+        e.bob = (e.bob || Math.random() * Math.PI * 2) + 0.06;
+        
+        if (e.burning > 0) {
+            e.burning--;
+            if (e.burning % 12 === 0) {
+                e.hp -= 0.6;
+                spawnParticles(e.x, e.y, '#ff6b00', 3);
+            }
+            if (e.hp <= 0) killEnemy(e);
+        }
+        
+        // Reached the wall (only if no ally blocked it)
+        if (e.x < CASTLE.wallRightX + 10) {
+            game.health -= Math.ceil(e.maxHp * 2.5);
+            damageFlash();
+            sfx.damage();
+            spawnParticles(e.x, e.y, '#8b2e2e', 20);
+            e.alive = false;
+            if (game.health <= 0) {
+                game.health = 0;
+                endGame();
+            }
+            updateHUD();
+        }
+    });
+    enemies = enemies.filter(e => e.alive);
+    
+    particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (!p.noGravity) p.vy += 0.12;
+        p.life--;
+        p.alpha = p.life / p.maxLife;
+    });
+    particles = particles.filter(p => p.life > 0);
+    
+    floatingTexts.forEach(t => {
+        t.y -= 1.2;
+        t.life--;
+        t.alpha = Math.min(1, t.life / 30);
+    });
+    floatingTexts = floatingTexts.filter(t => t.life > 0);
+    
+    // Power-ups: drift toward archer and auto-collect
+    powerUps.forEach(p => {
+        p.life--;
+        p.rotation += 0.1;
+        // Move toward archer
+        const dx = archer.x - p.x;
+        const dy = archer.y - p.y;
+        const d = Math.hypot(dx, dy) || 1;
+        const pullSpeed = 6 + (60 - Math.min(60, p.life)) * 0.2;
+        p.x += (dx / d) * pullSpeed;
+        p.y += (dy / d) * pullSpeed;
+        
+        if (d < 30 || p.life <= 0) {
+            collectPowerUp(p);
+            p.alive = false;
+        }
+    });
+    powerUps = powerUps.filter(p => p.alive);
+    
+    if (!game.waveInProgress && game.waveDelay <= 0) {
+        startWave();
+    } else if (game.waveDelay > 0) {
+        game.waveDelay--;
+        if (game.waveDelay === 1) document.getElementById('shopBtn').classList.remove('pulse');
+    }
+    
+    if (game.waveInProgress) {
+        game.spawnTimer--;
+        if (game.spawnTimer <= 0 && game.waveEnemiesLeft > 0) {
+            spawnEnemy();
+            game.waveEnemiesLeft--;
+            game.spawnTimer = Math.max(25, 80 - game.wave * 2);
+        }
+        if (game.waveEnemiesLeft <= 0 && enemies.length === 0) {
+            completeWave();
+        }
+    }
+}
+
+function hitEnemy(e, a) {
+    const type = ARROW_TYPES[a.type];
+    e.hp -= a.damage;
+    game.hits++;
+    sfx.hit();
+    
+    spawnParticles(e.x, e.y, type.color, 10);
+    floatingTexts.push({
+        x: e.x, y: e.y - 20, 
+        text: a.crit ? `CRIT! -${Math.floor(a.damage)}` : `-${Math.floor(a.damage)}`,
+        color: a.crit ? '#ff6b00' : type.color, 
+        life: 40, maxLife: 40, alpha: 1, 
+        size: a.crit ? 22 : 16
+    });
+    
+    if (type.effect === 'burn') e.burning = 180;
+    if (type.effect === 'slow') e.slowed = 150;
+    if (type.effect === 'aoe') {
+        spawnParticles(e.x, e.y, '#ff6b00', 40);
+        spawnParticles(e.x, e.y, '#fff', 15);
+        sfx.explosion();
+        enemies.forEach(other => {
+            if (other.alive && other !== e) {
+                const d = Math.hypot(other.x - e.x, other.y - e.y);
+                if (d < 100) {
+                    other.hp -= a.damage * 0.7;
+                    spawnParticles(other.x, other.y, '#c74545', 8);
+                    if (other.hp <= 0) killEnemy(other);
+                }
+            }
+        });
+    }
+    if (type.effect === 'chain') {
+        sfx.lightning();
+        let prev = e;
+        for (let i = 0; i < 3; i++) {
+            const nearby = enemies.filter(o => o.alive && o !== prev &&
+                Math.hypot(o.x - prev.x, o.y - prev.y) < 180);
+            if (nearby.length === 0) break;
+            const target = nearby[0];
+            target.hp -= a.damage * 0.7;
+            spawnLightningBolt(prev.x, prev.y, target.x, target.y);
+            if (target.hp <= 0) killEnemy(target);
+            prev = target;
+        }
+    }
+    
+    if (e.hp <= 0) killEnemy(e);
+    updateHUD();
+}
+
+function killEnemy(e) {
+    e.alive = false;
+    game.kills++;
+    game.combo++;
+    game.comboTimer = 120;
+    
+    const comboMult = 1 + (game.combo - 1) * 0.1;
+    const points = Math.floor(e.score * comboMult);
+    game.score += points;
+    
+    const goldMult = 1 + game.upgrades.goldFind * 0.15;
+    const goldEarned = Math.floor(e.gold * goldMult);
+    game.gold += goldEarned;
+    
+    sfx.enemyDie();
+    if (game.combo % 5 === 0 && game.combo >= 5) sfx.combo();
+    if (game.combo >= 2) {
+        document.getElementById('comboIndicator').classList.add('show');
+        document.getElementById('comboNum').textContent = game.combo;
+    }
+    
+    spawnParticles(e.x, e.y, e.color, 25);
+    spawnParticles(e.x, e.y, e.glow, 15);
+    spawnParticles(e.x, e.y, '#fff', 8);
+    floatingTexts.push({
+        x: e.x - 15, y: e.y, text: `+${points}`,
+        color: '#f0c75e', life: 60, maxLife: 60, alpha: 1, size: 18
+    });
+    floatingTexts.push({
+        x: e.x + 20, y: e.y, text: `+${goldEarned}🪙`,
+        color: '#ffd700', life: 70, maxLife: 70, alpha: 1, size: 16
+    });
+    
+    if (Math.random() < 0.15 + (e.boss ? 0.6 : 0)) {
+        dropPowerUp(e.x, e.y);
+    }
+    
+    updateHUD();
+}
+
+function dropPowerUp(x, y) {
+    const types = [
+        { type: 'fire', icon: '🔥', count: 4, color: '#ff6b00' },
+        { type: 'ice', icon: '❄️', count: 4, color: '#6ba3c7' },
+        { type: 'lightning', icon: '⚡', count: 3, color: '#f0c75e' },
+        { type: 'explosive', icon: '💥', count: 2, color: '#c74545' },
+        { type: 'health', icon: '❤️', count: 20, color: '#8b2e2e' },
+        { type: 'gold', icon: '🪙', count: 30, color: '#ffd700' }
+    ];
+    const p = types[Math.floor(Math.random() * types.length)];
+    powerUps.push({
+        x, y: y - 10, alive: true,
+        type: p.type, icon: p.icon, count: p.count, color: p.color,
+        rotation: 0,
+        life: 180  // ~3 sec then auto-collected anyway
+    });
+}
+
+function collectPowerUp(p) {
+    sfx.powerUp();
+    if (p.type === 'health') {
+        game.health = Math.min(game.maxHealth, game.health + p.count);
+        showPowerNotif(`+${p.count} HP RESTORED!`);
+    } else if (p.type === 'gold') {
+        game.gold += p.count;
+        sfx.coin();
+        showPowerNotif(`+${p.count} 🪙 GOLD!`);
+    } else {
+        game.arrows[p.type] += p.count;
+        showPowerNotif(`+${p.count} ${p.type.toUpperCase()} ARROWS!`);
+    }
+    spawnParticles(p.x, p.y, p.color, 30);
+    updateArrowSlots();
+    updateHUD();
+}
+
+function showPowerNotif(text) {
+    const div = document.createElement('div');
+    div.className = 'power-notif';
+    div.textContent = text;
+    document.getElementById('gameContainer').appendChild(div);
+    setTimeout(() => div.remove(), 1800);
+}
+
+// ═══════════ WAVES & BOSSES ═══════════
+function startWave() {
+    game.waveInProgress = true;
+    const baseEnemies = 6 + Math.floor(game.wave * 1.8);
+    game.waveEnemiesLeft = baseEnemies;
+    game.spawnTimer = 60;
+    
+    if (game.wave % 5 === 0) {
+        sfx.bossWave();
+        const bossIdx = Math.min(Math.floor(game.wave / 5) - 1, BOSS_ORDER.length - 1);
+        const bossName = ENEMY_TYPES[BOSS_ORDER[bossIdx]].name;
+        showBanner(`⚠️ ${bossName} ⚠️`, 'BOSS APPROACHES', true);
+    } else {
+        sfx.wave();
+        showBanner(`WAVE ${game.wave}`, getWaveSubtitle(game.wave));
+    }
+    document.getElementById('waveSubLabel').textContent = 'In Progress';
+}
+
+function getWaveSubtitle(w) {
+    if (w === 1) return 'SHADOWS APPROACH';
+    if (w % 3 === 0) return 'THE HORDE GROWS';
+    const subs = ['THE DARK STIRS', 'BEWARE!', 'STAND FIRM', 'NO MERCY', 'TO ARMS!'];
+    return subs[w % subs.length];
+}
+
+function completeWave() {
+    game.waveInProgress = false;
+    game.waveDelay = 240;
+    game.wave++;
+    
+    const bonus = 150 * (game.wave - 1);
+    const goldBonus = 50 + (game.wave - 1) * 15;
+    game.score += bonus;
+    game.gold += goldBonus;
+    
+    showPowerNotif(`WAVE CLEARED! +${bonus} SCORE • +${goldBonus} 🪙`);
+    document.getElementById('shopBtn').classList.add('pulse');
+    document.getElementById('waveSubLabel').textContent = 'Visit Armory!';
+    
+    game.health = Math.min(game.maxHealth, game.health + 15);
+    
+    // Revive fallen allies between waves to half HP
+    game.allies.forEach(a => {
+        if (a.hp < a.maxHp) a.hp = Math.min(a.maxHp, a.hp + a.maxHp * 0.5);
+    });
+    
+    updateHUD();
+    updateArrowSlots();
+}
+
+function spawnEnemy() {
+    let type;
+    const w = game.wave;
+    
+    // Every 5 waves the last enemy is a boss (escalating tier)
+    if (w % 5 === 0 && game.waveEnemiesLeft === 1) {
+        const bossIdx = Math.min(Math.floor(w / 5) - 1, BOSS_ORDER.length - 1);
+        type = BOSS_ORDER[bossIdx];
+    } else if (w >= 10 && Math.random() < 0.12) type = 'revenant';
+    else if (w >= 7 && Math.random() < 0.18) type = 'fiend';
+    else if (w >= 5 && Math.random() < 0.22) type = 'spectre';
+    else if (w >= 3 && Math.random() < 0.25) type = 'ghoul';
+    else if (w >= 2 && Math.random() < 0.35) type = 'wraith';
+    else type = 'shade';
+    
+    const t = ENEMY_TYPES[type];
+    const y = H - 200 - Math.random() * 200;
+    const hp = t.hp + Math.floor(w / 3) * (t.boss ? 8 : 1);
+    enemies.push({
+        x: W + 30, y: y, baseY: y,
+        bob: Math.random() * Math.PI * 2,
+        hp: hp, maxHp: hp,
+        speed: t.speed, size: t.size,
+        color: t.color, glow: t.glow,
+        score: t.score, gold: t.gold,
+        type: type, name: t.name, tier: t.tier, boss: t.boss,
+        bossType: t.bossType,
+        alive: true, burning: 0, slowed: 0,
+        attackCooldown: 0
+    });
+}
+
+function spawnParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 5 + 1;
+        particles.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 1.5,
+            color,
+            life: 30 + Math.random() * 25,
+            maxLife: 55, alpha: 1,
+            size: Math.random() * 3 + 1.5
+        });
+    }
+}
+
+function spawnLightningBolt(x1, y1, x2, y2) {
+    const segments = 8;
+    let prevX = x1, prevY = y1;
+    for (let i = 1; i <= segments; i++) {
+        const t = i / segments;
+        const nx = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 25;
+        const ny = y1 + (y2 - y1) * t + (Math.random() - 0.5) * 25;
+        particles.push({
+            x: prevX, y: prevY,
+            vx: 0, vy: 0,
+            color: '#f0c75e', life: 12, maxLife: 12, alpha: 1,
+            size: 3, lineEnd: {x: nx, y: ny}, noGravity: true
+        });
+        particles.push({
+            x: prevX, y: prevY,
+            vx: 0, vy: 0,
+            color: '#fff', life: 8, maxLife: 8, alpha: 1,
+            size: 1.5, lineEnd: {x: nx, y: ny}, noGravity: true
+        });
+        prevX = nx; prevY = ny;
+    }
+}
+
+// ═══════════ DRAW ═══════════
+let mistOffset = 0;
+let starList = [];
+
+function initStars() {
+    starList = [];
+    for (let i = 0; i < 150; i++) {
+        starList.push({
+            x: Math.random() * W,
+            y: Math.random() * H * 0.6,
+            size: Math.random() * 1.8 + 0.4,
+            twinkle: Math.random() * Math.PI * 2,
+            speed: Math.random() * 0.02 + 0.01
+        });
+    }
+}
+
+function draw() {
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#0a0518');
+    grad.addColorStop(0.3, '#1a0a2a');
+    grad.addColorStop(0.6, '#2a1424');
+    grad.addColorStop(0.85, '#3a1a1a');
+    grad.addColorStop(1, '#1a0a08');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    
+    starList.forEach(s => {
+        s.twinkle += s.speed;
+        const alpha = 0.4 + Math.sin(s.twinkle) * 0.4;
+        ctx.fillStyle = `rgba(240, 230, 210, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+        if (s.size > 1.5) {
+            ctx.fillStyle = `rgba(240, 230, 210, ${alpha * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size * 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
+    
+    const moonX = W - 220, moonY = 110;
+    const moonGrad = ctx.createRadialGradient(moonX, moonY, 0, moonX, moonY, 100);
+    moonGrad.addColorStop(0, 'rgba(255, 200, 150, 0.95)');
+    moonGrad.addColorStop(0.5, 'rgba(200, 100, 80, 0.4)');
+    moonGrad.addColorStop(1, 'rgba(139, 46, 46, 0)');
+    ctx.fillStyle = moonGrad;
+    ctx.fillRect(moonX - 120, moonY - 120, 240, 240);
+    ctx.fillStyle = '#f0d8b8';
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 50, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(180, 140, 100, 0.4)';
+    ctx.beginPath();
+    ctx.arc(moonX - 14, moonY - 9, 8, 0, Math.PI * 2);
+    ctx.arc(moonX + 12, moonY + 14, 6, 0, Math.PI * 2);
+    ctx.arc(moonX + 5, moonY - 20, 5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    drawMountainLayer(H - 300, '#1a0e1a', 90, 0.6);
+    drawMountainLayer(H - 230, '#0f0810', 70, 0.4);
+    drawForest();
+    
+    mistOffset += 0.3;
+    for (let i = 0; i < 3; i++) {
+        ctx.fillStyle = `rgba(80, 60, 90, ${0.15 - i * 0.03})`;
+        ctx.beginPath();
+        ctx.moveTo(0, H - 150 + i * 20);
+        for (let x = 0; x <= W; x += 30) {
+            ctx.lineTo(x, H - 150 + i * 20 + Math.sin((x + mistOffset + i * 100) * 0.01) * 15);
+        }
+        ctx.lineTo(W, H);
+        ctx.lineTo(0, H);
+        ctx.fill();
+    }
+    
+    const groundGrad = ctx.createLinearGradient(0, H - 100, 0, H);
+    groundGrad.addColorStop(0, '#2a1810');
+    groundGrad.addColorStop(0.5, '#1a0e08');
+    groundGrad.addColorStop(1, '#0a0604');
+    ctx.fillStyle = groundGrad;
+    ctx.fillRect(0, H - 100, W, 100);
+    
+    drawCastle();
+    
+    // Sort all entities by Y for proper layering
+    const allEntities = [
+        ...game.allies.map(a => ({ ...a, _type: 'ally' })),
+        ...enemies.map(e => ({ ...e, _type: 'enemy' }))
+    ];
+    allEntities.sort((a, b) => (a.y || 0) - (b.y || 0));
+    allEntities.forEach(ent => {
+        if (ent._type === 'ally') {
+            const realAlly = game.allies.find(a => a.id === ent.id);
+            if (realAlly) drawAlly(realAlly);
+        } else {
+            const realEnemy = enemies.find(e => e === ent || (e.x === ent.x && e.y === ent.y));
+            if (realEnemy) drawEnemy(realEnemy);
+        }
+    });
+    
+    drawArcher();
+    
+    powerUps.forEach(p => drawPowerUp(p));
+    arrows.forEach(a => drawArrow(a));
+    allySpells.forEach(s => drawAllySpell(s));
+    
+    particles.forEach(p => {
+        ctx.globalAlpha = p.alpha;
+        if (p.lineEnd) {
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = p.size;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = p.color;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.lineEnd.x, p.lineEnd.y);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        } else {
+            ctx.fillStyle = p.color;
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    });
+    ctx.globalAlpha = 1;
+    
+    floatingTexts.forEach(t => {
+        ctx.globalAlpha = t.alpha;
+        ctx.fillStyle = t.color;
+        ctx.font = `bold ${t.size}px MedievalSharp, serif`;
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = '#000';
+        ctx.fillText(t.text, t.x, t.y);
+        ctx.shadowBlur = 0;
+    });
+    ctx.globalAlpha = 1;
+    
+    if (game.running && !game.paused) {
+        drawAimIndicator();
+    }
+}
+
+function drawMountainLayer(baseY, color, amplitude, alpha) {
+    ctx.fillStyle = color;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    ctx.lineTo(0, baseY);
+    for (let x = 0; x <= W; x += 80) {
+        const y = baseY - Math.abs(Math.sin(x * 0.008) * amplitude) - Math.abs(Math.cos(x * 0.015) * amplitude * 0.5);
+        ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+}
+
+function drawForest() {
+    const startX = CASTLE.wallRightX + 200;
+    for (let i = 0; i < 25; i++) {
+        const x = startX + i * 75 + Math.sin(i * 1.3) * 30;
+        if (x > W) break;
+        const y = H - 130;
+        const h = 70 + Math.sin(i * 2.1) * 25;
+        
+        ctx.strokeStyle = '#0f0810';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.sin(i) * 6, y - h);
+        ctx.stroke();
+        
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.sin(i) * 4, y - h * 0.6);
+        ctx.lineTo(x - 14, y - h * 0.85);
+        ctx.moveTo(x + Math.sin(i) * 4, y - h * 0.7);
+        ctx.lineTo(x + 16, y - h * 0.9);
+        ctx.moveTo(x + Math.sin(i) * 5, y - h * 0.4);
+        ctx.lineTo(x - 11, y - h * 0.5);
+        ctx.moveTo(x + Math.sin(i) * 5, y - h * 0.45);
+        ctx.lineTo(x + 13, y - h * 0.55);
+        ctx.stroke();
+    }
+}
+
+function drawCastle() {
+    const wallTop = CASTLE.wallWalkY;
+    const crenTop = wallTop - 22;
+    const wallRight = CASTLE.wallRightX;
+    
+    const wallGrad = ctx.createLinearGradient(0, wallTop, 0, H);
+    wallGrad.addColorStop(0, '#6a5840');
+    wallGrad.addColorStop(0.5, '#4a3a20');
+    wallGrad.addColorStop(1, '#2a1e10');
+    ctx.fillStyle = wallGrad;
+    ctx.fillRect(0, wallTop, wallRight, H - wallTop);
+    
+    ctx.strokeStyle = 'rgba(20, 12, 6, 0.6)';
+    ctx.lineWidth = 1;
+    for (let y = wallTop; y < H; y += 26) {
+        const offset = ((y - wallTop) / 26) % 2 === 0 ? 0 : 22;
+        for (let x = -offset; x < wallRight; x += 44) {
+            ctx.strokeRect(x, y, 44, 26);
+        }
+    }
+    
+    ctx.fillStyle = 'rgba(140, 110, 80, 0.15)';
+    for (let i = 0; i < 30; i++) {
+        const bx = (i * 73) % wallRight;
+        const by = wallTop + ((i * 37) % (H - wallTop));
+        ctx.fillRect(bx, by, 6, 3);
+    }
+    
+    const walkGrad = ctx.createLinearGradient(0, wallTop - 2, 0, wallTop + 8);
+    walkGrad.addColorStop(0, '#8a7050');
+    walkGrad.addColorStop(1, '#5a4830');
+    ctx.fillStyle = walkGrad;
+    ctx.fillRect(0, wallTop - 2, wallRight, 10);
+    
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, wallTop + 8);
+    ctx.lineTo(wallRight, wallTop + 8);
+    ctx.stroke();
+    
+    ctx.fillStyle = '#4a3a20';
+    for (let x = 0; x < wallRight; x += 36) {
+        ctx.fillRect(x, crenTop, 22, 22);
+    }
+    
+    ctx.fillStyle = '#6a5840';
+    for (let x = 0; x < wallRight; x += 36) {
+        ctx.fillRect(x, crenTop, 22, 4);
+    }
+    
+    ctx.strokeStyle = 'rgba(20, 12, 6, 0.7)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < wallRight; x += 36) {
+        ctx.strokeRect(x, crenTop, 22, 22);
+    }
+    
+    ctx.fillStyle = '#0a0604';
+    for (let i = 0; i < 6; i++) {
+        const sx = 30 + i * 60;
+        if (sx > wallRight - 20) break;
+        const sy = wallTop + 50;
+        ctx.fillRect(sx, sy, 4, 16);
+        ctx.fillStyle = 'rgba(255, 140, 0, 0.4)';
+        ctx.fillRect(sx + 1, sy + 4, 2, 8);
+        ctx.fillStyle = '#0a0604';
+    }
+    
+    const towerX = wallRight - 70;
+    const towerW = 80;
+    const towerTop = CASTLE.towerTopY;
+    
+    const towerGrad = ctx.createLinearGradient(towerX, 0, towerX + towerW, 0);
+    towerGrad.addColorStop(0, '#5a4830');
+    towerGrad.addColorStop(0.5, '#6a5840');
+    towerGrad.addColorStop(1, '#3a2a18');
+    ctx.fillStyle = towerGrad;
+    ctx.fillRect(towerX, towerTop, towerW, H - towerTop);
+    
+    ctx.strokeStyle = 'rgba(20, 12, 6, 0.7)';
+    ctx.lineWidth = 1;
+    for (let y = towerTop; y < H; y += 26) {
+        const offset = ((y - towerTop) / 26) % 2 === 0 ? 0 : 22;
+        for (let x = towerX - offset; x < towerX + towerW; x += 44) {
+            ctx.strokeRect(x, y, 44, 26);
+        }
+    }
+    
+    ctx.fillStyle = '#4a3a20';
+    for (let x = towerX; x < towerX + towerW; x += 22) {
+        ctx.fillRect(x, towerTop - 22, 14, 22);
+    }
+    ctx.fillStyle = '#6a5840';
+    for (let x = towerX; x < towerX + towerW; x += 22) {
+        ctx.fillRect(x, towerTop - 22, 14, 4);
+    }
+    
+    ctx.fillStyle = '#6a1a1a';
+    ctx.beginPath();
+    ctx.moveTo(towerX - 15, towerTop - 18);
+    ctx.lineTo(towerX + towerW / 2, towerTop - 95);
+    ctx.lineTo(towerX + towerW + 15, towerTop - 18);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = '#4a0a0a';
+    ctx.beginPath();
+    ctx.moveTo(towerX + towerW / 2, towerTop - 95);
+    ctx.lineTo(towerX + towerW + 15, towerTop - 18);
+    ctx.lineTo(towerX + towerW / 2, towerTop - 18);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.strokeStyle = '#2a0505';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+        ctx.beginPath();
+        ctx.moveTo(towerX - 15 + i * 10, towerTop - 18 - i * 19);
+        ctx.lineTo(towerX + towerW + 15 - i * 10, towerTop - 18 - i * 19);
+        ctx.stroke();
+    }
+    
+    ctx.fillStyle = '#3a2a18';
+    ctx.fillRect(towerX + towerW / 2 - 1, towerTop - 130, 2, 35);
+    
+    const flagWave = Math.sin(Date.now() / 300) * 3;
+    ctx.fillStyle = '#8b2e2e';
+    ctx.beginPath();
+    ctx.moveTo(towerX + towerW / 2 + 1, towerTop - 128);
+    ctx.lineTo(towerX + towerW / 2 + 26 + flagWave, towerTop - 122);
+    ctx.lineTo(towerX + towerW / 2 + 22 + flagWave, towerTop - 115);
+    ctx.lineTo(towerX + towerW / 2 + 26 + flagWave, towerTop - 108);
+    ctx.lineTo(towerX + towerW / 2 + 1, towerTop - 105);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = '#d4af6e';
+    ctx.font = 'bold 10px serif';
+    ctx.fillText('⚔', towerX + towerW / 2 + 10 + flagWave, towerTop - 115);
+    
+    const winY = towerTop + 60;
+    const winGrad = ctx.createRadialGradient(towerX + towerW/2, winY + 12, 0, towerX + towerW/2, winY + 12, 30);
+    winGrad.addColorStop(0, 'rgba(255, 180, 60, 0.95)');
+    winGrad.addColorStop(1, 'rgba(255, 140, 0, 0.1)');
+    ctx.fillStyle = winGrad;
+    ctx.fillRect(towerX + towerW/2 - 25, winY - 8, 50, 40);
+    
+    ctx.fillStyle = '#1a0e08';
+    ctx.fillRect(towerX + towerW/2 - 9, winY, 18, 26);
+    const archGlow = ctx.createRadialGradient(towerX + towerW/2, winY + 8, 0, towerX + towerW/2, winY + 8, 16);
+    archGlow.addColorStop(0, '#ffcc44');
+    archGlow.addColorStop(1, '#ff6b00');
+    ctx.fillStyle = archGlow;
+    ctx.fillRect(towerX + towerW/2 - 7, winY + 2, 14, 22);
+    
+    ctx.strokeStyle = '#1a0e08';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(towerX + towerW/2, winY + 2); ctx.lineTo(towerX + towerW/2, winY + 24);
+    ctx.moveTo(towerX + towerW/2 - 7, winY + 13); ctx.lineTo(towerX + towerW/2 + 7, winY + 13);
+    ctx.stroke();
+    
+    const winY2 = towerTop + 160;
+    const winGrad2 = ctx.createRadialGradient(towerX + towerW/2, winY2 + 12, 0, towerX + towerW/2, winY2 + 12, 30);
+    winGrad2.addColorStop(0, 'rgba(255, 180, 60, 0.95)');
+    winGrad2.addColorStop(1, 'rgba(255, 140, 0, 0.1)');
+    ctx.fillStyle = winGrad2;
+    ctx.fillRect(towerX + towerW/2 - 25, winY2 - 8, 50, 40);
+    
+    ctx.fillStyle = '#1a0e08';
+    ctx.fillRect(towerX + towerW/2 - 9, winY2, 18, 26);
+    const archGlow2 = ctx.createRadialGradient(towerX + towerW/2, winY2 + 8, 0, towerX + towerW/2, winY2 + 8, 16);
+    archGlow2.addColorStop(0, '#ffcc44');
+    archGlow2.addColorStop(1, '#ff6b00');
+    ctx.fillStyle = archGlow2;
+    ctx.fillRect(towerX + towerW/2 - 7, winY2 + 2, 14, 22);
+    
+    ctx.strokeStyle = '#1a0e08';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(towerX + towerW/2, winY2 + 2); ctx.lineTo(towerX + towerW/2, winY2 + 24);
+    ctx.moveTo(towerX + towerW/2 - 7, winY2 + 13); ctx.lineTo(towerX + towerW/2 + 7, winY2 + 13);
+    ctx.stroke();
+    
+    drawTorch(wallRight * 0.25, wallTop + 30);
+    drawTorch(wallRight * 0.6, wallTop + 30);
+    drawTorch(towerX + 10, towerTop + 30);
+    drawTorch(towerX + towerW - 18, towerTop + 30);
+    
+    const bannerX = wallRight * 0.4;
+    const bannerY = wallTop + 35;
+    ctx.fillStyle = '#1a0e08';
+    ctx.fillRect(bannerX - 2, bannerY - 8, 4, 12);
+    ctx.fillStyle = '#8b2e2e';
+    ctx.beginPath();
+    ctx.moveTo(bannerX - 18, bannerY);
+    ctx.lineTo(bannerX + 18, bannerY);
+    ctx.lineTo(bannerX + 18, bannerY + 50);
+    ctx.lineTo(bannerX, bannerY + 60);
+    ctx.lineTo(bannerX - 18, bannerY + 50);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#5a1a1a';
+    ctx.beginPath();
+    ctx.moveTo(bannerX, bannerY);
+    ctx.lineTo(bannerX + 18, bannerY);
+    ctx.lineTo(bannerX + 18, bannerY + 50);
+    ctx.lineTo(bannerX, bannerY + 60);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#d4af6e';
+    ctx.font = 'bold 22px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚔', bannerX, bannerY + 32);
+}
+
+function drawTorch(x, y) {
+    ctx.fillStyle = '#1a0e08';
+    ctx.fillRect(x - 3, y, 6, 8);
+    ctx.fillStyle = '#3a2a18';
+    ctx.fillRect(x - 2, y - 12, 4, 12);
+    
+    const flicker = 0.7 + Math.sin(Date.now() / 100) * 0.3;
+    const glow = ctx.createRadialGradient(x, y - 14, 0, x, y - 14, 40);
+    glow.addColorStop(0, `rgba(255, 200, 80, ${flicker * 0.8})`);
+    glow.addColorStop(0.5, `rgba(255, 140, 0, ${flicker * 0.4})`);
+    glow.addColorStop(1, 'rgba(255, 100, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(x, y - 14, 40, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#ff6b00';
+    ctx.beginPath();
+    ctx.ellipse(x, y - 16, 5, 9 + Math.sin(Date.now() / 80) * 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#ffcc44';
+    ctx.beginPath();
+    ctx.ellipse(x, y - 17, 3, 6 + Math.sin(Date.now() / 80) * 1.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#ffffaa';
+    ctx.beginPath();
+    ctx.ellipse(x, y - 18, 1.5, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawArcher() {
+    const x = archer.x, y = archer.y;
+    const bowY = y - 15;
+    const angle = Math.atan2(mouseY - bowY, mouseX - (x + 5));
+    
+    ctx.fillStyle = '#1a0510';
+    ctx.beginPath();
+    ctx.moveTo(x - 9, y - 12);
+    ctx.quadraticCurveTo(x - 22, y + 5, x - 16, y + 22);
+    ctx.quadraticCurveTo(x - 4, y + 15, x, y - 5);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = '#3a0a20';
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y - 10);
+    ctx.quadraticCurveTo(x - 16, y, x - 11, y + 12);
+    ctx.quadraticCurveTo(x - 4, y + 8, x, y - 2);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = '#1a0e08';
+    ctx.fillRect(x - 5, y - 5, 4, 13);
+    ctx.fillRect(x + 1, y - 5, 4, 13);
+    
+    ctx.fillStyle = '#3a1a08';
+    ctx.fillRect(x - 7, y + 6, 7, 4);
+    ctx.fillRect(x, y + 6, 7, 4);
+    
+    ctx.fillStyle = '#2a1a10';
+    ctx.beginPath();
+    ctx.ellipse(x, y - 13, 11, 13, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = 'rgba(130, 130, 140, 0.4)';
+    for (let py = y - 22; py < y; py += 3) {
+        for (let px = x - 8; px < x + 8; px += 3) {
+            ctx.beginPath();
+            ctx.arc(px + (py % 6 ? 1.5 : 0), py, 1, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    
+    ctx.fillStyle = '#5a3a18';
+    ctx.fillRect(x - 11, y - 7, 22, 4);
+    ctx.fillStyle = '#d4af6e';
+    ctx.fillRect(x - 2, y - 7, 4, 4);
+    
+    ctx.fillStyle = '#3a1a08';
+    ctx.fillRect(x + 6, y - 30, 6, 18);
+    ctx.strokeStyle = '#1a0e08';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 6, y - 30, 6, 18);
+    for (let i = 0; i < 4; i++) {
+        ctx.strokeStyle = ARROW_TYPES[Math.min(i + 1, 4)].color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x + 7 + i, y - 30);
+        ctx.lineTo(x + 7 + i, y - 36);
+        ctx.stroke();
+        ctx.fillStyle = ARROW_TYPES[Math.min(i + 1, 4)].color;
+        ctx.beginPath();
+        ctx.arc(x + 7 + i, y - 36, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.fillStyle = '#0a0510';
+    ctx.beginPath();
+    ctx.arc(x, y - 30, 13, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#0a0510';
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y - 38);
+    ctx.quadraticCurveTo(x + 6, y - 50, x + 11, y - 35);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(x, y - 28, 8, 0, Math.PI);
+    ctx.fill();
+    
+    ctx.fillStyle = '#3a2820';
+    ctx.beginPath();
+    ctx.arc(x, y - 27, 6, 0, Math.PI);
+    ctx.fill();
+    
+    ctx.fillStyle = '#f0c75e';
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#f0c75e';
+    ctx.beginPath();
+    ctx.arc(x - 3, y - 28, 1.8, 0, Math.PI * 2);
+    ctx.arc(x + 3, y - 28, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(x - 3, y - 28, 0.5, 0, Math.PI * 2);
+    ctx.arc(x + 3, y - 28, 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    const bowOriginX = x + 5;
+    const bowOriginY = y - 15;
+    
+    ctx.save();
+    ctx.translate(bowOriginX, bowOriginY);
+    ctx.rotate(angle);
+    
+    ctx.fillStyle = '#e8c9a0';
+    ctx.fillRect(8, -2, 14, 4);
+    
+    ctx.fillStyle = '#3a1a08';
+    ctx.fillRect(20, -3, 5, 6);
+    
+    if (game.charging) {
+        const chargePct = game.chargePower / game.chargeMax;
+        ctx.shadowBlur = 10 + chargePct * 30;
+        ctx.shadowColor = chargePct > 0.85 ? '#ff6b00' : (chargePct > 0.5 ? '#f0c75e' : '#d4af6e');
+    }
+    
+    ctx.strokeStyle = '#2a1208';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(24, -28);
+    ctx.quadraticCurveTo(38, -14, 42, 0);
+    ctx.quadraticCurveTo(38, 14, 24, 28);
+    ctx.stroke();
+    
+    ctx.strokeStyle = '#7a5028';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(25, -25);
+    ctx.quadraticCurveTo(35, -12, 39, 0);
+    ctx.quadraticCurveTo(35, 12, 25, 25);
+    ctx.stroke();
+    
+    ctx.fillStyle = '#1a0a08';
+    ctx.fillRect(24, -6, 5, 12);
+    ctx.fillStyle = '#d4af6e';
+    ctx.fillRect(24, -2, 5, 4);
+    
+    ctx.fillStyle = '#1a0a08';
+    ctx.beginPath();
+    ctx.arc(24, -28, 2.5, 0, Math.PI * 2);
+    ctx.arc(24, 28, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = game.charging ? 
+        `rgba(240, ${230 - game.chargePower * 2}, ${210 - game.chargePower * 3}, 1)` : 
+        '#f0e6d2';
+    ctx.lineWidth = 1.2;
+    const stringPull = game.charging ? (game.chargePower / game.chargeMax) * 15 : 0;
+    ctx.beginPath();
+    ctx.moveTo(24, -28);
+    ctx.lineTo(24 - stringPull, 0);
+    ctx.lineTo(24, 28);
+    ctx.stroke();
+    
+    if (game.charging) {
+        const arrowColor = ARROW_TYPES[game.currentArrow].color;
+        const chargePct = game.chargePower / game.chargeMax;
+        
+        ctx.strokeStyle = arrowColor;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(24 - stringPull, 0);
+        ctx.lineTo(44, 0);
+        ctx.stroke();
+        
+        ctx.strokeStyle = '#3a2a18';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(22 - stringPull, 0);
+        ctx.lineTo(42, 0);
+        ctx.stroke();
+        
+        ctx.fillStyle = arrowColor;
+        ctx.beginPath();
+        ctx.moveTo(50, 0);
+        ctx.lineTo(42, -4);
+        ctx.lineTo(42, 4);
+        ctx.closePath();
+        ctx.fill();
+        
+        if (chargePct > 0.5) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${chargePct - 0.5})`;
+            ctx.beginPath();
+            ctx.arc(46, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.fillStyle = arrowColor;
+        ctx.beginPath();
+        ctx.moveTo(24 - stringPull, 0);
+        ctx.lineTo(19 - stringPull, -3);
+        ctx.lineTo(22 - stringPull, 0);
+        ctx.lineTo(19 - stringPull, 3);
+        ctx.closePath();
+        ctx.fill();
+    }
+    
+    ctx.shadowBlur = 0;
+    ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SHADOW WARDENS — All redesigned to match dark aesthetic
+// ═══════════════════════════════════════════════════════════════
+function drawAlly(a) {
+    const x = a.x, y = a.y;
+    const bob = Math.sin(a.bob) * 1.5;
+    const atk = a.attackAnim || 0;
+    
+    // Dark shadow aura
+    const aura = ctx.createRadialGradient(x, y, 0, x, y, 35);
+    aura.addColorStop(0, 'rgba(155, 89, 182, 0.15)');
+    aura.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = aura;
+    ctx.beginPath();
+    ctx.arc(x, y, 35, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Ground shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 22, 16, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    if (a.id === 'vex') {
+        // === Apply jump offset to whole render ===
+        const jumpY = a.jumpOffset || 0;
+        ctx.save();
+        ctx.translate(0, jumpY);
+        ctx.fillStyle = '#0a0510';
+        ctx.beginPath();
+        ctx.moveTo(x - 10, y - 8 + bob);
+        ctx.quadraticCurveTo(x - 20, y + 10, x - 14, y + 22);
+        ctx.quadraticCurveTo(x - 4, y + 16, x, y - 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#2a0a30';
+        ctx.beginPath();
+        ctx.moveTo(x - 9, y - 6 + bob);
+        ctx.quadraticCurveTo(x - 15, y + 5, x - 10, y + 14);
+        ctx.quadraticCurveTo(x - 3, y + 10, x, y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Legs
+        ctx.fillStyle = '#1a0e1a';
+        ctx.fillRect(x - 4, y + 8 + bob, 3, 14);
+        ctx.fillRect(x + 1, y + 8 + bob, 3, 14);
+        
+        // Body armor
+        ctx.fillStyle = '#1a1020';
+        ctx.beginPath();
+        ctx.ellipse(x, y + bob, 10, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Chainmail dots
+        ctx.fillStyle = 'rgba(120, 80, 140, 0.4)';
+        for (let py = y - 8 + bob; py < y + 10 + bob; py += 3) {
+            for (let px = x - 7; px < x + 7; px += 3) {
+                ctx.beginPath();
+                ctx.arc(px + (py % 6 ? 1 : 0), py, 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Belt
+        ctx.fillStyle = '#5a1a4a';
+        ctx.fillRect(x - 10, y + 4 + bob, 20, 3);
+        
+        // Hood
+        ctx.fillStyle = '#0a0510';
+        ctx.beginPath();
+        ctx.arc(x, y - 14 + bob, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x - 7, y - 22 + bob);
+        ctx.quadraticCurveTo(x + 5, y - 32 + bob, x + 10, y - 18 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Face shadow
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(x, y - 13 + bob, 7, 0, Math.PI);
+        ctx.fill();
+        
+        // Glowing purple eyes
+        ctx.fillStyle = '#c79bd6';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#c79bd6';
+        ctx.beginPath();
+        ctx.arc(x - 3, y - 13 + bob, 1.5, 0, Math.PI * 2);
+        ctx.arc(x + 3, y - 13 + bob, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Sword (with attack animation)
+        const swordSwing = atk > 0 ? Math.sin((20 - atk) / 20 * Math.PI) * 0.8 : 0;
+        ctx.save();
+        ctx.translate(x + 8, y + bob);
+        ctx.rotate(-0.3 + swordSwing);
+        // Blade
+        ctx.fillStyle = '#c0c0d0';
+        ctx.shadowBlur = atk > 0 ? 12 : 0;
+        ctx.shadowColor = '#c79bd6';
+        ctx.fillRect(-1, -22, 3, 24);
+        // Cross guard
+        ctx.fillStyle = '#5a1a4a';
+        ctx.fillRect(-5, -2, 11, 3);
+        // Pommel
+        ctx.fillStyle = '#9b59b6';
+        ctx.beginPath();
+        ctx.arc(0, 4, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        // Hilt
+        ctx.fillStyle = '#2a0a30';
+        ctx.fillRect(-1.5, 0, 3, 4);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+    } else if (a.id === 'nyra') {
+        // === NYRA THE NIGHTSTALKER === Twin-bow shadow archer
+        // Cape (shorter, lighter)
+        ctx.fillStyle = '#1a0a2a';
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 5 + bob);
+        ctx.quadraticCurveTo(x - 14, y + 8, x - 10, y + 18);
+        ctx.quadraticCurveTo(x - 2, y + 12, x, y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Legs (slim)
+        ctx.fillStyle = '#0a0510';
+        ctx.fillRect(x - 4, y + 6 + bob, 3, 16);
+        ctx.fillRect(x + 1, y + 6 + bob, 3, 16);
+        
+        // Body (leather armor)
+        ctx.fillStyle = '#2a1a3a';
+        ctx.beginPath();
+        ctx.ellipse(x, y - 2 + bob, 9, 11, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Leather straps
+        ctx.strokeStyle = '#1a0a18';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 5 + bob);
+        ctx.lineTo(x + 8, y - 5 + bob);
+        ctx.moveTo(x - 8, y + 2 + bob);
+        ctx.lineTo(x + 8, y + 2 + bob);
+        ctx.stroke();
+        
+        // Hood
+        ctx.fillStyle = '#1a0a2a';
+        ctx.beginPath();
+        ctx.arc(x, y - 14 + bob, 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x - 6, y - 20 + bob);
+        ctx.quadraticCurveTo(x + 4, y - 28 + bob, x + 9, y - 16 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Face partial
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(x, y - 14 + bob, 5, 0, Math.PI);
+        ctx.fill();
+        ctx.fillStyle = '#2a2018';
+        ctx.beginPath();
+        ctx.arc(x, y - 13 + bob, 4, 0, Math.PI);
+        ctx.fill();
+        
+        // Glowing red-orange eyes
+        ctx.fillStyle = '#ff6b00';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#ff6b00';
+        ctx.beginPath();
+        ctx.arc(x - 2.5, y - 13 + bob, 1.2, 0, Math.PI * 2);
+        ctx.arc(x + 2.5, y - 13 + bob, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // TWIN BOWS — one on each side
+        const drawBow = (offsetX, flip) => {
+            ctx.save();
+            ctx.translate(x + offsetX, y - 3 + bob);
+            if (flip) ctx.scale(-1, 1);
+            
+            ctx.shadowBlur = atk > 0 ? 10 : 0;
+            ctx.shadowColor = '#9b59b6';
+            
+            ctx.strokeStyle = '#2a0a18';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, 9, -Math.PI/3, Math.PI/3);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#9b59b6';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(9 * Math.cos(-Math.PI/3), 9 * Math.sin(-Math.PI/3));
+            ctx.lineTo(9 * Math.cos(Math.PI/3), 9 * Math.sin(Math.PI/3));
+            ctx.stroke();
+            
+            // Bow tips
+            ctx.fillStyle = '#c79bd6';
+            ctx.beginPath();
+            ctx.arc(9 * Math.cos(-Math.PI/3), 9 * Math.sin(-Math.PI/3), 1.5, 0, Math.PI * 2);
+            ctx.arc(9 * Math.cos(Math.PI/3), 9 * Math.sin(Math.PI/3), 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            ctx.restore();
+        };
+        drawBow(10, false);
+        drawBow(-10, true);
+        
+    } else if (a.id === 'morrok') {
+        // === MORROK THE VOIDMAGE === Dark mage with floating orb
+        // Long robes
+        ctx.fillStyle = '#0a051a';
+        ctx.beginPath();
+        ctx.moveTo(x - 14, y + 22 + bob);
+        ctx.lineTo(x - 8, y - 8 + bob);
+        ctx.lineTo(x + 8, y - 8 + bob);
+        ctx.lineTo(x + 14, y + 22 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Robe details
+        ctx.fillStyle = '#1a0a2a';
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 5 + bob);
+        ctx.lineTo(x + 8, y - 5 + bob);
+        ctx.lineTo(x + 11, y + 16 + bob);
+        ctx.lineTo(x - 11, y + 16 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Mystic runes glowing on robe
+        ctx.fillStyle = '#9b59b6';
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = '#9b59b6';
+        ctx.font = '8px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('✦', x - 4, y + 4 + bob);
+        ctx.fillText('✧', x + 4, y + 10 + bob);
+        ctx.fillText('☽', x, y + 16 + bob);
+        ctx.shadowBlur = 0;
+        
+        // Belt with skull
+        ctx.fillStyle = '#3a1a4a';
+        ctx.fillRect(x - 9, y - 2 + bob, 18, 3);
+        ctx.fillStyle = '#c0c0c0';
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Hood (deep, covers face)
+        ctx.fillStyle = '#0a051a';
+        ctx.beginPath();
+        ctx.arc(x, y - 16 + bob, 12, 0, Math.PI * 2);
+        ctx.fill();
+        // Hood point
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 26 + bob);
+        ctx.quadraticCurveTo(x + 4, y - 40 + bob, x + 11, y - 20 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Pitch black face
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(x, y - 15 + bob, 8, 0, Math.PI);
+        ctx.fill();
+        
+        // Two glowing purple voids for eyes
+        ctx.fillStyle = '#c79bd6';
+        ctx.shadowBlur = 14;
+        ctx.shadowColor = '#9b59b6';
+        ctx.beginPath();
+        ctx.arc(x - 3, y - 14 + bob, 2, 0, Math.PI * 2);
+        ctx.arc(x + 3, y - 14 + bob, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Staff
+        ctx.strokeStyle = '#1a0a08';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(x + 14, y - 32 + bob);
+        ctx.lineTo(x + 16, y + 22 + bob);
+        ctx.stroke();
+        
+        // Staff wrappings
+        ctx.strokeStyle = '#3a1a4a';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 4; i++) {
+            const ty = y - 22 + i * 12 + bob;
+            ctx.beginPath();
+            ctx.moveTo(x + 13.5, ty);
+            ctx.lineTo(x + 16.5, ty + 2);
+            ctx.stroke();
+        }
+        
+        // Floating orb of darkness
+        const orbY = y - 38 + bob + Math.sin(a.bob * 2) * 2;
+        const orbGlow = ctx.createRadialGradient(x + 14, orbY, 0, x + 14, orbY, 14);
+        orbGlow.addColorStop(0, 'rgba(199, 155, 214, 1)');
+        orbGlow.addColorStop(0.4, 'rgba(155, 89, 182, 0.8)');
+        orbGlow.addColorStop(1, 'rgba(155, 89, 182, 0)');
+        ctx.fillStyle = orbGlow;
+        ctx.beginPath();
+        ctx.arc(x + 14, orbY, 14, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#1a051a';
+        ctx.beginPath();
+        ctx.arc(x + 14, orbY, 5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#9b59b6';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#9b59b6';
+        ctx.beginPath();
+        ctx.arc(x + 14, orbY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+    } else if (a.id === 'thane') {
+        // === THANE THE SOULREAVER === Massive armored berserker
+        // Cape (heavy)
+        ctx.fillStyle = '#1a0a0a';
+        ctx.beginPath();
+        ctx.moveTo(x - 12, y - 8 + bob);
+        ctx.quadraticCurveTo(x - 20, y + 12, x - 14, y + 22);
+        ctx.quadraticCurveTo(x - 4, y + 18, x, y - 2);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Legs (thick)
+        ctx.fillStyle = '#1a0a08';
+        ctx.fillRect(x - 6, y + 10 + bob, 5, 12);
+        ctx.fillRect(x + 1, y + 10 + bob, 5, 12);
+        
+        // Plate armor body (bulky)
+        ctx.fillStyle = '#2a1818';
+        ctx.beginPath();
+        ctx.ellipse(x, y + bob, 13, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Armor plates (segmented)
+        ctx.fillStyle = '#3a2020';
+        ctx.beginPath();
+        ctx.ellipse(x, y - 5 + bob, 12, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(x, y + 2 + bob, 13, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Spikes on shoulders
+        ctx.fillStyle = '#1a0a08';
+        ctx.beginPath();
+        ctx.moveTo(x - 12, y - 4 + bob);
+        ctx.lineTo(x - 16, y - 12 + bob);
+        ctx.lineTo(x - 10, y - 8 + bob);
+        ctx.closePath();
+        ctx.moveTo(x + 12, y - 4 + bob);
+        ctx.lineTo(x + 16, y - 12 + bob);
+        ctx.lineTo(x + 10, y - 8 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Helmet (full helm)
+        ctx.fillStyle = '#1a1010';
+        ctx.beginPath();
+        ctx.arc(x, y - 14 + bob, 10, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Horns
+        ctx.fillStyle = '#0a0408';
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 18 + bob);
+        ctx.quadraticCurveTo(x - 14, y - 28 + bob, x - 10, y - 30 + bob);
+        ctx.quadraticCurveTo(x - 6, y - 22 + bob, x - 6, y - 14 + bob);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x + 8, y - 18 + bob);
+        ctx.quadraticCurveTo(x + 14, y - 28 + bob, x + 10, y - 30 + bob);
+        ctx.quadraticCurveTo(x + 6, y - 22 + bob, x + 6, y - 14 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Glowing visor slit
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x - 7, y - 14 + bob, 14, 3);
+        ctx.fillStyle = '#ff3030';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = '#ff3030';
+        ctx.fillRect(x - 6, y - 13 + bob, 12, 1);
+        ctx.shadowBlur = 0;
+        
+        // MASSIVE CURSED AXE
+        const axeSwing = atk > 0 ? Math.sin((20 - atk) / 20 * Math.PI) * 1.2 : 0;
+        ctx.save();
+        ctx.translate(x + 10, y + bob);
+        ctx.rotate(-0.5 + axeSwing);
+        
+        // Shaft
+        ctx.fillStyle = '#1a0a08';
+        ctx.fillRect(-1.5, -28, 3, 36);
+        // Wrappings
+        ctx.strokeStyle = '#5a1a1a';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.moveTo(-2, -25 + i * 12);
+            ctx.lineTo(2, -23 + i * 12);
+            ctx.stroke();
+        }
+        
+        // Axe head (cursed)
+        ctx.shadowBlur = atk > 0 ? 14 : 4;
+        ctx.shadowColor = '#ff3030';
+        ctx.fillStyle = '#2a1818';
+        ctx.beginPath();
+        ctx.moveTo(0, -28);
+        ctx.lineTo(14, -32);
+        ctx.lineTo(18, -22);
+        ctx.lineTo(14, -14);
+        ctx.lineTo(0, -18);
+        ctx.closePath();
+        ctx.fill();
+        // Other side
+        ctx.beginPath();
+        ctx.moveTo(0, -28);
+        ctx.lineTo(-14, -32);
+        ctx.lineTo(-18, -22);
+        ctx.lineTo(-14, -14);
+        ctx.lineTo(0, -18);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Blade edges
+        ctx.strokeStyle = '#ff3030';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(14, -32); ctx.lineTo(18, -22); ctx.lineTo(14, -14);
+        ctx.moveTo(-14, -32); ctx.lineTo(-18, -22); ctx.lineTo(-14, -14);
+        ctx.stroke();
+        
+        // Cursed rune on axe
+        ctx.fillStyle = '#ff3030';
+        ctx.font = 'bold 8px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('☠', 0, -20);
+        
+        ctx.shadowBlur = 0;
+        ctx.restore();
+        
+    } else if (a.id === 'sylphine') {
+        // === SYLPHINE THE MOONPRIESTESS === Ethereal healer
+        // Flowing robes (white/silver)
+        ctx.fillStyle = '#1a1a3a';
+        ctx.beginPath();
+        ctx.moveTo(x - 13, y + 22 + bob);
+        ctx.lineTo(x - 7, y - 8 + bob);
+        ctx.lineTo(x + 7, y - 8 + bob);
+        ctx.lineTo(x + 13, y + 22 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Silver inner robe
+        ctx.fillStyle = '#3a3a5a';
+        ctx.beginPath();
+        ctx.moveTo(x - 6, y - 6 + bob);
+        ctx.lineTo(x + 6, y - 6 + bob);
+        ctx.lineTo(x + 9, y + 18 + bob);
+        ctx.lineTo(x - 9, y + 18 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Moon symbols
+        ctx.fillStyle = '#b8c5e8';
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = '#fff';
+        ctx.font = '10px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('☽', x, y + 6 + bob);
+        ctx.fillText('✦', x - 5, y + 14 + bob);
+        ctx.fillText('✦', x + 5, y + 14 + bob);
+        ctx.shadowBlur = 0;
+        
+        // Belt
+        ctx.fillStyle = '#5a5a7a';
+        ctx.fillRect(x - 8, y - 3 + bob, 16, 3);
+        
+        // Face (pale)
+        ctx.fillStyle = '#c8c8d8';
+        ctx.beginPath();
+        ctx.arc(x, y - 14 + bob, 7, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Long flowing silver hair
+        ctx.fillStyle = '#9aa8c0';
+        ctx.beginPath();
+        ctx.arc(x, y - 16 + bob, 9, Math.PI, 0);
+        ctx.fill();
+        ctx.fillRect(x - 9, y - 16 + bob, 18, 14);
+        // Hair strands flowing
+        ctx.beginPath();
+        ctx.moveTo(x - 9, y - 2 + bob);
+        ctx.quadraticCurveTo(x - 12, y + 5 + bob, x - 10, y + 10 + bob);
+        ctx.lineTo(x - 7, y - 2 + bob);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x + 9, y - 2 + bob);
+        ctx.quadraticCurveTo(x + 12, y + 5 + bob, x + 10, y + 10 + bob);
+        ctx.lineTo(x + 7, y - 2 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Glowing white eyes
+        ctx.fillStyle = '#fff';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = '#b8c5e8';
+        ctx.beginPath();
+        ctx.arc(x - 2.5, y - 14 + bob, 1.2, 0, Math.PI * 2);
+        ctx.arc(x + 2.5, y - 14 + bob, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Crescent moon crown
+        ctx.fillStyle = '#fff';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#fff';
+        ctx.beginPath();
+        ctx.arc(x, y - 22 + bob, 6, Math.PI * 0.2, Math.PI * 0.8, true);
+        ctx.arc(x + 2, y - 21 + bob, 5, Math.PI * 0.8, Math.PI * 0.2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Floating crystal staff
+        const crystalY = y - 30 + bob + Math.sin(a.bob * 1.5) * 1.5;
+        ctx.strokeStyle = '#7a7aa0';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + 14, y - 30 + bob);
+        ctx.lineTo(x + 14, y + 22 + bob);
+        ctx.stroke();
+        
+        // Crystal at top
+        const crystalGlow = ctx.createRadialGradient(x + 14, crystalY, 0, x + 14, crystalY, 14);
+        crystalGlow.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        crystalGlow.addColorStop(0.3, 'rgba(184, 197, 232, 0.8)');
+        crystalGlow.addColorStop(1, 'rgba(155, 89, 182, 0)');
+        ctx.fillStyle = crystalGlow;
+        ctx.beginPath();
+        ctx.arc(x + 14, crystalY, 14, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(x + 14, crystalY - 6);
+        ctx.lineTo(x + 18, crystalY);
+        ctx.lineTo(x + 14, crystalY + 6);
+        ctx.lineTo(x + 10, crystalY);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Continuous healing aura
+        const healPulse = 0.15 + Math.sin(Date.now() / 400) * 0.1;
+        const healAura = ctx.createRadialGradient(x, y + 5 + bob, 0, x, y + 5 + bob, 45);
+        healAura.addColorStop(0, `rgba(184, 197, 232, ${healPulse})`);
+        healAura.addColorStop(1, 'rgba(184, 197, 232, 0)');
+        ctx.fillStyle = healAura;
+        ctx.beginPath();
+        ctx.arc(x, y + 5 + bob, 45, 0, Math.PI * 2);
+        ctx.fill();
+        
+    } else if (a.id === 'zharaak') {
+        // === ZHARAAK THE STORMWRAITH === Lightning sorcerer
+        // Tattered robe
+        ctx.fillStyle = '#0a0a2a';
+        ctx.beginPath();
+        ctx.moveTo(x - 14, y + 22 + bob);
+        ctx.lineTo(x - 9, y - 8 + bob);
+        ctx.lineTo(x + 9, y - 8 + bob);
+        ctx.lineTo(x + 14, y + 22 + bob);
+        // Tattered bottom
+        ctx.lineTo(x + 10, y + 18 + bob);
+        ctx.lineTo(x + 6, y + 22 + bob);
+        ctx.lineTo(x + 2, y + 18 + bob);
+        ctx.lineTo(x - 2, y + 22 + bob);
+        ctx.lineTo(x - 6, y + 18 + bob);
+        ctx.lineTo(x - 10, y + 22 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Lightning patterns crackling on robe
+        ctx.strokeStyle = '#f0c75e';
+        ctx.lineWidth = 1.2;
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = '#f0c75e';
+        ctx.beginPath();
+        ctx.moveTo(x - 5, y - 3 + bob);
+        ctx.lineTo(x - 3, y + 2 + bob);
+        ctx.lineTo(x - 6, y + 6 + bob);
+        ctx.lineTo(x - 4, y + 12 + bob);
+        ctx.moveTo(x + 5, y - 3 + bob);
+        ctx.lineTo(x + 3, y + 2 + bob);
+        ctx.lineTo(x + 6, y + 6 + bob);
+        ctx.lineTo(x + 4, y + 12 + bob);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        
+        // Hood
+        ctx.fillStyle = '#0a0a2a';
+        ctx.beginPath();
+        ctx.arc(x, y - 14 + bob, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 22 + bob);
+        ctx.quadraticCurveTo(x + 5, y - 34 + bob, x + 11, y - 18 + bob);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Dark face
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(x, y - 13 + bob, 7, 0, Math.PI);
+        ctx.fill();
+        
+        // Lightning eyes
+        ctx.fillStyle = '#f0c75e';
+        ctx.shadowBlur = 14;
+        ctx.shadowColor = '#f0c75e';
+        ctx.beginPath();
+        ctx.arc(x - 3, y - 13 + bob, 1.5, 0, Math.PI * 2);
+        ctx.arc(x + 3, y - 13 + bob, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Electric arcs from eyes (sometimes)
+        if (Math.random() < 0.1 || atk > 0) {
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(x - 3, y - 13 + bob);
+            ctx.lineTo(x - 5, y - 10 + bob);
+            ctx.lineTo(x - 3, y - 8 + bob);
+            ctx.moveTo(x + 3, y - 13 + bob);
+            ctx.lineTo(x + 5, y - 10 + bob);
+            ctx.lineTo(x + 3, y - 8 + bob);
+            ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+        
+        // Staff with lightning rod
+        ctx.strokeStyle = '#2a2a3a';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(x + 15, y - 38 + bob);
+        ctx.lineTo(x + 17, y + 22 + bob);
+        ctx.stroke();
+        
+        // Lightning rod tip
+        const crystalY = y - 42 + bob;
+        const crystalGlow = ctx.createRadialGradient(x + 15, crystalY, 0, x + 15, crystalY, 16);
+        crystalGlow.addColorStop(0, 'rgba(255, 255, 220, 1)');
+        crystalGlow.addColorStop(0.4, 'rgba(240, 199, 94, 0.7)');
+        crystalGlow.addColorStop(1, 'rgba(240, 199, 94, 0)');
+        ctx.fillStyle = crystalGlow;
+        ctx.beginPath();
+        ctx.arc(x + 15, crystalY, 16, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Lightning crystal
+        ctx.fillStyle = '#f0c75e';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#f0c75e';
+        ctx.beginPath();
+        ctx.moveTo(x + 15, crystalY - 8);
+        ctx.lineTo(x + 21, crystalY);
+        ctx.lineTo(x + 15, crystalY + 6);
+        ctx.lineTo(x + 9, crystalY);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(x + 15, crystalY - 5);
+        ctx.lineTo(x + 18, crystalY);
+        ctx.lineTo(x + 15, crystalY + 3);
+        ctx.lineTo(x + 12, crystalY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+    
+    // ═══ Name tag ═══
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(x - 32, y + 26, 64, 12);
+    ctx.strokeStyle = 'rgba(155,89,182,0.6)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - 32, y + 26, 64, 12);
+    ctx.fillStyle = '#c79bd6';
+    ctx.font = 'bold 8px Cinzel';
+    ctx.textAlign = 'center';
+    ctx.fillText(a.name.toUpperCase(), x, y + 35);
+    
+    // HP bar if damaged
+    if (a.hp < a.maxHp) {
+        const barW = 36;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(x - barW/2, y + 41, barW, 4);
+        const hpPct = a.hp / a.maxHp;
+        const hpColor = hpPct > 0.5 ? '#5a8c3a' : '#c74545';
+        ctx.fillStyle = hpColor;
+        ctx.fillRect(x - barW/2, y + 41, barW * hpPct, 4);
+    }
+}
+
+function drawEnemy(e) {
+    const bobY = e.y + Math.sin(e.bob) * 4;
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.beginPath();
+    ctx.ellipse(e.x, e.y + e.size * 0.9, e.size * 0.8, e.size * 0.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    const auraGrad = ctx.createRadialGradient(e.x, bobY, 0, e.x, bobY, e.size * 2.5);
+    auraGrad.addColorStop(0, e.glow + '88');
+    auraGrad.addColorStop(0.5, e.glow + '33');
+    auraGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = auraGrad;
+    ctx.beginPath();
+    ctx.arc(e.x, bobY, e.size * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = e.color + 'cc';
+    for (let i = 0; i < 5; i++) {
+        const angle = (Math.PI * 2 / 5) * i + e.bob * 0.5;
+        const len = e.size * 0.7 + Math.sin(e.bob + i) * 5;
+        ctx.beginPath();
+        ctx.moveTo(e.x, bobY);
+        ctx.quadraticCurveTo(
+            e.x + Math.cos(angle) * len * 0.5,
+            bobY + Math.sin(angle) * len * 0.5 + 5,
+            e.x + Math.cos(angle) * len,
+            bobY + Math.sin(angle) * len
+        );
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = e.color + '66';
+        ctx.stroke();
+    }
+    
+    ctx.fillStyle = e.color;
+    ctx.beginPath();
+    ctx.arc(e.x, bobY, e.size, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#000';
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.arc(e.x - e.size * 0.15, bobY - e.size * 0.1, e.size * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    
+    ctx.strokeStyle = e.glow + 'aa';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = e.glow;
+    ctx.beginPath();
+    ctx.arc(e.x, bobY, e.size, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    ctx.fillStyle = e.color + 'aa';
+    ctx.beginPath();
+    ctx.moveTo(e.x - e.size * 0.8, bobY + e.size * 0.3);
+    ctx.quadraticCurveTo(e.x - e.size * 0.3, bobY + e.size * 1.8 + Math.sin(e.bob) * 3, e.x, bobY + e.size * 1.5);
+    ctx.quadraticCurveTo(e.x + e.size * 0.3, bobY + e.size * 1.8 - Math.sin(e.bob) * 3, e.x + e.size * 0.8, bobY + e.size * 0.3);
+    ctx.fill();
+    
+    const eyeSize = e.size > 35 ? 3 : 2;
+    ctx.fillStyle = e.boss ? '#ff3030' : '#f0c75e';
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = e.boss ? '#ff3030' : '#f0c75e';
+    
+    if (e.tier >= 3 || e.boss) {
+        ctx.beginPath();
+        ctx.arc(e.x - e.size * 0.35, bobY - e.size * 0.15, eyeSize, 0, Math.PI * 2);
+        ctx.arc(e.x + e.size * 0.35, bobY - e.size * 0.15, eyeSize, 0, Math.PI * 2);
+        if (e.boss) {
+            ctx.arc(e.x, bobY - e.size * 0.4, eyeSize * 1.8, 0, Math.PI * 2);
+        }
+        ctx.fill();
+    } else {
+        ctx.beginPath();
+        ctx.arc(e.x - e.size * 0.3, bobY - e.size * 0.1, eyeSize, 0, Math.PI * 2);
+        ctx.arc(e.x + e.size * 0.3, bobY - e.size * 0.1, eyeSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.fillStyle = '#000';
+    ctx.shadowBlur = 0;
+    if (e.tier >= 3 || e.boss) {
+        ctx.beginPath();
+        ctx.arc(e.x - e.size * 0.35, bobY - e.size * 0.15, eyeSize * 0.4, 0, Math.PI * 2);
+        ctx.arc(e.x + e.size * 0.35, bobY - e.size * 0.15, eyeSize * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    if (e.tier >= 2) {
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(e.x - 4, bobY + e.size * 0.3);
+        ctx.lineTo(e.x - 6, bobY + e.size * 0.6);
+        ctx.lineTo(e.x - 2, bobY + e.size * 0.4);
+        ctx.closePath();
+        ctx.moveTo(e.x + 4, bobY + e.size * 0.3);
+        ctx.lineTo(e.x + 6, bobY + e.size * 0.6);
+        ctx.lineTo(e.x + 2, bobY + e.size * 0.4);
+        ctx.closePath();
+        ctx.fill();
+    }
+    
+    // ═══ BOSS DECORATIONS (unique per boss) ═══
+    if (e.boss) {
+        ctx.shadowBlur = 15;
+        if (e.bossType === 'voidlord') {
+            // Purple crown
+            ctx.fillStyle = '#9b59b6';
+            ctx.shadowColor = '#9b59b6';
+            ctx.beginPath();
+            ctx.moveTo(e.x - 18, bobY - e.size - 5);
+            ctx.lineTo(e.x - 12, bobY - e.size - 18);
+            ctx.lineTo(e.x - 6, bobY - e.size - 10);
+            ctx.lineTo(e.x, bobY - e.size - 22);
+            ctx.lineTo(e.x + 6, bobY - e.size - 10);
+            ctx.lineTo(e.x + 12, bobY - e.size - 18);
+            ctx.lineTo(e.x + 18, bobY - e.size - 5);
+            ctx.closePath();
+            ctx.fill();
+        } else if (e.bossType === 'bloodking') {
+            // Spiked blood crown with horns
+            ctx.fillStyle = '#ff3030';
+            ctx.shadowColor = '#ff3030';
+            ctx.beginPath();
+            ctx.moveTo(e.x - 24, bobY - e.size - 8);
+            ctx.lineTo(e.x - 16, bobY - e.size - 28);
+            ctx.lineTo(e.x - 8, bobY - e.size - 12);
+            ctx.lineTo(e.x, bobY - e.size - 32);
+            ctx.lineTo(e.x + 8, bobY - e.size - 12);
+            ctx.lineTo(e.x + 16, bobY - e.size - 28);
+            ctx.lineTo(e.x + 24, bobY - e.size - 8);
+            ctx.closePath();
+            ctx.fill();
+            // Side horns
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.moveTo(e.x - e.size, bobY - e.size * 0.3);
+            ctx.quadraticCurveTo(e.x - e.size - 20, bobY - e.size - 5, e.x - e.size - 12, bobY - e.size + 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(e.x + e.size, bobY - e.size * 0.3);
+            ctx.quadraticCurveTo(e.x + e.size + 20, bobY - e.size - 5, e.x + e.size + 12, bobY - e.size + 5);
+            ctx.closePath();
+            ctx.fill();
+        } else if (e.bossType === 'necrotitan') {
+            // Bone skull mask + bone spikes
+            ctx.fillStyle = '#e0d8b0';
+            ctx.shadowColor = '#5a8c3a';
+            // Top spikes (bones)
+            for (let i = -3; i <= 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(e.x + i * 12, bobY - e.size);
+                ctx.lineTo(e.x + i * 12 - 4, bobY - e.size - 18);
+                ctx.lineTo(e.x + i * 12 + 4, bobY - e.size - 18);
+                ctx.closePath();
+                ctx.fill();
+            }
+            // Spinal column rising
+            ctx.fillRect(e.x - 3, bobY - e.size - 35, 6, 30);
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.arc(e.x, bobY - e.size - 32 + i * 8, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else if (e.bossType === 'abysslord') {
+            // Multiple floating crowns / void crown
+            ctx.fillStyle = '#9b59b6';
+            ctx.shadowColor = '#c79bd6';
+            for (let i = 0; i < 3; i++) {
+                const ang = (Date.now() / 1000 + i * Math.PI * 2 / 3) % (Math.PI * 2);
+                const cx = e.x + Math.cos(ang) * 30;
+                const cy = bobY - e.size - 30 + Math.sin(ang) * 10;
+                ctx.beginPath();
+                ctx.moveTo(cx - 8, cy);
+                ctx.lineTo(cx - 5, cy - 10);
+                ctx.lineTo(cx, cy - 4);
+                ctx.lineTo(cx + 5, cy - 10);
+                ctx.lineTo(cx + 8, cy);
+                ctx.closePath();
+                ctx.fill();
+            }
+            // Tentacles
+            ctx.strokeStyle = '#9b59b6';
+            ctx.lineWidth = 4;
+            for (let i = 0; i < 4; i++) {
+                const tang = (Date.now() / 600 + i * Math.PI / 2);
+                ctx.beginPath();
+                ctx.moveTo(e.x, bobY);
+                ctx.quadraticCurveTo(
+                    e.x + Math.cos(tang) * (e.size + 30),
+                    bobY + Math.sin(tang) * (e.size + 30) - 10,
+                    e.x + Math.cos(tang) * (e.size + 50),
+                    bobY + Math.sin(tang) * (e.size + 50)
+                );
+                ctx.stroke();
+            }
+        } else if (e.bossType === 'eternaldragon') {
+            // Dragon horns + wings + flames
+            ctx.fillStyle = '#ff6b00';
+            ctx.shadowColor = '#ff6b00';
+            // Massive horns
+            ctx.beginPath();
+            ctx.moveTo(e.x - 30, bobY - e.size + 5);
+            ctx.quadraticCurveTo(e.x - 50, bobY - e.size - 35, e.x - 35, bobY - e.size - 45);
+            ctx.quadraticCurveTo(e.x - 25, bobY - e.size - 20, e.x - 20, bobY - e.size);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(e.x + 30, bobY - e.size + 5);
+            ctx.quadraticCurveTo(e.x + 50, bobY - e.size - 35, e.x + 35, bobY - e.size - 45);
+            ctx.quadraticCurveTo(e.x + 25, bobY - e.size - 20, e.x + 20, bobY - e.size);
+            ctx.closePath();
+            ctx.fill();
+            // Wings
+            ctx.fillStyle = '#3a0a0a';
+            ctx.beginPath();
+            ctx.moveTo(e.x - e.size, bobY);
+            ctx.quadraticCurveTo(e.x - e.size - 50, bobY - 40, e.x - e.size - 30, bobY + 20);
+            ctx.lineTo(e.x - e.size, bobY + 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(e.x + e.size, bobY);
+            ctx.quadraticCurveTo(e.x + e.size + 50, bobY - 40, e.x + e.size + 30, bobY + 20);
+            ctx.lineTo(e.x + e.size, bobY + 10);
+            ctx.closePath();
+            ctx.fill();
+            // Flame breath particles
+            for (let i = 0; i < 3; i++) {
+                ctx.fillStyle = `rgba(255, ${100 + Math.random() * 155}, 0, 0.7)`;
+                ctx.beginPath();
+                ctx.arc(e.x - e.size - 10 + Math.random() * 10, bobY + e.size * 0.5 + Math.random() * 10, 4 + Math.random() * 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        ctx.shadowBlur = 0;
+    }
+    
+    if (e.burning > 0) {
+        for (let i = 0; i < 4; i++) {
+            const fy = bobY - e.size - Math.random() * 20;
+            ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, ${0.5 + Math.random() * 0.4})`;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#ff6b00';
+            ctx.beginPath();
+            ctx.arc(e.x + (Math.random() - 0.5) * e.size * 1.2, fy, 3 + Math.random() * 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+    }
+    
+    if (e.slowed > 0) {
+        ctx.strokeStyle = 'rgba(184, 220, 232, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#6ba3c7';
+        for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI * 2 / 6) * i;
+            ctx.beginPath();
+            ctx.moveTo(e.x + Math.cos(angle) * (e.size + 2), bobY + Math.sin(angle) * (e.size + 2));
+            ctx.lineTo(e.x + Math.cos(angle) * (e.size + 8), bobY + Math.sin(angle) * (e.size + 8));
+            ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+    }
+    
+    if (e.hp < e.maxHp || e.boss) {
+        const barW = Math.max(e.size * 1.8, 30);
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(e.x - barW/2 - 1, bobY - e.size - 14, barW + 2, 6);
+        const hpPct = e.hp / e.maxHp;
+        const hpColor = hpPct > 0.6 ? '#5a8c3a' : (hpPct > 0.3 ? '#f0c75e' : '#c74545');
+        ctx.fillStyle = hpColor;
+        ctx.fillRect(e.x - barW/2, bobY - e.size - 13, barW * hpPct, 4);
+    }
+    
+    if (e.boss) {
+        ctx.fillStyle = '#ff3030';
+        ctx.font = 'bold 16px MedievalSharp';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#000';
+        ctx.fillText(e.name, e.x, bobY - e.size - 22);
+        ctx.shadowBlur = 0;
+    }
+}
+
+function drawArrow(a) {
+    const type = ARROW_TYPES[a.type];
+    
+    a.trail.forEach((t, i) => {
+        ctx.globalAlpha = (i / a.trail.length) * 0.7;
+        ctx.fillStyle = type.trail || type.color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = type.color;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, 2 + i * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    
+    const angle = Math.atan2(a.vy, a.vx);
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    ctx.rotate(angle);
+    
+    if (a.crit) {
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#ff6b00';
+    } else {
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = type.color;
+    }
+    
+    ctx.strokeStyle = type.color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(-12, 0);
+    ctx.lineTo(10, 0);
+    ctx.stroke();
+    
+    ctx.strokeStyle = '#3a2a18';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-10, 0);
+    ctx.lineTo(8, 0);
+    ctx.stroke();
+    
+    ctx.fillStyle = type.color;
+    ctx.beginPath();
+    ctx.moveTo(14, 0);
+    ctx.lineTo(8, -4);
+    ctx.lineTo(8, 4);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.moveTo(12, -1);
+    ctx.lineTo(10, -2);
+    ctx.lineTo(10, 1);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.fillStyle = type.color;
+    ctx.beginPath();
+    ctx.moveTo(-12, 0);
+    ctx.lineTo(-17, -4);
+    ctx.lineTo(-14, 0);
+    ctx.lineTo(-17, 4);
+    ctx.closePath();
+    ctx.fill();
+    
+    if (a.type === 1) {
+        for (let i = 0; i < 2; i++) {
+            ctx.fillStyle = `rgba(255, ${150 + Math.random()*100}, 0, ${0.6 + Math.random() * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(-5 - Math.random() * 5, (Math.random() - 0.5) * 4, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    } else if (a.type === 2) {
+        ctx.strokeStyle = '#b8dce8';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.moveTo(-5 - i * 3, -2);
+            ctx.lineTo(-5 - i * 3, 2);
+            ctx.stroke();
+        }
+    } else if (a.type === 3) {
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -3);
+        ctx.lineTo(-3, 0);
+        ctx.lineTo(0, 3);
+        ctx.stroke();
+    } else if (a.type === 4) {
+        ctx.fillStyle = '#1a1209';
+        ctx.beginPath();
+        ctx.arc(14, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ff6b00';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(14, 0, 4, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    
+    ctx.shadowBlur = 0;
+    ctx.restore();
+}
+
+function drawAllySpell(s) {
+    if (s.type === 'arrow') {
+        const angle = Math.atan2(s.vy, s.vx);
+        ctx.save();
+        ctx.translate(s.x, s.y);
+        ctx.rotate(angle);
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = s.color;
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-7, 0);
+        ctx.lineTo(7, 0);
+        ctx.stroke();
+        ctx.fillStyle = s.color;
+        ctx.beginPath();
+        ctx.moveTo(9, 0);
+        ctx.lineTo(5, -2.5);
+        ctx.lineTo(5, 2.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+    } else if (s.type === 'darkfire') {
+        const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 20);
+        glow.addColorStop(0, '#fff');
+        glow.addColorStop(0.3, '#c79bd6');
+        glow.addColorStop(1, 'rgba(155,89,182,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#9b59b6';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        if (Math.random() < 0.6) {
+            particles.push({
+                x: s.x, y: s.y,
+                vx: -s.vx * 0.2 + (Math.random() - 0.5),
+                vy: -s.vy * 0.2,
+                color: '#9b59b6',
+                life: 25, maxLife: 25, alpha: 1,
+                size: 3, noGravity: true
+            });
+        }
+    }
+}
+
+function drawPowerUp(p) {
+    const pulse = Math.sin(Date.now() / 150) * 0.3 + 0.7;
+    
+    const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 35);
+    glow.addColorStop(0, p.color + 'ee');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 35, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rotation);
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, 16, 0, Math.PI * 1.5);
+    ctx.stroke();
+    ctx.restore();
+    
+    ctx.fillStyle = `rgba(26, 18, 9, ${pulse})`;
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    ctx.font = '16px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.icon, p.x, p.y);
+    ctx.textBaseline = 'alphabetic';
+}
+
+function drawAimIndicator() {
+    if (!game.charging) return;
+    const chargePct = game.chargePower / game.chargeMax;
+    
+    const bowX = archer.x + 5;
+    const bowY = archer.y - 15;
+    const dx = mouseX - bowX;
+    const dy = mouseY - bowY;
+    const dist = Math.hypot(dx, dy) || 1;
+    const power = MIN_CHARGE_FOR_DAMAGE + chargePct * (1 - MIN_CHARGE_FOR_DAMAGE);
+    const speed = 8 + power * 12;
+    let px = bowX + 20, py = bowY;
+    let pvx = (dx/dist) * speed;
+    let pvy = (dy/dist) * speed;
+    
+    ctx.strokeStyle = `rgba(212, 175, 110, ${0.2 + chargePct * 0.5})`;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 6]);
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    for (let i = 0; i < 40; i++) {
+        px += pvx;
+        py += pvy;
+        pvy += 0.18;
+        ctx.lineTo(px, py);
+        if (px > W || py > H) break;
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    const chargeColor = chargePct > 0.85 ? '#ff6b00' : (chargePct > 0.5 ? '#f0c75e' : '#d4af6e');
+    ctx.strokeStyle = chargeColor;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = chargeColor;
+    
+    const cs = 14 + chargePct * 8;
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, cs, 0, Math.PI * 2);
+    ctx.moveTo(mouseX - cs - 6, mouseY); ctx.lineTo(mouseX - cs + 3, mouseY);
+    ctx.moveTo(mouseX + cs - 3, mouseY); ctx.lineTo(mouseX + cs + 6, mouseY);
+    ctx.moveTo(mouseX, mouseY - cs - 6); ctx.lineTo(mouseX, mouseY - cs + 3);
+    ctx.moveTo(mouseX, mouseY + cs - 3); ctx.lineTo(mouseX, mouseY + cs + 6);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+}
+
+function updateHUD() {
+    document.getElementById('waveNum').textContent = game.wave;
+    document.getElementById('scoreVal').textContent = game.score.toLocaleString();
+    document.getElementById('killsVal').textContent = game.kills;
+    document.getElementById('goldVal').textContent = game.gold.toLocaleString();
+    const acc = game.shots > 0 ? Math.round((game.hits / game.shots) * 100) : 100;
+    document.getElementById('accuracyVal').textContent = acc + '%';
+    const hpPct = (game.health / game.maxHealth) * 100;
+    document.getElementById('healthFill').style.width = hpPct + '%';
+    document.getElementById('healthText').textContent = `${Math.floor(game.health)} / ${game.maxHealth}`;
+    
+    const ap = document.getElementById('alliesPanel');
+    ap.innerHTML = '';
+    game.allies.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'ally-icon';
+        const hpPct = Math.floor((a.hp / a.maxHp) * 100);
+        div.innerHTML = `<span>${a.icon}</span><span>${a.name}</span><span style="color:#5a8c3a; font-size:0.8em;">${hpPct}%</span>`;
+        ap.appendChild(div);
+    });
+}
+
+function updateArrowSlots() {
+    const container = document.getElementById('arrowSlots');
+    container.innerHTML = '';
+    ARROW_TYPES.forEach((t, i) => {
+        const slot = document.createElement('div');
+        slot.className = 'arrow-slot' + (i === game.currentArrow ? ' active' : '');
+        const typeKey = Object.keys(game.arrows)[i];
+        const count = game.arrows[typeKey];
+        const countClass = count === Infinity ? 'inf' : '';
+        const countDisplay = count === Infinity ? '∞' : count;
+        slot.innerHTML = `
+            <span class="arrow-key">${t.key}</span>
+            <span>${t.icon}</span>
+            <span class="arrow-count ${countClass}">${countDisplay}</span>
+            <span class="arrow-name">${t.name.toUpperCase()}</span>
+        `;
+        if (count === 0 && i !== 0) slot.style.opacity = '0.4';
+        slot.onclick = () => {
+            if (i === 0 || game.arrows[typeKey] > 0) {
+                game.currentArrow = i;
+                updateArrowSlots();
+            }
+        };
+        container.appendChild(slot);
+    });
+}
+
+function damageFlash() {
+    const flash = document.getElementById('damageFlash');
+    flash.classList.add('flash');
+    setTimeout(() => flash.classList.remove('flash'), 200);
+}
+
+function showBanner(title, sub, isBoss) {
+    document.getElementById('bannerTitle').textContent = title;
+    document.getElementById('bannerSub').textContent = sub;
+    document.getElementById('bannerTitle').classList.toggle('boss', !!isBoss);
+    const banner = document.getElementById('waveBanner');
+    banner.classList.remove('show');
+    void banner.offsetWidth;
+    banner.classList.add('show');
+    setTimeout(() => banner.classList.remove('show'), 2500);
+}
+
+let currentShopTab = 'upgrades';
+
+function openShop() {
+    if (!game.running) return;
+    game.paused = true;
+    document.getElementById('shopModal').classList.add('show');
+    renderShop();
+}
+
+function closeShop() {
+    document.getElementById('shopModal').classList.remove('show');
+    game.paused = false;
+}
+
+function setShopTab(tab, e) {
+    currentShopTab = tab;
+    document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+    if (e) e.target.classList.add('active');
+    renderShop();
+}
+
+function renderShop() {
+    document.getElementById('shopGold').textContent = game.gold.toLocaleString();
+    const grid = document.getElementById('shopGrid');
+    grid.innerHTML = '';
+    
+    if (currentShopTab === 'upgrades') {
+        SHOP_UPGRADES.forEach(u => {
+            const level = game.upgrades[u.id];
+            const cost = Math.floor(u.baseCost * Math.pow(u.costMult, level));
+            const maxed = level >= u.max;
+            const canAfford = game.gold >= cost;
+            
+            const div = document.createElement('div');
+            div.className = 'shop-item' + (maxed ? ' maxed' : '');
+            div.innerHTML = `
+                <div class="shop-item-header">
+                    <div class="shop-item-icon">${u.icon}</div>
+                    <div>
+                        <div class="shop-item-title">${u.name}</div>
+                        <div class="shop-item-level">Level ${level} / ${u.max}</div>
+                    </div>
+                </div>
+                <div class="shop-item-desc">${u.desc}</div>
+                ${level > 0 ? `<div class="shop-item-effect">Current: ${getUpgradeEffect(u.id, level)}</div>` : ''}
+                <button class="shop-buy-btn ${maxed ? 'maxed' : ''}" 
+                        ${maxed || !canAfford ? 'disabled' : ''} 
+                        onclick="buyUpgrade('${u.id}')">
+                    ${maxed ? '✓ MAXED' : `🪙 ${cost}`}
+                </button>
+            `;
+            grid.appendChild(div);
+        });
+    } else if (currentShopTab === 'arrows') {
+        SHOP_ARROWS.forEach(a => {
+            const canAfford = game.gold >= a.cost;
+            const div = document.createElement('div');
+            div.className = 'shop-item';
+            div.innerHTML = `
+                <div class="shop-item-header">
+                    <div class="shop-item-icon">${a.icon}</div>
+                    <div>
+                        <div class="shop-item-title">${a.name}</div>
+                        <div class="shop-item-level">Owned: ${game.arrows[a.id]}</div>
+                    </div>
+                </div>
+                <div class="shop-item-desc">${a.desc}</div>
+                <button class="shop-buy-btn" ${!canAfford ? 'disabled' : ''} onclick="buyArrows('${a.id}')">
+                    🪙 ${a.cost}
+                </button>
+            `;
+            grid.appendChild(div);
+        });
+    } else if (currentShopTab === 'allies') {
+        SHOP_ALLIES.forEach(a => {
+            const hired = game.allies.some(al => al.id === a.id);
+            const canAfford = game.gold >= a.cost;
+            const div = document.createElement('div');
+            div.className = 'shop-item' + (hired ? ' maxed' : '');
+            div.innerHTML = `
+                <div class="shop-item-header">
+                    <div class="shop-item-icon">${a.icon}</div>
+                    <div>
+                        <div class="shop-item-title">${a.name}</div>
+                        <div class="shop-item-level">${a.title}</div>
+                    </div>
+                </div>
+                <div class="shop-item-desc">${a.desc}</div>
+                <button class="shop-buy-btn ${hired ? 'maxed' : ''}" 
+                        ${hired || !canAfford ? 'disabled' : ''} 
+                        onclick="hireAlly('${a.id}')">
+                    ${hired ? '✓ RECRUITED' : `🪙 ${a.cost}`}
+                </button>
+            `;
+            grid.appendChild(div);
+        });
+    }
+}
+
+function getUpgradeEffect(id, lvl) {
+    if (id === 'damage') return `+${lvl * 25}% damage`;
+    if (id === 'chargeSpeed') return `+${lvl * 20}% charge speed`;
+    if (id === 'fireRate') return `-${lvl * 15}% cooldown`;
+    if (id === 'critChance') return `${lvl * 8}% crit chance`;
+    if (id === 'maxHealth') return `+${lvl * 25} max HP`;
+    if (id === 'regen') return `+${lvl} HP/sec`;
+    if (id === 'goldFind') return `+${lvl * 15}% gold`;
+    return '';
+}
+
+function buyUpgrade(id) {
+    const u = SHOP_UPGRADES.find(x => x.id === id);
+    const level = game.upgrades[id];
+    if (level >= u.max) return;
+    const cost = Math.floor(u.baseCost * Math.pow(u.costMult, level));
+    if (game.gold < cost) return;
+    
+    game.gold -= cost;
+    game.upgrades[id]++;
+    
+    if (id === 'maxHealth') {
+        game.maxHealth += 25;
+        game.health += 25;
+    }
+    
+    sfx.coin();
+    renderShop();
+    updateHUD();
+}
+
+function buyArrows(id) {
+    const a = SHOP_ARROWS.find(x => x.id === id);
+    if (game.gold < a.cost) return;
+    game.gold -= a.cost;
+    game.arrows[id] += a.amount;
+    sfx.coin();
+    renderShop();
+    updateHUD();
+    updateArrowSlots();
+}
+
+function hireAlly(id) {
+    const a = SHOP_ALLIES.find(x => x.id === id);
+    if (game.gold < a.cost) return;
+    if (game.allies.some(al => al.id === id)) return;
+    
+    game.gold -= a.cost;
+    
+    // Position allies IN FRONT of the wall to defend it
+    const numAllies = game.allies.length;
+    const posX = CASTLE.gateLineX + (numAllies % 3) * 50;
+    const posY = H - 100 - Math.floor(numAllies / 3) * 50;
+    
+    // Each ally has HP scaling with cost
+    const allyHp = Math.floor(a.cost / 8) + 30;
+    
+    game.allies.push({
+        id: a.id, name: a.name, icon: a.icon,
+        x: posX, y: posY, 
+        cooldown: 30, bob: Math.random() * Math.PI * 2,
+        hp: allyHp, maxHp: allyHp,
+        attackAnim: 0
+    });
+    
+    sfx.coin();
+    sfx.powerUp();
+    showPowerNotif(`${a.name} has joined!`);
+    renderShop();
+    updateHUD();
+}
+
+function startGame() {
+    initAudio();
+    resizeCanvas();
+    
+    game = {
+        running: true, paused: false,
+        wave: 1, score: 0, gold: 100,
+        health: 100, maxHealth: 100,
+        shots: 0, hits: 0, kills: 0,
+        combo: 0, comboTimer: 0,
+        waveEnemiesLeft: 0, waveInProgress: false,
+        waveDelay: 90, spawnTimer: 0,
+        currentArrow: 0,
+        arrows: { normal: Infinity, fire: 5, ice: 5, lightning: 3, explosive: 2 },
+        charging: false, chargePower: 0, chargeMax: 50,
+        shotCooldown: 0,
+        upgrades: { damage: 0, chargeSpeed: 0, fireRate: 0, critChance: 0, maxHealth: 0, regen: 0, goldFind: 0 },
+        allies: [],
+        lastRegenTick: 0
+    };
+    arrows = []; enemies = []; particles = []; powerUps = []; floatingTexts = []; allySpells = [];
+    initStars();
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('gameOverScreen').style.display = 'none';
+    updateHUD();
+    updateArrowSlots();
+}
+
+function endGame() {
+    game.running = false;
+    const acc = game.shots > 0 ? Math.round((game.hits / game.shots) * 100) : 0;
+    
+    document.getElementById('finalWave').textContent = game.wave;
+    document.getElementById('finalScore').textContent = game.score.toLocaleString();
+    document.getElementById('finalAccuracy').textContent = acc + '%';
+    document.getElementById('finalKills').textContent = game.kills;
+    
+    let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    if (!scores.shadow_archer_waves || game.wave > scores.shadow_archer_waves) {
+        scores.shadow_archer_waves = game.wave;
+    }
+    if (!scores.shadow_archer_score || game.score > scores.shadow_archer_score) {
+        scores.shadow_archer_score = game.score;
+    }
+    if (!scores.shadow_archer_accuracy || acc > scores.shadow_archer_accuracy) {
+        scores.shadow_archer_accuracy = acc;
+    }
+    localStorage.setItem('arcadeScores', JSON.stringify(scores));
+    
+    document.getElementById('gameOverScreen').style.display = 'flex';
+    
+    if (game.wave >= 25) {
+        document.getElementById('endTitle').textContent = '🏆 ETERNAL CHAMPION!';
+        document.getElementById('endSub').textContent = '"You have slain the Eternal Dragon..."';
+    } else if (game.wave >= 20) {
+        document.getElementById('endTitle').textContent = '🏆 LEGENDARY ARCHER!';
+        document.getElementById('endSub').textContent = '"Songs shall be sung of your deeds for ages..."';
+    } else if (game.wave >= 12) {
+        document.getElementById('endTitle').textContent = '⚔️ MIGHTY DEFENDER!';
+        document.getElementById('endSub').textContent = '"The Citadel speaks your name in reverence."';
+    } else if (game.wave >= 6) {
+        document.getElementById('endTitle').textContent = '🏹 VALIANT ARCHER';
+        document.getElementById('endSub').textContent = '"You fought bravely against the dark."';
+    } else {
+        document.getElementById('endTitle').textContent = '💀 THE CITADEL HAS FALLEN';
+        document.getElementById('endSub').textContent = '"Your bow falls silent..."';
+    }
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+resizeCanvas();
+initStars();
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,3634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shadows of Eldrath - Dungeon Crawler</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Cinzel', serif;
+    background: #0a0604;
+    color: #f0e6d2;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+}
+
+#gameWrapper {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: radial-gradient(ellipse at center, #2a1a08, #0a0604);
+}
+
+#backBtn {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1000;
+    background: linear-gradient(135deg, #8b2e2e, #5a1818);
+    color: #f0e6d2;
+    border: 2px solid #d4af6e;
+    padding: 10px 20px;
+    font-family: 'MedievalSharp', serif;
+    font-size: 1em;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.6), 0 0 20px rgba(212,175,110,0.3);
+    transition: all 0.2s;
+}
+#backBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212,175,110,0.6);
+    background: linear-gradient(135deg, #a83232, #8b2e2e);
+}
+
+#mainMenu {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, #2a1a08 0%, #0a0604 70%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 500;
+    overflow: hidden;
+}
+#mainMenu::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+        radial-gradient(circle at 20% 30%, rgba(255,140,0,0.15), transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(155,89,182,0.1), transparent 40%);
+    animation: menuPulse 4s ease-in-out infinite;
+}
+@keyframes menuPulse {
+    0%,100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+.menu-title {
+    font-family: 'MedievalSharp', serif;
+    font-size: 5em;
+    color: #d4af6e;
+    text-shadow: 0 0 30px #ff8c00, 0 0 60px #8b2e2e;
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+    z-index: 1;
+    animation: titleGlow 3s ease-in-out infinite alternate;
+}
+@keyframes titleGlow {
+    from { text-shadow: 0 0 20px #ff8c00, 0 0 40px #8b2e2e; }
+    to { text-shadow: 0 0 40px #f0c75e, 0 0 80px #ff6b00, 0 0 120px #8b2e2e; }
+}
+.menu-subtitle {
+    color: #b09b76;
+    font-style: italic;
+    font-size: 1.2em;
+    margin-bottom: 30px;
+    z-index: 1;
+    letter-spacing: 2px;
+}
+.difficulty-select {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    z-index: 1;
+}
+.diff-btn {
+    background: rgba(26,18,9,0.9);
+    border: 2px solid #4a3a20;
+    color: #b09b76;
+    padding: 8px 20px;
+    font-family: 'MedievalSharp', serif;
+    cursor: pointer;
+    border-radius: 4px;
+    letter-spacing: 1px;
+}
+.diff-btn:hover { border-color: #d4af6e; color: #f0e6d2; }
+.diff-btn.active { background: #d4af6e; color: #1a1209; border-color: #f0c75e; }
+
+.menu-btn {
+    background: linear-gradient(135deg, rgba(50,35,16,0.9), rgba(26,18,9,0.9));
+    color: #f0e6d2;
+    border: 2px solid #d4af6e;
+    padding: 16px 50px;
+    font-family: 'MedievalSharp', serif;
+    font-size: 1.4em;
+    letter-spacing: 3px;
+    cursor: pointer;
+    border-radius: 6px;
+    margin: 8px;
+    min-width: 320px;
+    transition: all 0.3s;
+    z-index: 1;
+    text-shadow: 0 0 10px rgba(212,175,110,0.5);
+}
+.menu-btn:hover {
+    background: linear-gradient(135deg, #8b2e2e, #5a1818);
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(212,175,110,0.7);
+    color: #f0c75e;
+}
+.menu-footer {
+    position: absolute;
+    bottom: 30px;
+    color: #6b5836;
+    font-style: italic;
+    z-index: 1;
+    text-align: center;
+}
+
+#gameUI {
+    position: absolute;
+    inset: 0;
+    display: none;
+    pointer-events: none;
+}
+#gameUI.active { display: block; }
+
+#hud {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    pointer-events: auto;
+    z-index: 100;
+}
+.stat-bar {
+    background: rgba(0,0,0,0.7);
+    border: 2px solid #d4af6e;
+    border-radius: 6px;
+    padding: 6px 12px;
+    min-width: 180px;
+    backdrop-filter: blur(4px);
+}
+.stat-label {
+    font-size: 0.75em;
+    color: #b09b76;
+    letter-spacing: 2px;
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+}
+.stat-bar-bg {
+    background: #1a1209;
+    height: 14px;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid #4a3a20;
+}
+.stat-bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    box-shadow: inset 0 0 10px rgba(255,255,255,0.2);
+}
+.health-fill { background: linear-gradient(90deg, #8b2e2e, #ff4444); }
+.mana-fill { background: linear-gradient(90deg, #2e4a8b, #4488ff); }
+.xp-fill { background: linear-gradient(90deg, #d4870e, #f0c75e); }
+
+#sidePanel {
+    position: absolute;
+    top: 110px;
+    left: 15px;
+    background: rgba(0,0,0,0.7);
+    border: 2px solid #d4af6e;
+    border-radius: 6px;
+    padding: 12px 16px;
+    min-width: 200px;
+    pointer-events: auto;
+    backdrop-filter: blur(4px);
+    z-index: 100;
+}
+.player-name {
+    font-family: 'MedievalSharp', serif;
+    color: #f0c75e;
+    font-size: 1.2em;
+    margin-bottom: 4px;
+    text-shadow: 0 0 8px rgba(240,199,94,0.5);
+}
+.player-class {
+    color: #b09b76;
+    font-style: italic;
+    font-size: 0.85em;
+    margin-bottom: 8px;
+}
+.player-stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85em;
+    color: #d4af6e;
+    margin: 3px 0;
+}
+.player-stat strong { color: #f0e6d2; }
+
+#locationDisplay {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(0,0,0,0.7);
+    border: 2px solid #d4af6e;
+    border-radius: 6px;
+    padding: 8px 16px;
+    pointer-events: auto;
+    backdrop-filter: blur(4px);
+    font-family: 'MedievalSharp', serif;
+    color: #f0c75e;
+    font-size: 1.1em;
+    z-index: 100;
+}
+
+#actionBar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    pointer-events: auto;
+    z-index: 100;
+}
+.action-btn {
+    background: linear-gradient(135deg, #322310, #1a1209);
+    border: 2px solid #d4af6e;
+    color: #f0e6d2;
+    padding: 10px 20px;
+    font-family: 'MedievalSharp', serif;
+    font-size: 1em;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+}
+.action-btn:hover {
+    background: linear-gradient(135deg, #8b2e2e, #5a1818);
+    box-shadow: 0 0 15px rgba(212,175,110,0.6);
+    transform: translateY(-2px);
+}
+
+#minimap {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 220px;
+    height: 220px;
+    background: rgba(0,0,0,0.8);
+    border: 2px solid #d4af6e;
+    border-radius: 6px;
+    pointer-events: auto;
+    backdrop-filter: blur(4px);
+    z-index: 100;
+}
+
+#gameCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+}
+
+#dialogBox {
+    position: absolute;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    max-width: 700px;
+    background: linear-gradient(135deg, rgba(36,26,13,0.95), rgba(26,18,9,0.95));
+    border: 3px solid #d4af6e;
+    border-radius: 10px;
+    padding: 20px 25px;
+    display: none;
+    pointer-events: auto;
+    z-index: 200;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 30px rgba(212,175,110,0.3);
+}
+#dialogBox.active { display: block; animation: dialogIn 0.3s; }
+@keyframes dialogIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.dialog-speaker {
+    font-family: 'MedievalSharp', serif;
+    color: #f0c75e;
+    font-size: 1.3em;
+    margin-bottom: 8px;
+    text-shadow: 0 0 8px rgba(240,199,94,0.5);
+}
+.dialog-text {
+    color: #f0e6d2;
+    font-size: 1em;
+    line-height: 1.5;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+.dialog-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.dialog-option {
+    background: rgba(212,175,110,0.1);
+    border: 1px solid #d4af6e;
+    color: #f0e6d2;
+    padding: 8px 14px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.95em;
+    transition: all 0.2s;
+}
+.dialog-option:hover {
+    background: rgba(212,175,110,0.3);
+    border-color: #f0c75e;
+    color: #f0c75e;
+    transform: translateX(5px);
+}
+
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    pointer-events: auto;
+    backdrop-filter: blur(6px);
+}
+.modal-overlay.active { display: flex; }
+.modal-content {
+    background: linear-gradient(135deg, #241a0d, #1a1209);
+    border: 3px solid #d4af6e;
+    border-radius: 12px;
+    padding: 25px;
+    width: 700px;
+    max-width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(212,175,110,0.3);
+}
+.modal-title {
+    font-family: 'MedievalSharp', serif;
+    color: #f0c75e;
+    font-size: 2em;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 0 0 15px rgba(240,199,94,0.5);
+    letter-spacing: 3px;
+}
+.modal-close {
+    background: #8b2e2e;
+    border: 2px solid #d4af6e;
+    color: #fff;
+    padding: 10px 30px;
+    font-family: 'MedievalSharp', serif;
+    cursor: pointer;
+    border-radius: 6px;
+    display: block;
+    margin: 20px auto 0;
+    letter-spacing: 2px;
+}
+.modal-close:hover { background: #a83232; }
+
+.inv-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #4a3a20;
+    padding-bottom: 10px;
+}
+.inv-tab {
+    background: rgba(212,175,110,0.1);
+    border: 1px solid #d4af6e;
+    color: #b09b76;
+    padding: 6px 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: 'Cinzel', serif;
+}
+.inv-tab.active { background: #d4af6e; color: #1a1209; }
+.inv-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+}
+.inv-slot {
+    aspect-ratio: 1;
+    background: rgba(0,0,0,0.5);
+    border: 2px solid #4a3a20;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+}
+.inv-slot:hover {
+    border-color: #f0c75e;
+    transform: scale(1.05);
+    background: rgba(212,175,110,0.1);
+}
+.inv-slot.equipped {
+    border-color: #5a8c3a;
+    box-shadow: 0 0 12px rgba(90,140,58,0.5);
+}
+.inv-slot.empty { opacity: 0.3; }
+.inv-slot-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    background: #8b2e2e;
+    color: #fff;
+    font-size: 0.5em;
+    font-weight: bold;
+    padding: 1px 5px;
+    border-radius: 8px;
+}
+.item-tooltip {
+    position: absolute;
+    background: rgba(0,0,0,0.95);
+    border: 2px solid #d4af6e;
+    padding: 10px 14px;
+    border-radius: 6px;
+    z-index: 400;
+    min-width: 200px;
+    pointer-events: none;
+    display: none;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+}
+.item-tooltip.show { display: block; }
+.tooltip-name { font-family: 'MedievalSharp', serif; color: #f0c75e; font-size: 1.1em; margin-bottom: 4px; }
+.tooltip-type { color: #b09b76; font-size: 0.8em; font-style: italic; margin-bottom: 6px; }
+.tooltip-stats { color: #5a8c3a; font-size: 0.85em; }
+.tooltip-desc { color: #d4af6e; font-size: 0.8em; font-style: italic; margin-top: 6px; padding-top: 6px; border-top: 1px solid #4a3a20; }
+
+#messageLog {
+    position: absolute;
+    top: 110px;
+    right: 15px;
+    width: 280px;
+    max-height: 300px;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid #d4af6e;
+    border-radius: 6px;
+    padding: 10px;
+    pointer-events: auto;
+    backdrop-filter: blur(4px);
+    overflow-y: auto;
+    z-index: 90;
+    font-size: 0.85em;
+}
+.log-entry {
+    color: #d4af6e;
+    margin: 2px 0;
+    padding: 2px 4px;
+    border-left: 2px solid #4a3a20;
+    padding-left: 6px;
+    animation: logIn 0.3s;
+}
+@keyframes logIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.log-combat { color: #ff8888; border-color: #8b2e2e; }
+.log-loot { color: #f0c75e; border-color: #d4870e; }
+.log-quest { color: #5a8c3a; border-color: #3a6b2a; }
+.log-system { color: #6ba3c7; border-color: #2e4a8b; }
+.log-boss { color: #c79bd6; border-color: #9b59b6; font-weight: bold; }
+
+.endscreen {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 500;
+    pointer-events: auto;
+}
+.endscreen.active { display: flex; animation: fadeIn 1s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.endscreen-title {
+    font-family: 'MedievalSharp', serif;
+    font-size: 5em;
+    letter-spacing: 5px;
+    margin-bottom: 20px;
+}
+#deathScreen .endscreen-title { color: #8b2e2e; text-shadow: 0 0 30px #8b2e2e; }
+#victoryScreen .endscreen-title { color: #f0c75e; text-shadow: 0 0 30px #f0c75e; animation: titleGlow 2s infinite alternate; }
+.endscreen-msg { color: #d4af6e; font-style: italic; margin-bottom: 30px; font-size: 1.3em; }
+.endscreen-stats {
+    background: rgba(0,0,0,0.6);
+    border: 2px solid #d4af6e;
+    border-radius: 8px;
+    padding: 20px 30px;
+    margin-bottom: 25px;
+    color: #f0e6d2;
+    font-size: 1em;
+    line-height: 1.8;
+}
+
+#controlsHint {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid #4a3a20;
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: #b09b76;
+    font-size: 0.75em;
+    pointer-events: none;
+    z-index: 90;
+    backdrop-filter: blur(4px);
+}
+#controlsHint kbd {
+    background: #322310;
+    border: 1px solid #d4af6e;
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: #f0c75e;
+    font-family: monospace;
+    margin: 0 2px;
+}
+
+#bossWarning {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'MedievalSharp', serif;
+    font-size: 4em;
+    color: #ff0000;
+    text-shadow: 0 0 30px #ff0000, 0 0 60px #8b2e2e;
+    letter-spacing: 8px;
+    pointer-events: none;
+    z-index: 250;
+    opacity: 0;
+    display: none;
+}
+#bossWarning.show {
+    display: block;
+    animation: bossWarnIn 3s ease-out;
+}
+@keyframes bossWarnIn {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    40% { transform: translate(-50%, -50%) scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #1a1209; }
+::-webkit-scrollbar-thumb { background: #d4af6e; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<a href="tavern.html" id="backBtn">⬅ TAVERN</a>
+
+<div id="gameWrapper">
+    <div id="mainMenu">
+        <div class="menu-title">Shadows of Eldrath</div>
+        <div class="menu-subtitle">~ A Dungeon Crawler ~</div>
+        <div class="difficulty-select">
+            <button class="diff-btn" onclick="setDifficulty('easy', this)">😊 Easy</button>
+            <button class="diff-btn active" onclick="setDifficulty('normal', this)">⚔️ Normal</button>
+            <button class="diff-btn" onclick="setDifficulty('hard', this)">💀 Hard</button>
+            <button class="diff-btn" onclick="setDifficulty('nightmare', this)">🔥 Nightmare</button>
+        </div>
+        <button class="menu-btn" onclick="startGame('warrior')">⚔️ Warrior</button>
+        <button class="menu-btn" onclick="startGame('mage')">🔮 Mage</button>
+        <button class="menu-btn" onclick="startGame('rogue')">🗡️ Rogue</button>
+        <div class="menu-footer">
+            Move: WASD / Arrows • Attack: SPACE • Interact/Open Chest: E • Inventory: I<br>
+            <span style="color:#5a8c3a;">⚠ 6 zones, 100+ enemies, 5 bosses await!</span>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="gameUI">
+        <div id="hud">
+            <div class="stat-bar">
+                <div class="stat-label"><span>❤️ HEALTH</span><span id="hpText">100/100</span></div>
+                <div class="stat-bar-bg"><div class="stat-bar-fill health-fill" id="hpFill" style="width:100%"></div></div>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-label"><span>💧 MANA</span><span id="mpText">50/50</span></div>
+                <div class="stat-bar-bg"><div class="stat-bar-fill mana-fill" id="mpFill" style="width:100%"></div></div>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-label"><span>⭐ LVL <span id="lvlText">1</span></span><span id="xpText">0/100</span></div>
+                <div class="stat-bar-bg"><div class="stat-bar-fill xp-fill" id="xpFill" style="width:0%"></div></div>
+            </div>
+        </div>
+
+        <div id="sidePanel">
+            <div class="player-name" id="playerNameDisplay">Hero</div>
+            <div class="player-class" id="playerClassDisplay">Warrior</div>
+            <div class="player-stat">⚔️ Attack <strong id="statAtk">10</strong></div>
+            <div class="player-stat">🛡️ Defense <strong id="statDef">5</strong></div>
+            <div class="player-stat">💨 Speed <strong id="statSpd">3</strong></div>
+            <div class="player-stat">🪙 Gold <strong id="statGold">0</strong></div>
+            <div class="player-stat">💀 Kills <strong id="statKills">0</strong></div>
+        </div>
+
+        <div id="locationDisplay">📍 Tavern Cellar</div>
+        <div id="messageLog"></div>
+
+        <div id="actionBar">
+            <button class="action-btn" onclick="toggleInventory()">🎒 Inventory (I)</button>
+            <button class="action-btn" onclick="returnToMenu()">🏠 Menu</button>
+        </div>
+
+        <div id="controlsHint">
+            <kbd>WASD</kbd> Move • <kbd>SPACE</kbd> Attack • <kbd>E</kbd> Interact/Open • <kbd>I</kbd> Inventory • <kbd>1-2</kbd> Potions
+        </div>
+
+        <canvas id="minimap" width="220" height="220"></canvas>
+    </div>
+
+    <div id="bossWarning">⚠ BOSS ⚠</div>
+
+    <div id="dialogBox">
+        <div class="dialog-speaker" id="dialogSpeaker">NPC</div>
+        <div class="dialog-text" id="dialogText"></div>
+        <div class="dialog-options" id="dialogOptions"></div>
+    </div>
+
+    <div class="modal-overlay" id="inventoryModal">
+        <div class="modal-content">
+            <div class="modal-title">⚔️ INVENTORY ⚔️</div>
+            <div class="inv-tabs">
+                <button class="inv-tab active" onclick="setInvTab('all', this)">All</button>
+                <button class="inv-tab" onclick="setInvTab('weapon', this)">Weapons</button>
+                <button class="inv-tab" onclick="setInvTab('armor', this)">Armor</button>
+                <button class="inv-tab" onclick="setInvTab('potion', this)">Potions</button>
+                <button class="inv-tab" onclick="setInvTab('key', this)">Keys</button>
+            </div>
+            <div class="inv-grid" id="invGrid"></div>
+            <button class="modal-close" onclick="toggleInventory()">CLOSE</button>
+        </div>
+    </div>
+
+    <div class="item-tooltip" id="itemTooltip"></div>
+
+    <div class="endscreen" id="deathScreen">
+        <div class="endscreen-title">💀 YOU DIED 💀</div>
+        <div class="endscreen-msg">Your tale ends here, brave hero...</div>
+        <div class="endscreen-stats" id="deathStats"></div>
+        <button class="menu-btn" onclick="returnToMenu()">Return to Menu</button>
+    </div>
+    <div class="endscreen" id="victoryScreen">
+        <div class="endscreen-title">🏆 VICTORY 🏆</div>
+        <div class="endscreen-msg">The Dragon Lord has fallen! Eldrath is saved!</div>
+        <div class="endscreen-stats" id="victoryStats"></div>
+        <button class="menu-btn" onclick="returnToMenu()">Return to Menu</button>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// SHADOWS OF ELDRATH - DUNGEON CRAWLER
+// ============================================================
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const minimap = document.getElementById('minimap');
+const mctx = minimap.getContext('2d');
+
+let W = window.innerWidth, H = window.innerHeight;
+function resize() { 
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W; canvas.height = H;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const TILE = 48;
+
+const game = {
+    state: 'menu',
+    player: null,
+    currentMap: null,
+    currentMapId: null,
+    enemies: [],
+    npcs: [],
+    items: [],
+    projectiles: [],
+    particles: [],
+    floatTexts: [],
+    camera: { x: 0, y: 0 },
+    keys: {},
+    mouse: { x: 0, y: 0, down: false },
+    time: 0,
+    startTime: 0,
+    invTab: 'all',
+    questFlags: {},
+    difficulty: 'normal'
+};
+
+const DIFFICULTIES = {
+    easy:      { hp: 0.7, atk: 0.7, name: 'Easy' },
+    normal:    { hp: 1.0, atk: 1.0, name: 'Normal' },
+    hard:      { hp: 1.5, atk: 1.4, name: 'Hard' },
+    nightmare: { hp: 2.5, atk: 1.8, name: 'Nightmare' }
+};
+
+function setDifficulty(d, btn) {
+    game.difficulty = d;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+const CLASSES = {
+    warrior: { name: 'Warrior', icon: '⚔️', hp: 130, mp: 30, atk: 12, def: 8, spd: 2.4, 
+               bodyColor: '#7a2020', skinColor: '#e8c9a0', hairColor: '#3a2410', accent: '#b8b0a0' },
+    mage:    { name: 'Mage',    icon: '🔮', hp: 85,  mp: 110, atk: 7,  def: 4, spd: 2.7,   
+               bodyColor: '#3a2a8c', skinColor: '#e8c9a0', hairColor: '#d4af6e', accent: '#9b59b6' },
+    rogue:   { name: 'Rogue',   icon: '🗡️', hp: 100, mp: 50, atk: 10, def: 5, spd: 3.1, 
+               bodyColor: '#1a3a2a', skinColor: '#d4af6e', hairColor: '#1a1209', accent: '#5a8c3a' }
+};
+
+const ITEMS = {
+    sword_rusty:    { name: 'Rusty Sword',       icon: '🗡️', type: 'weapon', atk: 5,  desc: 'A worn but reliable blade.' },
+    sword_iron:     { name: 'Iron Sword',        icon: '⚔️', type: 'weapon', atk: 12, desc: 'A well-forged iron blade.' },
+    sword_steel:    { name: 'Steel Longsword',   icon: '⚔️', type: 'weapon', atk: 18, desc: 'A finely tempered sword.' },
+    sword_flame:    { name: 'Flameblade',        icon: '🔥', type: 'weapon', atk: 28, desc: 'Forged in dragonfire. Burns enemies.' },
+    sword_holy:     { name: 'Holy Avenger',      icon: '✨', type: 'weapon', atk: 35, desc: 'Blessed by ancient gods.' },
+    staff_wood:     { name: 'Wooden Staff',      icon: '🪄', type: 'weapon', atk: 6,  mp: 10, desc: 'A simple apprentice staff.' },
+    staff_arcane:   { name: 'Arcane Staff',      icon: '⚡', type: 'weapon', atk: 15, mp: 30, desc: 'Channels raw magical power.' },
+    staff_void:     { name: 'Voidcaller',        icon: '🌑', type: 'weapon', atk: 25, mp: 50, desc: 'Drinks souls of the fallen.' },
+    dagger_iron:    { name: 'Iron Dagger',       icon: '🔪', type: 'weapon', atk: 8,  spd: 1, desc: 'Quick and silent.' },
+    dagger_poison:  { name: 'Venomfang',         icon: '☠️', type: 'weapon', atk: 18, spd: 2, desc: 'Drips with cruel poison.' },
+    dagger_shadow:  { name: 'Shadowstrike',      icon: '🌒', type: 'weapon', atk: 26, spd: 2, desc: 'Forged from solid darkness.' },
+    armor_leather:  { name: 'Leather Armor',     icon: '🥋', type: 'armor', def: 4,  desc: 'Basic protection.' },
+    armor_studded:  { name: 'Studded Leather',   icon: '🥋', type: 'armor', def: 8,  desc: 'Reinforced with metal studs.' },
+    armor_chain:    { name: 'Chainmail',         icon: '🛡️', type: 'armor', def: 14, desc: 'Heavy but protective.' },
+    armor_plate:    { name: 'Dragonscale Plate', icon: '🦴', type: 'armor', def: 24, desc: 'Legendary armor of fallen heroes.' },
+    armor_celestial:{ name: 'Celestial Aegis',   icon: '🌟', type: 'armor', def: 35, desc: 'Forged in the heavens.' },
+    potion_health:  { name: 'Health Potion',     icon: '🧪', type: 'potion', heal: 60, desc: 'Restores 60 HP.' },
+    potion_mana:    { name: 'Mana Potion',       icon: '💙', type: 'potion', mana: 50, desc: 'Restores 50 MP.' },
+    potion_greater: { name: 'Greater Potion',    icon: '🍷', type: 'potion', heal: 150, desc: 'Restores 150 HP.' },
+    key_dungeon:    { name: 'Dungeon Key',       icon: '🗝️', type: 'key', desc: 'Opens the dungeon door.' },
+    key_crypt:      { name: 'Crypt Key',         icon: '🔑', type: 'key', desc: 'Opens the ancient crypt.' },
+    key_catacomb:   { name: 'Catacomb Key',      icon: '🗝️', type: 'key', desc: 'Opens the catacombs.' },
+    key_throne:     { name: 'Throne Key',        icon: '👑', type: 'key', desc: 'Opens the Dragon Lord\'s lair.' },
+    gold_pile:      { name: 'Gold Pile',         icon: '💰', type: 'gold', value: 50, desc: 'Shiny gold coins.' },
+    gold_big:       { name: 'Treasure',          icon: '💎', type: 'gold', value: 150, desc: 'A pile of jewels and coin.' }
+};
+
+const ENEMY_TYPES = {
+    rat:        { name: 'Giant Rat',     hp: 22,  atk: 5,  def: 0,  spd: 1.5, xp: 12,  gold: 5,   color: '#6b5836', size: 18 },
+    bat:        { name: 'Cave Bat',      hp: 18,  atk: 6,  def: 0,  spd: 2.8, xp: 14,  gold: 4,   color: '#2a1d3a', size: 16 },
+    spider:     { name: 'Cave Spider',   hp: 28,  atk: 8,  def: 1,  spd: 2.0, xp: 18,  gold: 8,   color: '#3a1a1a', size: 20 },
+    goblin:     { name: 'Goblin',        hp: 38,  atk: 9,  def: 2,  spd: 1.9, xp: 25,  gold: 18,  color: '#5a8c3a', size: 22 },
+    goblin_arch:{ name: 'Goblin Archer', hp: 32,  atk: 11, def: 1,  spd: 1.7, xp: 28,  gold: 22,  color: '#4a7c2a', size: 22, ranged: true, range: 250 },
+    orc:        { name: 'Orc Brute',     hp: 75,  atk: 14, def: 5,  spd: 1.6, xp: 50,  gold: 35,  color: '#3a6b2a', size: 28 },
+    orc_chief:  { name: 'Orc Chieftain', hp: 180, atk: 22, def: 8,  spd: 1.7, xp: 200, gold: 150, color: '#2a4b1a', size: 34, miniboss: true },
+    skeleton:   { name: 'Skeleton',      hp: 55,  atk: 12, def: 3,  spd: 1.7, xp: 35,  gold: 22,  color: '#e8e0d0', size: 24 },
+    skel_arch:  { name: 'Skeleton Archer', hp: 45, atk: 14, def: 2,  spd: 1.6, xp: 38,  gold: 25,  color: '#d8d0c0', size: 24, ranged: true, range: 280 },
+    wraith:     { name: 'Wraith',        hp: 65,  atk: 16, def: 6,  spd: 2.3, xp: 60,  gold: 40,  color: '#9b59b6', size: 26 },
+    lich:       { name: 'Lich Lord',     hp: 250, atk: 24, def: 10, spd: 1.8, xp: 300, gold: 250, color: '#6c5ce7', size: 32, miniboss: true, ranged: true, range: 320 },
+    knight:     { name: 'Fallen Knight', hp: 130, atk: 20, def: 12, spd: 1.5, xp: 100, gold: 70,  color: '#b8b0a0', size: 30 },
+    death_knight:{ name: 'Death Knight', hp: 300, atk: 28, def: 15, spd: 1.7, xp: 400, gold: 300, color: '#5a4a8a', size: 36, miniboss: true },
+    demon:      { name: 'Fire Demon',    hp: 160, atk: 24, def: 9,  spd: 1.9, xp: 150, gold: 100, color: '#a83232', size: 32 },
+    demon_lord: { name: 'Demon Lord',    hp: 450, atk: 32, def: 14, spd: 2.0, xp: 600, gold: 500, color: '#6b0000', size: 42, miniboss: true, ranged: true, range: 250 },
+    dragon:     { name: 'Pyraxx the Dragon Lord', hp: 800, atk: 38, def: 18, spd: 1.7, xp: 1500, gold: 2000, color: '#8b2e2e', size: 60, boss: true, ranged: true, range: 350 }
+};
+
+// ============================================================
+// MAPS — exits placed on FLOOR tiles ('0') in walls so they work both ways
+// ============================================================
+const MAPS = {
+    cellar: {
+        name: '🍺 Tavern Cellar',
+        bgColor: '#2a1a08',
+        wallColor: '#4a3a20',
+        floorColor: '#1a1209',
+        tiles: [
+            "111111111111111111111111111111",
+            "100000000111000000000000000061",
+            "100600000111000000000111100001",
+            "100000000111000000000100100001",
+            "100000000000000000000100100001",
+            "100000000000000000050100100061",
+            "111111110000111100000100100001",
+            "100000000000111100000100100001",
+            "100600000000111100000000000001",
+            "100000000050000000000111100001",
+            "111111000000000000000100100001",
+            "100000000060000005000100100061",
+            "100000000000000000000100100001",
+            "100000000000000000000000000001",
+            "100600005000111001110000000001",
+            "100000000000100000010005000001",
+            "100000000000100600010000000001",
+            "100000000000100000010000000061",
+            "100000000000100000010000000001",
+            "100000000000100000010000000001",
+            "100000000000111111110000000000",
+            "111111111111111111111111111111",
+        ],
+        spawns: {
+            player: { x: 2, y: 2 },
+            enemies: [
+                { type: 'rat', x: 5, y: 3 },
+                { type: 'rat', x: 8, y: 7 },
+                { type: 'rat', x: 16, y: 4 },
+                { type: 'rat', x: 22, y: 8 },
+                { type: 'rat', x: 14, y: 13 },
+                { type: 'rat', x: 4, y: 18 },
+                { type: 'bat', x: 18, y: 2 },
+                { type: 'bat', x: 25, y: 6 },
+                { type: 'bat', x: 11, y: 12 },
+                { type: 'bat', x: 20, y: 16 },
+                { type: 'spider', x: 14, y: 10 },
+                { type: 'spider', x: 24, y: 13 },
+                { type: 'spider', x: 7, y: 16 }
+            ],
+            npcs: [
+                { id: 'innkeeper', x: 2, y: 19, name: 'Innkeeper Garrick' }
+            ],
+            items: [
+                { type: 'potion_health', x: 4, y: 9 },
+                { type: 'potion_health', x: 19, y: 14 },
+                { type: 'gold_pile', x: 26, y: 4, inChest: true },
+                { type: 'gold_pile', x: 16, y: 18 },
+                { type: 'sword_iron', x: 8, y: 15, inChest: true }
+            ]
+        },
+        exits: [
+            { x: 29, y: 20, to: 'forest', toX: 1, toY: 10 }
+        ]
+    },
+    forest: {
+        name: '🌲 Cursed Forest',
+        bgColor: '#0a1f0a',
+        wallColor: '#2a4a2a',
+        floorColor: '#1a3a1a',
+        tiles: [
+            "1111111111111111111111111111111111111111",
+            "1000000000111000000000000000000011100001",
+            "1000600000100000060000111000060010100001",
+            "1000000000100000000000100000000010100061",
+            "1000111000100000111110100000111110100001",
+            "1000000000000000100000000000000000000001",
+            "1000000000000000100000000000000000000001",
+            "1000000000000000100000000000000000000001",
+            "1000111000111000111110111000111000111001",
+            "1000000000000000000000000000000000000001",
+            "0000060000000060000005000060000000600000",
+            "1000000000000000000000000000000000000001",
+            "1000111000111000111110111000111000111001",
+            "1000000000005000100000000000005000000001",
+            "1000600000000000100600000000000000600001",
+            "1000111110000000100000111000000011100001",
+            "1000000000111000100000100000111000000001",
+            "1000000000000000100000100000000000000001",
+            "1000111000000000111110100000000000111001",
+            "1000000060000000000000000060000000000001",
+            "1000600000111000000000111000000000600001",
+            "1111111111111111111111111111111111111111",
+        ],
+        spawns: {
+            player: { x: 1, y: 10 },
+            enemies: [
+                { type: 'goblin', x: 7, y: 5 },
+                { type: 'goblin', x: 14, y: 7 },
+                { type: 'goblin', x: 22, y: 5 },
+                { type: 'goblin', x: 28, y: 9 },
+                { type: 'goblin', x: 35, y: 13 },
+                { type: 'goblin', x: 7, y: 17 },
+                { type: 'goblin', x: 18, y: 19 },
+                { type: 'goblin_arch', x: 15, y: 3 },
+                { type: 'goblin_arch', x: 30, y: 6 },
+                { type: 'goblin_arch', x: 11, y: 14 },
+                { type: 'goblin_arch', x: 33, y: 18 },
+                { type: 'bat', x: 5, y: 3 },
+                { type: 'bat', x: 20, y: 11 },
+                { type: 'bat', x: 36, y: 4 },
+                { type: 'bat', x: 8, y: 20 },
+                { type: 'spider', x: 12, y: 9 },
+                { type: 'spider', x: 25, y: 15 },
+                { type: 'orc', x: 17, y: 5 },
+                { type: 'orc', x: 24, y: 13 },
+                { type: 'orc', x: 30, y: 17 },
+                { type: 'orc_chief', x: 36, y: 10 }
+            ],
+            npcs: [
+                { id: 'merchant', x: 14, y: 15, name: 'Wandering Merchant' },
+                { id: 'hermit', x: 3, y: 3, name: 'Forest Hermit' }
+            ],
+            items: [
+                { type: 'sword_iron', x: 8, y: 6, inChest: true },
+                { type: 'armor_studded', x: 26, y: 10, inChest: true },
+                { type: 'potion_health', x: 5, y: 14 },
+                { type: 'potion_health', x: 21, y: 7 },
+                { type: 'potion_mana', x: 32, y: 11 },
+                { type: 'gold_pile', x: 11, y: 13 },
+                { type: 'gold_pile', x: 28, y: 19 }
+            ]
+        },
+        exits: [
+            { x: 0, y: 10, to: 'cellar', toX: 27, toY: 19 },
+            { x: 39, y: 10, to: 'dungeon', toX: 1, toY: 10, requiresKey: 'key_dungeon' }
+        ]
+    },
+    dungeon: {
+        name: '⚔️ Ancient Dungeon',
+        bgColor: '#0a0a14',
+        wallColor: '#3a3a4a',
+        floorColor: '#1a1a24',
+        tiles: [
+            "1111111111111111111111111111111111111111",
+            "1000000111000000111000000111000000000001",
+            "1006000100000600100000060100000060000001",
+            "1000000100000000100000000100000000000001",
+            "1000000100050000100050000100000050000001",
+            "1000000100000000100000000100000000000001",
+            "1000000111111000111111000111111000000001",
+            "1000000000000000000000000000000000000001",
+            "1006000000000060000005000000000060000061",
+            "1000000000000000000000000000000000000001",
+            "0000000000005000000000000000005000000000",
+            "1000000000000000000000000000000000000001",
+            "1006000000000060000005000000000060000001",
+            "1000000000000000000000000000000000000001",
+            "1000000111111000111111000111111000000001",
+            "1000000100000000100000000100000000000001",
+            "1000000100050000100050000100000050000001",
+            "1000000100000000100000000100000000000001",
+            "1006000100000600100000060100000060000061",
+            "1000000111000000111000000111000000000001",
+            "1000000000000000000000000000000000000001",
+            "1111111111111111111111111111111111111111",
+        ],
+        spawns: {
+            player: { x: 1, y: 10 },
+            enemies: [
+                { type: 'skeleton', x: 4, y: 3 },
+                { type: 'skeleton', x: 12, y: 5 },
+                { type: 'skeleton', x: 20, y: 3 },
+                { type: 'skeleton', x: 28, y: 5 },
+                { type: 'skeleton', x: 35, y: 4 },
+                { type: 'skeleton', x: 8, y: 16 },
+                { type: 'skeleton', x: 16, y: 18 },
+                { type: 'skeleton', x: 25, y: 16 },
+                { type: 'skeleton', x: 33, y: 18 },
+                { type: 'skel_arch', x: 6, y: 12 },
+                { type: 'skel_arch', x: 14, y: 9 },
+                { type: 'skel_arch', x: 22, y: 12 },
+                { type: 'skel_arch', x: 30, y: 9 },
+                { type: 'wraith', x: 11, y: 7 },
+                { type: 'wraith', x: 19, y: 11 },
+                { type: 'wraith', x: 27, y: 13 },
+                { type: 'wraith', x: 35, y: 8 },
+                { type: 'wraith', x: 18, y: 17 },
+                { type: 'orc', x: 7, y: 8 },
+                { type: 'orc', x: 23, y: 17 },
+                { type: 'knight', x: 32, y: 14 },
+                { type: 'lich', x: 36, y: 10 }
+            ],
+            npcs: [
+                { id: 'ghost', x: 9, y: 10, name: 'Lost Spirit' }
+            ],
+            items: [
+                { type: 'armor_chain', x: 12, y: 8, inChest: true },
+                { type: 'sword_steel', x: 22, y: 5, inChest: true },
+                { type: 'potion_mana', x: 16, y: 12 },
+                { type: 'potion_health', x: 26, y: 17 },
+                { type: 'potion_greater', x: 32, y: 5, inChest: true },
+                { type: 'gold_pile', x: 5, y: 8 },
+                { type: 'gold_big', x: 30, y: 18, inChest: true }
+            ]
+        },
+        exits: [
+            { x: 0, y: 10, to: 'forest', toX: 38, toY: 10 },
+            { x: 39, y: 10, to: 'catacombs', toX: 1, toY: 10, requiresKey: 'key_crypt' }
+        ]
+    },
+    catacombs: {
+        name: '🕯️ Catacombs',
+        bgColor: '#0a0808',
+        wallColor: '#2a2030',
+        floorColor: '#15101a',
+        tiles: [
+            "1111111111111111111111111111111111111111",
+            "1000600000000060000000000600000000000001",
+            "1000000111000000000111000000000111000001",
+            "1000000100000005000100000005000100000001",
+            "1000000100000000000100000000000100000001",
+            "1000000100600000000100600000000100000061",
+            "1000000111000000000111000000000111000001",
+            "1000000000000000000000000000000000000001",
+            "1006000000000000000000000000000000060001",
+            "1000000000000000000000000000000000000001",
+            "0000000005000000000005000000000005000000",
+            "1000000000000000000000000000000000000001",
+            "1006000000000000000000000000000000060001",
+            "1000000000000000000000000000000000000001",
+            "1000000111000000000111000000000111000001",
+            "1000000100600000000100600000000100600001",
+            "1000000100000000000100000000000100000061",
+            "1000000100000005000100000005000100000001",
+            "1000000111000000000111000000000111000001",
+            "1000600000000060000000000600000000000001",
+            "1000000000000000000000000000000000000001",
+            "1111111111111111111111111111111111111111",
+        ],
+        spawns: {
+            player: { x: 1, y: 10 },
+            enemies: [
+                { type: 'wraith', x: 5, y: 3 },
+                { type: 'wraith', x: 14, y: 5 },
+                { type: 'wraith', x: 23, y: 3 },
+                { type: 'wraith', x: 32, y: 5 },
+                { type: 'wraith', x: 7, y: 17 },
+                { type: 'wraith', x: 16, y: 19 },
+                { type: 'wraith', x: 27, y: 17 },
+                { type: 'wraith', x: 35, y: 16 },
+                { type: 'knight', x: 11, y: 8 },
+                { type: 'knight', x: 22, y: 11 },
+                { type: 'knight', x: 30, y: 9 },
+                { type: 'knight', x: 8, y: 13 },
+                { type: 'knight', x: 17, y: 15 },
+                { type: 'skel_arch', x: 13, y: 12 },
+                { type: 'skel_arch', x: 25, y: 14 },
+                { type: 'demon', x: 19, y: 7 },
+                { type: 'demon', x: 28, y: 13 },
+                { type: 'demon', x: 34, y: 11 },
+                { type: 'death_knight', x: 37, y: 10 }
+            ],
+            npcs: [],
+            items: [
+                { type: 'sword_steel', x: 14, y: 9, inChest: true },
+                { type: 'armor_chain', x: 7, y: 5, inChest: true },
+                { type: 'potion_greater', x: 20, y: 11, inChest: true },
+                { type: 'potion_health', x: 25, y: 7 },
+                { type: 'potion_mana', x: 29, y: 16 },
+                { type: 'gold_big', x: 16, y: 17, inChest: true },
+                { type: 'gold_pile', x: 33, y: 4 }
+            ]
+        },
+        exits: [
+            { x: 0, y: 10, to: 'dungeon', toX: 38, toY: 10 },
+            { x: 39, y: 10, to: 'crypt', toX: 1, toY: 10, requiresKey: 'key_catacomb' }
+        ]
+    },
+    crypt: {
+        name: '☠️ Forgotten Crypt',
+        bgColor: '#100808',
+        wallColor: '#3a1a1a',
+        floorColor: '#1a0808',
+        tiles: [
+            "1111111111111111111111111111111111111111",
+            "1006000000000000060000000000000000600001",
+            "1000000000000000000000000000000000000001",
+            "1000111000111000000000111000111000111001",
+            "1000100000100000000000100000100000100001",
+            "1000100050100050000050100050100050100001",
+            "1000100000100000000000100000100000100001",
+            "1000111000111000060000111000111000111001",
+            "1000000000000000000000000000000000000001",
+            "1000000000000000005000000000000000000001",
+            "0000000000005000000000005000000000000000",
+            "1000000000000000005000000000000000000001",
+            "1000000000000000000000000000000000000001",
+            "1000111000111000060000111000111000111001",
+            "1000100000100000000000100000100000100001",
+            "1000100050100050000050100050100050100001",
+            "1000100000100000000000100000100000100001",
+            "1000111000111000000000111000111000111001",
+            "1000000000000000000000000000000000000001",
+            "1006000000000000060000000000000000600001",
+            "1000000000000000000000000000000000000001",
+            "1111111111111111111111111111111111111111",
+        ],
+        spawns: {
+            player: { x: 1, y: 10 },
+            enemies: [
+                { type: 'wraith', x: 5, y: 5 },
+                { type: 'wraith', x: 11, y: 9 },
+                { type: 'wraith', x: 18, y: 5 },
+                { type: 'wraith', x: 25, y: 9 },
+                { type: 'wraith', x: 32, y: 5 },
+                { type: 'wraith', x: 5, y: 15 },
+                { type: 'wraith', x: 14, y: 13 },
+                { type: 'wraith', x: 28, y: 15 },
+                { type: 'knight', x: 8, y: 8 },
+                { type: 'knight', x: 15, y: 10 },
+                { type: 'knight', x: 23, y: 8 },
+                { type: 'knight', x: 30, y: 10 },
+                { type: 'knight', x: 19, y: 13 },
+                { type: 'knight', x: 11, y: 17 },
+                { type: 'knight', x: 26, y: 17 },
+                { type: 'demon', x: 17, y: 7 },
+                { type: 'demon', x: 22, y: 11 },
+                { type: 'demon', x: 31, y: 14 },
+                { type: 'demon', x: 8, y: 13 },
+                { type: 'demon_lord', x: 35, y: 10 }
+            ],
+            npcs: [],
+            items: [
+                { type: 'sword_flame', x: 19, y: 10, inChest: true },
+                { type: 'armor_plate', x: 6, y: 11, inChest: true },
+                { type: 'dagger_shadow', x: 31, y: 11, inChest: true },
+                { type: 'staff_void', x: 26, y: 5, inChest: true },
+                { type: 'potion_greater', x: 14, y: 5 },
+                { type: 'potion_greater', x: 22, y: 15 },
+                { type: 'potion_mana', x: 11, y: 12 },
+                { type: 'gold_big', x: 31, y: 18, inChest: true },
+                { type: 'gold_big', x: 5, y: 18, inChest: true }
+            ]
+        },
+        exits: [
+            { x: 0, y: 10, to: 'catacombs', toX: 38, toY: 10 },
+            { x: 39, y: 10, to: 'throne', toX: 1, toY: 11, requiresKey: 'key_throne' }
+        ]
+    },
+    throne: {
+        name: '🐉 Dragon\'s Throne',
+        bgColor: '#1a0500',
+        wallColor: '#5a1a08',
+        floorColor: '#2a0a04',
+        tiles: [
+            "11111111111111111111111111111111111111111111",
+            "10006000000000000000000000000000000000060001",
+            "10000000000000000000000000000000000000000001",
+            "10000000000000000000000000000000000000000001",
+            "10000600000000000000000000000000000006000001",
+            "10000000000000000000000000000000000000000001",
+            "10000000000000000000000000000000000000000001",
+            "10006000000000000000000000000000000000060001",
+            "10000000000000000000000000000000000000000001",
+            "10000000000000000000000000000000000000000001",
+            "10000600000000000000000000000000000006000001",
+            "00000000000000000000000000000000000000000000",
+            "10000000000000000000000000000000000000000001",
+            "10006000000000000000000000000000000000060001",
+            "10000000000000000000000000000000000000000001",
+            "10000000000000000000000000000000000000000001",
+            "10000600000000000000000000000000000006000001",
+            "10000000000000000000000000000000000000000001",
+            "10000000000000000000000000000000000000000001",
+            "10006000000000000000000000000000000000060001",
+            "10000000000000000000000000000000000000000001",
+            "11111111111111111111111111111111111111111111",
+        ],
+        spawns: {
+            player: { x: 1, y: 11 },
+            enemies: [
+                { type: 'dragon', x: 35, y: 11 }
+            ],
+            npcs: [],
+            items: []
+        },
+        exits: [
+            { x: 0, y: 11, to: 'crypt', toX: 38, toY: 10 }
+        ]
+    }
+};
+
+// ============================================================
+// PLAYER
+// ============================================================
+class Player {
+    constructor(classType) {
+        const c = CLASSES[classType];
+        this.classType = classType;
+        this.name = c.name;
+        this.x = 100;
+        this.y = 100;
+        this.size = 20;
+        this.maxHp = c.hp;
+        this.hp = c.hp;
+        this.maxMp = c.mp;
+        this.mp = c.mp;
+        this.baseAtk = c.atk;
+        this.baseDef = c.def;
+        this.spd = c.spd;
+        this.bodyColor = c.bodyColor;
+        this.skinColor = c.skinColor;
+        this.hairColor = c.hairColor;
+        this.accent = c.accent;
+        this.level = 1;
+        this.xp = 0;
+        this.xpNext = 100;
+        this.gold = 0;
+        this.kills = 0;
+        this.facing = 'down';
+        this.attacking = 0;
+        this.attackCD = 0;
+        this.dmgTimer = 0;
+        this.invulnTimer = 0;
+        this.inventory = [];
+        this.equipped = { weapon: null, armor: null };
+        this.walkPhase = 0;
+        this.moving = false;
+        this.exitCD = 0; // cooldown to prevent instant re-entry
+        
+        if (classType === 'warrior') {
+            this.addItem('sword_rusty');
+            this.addItem('armor_leather');
+            this.equipItem('sword_rusty');
+            this.equipItem('armor_leather');
+        } else if (classType === 'mage') {
+            this.addItem('staff_wood');
+            this.equipItem('staff_wood');
+        } else {
+            this.addItem('dagger_iron');
+            this.equipItem('dagger_iron');
+        }
+        this.addItem('potion_health');
+        this.addItem('potion_health');
+        this.addItem('potion_health');
+    }
+    
+    get atk() {
+        let a = this.baseAtk;
+        if (this.equipped.weapon) a += ITEMS[this.equipped.weapon].atk || 0;
+        return a;
+    }
+    get def() {
+        let d = this.baseDef;
+        if (this.equipped.armor) d += ITEMS[this.equipped.armor].def || 0;
+        return d;
+    }
+    
+    addItem(id) {
+        const existing = this.inventory.find(i => i.id === id);
+        const item = ITEMS[id];
+        if (item.type === 'potion' && existing) {
+            existing.count++;
+        } else if (item.type === 'gold') {
+            this.gold += item.value;
+            logMsg(`+${item.value} gold!`, 'loot');
+        } else if (item.type === 'key' && existing) {
+            // don't duplicate keys
+        } else {
+            this.inventory.push({ id, count: 1 });
+        }
+    }
+    
+    equipItem(id) {
+        const item = ITEMS[id];
+        if (item.type === 'weapon') this.equipped.weapon = id;
+        else if (item.type === 'armor') this.equipped.armor = id;
+        logMsg(`Equipped ${item.name}`, 'system');
+    }
+    
+    usePotion(id) {
+        const inv = this.inventory.find(i => i.id === id);
+        if (!inv || inv.count <= 0) return;
+        const item = ITEMS[id];
+        if (item.heal) {
+            this.hp = Math.min(this.maxHp, this.hp + item.heal);
+            spawnFloat(this.x, this.y, '+' + item.heal, 'heal');
+        }
+        if (item.mana) {
+            this.mp = Math.min(this.maxMp, this.mp + item.mana);
+            spawnFloat(this.x, this.y, '+' + item.mana + ' MP', 'heal');
+        }
+        inv.count--;
+        if (inv.count <= 0) this.inventory = this.inventory.filter(i => i !== inv);
+        logMsg(`Used ${item.name}`, 'system');
+    }
+    
+    hasItem(id) {
+        return this.inventory.some(i => i.id === id);
+    }
+    
+    takeDamage(dmg) {
+        if (this.invulnTimer > 0) return;
+        const actual = Math.max(1, dmg - this.def);
+        this.hp -= actual;
+        this.dmgTimer = 20;
+        this.invulnTimer = 30;
+        spawnFloat(this.x, this.y - 20, '-' + actual, 'damage');
+        screenShake(8);
+        if (this.hp <= 0) {
+            this.hp = 0;
+            triggerDeath();
+        }
+    }
+    
+    addXp(amt) {
+        this.xp += amt;
+        spawnFloat(this.x, this.y - 30, '+' + amt + ' XP', 'xp');
+        while (this.xp >= this.xpNext) {
+            this.xp -= this.xpNext;
+            this.level++;
+            this.xpNext = Math.floor(this.xpNext * 1.6);
+            this.maxHp += 18;
+            this.maxMp += 8;
+            this.baseAtk += 3;
+            this.baseDef += 2;
+            this.hp = this.maxHp;
+            this.mp = this.maxMp;
+            logMsg(`⭐ LEVEL UP! You are now level ${this.level}!`, 'system');
+            spawnParticles(this.x, this.y, '#f0c75e', 30);
+        }
+    }
+    
+    attack() {
+        if (this.attackCD > 0) return;
+        this.attacking = 15;
+        this.attackCD = 30;
+        const range = 65;
+        const ax = this.x + (this.facing === 'right' ? range/2 : this.facing === 'left' ? -range/2 : 0);
+        const ay = this.y + (this.facing === 'down' ? range/2 : this.facing === 'up' ? -range/2 : 0);
+        
+        game.enemies.forEach(e => {
+            if (!e.alive) return;
+            const dx = e.x - ax, dy = e.y - ay;
+            if (Math.sqrt(dx*dx + dy*dy) < range) {
+                const crit = Math.random() < 0.15;
+                const dmg = this.atk * (crit ? 2 : 1) + Math.floor(Math.random() * 4);
+                e.takeDamage(dmg, crit);
+            }
+        });
+        
+        if (this.classType === 'mage' && this.mp >= 8) {
+            this.mp -= 8;
+            const dirs = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] };
+            const [dx, dy] = dirs[this.facing];
+            game.projectiles.push({ x: this.x, y: this.y, vx: dx*8, vy: dy*8, dmg: this.atk + 8, life: 70, color: '#9b59b6', friendly: true });
+        }
+    }
+    
+    update() {
+        let dx = 0, dy = 0;
+        if (game.keys['w'] || game.keys['arrowup']) { dy = -1; this.facing = 'up'; }
+        if (game.keys['s'] || game.keys['arrowdown']) { dy = 1; this.facing = 'down'; }
+        if (game.keys['a'] || game.keys['arrowleft']) { dx = -1; this.facing = 'left'; }
+        if (game.keys['d'] || game.keys['arrowright']) { dx = 1; this.facing = 'right'; }
+        
+        if (dx !== 0 || dy !== 0) {
+            const len = Math.sqrt(dx*dx + dy*dy);
+            dx = dx/len * this.spd;
+            dy = dy/len * this.spd;
+            this.moving = true;
+            
+            const nx = this.x + dx, ny = this.y + dy;
+            if (!isWall(nx, this.y)) this.x = nx;
+            if (!isWall(this.x, ny)) this.y = ny;
+            
+            this.walkPhase += 0.25;
+        } else {
+            this.moving = false;
+        }
+        
+        if (this.attacking > 0) this.attacking--;
+        if (this.attackCD > 0) this.attackCD--;
+        if (this.dmgTimer > 0) this.dmgTimer--;
+        if (this.invulnTimer > 0) this.invulnTimer--;
+        if (this.exitCD > 0) this.exitCD--;
+        
+        if (game.time % 60 === 0 && this.mp < this.maxMp) this.mp = Math.min(this.maxMp, this.mp + 1);
+        if (game.time % 120 === 0 && this.hp < this.maxHp && this.invulnTimer <= 0) {
+            this.hp = Math.min(this.maxHp, this.hp + 1);
+        }
+        
+        // Map exit check (only after cooldown expires)
+        if (this.exitCD <= 0) {
+            const tx = Math.floor(this.x / TILE), ty = Math.floor(this.y / TILE);
+            for (const exit of game.currentMap.exits) {
+                if (exit.x === tx && exit.y === ty) {
+                    if (exit.requiresKey && !this.hasItem(exit.requiresKey)) {
+                        if (game.time % 30 === 0) logMsg(`🔒 You need a ${ITEMS[exit.requiresKey].name} to enter!`, 'system');
+                        this.x -= dx * 6; this.y -= dy * 6;
+                    } else {
+                        loadMap(exit.to, exit.toX, exit.toY);
+                    }
+                    break;
+                }
+            }
+        }
+        
+        // Item pickup (only non-chest items auto-pickup; chest items must be opened first)
+        game.items.forEach(item => {
+            if (!item.alive) return;
+            if (item.inChest && !item.opened) return;
+            const ddx = this.x - item.x, ddy = this.y - item.y;
+            const dist = Math.sqrt(ddx*ddx + ddy*ddy);
+            if (dist < 30) {
+                this.addItem(item.type);
+                logMsg(`Picked up ${ITEMS[item.type].name}`, 'loot');
+                item.alive = false;
+                spawnParticles(item.x, item.y, '#f0c75e', 12);
+            }
+        });
+    }
+    
+    draw() {
+        const sx = this.x - game.camera.x, sy = this.y - game.camera.y;
+        const flash = (this.dmgTimer > 0 && this.dmgTimer % 4 < 2) || (this.invulnTimer > 0 && this.invulnTimer % 6 < 3 && this.dmgTimer <= 0);
+        
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.beginPath();
+        ctx.ellipse(sx, sy + 22, 16, 5, 0, 0, Math.PI*2);
+        ctx.fill();
+        
+        const legSwing = this.moving ? Math.sin(this.walkPhase) * 4 : 0;
+        const legSwing2 = this.moving ? Math.sin(this.walkPhase + Math.PI) * 4 : 0;
+        
+        ctx.fillStyle = flash ? '#fff' : '#2a1d0a';
+        ctx.fillRect(sx - 7, sy + 8 + Math.max(0, legSwing), 5, 12 - Math.abs(legSwing));
+        ctx.fillRect(sx + 2, sy + 8 + Math.max(0, legSwing2), 5, 12 - Math.abs(legSwing2));
+        ctx.fillStyle = flash ? '#fff' : '#1a1209';
+        ctx.fillRect(sx - 8, sy + 18 + Math.max(0, legSwing), 7, 4);
+        ctx.fillRect(sx + 1, sy + 18 + Math.max(0, legSwing2), 7, 4);
+        
+        ctx.fillStyle = flash ? '#fff' : this.bodyColor;
+        ctx.fillRect(sx - 10, sy - 6, 20, 16);
+        ctx.fillStyle = flash ? '#fff' : '#3a2410';
+        ctx.fillRect(sx - 10, sy + 7, 20, 3);
+        ctx.fillStyle = flash ? '#fff' : '#d4af6e';
+        ctx.fillRect(sx - 2, sy + 7, 4, 3);
+        
+        ctx.fillStyle = flash ? '#fff' : this.accent;
+        ctx.fillRect(sx - 8, sy - 4, 16, 2);
+        
+        const armSwing = this.moving ? Math.sin(this.walkPhase + Math.PI) * 2 : 0;
+        const armSwing2 = this.moving ? Math.sin(this.walkPhase) * 2 : 0;
+        ctx.fillStyle = flash ? '#fff' : this.bodyColor;
+        ctx.fillRect(sx - 13, sy - 4 + armSwing, 4, 11);
+        ctx.fillRect(sx + 9, sy - 4 + armSwing2, 4, 11);
+        ctx.fillStyle = flash ? '#fff' : this.skinColor;
+        ctx.fillRect(sx - 13, sy + 6 + armSwing, 4, 3);
+        ctx.fillRect(sx + 9, sy + 6 + armSwing2, 4, 3);
+        
+        ctx.fillStyle = flash ? '#fff' : this.skinColor;
+        ctx.fillRect(sx - 7, sy - 18, 14, 13);
+        
+        ctx.fillStyle = flash ? '#fff' : this.hairColor;
+        ctx.fillRect(sx - 8, sy - 19, 16, 5);
+        if (this.classType === 'warrior') {
+            ctx.fillRect(sx - 8, sy - 14, 3, 4);
+            ctx.fillRect(sx + 5, sy - 14, 3, 4);
+        }
+        
+        ctx.fillStyle = '#1a1209';
+        if (this.facing === 'left') {
+            ctx.fillRect(sx - 5, sy - 11, 2, 2);
+        } else if (this.facing === 'right') {
+            ctx.fillRect(sx + 3, sy - 11, 2, 2);
+        } else if (this.facing === 'down') {
+            ctx.fillRect(sx - 4, sy - 11, 2, 2);
+            ctx.fillRect(sx + 2, sy - 11, 2, 2);
+        }
+        
+        if (this.classType === 'mage') {
+            ctx.fillStyle = flash ? '#fff' : this.accent;
+            ctx.beginPath();
+            ctx.moveTo(sx - 9, sy - 18);
+            ctx.lineTo(sx, sy - 34);
+            ctx.lineTo(sx + 9, sy - 18);
+            ctx.fill();
+            ctx.fillStyle = flash ? '#fff' : '#d4af6e';
+            ctx.fillRect(sx - 9, sy - 20, 18, 2);
+            ctx.fillStyle = '#f0c75e';
+            ctx.fillRect(sx - 1, sy - 28, 2, 2);
+        } else if (this.classType === 'warrior') {
+            ctx.fillStyle = flash ? '#fff' : this.accent;
+            ctx.fillRect(sx - 8, sy - 20, 16, 6);
+            ctx.fillRect(sx - 1, sy - 14, 2, 4);
+            ctx.fillStyle = '#a83232';
+            ctx.fillRect(sx - 2, sy - 24, 4, 6);
+        } else {
+            ctx.fillStyle = flash ? '#fff' : '#1a1209';
+            ctx.beginPath();
+            ctx.moveTo(sx - 9, sy - 18);
+            ctx.lineTo(sx - 9, sy - 22);
+            ctx.lineTo(sx, sy - 25);
+            ctx.lineTo(sx + 9, sy - 22);
+            ctx.lineTo(sx + 9, sy - 18);
+            ctx.fill();
+            ctx.fillRect(sx - 10, sy - 18, 3, 8);
+            ctx.fillRect(sx + 7, sy - 18, 3, 8);
+        }
+        
+        if (this.classType === 'warrior' || this.classType === 'mage') {
+            ctx.fillStyle = this.classType === 'warrior' ? '#5a1a1a' : '#2a1a5a';
+            const capeWave = Math.sin(game.time/8) * 1;
+            ctx.beginPath();
+            ctx.moveTo(sx - 10, sy - 5);
+            ctx.lineTo(sx + 10, sy - 5);
+            ctx.lineTo(sx + 8 + capeWave, sy + 8);
+            ctx.lineTo(sx - 8 + capeWave, sy + 8);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        if (this.attacking > 0) {
+            const t = (15 - this.attacking) / 15;
+            ctx.save();
+            ctx.translate(sx, sy);
+            const angles = { up: -Math.PI/2, down: Math.PI/2, left: Math.PI, right: 0 };
+            ctx.rotate(angles[this.facing] + (t - 0.5) * 1.8);
+            
+            ctx.fillStyle = '#e8e0d0';
+            ctx.fillRect(14, -3, 28, 6);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(14, -2, 28, 1);
+            ctx.fillStyle = '#d4af6e';
+            ctx.fillRect(10, -6, 5, 12);
+            ctx.fillStyle = '#3a2410';
+            ctx.fillRect(6, -2, 5, 4);
+            ctx.fillStyle = '#d4af6e';
+            ctx.beginPath();
+            ctx.arc(5, 0, 3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+            
+            ctx.strokeStyle = `rgba(255,255,255,${1 - t})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 42, angles[this.facing] - 0.7, angles[this.facing] + 0.7);
+            ctx.stroke();
+            ctx.strokeStyle = `rgba(240,199,94,${0.6 - t*0.6})`;
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 42, angles[this.facing] - 0.5, angles[this.facing] + 0.5);
+            ctx.stroke();
+        } else {
+            if (this.classType === 'warrior') {
+                ctx.fillStyle = '#d4af6e';
+                ctx.fillRect(sx + 11, sy - 2, 3, 14);
+                ctx.fillStyle = '#e8e0d0';
+                ctx.fillRect(sx + 11, sy - 8, 3, 8);
+            } else if (this.classType === 'rogue') {
+                ctx.fillStyle = '#e8e0d0';
+                ctx.fillRect(sx + 11, sy, 2, 7);
+                ctx.fillStyle = '#3a2410';
+                ctx.fillRect(sx + 11, sy + 6, 2, 3);
+            } else if (this.classType === 'mage') {
+                ctx.fillStyle = '#5a3a1a';
+                ctx.fillRect(sx + 11, sy - 18, 3, 30);
+                ctx.fillStyle = '#9b59b6';
+                ctx.beginPath();
+                ctx.arc(sx + 12, sy - 20, 4, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#f0c75e';
+                ctx.beginPath();
+                ctx.arc(sx + 12, sy - 20, 2, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+    }
+}
+
+// ============================================================
+// ENEMIES
+// ============================================================
+class Enemy {
+    constructor(type, tx, ty) {
+        const t = ENEMY_TYPES[type];
+        const diff = DIFFICULTIES[game.difficulty];
+        this.type = type;
+        this.x = tx * TILE + TILE/2;
+        this.y = ty * TILE + TILE/2;
+        this.hp = Math.floor(t.hp * diff.hp);
+        this.maxHp = this.hp;
+        this.atk = Math.floor(t.atk * diff.atk);
+        this.def = t.def;
+        this.spd = t.spd;
+        this.xp = t.xp;
+        this.gold = t.gold;
+        this.color = t.color;
+        this.size = t.size;
+        this.name = t.name;
+        this.boss = t.boss || false;
+        this.miniboss = t.miniboss || false;
+        this.ranged = t.ranged || false;
+        this.range = t.range || 0;
+        this.alive = true;
+        this.dmgTimer = 0;
+        this.attackCD = Math.floor(Math.random() * 30);
+        this.animTimer = Math.random() * 100;
+        this.walkPhase = Math.random() * Math.PI * 2;
+        this.aggro = false;
+        this.detectRange = this.boss ? 1500 : (this.miniboss ? 400 : 220);
+        this.facing = 'left';
+        
+        if (this.boss || this.miniboss) {
+            const self = this;
+            setTimeout(() => {
+                if (self.alive && game.player) {
+                    const ddx = game.player.x - self.x, ddy = game.player.y - self.y;
+                    if (Math.sqrt(ddx*ddx + ddy*ddy) < 500) {
+                        showBossWarning(self.name);
+                    }
+                }
+            }, 100);
+        }
+    }
+    
+    takeDamage(dmg, crit) {
+        const actual = Math.max(1, dmg - this.def);
+        this.hp -= actual;
+        this.dmgTimer = 15;
+        this.aggro = true;
+        spawnFloat(this.x, this.y - this.size, '-' + actual, crit ? 'crit' : 'damage');
+        if (this.hp <= 0) {
+            this.alive = false;
+            game.player.kills++;
+            game.player.gold += this.gold;
+            game.player.addXp(this.xp);
+            logMsg(`💀 Slew ${this.name}! +${this.gold}g +${this.xp}xp`, this.miniboss || this.boss ? 'boss' : 'combat');
+            spawnParticles(this.x, this.y, this.color, this.miniboss || this.boss ? 50 : 20);
+            
+            if (this.boss) {
+                triggerVictory();
+            } else {
+                if (Math.random() < 0.35) {
+                    const drops = ['potion_health', 'potion_mana', 'gold_pile'];
+                    const drop = drops[Math.floor(Math.random() * drops.length)];
+                    game.items.push({ type: drop, x: this.x, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                }
+                if (this.type === 'orc_chief' && !game.questFlags.dungeonKeyDropped) {
+                    game.items.push({ type: 'key_dungeon', x: this.x, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.items.push({ type: 'gold_big', x: this.x + 20, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.items.push({ type: 'potion_greater', x: this.x - 20, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.questFlags.dungeonKeyDropped = true;
+                    logMsg('🗝️ The Orc Chieftain dropped the Dungeon Key!', 'quest');
+                }
+                if (this.type === 'lich' && !game.questFlags.cryptKeyDropped) {
+                    game.items.push({ type: 'key_crypt', x: this.x, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.items.push({ type: 'gold_big', x: this.x + 20, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.items.push({ type: 'potion_greater', x: this.x - 20, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.questFlags.cryptKeyDropped = true;
+                    logMsg('🔑 The Lich Lord dropped the Crypt Key!', 'quest');
+                }
+                if (this.type === 'death_knight' && !game.questFlags.catacombKeyDropped) {
+                    game.items.push({ type: 'key_catacomb', x: this.x, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.items.push({ type: 'gold_big', x: this.x + 20, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.items.push({ type: 'sword_steel', x: this.x - 20, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.questFlags.catacombKeyDropped = true;
+                    logMsg('🗝️ The Death Knight dropped the Catacomb Key!', 'quest');
+                }
+                if (this.type === 'demon_lord' && !game.questFlags.throneKeyDropped) {
+                    game.items.push({ type: 'key_throne', x: this.x, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.items.push({ type: 'gold_big', x: this.x + 20, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.items.push({ type: 'armor_celestial', x: this.x - 20, y: this.y, alive: true, bob: 0, inChest: false, opened: false });
+                    game.items.push({ type: 'sword_holy', x: this.x, y: this.y + 30, alive: true, bob: 0, inChest: false, opened: false });
+                    game.questFlags.throneKeyDropped = true;
+                    logMsg('👑 The Demon Lord dropped the Throne Key!', 'quest');
+                }
+            }
+        }
+    }
+    
+    fireProjectile() {
+        const dx = game.player.x - this.x;
+        const dy = game.player.y - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const speed = this.boss ? 6 : 5;
+        let color = '#ffaa00';
+        if (this.type === 'goblin_arch' || this.type === 'skel_arch') color = '#d4af6e';
+        if (this.type === 'lich') color = '#9b59b6';
+        if (this.type === 'demon_lord') color = '#ff4400';
+        if (this.type === 'dragon') color = '#ff6b00';
+        game.projectiles.push({
+            x: this.x, y: this.y,
+            vx: dx/dist * speed, vy: dy/dist * speed,
+            dmg: this.atk, life: 100,
+            color: color, friendly: false
+        });
+    }
+    
+    update() {
+        if (!this.alive) return;
+        this.animTimer++;
+        if (this.dmgTimer > 0) this.dmgTimer--;
+        if (this.attackCD > 0) this.attackCD--;
+        
+        const dx = game.player.x - this.x, dy = game.player.y - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist < this.detectRange) this.aggro = true;
+        
+        if (this.aggro) {
+            if (this.ranged) {
+                const idealRange = this.range * 0.7;
+                if (dist > idealRange + 30) {
+                    const mx = dx/dist * this.spd, my = dy/dist * this.spd;
+                    const nx = this.x + mx, ny = this.y + my;
+                    if (!isWall(nx, this.y)) this.x = nx;
+                    if (!isWall(this.x, ny)) this.y = ny;
+                    this.walkPhase += 0.2;
+                } else if (dist < idealRange - 30) {
+                    const mx = -dx/dist * this.spd * 0.7, my = -dy/dist * this.spd * 0.7;
+                    const nx = this.x + mx, ny = this.y + my;
+                    if (!isWall(nx, this.y)) this.x = nx;
+                    if (!isWall(this.x, ny)) this.y = ny;
+                    this.walkPhase += 0.2;
+                }
+                if (dist < this.range && this.attackCD <= 0) {
+                    this.fireProjectile();
+                    this.attackCD = this.boss ? 45 : 80;
+                    if (this.boss && Math.random() < 0.4) {
+                        const self = this;
+                        setTimeout(() => { if (self.alive) self.fireProjectile(); }, 200);
+                        setTimeout(() => { if (self.alive) self.fireProjectile(); }, 400);
+                    }
+                }
+            } else {
+                if (dist > 5) {
+                    const mx = dx/dist * this.spd, my = dy/dist * this.spd;
+                    const nx = this.x + mx, ny = this.y + my;
+                    if (!isWall(nx, this.y)) this.x = nx;
+                    if (!isWall(this.x, ny)) this.y = ny;
+                    this.walkPhase += 0.2;
+                }
+                if (dist < this.size + 25 && this.attackCD <= 0) {
+                    this.attackCD = this.miniboss ? 50 : 70;
+                    game.player.takeDamage(this.atk);
+                }
+            }
+            this.facing = dx < 0 ? 'left' : 'right';
+        }
+    }
+    
+    draw() {
+        const sx = this.x - game.camera.x, sy = this.y - game.camera.y;
+        if (sx < -100 || sx > W + 100 || sy < -100 || sy > H + 100) return;
+        const flash = this.dmgTimer > 0 && this.dmgTimer % 4 < 2;
+        const flip = this.facing === 'right' ? -1 : 1;
+        
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.beginPath();
+        ctx.ellipse(sx, sy + this.size/2 + 2, this.size/1.4, this.size/5, 0, 0, Math.PI*2);
+        ctx.fill();
+        
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.scale(flip, 1);
+        
+        if (this.type === 'rat') this.drawRat(flash);
+        else if (this.type === 'bat') this.drawBat(flash);
+        else if (this.type === 'spider') this.drawSpider(flash);
+        else if (this.type === 'goblin') this.drawGoblin(flash, false);
+        else if (this.type === 'goblin_arch') this.drawGoblin(flash, true);
+        else if (this.type === 'orc') this.drawOrc(flash);
+        else if (this.type === 'orc_chief') this.drawOrcChief(flash);
+        else if (this.type === 'skeleton') this.drawSkeleton(flash, false);
+        else if (this.type === 'skel_arch') this.drawSkeleton(flash, true);
+        else if (this.type === 'wraith') this.drawWraith(flash);
+        else if (this.type === 'lich') this.drawLich(flash);
+        else if (this.type === 'knight') this.drawKnight(flash);
+        else if (this.type === 'death_knight') this.drawDeathKnight(flash);
+        else if (this.type === 'demon') this.drawDemon(flash);
+        else if (this.type === 'demon_lord') this.drawDemonLord(flash);
+        else if (this.type === 'dragon') this.drawDragon(flash);
+        
+        ctx.restore();
+        
+        if (this.hp < this.maxHp || this.boss || this.miniboss) {
+            const barW = this.boss ? 280 : (this.miniboss ? 80 : 40);
+            const barH = this.boss ? 14 : (this.miniboss ? 6 : 4);
+            const barY = sy - this.size/2 - (this.boss ? 25 : 15);
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.fillRect(sx - barW/2 - 2, barY - 2, barW + 4, barH + 4);
+            ctx.fillStyle = '#3a0808';
+            ctx.fillRect(sx - barW/2, barY, barW, barH);
+            const hpColor = this.boss ? '#ff0000' : (this.miniboss ? '#c79bd6' : '#a83232');
+            ctx.fillStyle = hpColor;
+            ctx.fillRect(sx - barW/2, barY, barW * (this.hp / this.maxHp), barH);
+            
+            if (this.boss || this.miniboss) {
+                ctx.fillStyle = this.boss ? '#ff8888' : '#c79bd6';
+                ctx.font = 'bold ' + (this.boss ? 22 : 14) + 'px MedievalSharp';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.name, sx, barY - 6);
+            }
+        }
+    }
+    
+    drawRat(flash) {
+        const bob = Math.sin(this.walkPhase) * 1.5;
+        ctx.strokeStyle = flash ? '#fff' : '#3a2a1a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(8, 4);
+        ctx.quadraticCurveTo(15 + Math.sin(this.animTimer/8)*3, 0, 18, -4);
+        ctx.stroke();
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.ellipse(0, bob, 12, 7, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(-10, bob - 2, 6, 5, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = flash ? '#fff' : '#2a1a0a';
+        ctx.beginPath();
+        ctx.arc(-12, bob - 6, 2, 0, Math.PI*2);
+        ctx.arc(-8, bob - 6, 2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(-13, bob - 3, 2, 2);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-15, bob, 1, 2);
+        const ls = Math.sin(this.walkPhase) * 2;
+        ctx.fillStyle = flash ? '#fff' : '#2a1a0a';
+        ctx.fillRect(-6, 5, 2, 4 + ls);
+        ctx.fillRect(4, 5, 2, 4 - ls);
+    }
+    
+    drawBat(flash) {
+        const bob = Math.sin(this.animTimer/4) * 4;
+        const wingFlap = Math.sin(this.animTimer/2) * 0.5;
+        ctx.fillStyle = flash ? '#fff' : '#1a0a1a';
+        ctx.beginPath();
+        ctx.moveTo(0, bob);
+        ctx.quadraticCurveTo(-15, bob - 5 + wingFlap*5, -18, bob + wingFlap*3);
+        ctx.quadraticCurveTo(-10, bob + 3, 0, bob + 4);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, bob);
+        ctx.quadraticCurveTo(15, bob - 5 + wingFlap*5, 18, bob + wingFlap*3);
+        ctx.quadraticCurveTo(10, bob + 3, 0, bob + 4);
+        ctx.fill();
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.ellipse(0, bob, 5, 6, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-3, bob - 5);
+        ctx.lineTo(-4, bob - 9);
+        ctx.lineTo(-1, bob - 6);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(3, bob - 5);
+        ctx.lineTo(4, bob - 9);
+        ctx.lineTo(1, bob - 6);
+        ctx.fill();
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(-3, bob - 3, 2, 2);
+        ctx.fillRect(1, bob - 3, 2, 2);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-1, bob + 1, 1, 2);
+        ctx.fillRect(1, bob + 1, 1, 2);
+    }
+    
+    drawSpider(flash) {
+        const bob = Math.sin(this.walkPhase) * 1;
+        ctx.strokeStyle = flash ? '#fff' : '#1a0808';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 4; i++) {
+            const ang = i * 0.3 + 0.2;
+            const legW = Math.sin(this.walkPhase + i) * 2;
+            ctx.beginPath();
+            ctx.moveTo(-4, bob);
+            ctx.lineTo(-10 - i*2, bob - 5 + ang*3 + legW);
+            ctx.lineTo(-12 - i*2, bob + 5 + legW);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(4, bob);
+            ctx.lineTo(10 + i*2, bob - 5 + ang*3 - legW);
+            ctx.lineTo(12 + i*2, bob + 5 - legW);
+            ctx.stroke();
+        }
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.ellipse(0, bob, 9, 7, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, bob - 6, 5, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#8b0000';
+        ctx.fillRect(-2, bob + 1, 4, 3);
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(-3, bob - 7, 1, 1);
+        ctx.fillRect(-1, bob - 8, 1, 1);
+        ctx.fillRect(1, bob - 8, 1, 1);
+        ctx.fillRect(3, bob - 7, 1, 1);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-2, bob - 3, 1, 2);
+        ctx.fillRect(1, bob - 3, 1, 2);
+    }
+    
+    drawGoblin(flash, isArcher) {
+        const bob = Math.sin(this.walkPhase) * 1;
+        const ls = Math.sin(this.walkPhase) * 3;
+        ctx.fillStyle = flash ? '#fff' : '#3a2a1a';
+        ctx.fillRect(-5, 6, 4, 8 + Math.max(0, ls));
+        ctx.fillRect(2, 6, 4, 8 + Math.max(0, -ls));
+        ctx.fillStyle = flash ? '#fff' : (isArcher ? '#3a3a1a' : '#5a3a1a');
+        ctx.fillRect(-7, -2 + bob, 14, 10);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-9, 0 + bob, 3, 8);
+        ctx.fillRect(7, 0 + bob, 3, 8);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.ellipse(0, -8 + bob, 8, 7, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-8, -8 + bob);
+        ctx.lineTo(-12, -12 + bob);
+        ctx.lineTo(-6, -10 + bob);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(8, -8 + bob);
+        ctx.lineTo(12, -12 + bob);
+        ctx.lineTo(6, -10 + bob);
+        ctx.fill();
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(-4, -9 + bob, 2, 2);
+        ctx.fillRect(2, -9 + bob, 2, 2);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-3, -9 + bob, 1, 1);
+        ctx.fillRect(3, -9 + bob, 1, 1);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-3, -4 + bob, 6, 1);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-2, -4 + bob, 1, 2);
+        ctx.fillRect(1, -4 + bob, 1, 2);
+        
+        if (isArcher) {
+            ctx.strokeStyle = flash ? '#fff' : '#8b6914';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(11, 2 + bob, 7, -Math.PI/2 - 0.5, Math.PI/2 + 0.5);
+            ctx.stroke();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(11, -5 + bob);
+            ctx.lineTo(11, 8 + bob);
+            ctx.stroke();
+            ctx.fillStyle = flash ? '#fff' : '#3a2410';
+            ctx.fillRect(-11, -2 + bob, 3, 9);
+            ctx.fillStyle = '#d4af6e';
+            ctx.fillRect(-11, -4 + bob, 1, 3);
+            ctx.fillRect(-9, -4 + bob, 1, 3);
+        } else {
+            ctx.fillStyle = flash ? '#fff' : '#3a2410';
+            ctx.fillRect(10, -2 + bob, 3, 12);
+            ctx.fillStyle = flash ? '#fff' : '#5a3a1a';
+            ctx.fillRect(9, -2 + bob, 5, 5);
+        }
+    }
+    
+    drawOrc(flash) {
+        const bob = Math.sin(this.walkPhase) * 1.5;
+        const ls = Math.sin(this.walkPhase) * 3;
+        ctx.fillStyle = flash ? '#fff' : '#1a1a0a';
+        ctx.fillRect(-7, 10, 5, 10 + Math.max(0, ls));
+        ctx.fillRect(2, 10, 5, 10 + Math.max(0, -ls));
+        ctx.fillStyle = flash ? '#fff' : '#3a2a14';
+        ctx.fillRect(-12, 0 + bob, 24, 14);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-9, 2 + bob, 18, 8);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-14, 2 + bob, 5, 12);
+        ctx.fillRect(9, 2 + bob, 5, 12);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.ellipse(0, -8 + bob, 10, 8, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-5, -3 + bob, 2, 5);
+        ctx.fillRect(3, -3 + bob, 2, 5);
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(-5, -10 + bob, 3, 2);
+        ctx.fillRect(2, -10 + bob, 3, 2);
+        ctx.fillStyle = flash ? '#fff' : '#1a0a00';
+        ctx.fillRect(-7, -12 + bob, 14, 1);
+        ctx.fillStyle = flash ? '#fff' : '#3a2410';
+        ctx.fillRect(13, -5 + bob, 3, 18);
+        ctx.fillStyle = flash ? '#fff' : '#b8b0a0';
+        ctx.beginPath();
+        ctx.moveTo(11, -8 + bob);
+        ctx.lineTo(20, -10 + bob);
+        ctx.lineTo(20, 0 + bob);
+        ctx.lineTo(13, 2 + bob);
+        ctx.fill();
+    }
+    
+    drawOrcChief(flash) {
+        const bob = Math.sin(this.walkPhase) * 1.5;
+        const ls = Math.sin(this.walkPhase) * 3;
+        ctx.fillStyle = flash ? '#fff' : '#0a0a00';
+        ctx.fillRect(-9, 14, 7, 12 + Math.max(0, ls));
+        ctx.fillRect(2, 14, 7, 12 + Math.max(0, -ls));
+        ctx.fillStyle = flash ? '#fff' : '#2a1a04';
+        ctx.fillRect(-16, -2 + bob, 32, 18);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-12, 2 + bob, 24, 10);
+        ctx.fillStyle = '#8b0000';
+        ctx.fillRect(-10, 4 + bob, 3, 8);
+        ctx.fillRect(7, 4 + bob, 3, 8);
+        ctx.fillRect(-2, 4 + bob, 4, 8);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-18, 0 + bob, 6, 16);
+        ctx.fillRect(12, 0 + bob, 6, 16);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.ellipse(0, -10 + bob, 12, 10, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = flash ? '#fff' : '#e8e0d0';
+        for (let i = -10; i <= 10; i += 4) {
+            ctx.beginPath();
+            ctx.moveTo(i, -18 + bob);
+            ctx.lineTo(i + 2, -24 + bob);
+            ctx.lineTo(i + 4, -18 + bob);
+            ctx.fill();
+        }
+        ctx.fillStyle = flash ? '#fff' : '#3a2410';
+        ctx.fillRect(-12, -18 + bob, 24, 2);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-7, -4 + bob, 3, 7);
+        ctx.fillRect(4, -4 + bob, 3, 7);
+        ctx.fillStyle = '#ff2222';
+        ctx.fillRect(-6, -12 + bob, 4, 3);
+        ctx.fillRect(2, -12 + bob, 4, 3);
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.arc(-4, -10.5 + bob, 4, 0, Math.PI*2);
+        ctx.arc(4, -10.5 + bob, 4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = flash ? '#fff' : '#3a2410';
+        ctx.fillRect(16, -10 + bob, 4, 26);
+        ctx.fillStyle = flash ? '#fff' : '#5a5a6a';
+        ctx.beginPath();
+        ctx.moveTo(13, -15 + bob);
+        ctx.lineTo(26, -18 + bob);
+        ctx.lineTo(28, 0 + bob);
+        ctx.lineTo(16, 4 + bob);
+        ctx.fill();
+        ctx.fillStyle = '#8b0000';
+        ctx.fillRect(20, -14 + bob, 4, 16);
+    }
+    
+    drawSkeleton(flash, isArcher) {
+        const bob = Math.sin(this.walkPhase) * 1;
+        const ls = Math.sin(this.walkPhase) * 3;
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-5, 6, 3, 10 + Math.max(0, ls));
+        ctx.fillRect(2, 6, 3, 10 + Math.max(0, -ls));
+        ctx.fillStyle = flash ? '#fff' : '#a8a090';
+        ctx.fillRect(-6, 16 + Math.max(0, ls), 5, 2);
+        ctx.fillRect(1, 16 + Math.max(0, -ls), 5, 2);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-8, -2 + bob, 16, 10);
+        ctx.fillStyle = flash ? '#fff' : '#1a1209';
+        ctx.fillRect(-8, 0 + bob, 16, 1);
+        ctx.fillRect(-8, 3 + bob, 16, 1);
+        ctx.fillRect(-8, 6 + bob, 16, 1);
+        ctx.fillRect(-1, -2 + bob, 2, 10);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-11, 0 + bob, 3, 12);
+        ctx.fillRect(8, 0 + bob, 3, 12);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.arc(0, -10 + bob, 8, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-5, -12 + bob, 3, 4);
+        ctx.fillRect(2, -12 + bob, 3, 4);
+        ctx.fillStyle = '#00ffff';
+        ctx.fillRect(-4, -11 + bob, 1, 2);
+        ctx.fillRect(3, -11 + bob, 1, 2);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-1, -7 + bob, 2, 2);
+        ctx.fillRect(-4, -4 + bob, 8, 1);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-3, -4 + bob, 1, 2);
+        ctx.fillRect(-1, -4 + bob, 1, 2);
+        ctx.fillRect(1, -4 + bob, 1, 2);
+        ctx.fillRect(3, -4 + bob, 1, 2);
+        
+        if (isArcher) {
+            ctx.strokeStyle = flash ? '#fff' : '#3a2410';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(12, 2 + bob, 9, -Math.PI/2 - 0.5, Math.PI/2 + 0.5);
+            ctx.stroke();
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(12, -6 + bob);
+            ctx.lineTo(12, 10 + bob);
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = flash ? '#fff' : '#b8b0a0';
+            ctx.fillRect(11, -8 + bob, 3, 18);
+            ctx.fillStyle = flash ? '#fff' : '#d4af6e';
+            ctx.fillRect(9, -2 + bob, 7, 2);
+        }
+    }
+    
+    drawWraith(flash) {
+        const float = Math.sin(this.animTimer/15) * 3;
+        ctx.fillStyle = flash ? '#fff' : 'rgba(155,89,182,0.5)';
+        ctx.beginPath();
+        ctx.moveTo(-12, 12 + float);
+        ctx.quadraticCurveTo(-8, 18 + Math.sin(this.animTimer/8)*3, -4, 14 + float);
+        ctx.quadraticCurveTo(0, 20, 4, 14 + float);
+        ctx.quadraticCurveTo(8, 18 + Math.sin(this.animTimer/8 + 1)*3, 12, 12 + float);
+        ctx.lineTo(12, 0 + float);
+        ctx.lineTo(-12, 0 + float);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.moveTo(-13, -10 + float);
+        ctx.lineTo(-13, 5 + float);
+        ctx.lineTo(13, 5 + float);
+        ctx.lineTo(13, -10 + float);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = flash ? '#fff' : '#3a1a4a';
+        ctx.beginPath();
+        ctx.moveTo(-10, -15 + float);
+        ctx.lineTo(-12, -8 + float);
+        ctx.lineTo(12, -8 + float);
+        ctx.lineTo(10, -15 + float);
+        ctx.quadraticCurveTo(0, -20 + float, -10, -15 + float);
+        ctx.fill();
+        ctx.fillStyle = '#00ffff';
+        ctx.fillRect(-5, -12 + float, 3, 2);
+        ctx.fillRect(2, -12 + float, 3, 2);
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = '#88ffff';
+        ctx.beginPath();
+        ctx.arc(-3.5, -11 + float, 4, 0, Math.PI*2);
+        ctx.arc(3.5, -11 + float, 4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = flash ? '#fff' : '#d8c0e8';
+        ctx.beginPath();
+        ctx.arc(-10, 2 + float, 3, 0, Math.PI*2);
+        ctx.arc(10, 2 + float, 3, 0, Math.PI*2);
+        ctx.fill();
+    }
+    
+    drawLich(flash) {
+        const float = Math.sin(this.animTimer/12) * 4;
+        ctx.fillStyle = flash ? '#fff' : '#1a0a3a';
+        ctx.beginPath();
+        ctx.moveTo(-18, 18 + float);
+        ctx.quadraticCurveTo(-10, 22 + Math.sin(this.animTimer/8)*4, -2, 18 + float);
+        ctx.quadraticCurveTo(0, 24, 2, 18 + float);
+        ctx.quadraticCurveTo(10, 22 + Math.sin(this.animTimer/8 + 1)*4, 18, 18 + float);
+        ctx.lineTo(18, -5 + float);
+        ctx.lineTo(-18, -5 + float);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-16, -10 + float, 32, 10);
+        ctx.fillStyle = flash ? '#fff' : '#0a0420';
+        ctx.beginPath();
+        ctx.moveTo(-12, -22 + float);
+        ctx.lineTo(-15, -10 + float);
+        ctx.lineTo(15, -10 + float);
+        ctx.lineTo(12, -22 + float);
+        ctx.quadraticCurveTo(0, -30 + float, -12, -22 + float);
+        ctx.fill();
+        ctx.fillStyle = '#3a3a4a';
+        ctx.beginPath();
+        ctx.arc(0, -18 + float, 7, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#9b59b6';
+        ctx.fillRect(-4, -20 + float, 3, 3);
+        ctx.fillRect(1, -20 + float, 3, 3);
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.arc(-2.5, -18.5 + float, 4, 0, Math.PI*2);
+        ctx.arc(2.5, -18.5 + float, 4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = flash ? '#fff' : '#e0e0e8';
+        ctx.beginPath();
+        ctx.arc(-14, 0 + float, 4, 0, Math.PI*2);
+        ctx.arc(14, 0 + float, 4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = flash ? '#fff' : '#1a0a30';
+        ctx.fillRect(16, -22 + float, 3, 36);
+        ctx.fillStyle = flash ? '#fff' : '#9b59b6';
+        ctx.beginPath();
+        ctx.arc(17, -25 + float, 6, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = '#c79bd6';
+        ctx.beginPath();
+        ctx.arc(17, -25 + float, 10, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        if (game.time % 4 === 0) {
+            spawnParticles(this.x + (Math.random()-0.5)*40, this.y, '#9b59b6', 1);
+        }
+    }
+    
+    drawKnight(flash) {
+        const bob = Math.sin(this.walkPhase) * 1;
+        const ls = Math.sin(this.walkPhase) * 3;
+        ctx.fillStyle = flash ? '#fff' : '#5a5a6a';
+        ctx.fillRect(-7, 8, 6, 14 + Math.max(0, ls));
+        ctx.fillRect(1, 8, 6, 14 + Math.max(0, -ls));
+        ctx.fillStyle = flash ? '#fff' : '#2a2a3a';
+        ctx.fillRect(-7, 19 + Math.max(0, ls), 7, 3);
+        ctx.fillRect(0, 19 + Math.max(0, -ls), 7, 3);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-12, -4 + bob, 24, 14);
+        ctx.fillStyle = flash ? '#fff' : '#d8d0c0';
+        ctx.fillRect(-10, -2 + bob, 20, 3);
+        ctx.fillStyle = flash ? '#fff' : '#8b2e2e';
+        ctx.fillRect(-1, 2 + bob, 2, 6);
+        ctx.fillRect(-3, 4 + bob, 6, 2);
+        ctx.fillStyle = flash ? '#fff' : '#7a7a8a';
+        ctx.fillRect(-15, -2 + bob, 5, 14);
+        ctx.fillRect(10, -2 + bob, 5, 14);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-8, -18 + bob, 16, 14);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-7, -12 + bob, 14, 4);
+        ctx.fillStyle = '#ff2222';
+        ctx.fillRect(-6, -11 + bob, 4, 1);
+        ctx.fillRect(2, -11 + bob, 4, 1);
+        ctx.fillStyle = flash ? '#fff' : '#5a1a1a';
+        ctx.fillRect(-2, -24 + bob, 4, 8);
+        ctx.fillStyle = flash ? '#fff' : '#e8e0d0';
+        ctx.fillRect(14, -12 + bob, 4, 25);
+        ctx.fillStyle = flash ? '#fff' : '#d4af6e';
+        ctx.fillRect(11, -2 + bob, 10, 3);
+        ctx.fillStyle = flash ? '#fff' : '#8b2e2e';
+        ctx.beginPath();
+        ctx.ellipse(-15, 4 + bob, 5, 9, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = flash ? '#fff' : '#d4af6e';
+        ctx.fillRect(-16, 3 + bob, 2, 3);
+    }
+    
+    drawDeathKnight(flash) {
+        const bob = Math.sin(this.walkPhase) * 1.5;
+        const ls = Math.sin(this.walkPhase) * 3;
+        ctx.fillStyle = flash ? '#fff' : '#1a0a2a';
+        ctx.fillRect(-8, 10, 7, 16 + Math.max(0, ls));
+        ctx.fillRect(1, 10, 7, 16 + Math.max(0, -ls));
+        ctx.fillStyle = flash ? '#fff' : '#000';
+        ctx.fillRect(-9, 24 + Math.max(0, ls), 9, 4);
+        ctx.fillRect(0, 24 + Math.max(0, -ls), 9, 4);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-14, -4 + bob, 28, 16);
+        ctx.fillStyle = flash ? '#fff' : '#3a2a5a';
+        ctx.fillRect(-12, -2 + bob, 24, 4);
+        ctx.fillStyle = flash ? '#fff' : '#fff';
+        ctx.beginPath();
+        ctx.arc(0, 4 + bob, 4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-2, 3 + bob, 1, 2);
+        ctx.fillRect(1, 3 + bob, 1, 2);
+        ctx.fillStyle = flash ? '#fff' : '#2a1a4a';
+        ctx.fillRect(-17, -2 + bob, 5, 16);
+        ctx.fillRect(12, -2 + bob, 5, 16);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-9, -20 + bob, 18, 16);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-8, -14 + bob, 16, 5);
+        ctx.fillStyle = '#c79bd6';
+        ctx.fillRect(-6, -12 + bob, 4, 2);
+        ctx.fillRect(2, -12 + bob, 4, 2);
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.arc(-4, -11 + bob, 4, 0, Math.PI*2);
+        ctx.arc(4, -11 + bob, 4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = flash ? '#fff' : '#1a0420';
+        ctx.beginPath();
+        ctx.moveTo(-10, -20 + bob);
+        ctx.lineTo(-14, -26 + bob);
+        ctx.lineTo(-7, -22 + bob);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(10, -20 + bob);
+        ctx.lineTo(14, -26 + bob);
+        ctx.lineTo(7, -22 + bob);
+        ctx.fill();
+        ctx.fillStyle = flash ? '#fff' : '#c79bd6';
+        ctx.fillRect(16, -16 + bob, 5, 30);
+        ctx.globalAlpha = 0.4;
+        ctx.fillRect(15, -16 + bob, 7, 30);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = flash ? '#fff' : '#3a2a5a';
+        ctx.fillRect(13, -4 + bob, 11, 3);
+    }
+    
+    drawDemon(flash) {
+        const bob = Math.sin(this.walkPhase) * 1.5;
+        const ls = Math.sin(this.walkPhase) * 3;
+        ctx.fillStyle = flash ? '#fff' : '#5a0a0a';
+        ctx.fillRect(-8, 12, 6, 12 + Math.max(0, ls));
+        ctx.fillRect(2, 12, 6, 12 + Math.max(0, -ls));
+        ctx.fillStyle = flash ? '#fff' : '#000';
+        ctx.fillRect(-9, 22 + Math.max(0, ls), 8, 4);
+        ctx.fillRect(1, 22 + Math.max(0, -ls), 8, 4);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-13, -2 + bob, 26, 16);
+        ctx.fillStyle = flash ? '#fff' : '#c75e5e';
+        ctx.fillRect(-10, 0 + bob, 20, 8);
+        ctx.fillStyle = flash ? '#fff' : '#3a0808';
+        ctx.fillRect(-2, 4 + bob, 4, 8);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-16, -2 + bob, 5, 16);
+        ctx.fillRect(11, -2 + bob, 5, 16);
+        ctx.fillStyle = flash ? '#fff' : '#000';
+        ctx.fillRect(-17, 14 + bob, 2, 3);
+        ctx.fillRect(-14, 14 + bob, 2, 3);
+        ctx.fillRect(13, 14 + bob, 2, 3);
+        ctx.fillRect(16, 14 + bob, 2, 3);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.ellipse(0, -10 + bob, 11, 9, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = flash ? '#fff' : '#1a0000';
+        ctx.beginPath();
+        ctx.moveTo(-8, -16 + bob);
+        ctx.lineTo(-12, -24 + bob);
+        ctx.lineTo(-6, -18 + bob);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(8, -16 + bob);
+        ctx.lineTo(12, -24 + bob);
+        ctx.lineTo(6, -18 + bob);
+        ctx.fill();
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(-5, -12 + bob, 3, 3);
+        ctx.fillRect(2, -12 + bob, 3, 3);
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = '#ff8800';
+        ctx.beginPath();
+        ctx.arc(-3.5, -10.5 + bob, 4, 0, Math.PI*2);
+        ctx.arc(3.5, -10.5 + bob, 4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-5, -6 + bob, 10, 2);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-4, -6 + bob, 1, 3);
+        ctx.fillRect(-1, -6 + bob, 1, 3);
+        ctx.fillRect(2, -6 + bob, 1, 3);
+        ctx.fillStyle = flash ? '#fff' : '#3a0808';
+        ctx.beginPath();
+        ctx.moveTo(-10, -2 + bob);
+        ctx.lineTo(-20, -10 + bob);
+        ctx.lineTo(-22, 0 + bob);
+        ctx.lineTo(-12, 4 + bob);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(10, -2 + bob);
+        ctx.lineTo(20, -10 + bob);
+        ctx.lineTo(22, 0 + bob);
+        ctx.lineTo(12, 4 + bob);
+        ctx.fill();
+        if (game.time % 3 === 0) {
+            spawnParticles(this.x + (Math.random()-0.5)*30, this.y, '#ff6b00', 1);
+        }
+    }
+    
+    drawDemonLord(flash) {
+        const bob = Math.sin(this.walkPhase) * 2;
+        const ls = Math.sin(this.walkPhase) * 4;
+        ctx.fillStyle = flash ? '#fff' : '#3a0000';
+        ctx.fillRect(-10, 16, 8, 14 + Math.max(0, ls));
+        ctx.fillRect(2, 16, 8, 14 + Math.max(0, -ls));
+        ctx.fillStyle = flash ? '#fff' : '#000';
+        ctx.fillRect(-11, 28 + Math.max(0, ls), 10, 5);
+        ctx.fillRect(1, 28 + Math.max(0, -ls), 10, 5);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-17, -2 + bob, 34, 20);
+        ctx.fillStyle = flash ? '#fff' : '#ff4400';
+        ctx.fillRect(-14, 0 + bob, 28, 10);
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(-12, 2 + bob, 2, 6);
+        ctx.fillRect(-4, 4 + bob, 2, 4);
+        ctx.fillRect(8, 2 + bob, 2, 6);
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-21, 0 + bob, 6, 20);
+        ctx.fillRect(15, 0 + bob, 6, 20);
+        ctx.fillStyle = '#000';
+        for (let i = 0; i < 3; i++) {
+            ctx.fillRect(-22 + i*2, 18 + bob, 1, 4);
+            ctx.fillRect(16 + i*2, 18 + bob, 1, 4);
+        }
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.ellipse(0, -12 + bob, 14, 11, 0, 0, Math.PI*2);
+        ctx.fill();
+        for (let i = -10; i <= 10; i += 4) {
+            const fh = 6 + Math.sin(this.animTimer/4 + i) * 3;
+            ctx.fillStyle = '#ff6b00';
+            ctx.beginPath();
+            ctx.moveTo(i - 2, -20 + bob);
+            ctx.lineTo(i, -20 - fh + bob);
+            ctx.lineTo(i + 2, -20 + bob);
+            ctx.fill();
+            ctx.fillStyle = '#ffff00';
+            ctx.beginPath();
+            ctx.moveTo(i - 1, -20 + bob);
+            ctx.lineTo(i, -20 - fh*0.6 + bob);
+            ctx.lineTo(i + 1, -20 + bob);
+            ctx.fill();
+        }
+        ctx.fillStyle = flash ? '#fff' : '#1a0000';
+        ctx.beginPath();
+        ctx.moveTo(-10, -18 + bob);
+        ctx.lineTo(-16, -30 + bob);
+        ctx.lineTo(-7, -22 + bob);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(10, -18 + bob);
+        ctx.lineTo(16, -30 + bob);
+        ctx.lineTo(7, -22 + bob);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-6, -14 + bob, 4, 3);
+        ctx.fillRect(2, -14 + bob, 4, 3);
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(-4, -12.5 + bob, 5, 0, Math.PI*2);
+        ctx.arc(4, -12.5 + bob, 5, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-7, -7 + bob, 14, 4);
+        ctx.fillStyle = '#fff';
+        for (let i = -6; i <= 6; i += 2) {
+            ctx.fillRect(i, -7 + bob, 1, 4);
+        }
+        ctx.fillStyle = flash ? '#fff' : '#3a0000';
+        const wingFlap = Math.sin(this.animTimer/8) * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(-12, -2 + bob);
+        ctx.quadraticCurveTo(-30, -25 + wingFlap*10, -36, -8);
+        ctx.quadraticCurveTo(-24, 0, -14, 6 + bob);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(12, -2 + bob);
+        ctx.quadraticCurveTo(30, -25 + wingFlap*10, 36, -8);
+        ctx.quadraticCurveTo(24, 0, 14, 6 + bob);
+        ctx.fill();
+        if (game.time % 2 === 0) {
+            spawnParticles(this.x + (Math.random()-0.5)*50, this.y - 10, '#ff8800', 1);
+        }
+    }
+    
+    drawDragon(flash) {
+        const bob = Math.sin(this.animTimer/12) * 4;
+        const wingFlap = Math.sin(this.animTimer/10) * 0.4;
+        
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.arc(25 + i*8, 5 + Math.sin(this.animTimer/10 + i) * 4, 8 - i, 0, Math.PI*2);
+            ctx.fill();
+        }
+        ctx.fillStyle = flash ? '#fff' : '#3a0a0a';
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.moveTo(25 + i*8, -3 + Math.sin(this.animTimer/10 + i) * 4);
+            ctx.lineTo(28 + i*8, -10 + Math.sin(this.animTimer/10 + i) * 4);
+            ctx.lineTo(31 + i*8, -3 + Math.sin(this.animTimer/10 + i) * 4);
+            ctx.fill();
+        }
+        
+        ctx.fillStyle = flash ? '#fff' : '#5a0a0a';
+        ctx.beginPath();
+        ctx.moveTo(-5, -10 + bob);
+        ctx.quadraticCurveTo(-30, -45 + wingFlap*15, -55, -25 + wingFlap*10);
+        ctx.quadraticCurveTo(-30, -5, -10, 5 + bob);
+        ctx.fill();
+        ctx.strokeStyle = flash ? '#fff' : '#3a0606';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-5, -10 + bob);
+        ctx.lineTo(-45, -28 + wingFlap*12);
+        ctx.moveTo(-5, -10 + bob);
+        ctx.lineTo(-35, -12 + wingFlap*8);
+        ctx.stroke();
+        
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0 + bob, 28, 20, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = flash ? '#fff' : '#d4870e';
+        ctx.beginPath();
+        ctx.ellipse(0, 8 + bob, 22, 10, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle = '#3a0a0a';
+        ctx.lineWidth = 1;
+        for (let i = -18; i <= 18; i += 5) {
+            ctx.beginPath();
+            ctx.moveTo(i, 4 + bob);
+            ctx.lineTo(i, 14 + bob);
+            ctx.stroke();
+        }
+        
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.fillRect(-20, 14 + bob, 9, 16);
+        ctx.fillRect(11, 14 + bob, 9, 16);
+        ctx.fillStyle = flash ? '#fff' : '#f0c75e';
+        for (let i = 0; i < 3; i++) {
+            ctx.fillRect(-19 + i*3, 28 + bob, 2, 5);
+            ctx.fillRect(12 + i*3, 28 + bob, 2, 5);
+        }
+        
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.ellipse(-22, -8 + bob, 9, 13, 0.3, 0, Math.PI*2);
+        ctx.fill();
+        
+        ctx.fillStyle = flash ? '#fff' : this.color;
+        ctx.beginPath();
+        ctx.ellipse(-34, -22 + bob, 16, 13, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(-48, -20 + bob, 10, 7, 0, 0, Math.PI*2);
+        ctx.fill();
+        
+        ctx.fillStyle = flash ? '#fff' : '#1a0000';
+        ctx.beginPath();
+        ctx.moveTo(-36, -30 + bob);
+        ctx.lineTo(-42, -44 + bob);
+        ctx.lineTo(-32, -34 + bob);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-28, -30 + bob);
+        ctx.lineTo(-22, -44 + bob);
+        ctx.lineTo(-24, -34 + bob);
+        ctx.fill();
+        
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(-36, -22 + bob, 4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-37, -24 + bob, 1, 5);
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = '#ff8800';
+        ctx.beginPath();
+        ctx.arc(-36, -22 + bob, 7, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-52, -20 + bob, 2, 1);
+        ctx.fillRect(-52, -18 + bob, 2, 1);
+        
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-52, -14 + bob, 1, 4);
+        ctx.fillRect(-48, -14 + bob, 1, 4);
+        ctx.fillRect(-44, -14 + bob, 1, 4);
+        
+        ctx.fillStyle = flash ? '#fff' : '#3a0a0a';
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.moveTo(-12 + i*8, -18 + bob);
+            ctx.lineTo(-10 + i*8, -28 + bob);
+            ctx.lineTo(-8 + i*8, -18 + bob);
+            ctx.fill();
+        }
+        
+        if (game.time % 3 === 0) {
+            game.particles.push({
+                x: this.x - 55, y: this.y - 20,
+                vx: -5 - Math.random()*3, vy: (Math.random()-0.5)*3,
+                life: 35, color: Math.random() < 0.5 ? '#ff6b00' : '#f0c75e', size: 5
+            });
+        }
+    }
+}
+
+// ============================================================
+// NPCs
+// ============================================================
+const DIALOGS = {
+    innkeeper: {
+        speaker: 'Innkeeper Garrick',
+        lines: [
+            { text: "Ah, a brave soul! The cellar has been overrun by foul creatures, and beyond it lies the Cursed Forest. Foul Pyraxx the Dragon Lord has awakened — none have returned from his domain!", 
+              options: [
+                  { text: "Tell me of the path ahead.", next: 'lore' },
+                  { text: "Any advice?", next: 'tips' },
+                  { text: "I'll deal with this.", action: 'close' }
+              ]
+            }
+        ],
+        lore: {
+            text: "You must cross five zones to reach Pyraxx: Forest, Dungeon, Catacombs, Crypt, and finally his Throne. Each is guarded by a powerful champion who holds a key. Slay them all, or die trying.",
+            options: [{ text: "I won't fail.", action: 'close' }]
+        },
+        tips: {
+            text: "Aye, listen well: search every chest you find — press E to open them. The merchant in the forest sells gear. And NEVER fight ranged enemies head-on — close the gap or take cover behind walls!",
+            options: [{ text: "Wise counsel.", action: 'close' }]
+        }
+    },
+    merchant: {
+        speaker: 'Wandering Merchant',
+        lines: [
+            { text: "Greetings, traveler! Care to peruse my wares? I deal in potions, weapons, and lifesavers.",
+              options: [
+                  { text: "Buy Health Potion (30g)", action: 'buy_hp' },
+                  { text: "Buy Greater Potion (120g)", action: 'buy_greater' },
+                  { text: "Buy Mana Potion (40g)", action: 'buy_mp' },
+                  { text: "Buy Steel Longsword (250g)", action: 'buy_steel' },
+                  { text: "Buy Chainmail (200g)", action: 'buy_chain' },
+                  { text: "Farewell.", action: 'close' }
+              ]
+            }
+        ]
+    },
+    hermit: {
+        speaker: 'Forest Hermit',
+        lines: [
+            { text: "*coughs* ...You'll never make it past the Orc Chieftain alone, young one. He guards the key to the dungeon — strike hard and fast, and use the trees for cover. Take this!",
+              options: [
+                  { text: "Accept gift", action: 'hermit_gift' },
+                  { text: "Thank you, elder.", action: 'close' }
+              ]
+            }
+        ]
+    },
+    ghost: {
+        speaker: 'Lost Spirit',
+        lines: [
+            { text: "Beware... the Lich Lord at the far end of these halls. His magic is deadly at range — close the distance, but do not stand still! He drops the key to the catacombs below...",
+              options: [
+                  { text: "I understand.", action: 'close' }
+              ]
+            }
+        ]
+    }
+};
+
+function handleDialogAction(action) {
+    if (action === 'close') return closeDialog();
+    if (action === 'lore') return showDialog('innkeeper', 'lore');
+    if (action === 'tips') return showDialog('innkeeper', 'tips');
+    
+    const tryBuy = (cost, item, name) => {
+        if (game.player.gold >= cost) {
+            game.player.gold -= cost;
+            game.player.addItem(item);
+            logMsg(`Bought ${name}`, 'loot');
+        } else logMsg('Not enough gold!', 'system');
+    };
+    if (action === 'buy_hp') tryBuy(30, 'potion_health', 'Health Potion');
+    if (action === 'buy_mp') tryBuy(40, 'potion_mana', 'Mana Potion');
+    if (action === 'buy_greater') tryBuy(120, 'potion_greater', 'Greater Potion');
+    if (action === 'buy_steel') tryBuy(250, 'sword_steel', 'Steel Longsword');
+    if (action === 'buy_chain') tryBuy(200, 'armor_chain', 'Chainmail');
+    if (action === 'hermit_gift') {
+        if (!game.questFlags.hermitGift) {
+            game.player.addItem('potion_greater');
+            game.player.addItem('potion_greater');
+            game.questFlags.hermitGift = true;
+            logMsg('Received 2 Greater Potions!', 'loot');
+            closeDialog();
+        } else {
+            logMsg('The hermit has nothing more to give.', 'system');
+            closeDialog();
+        }
+    }
+}
+
+function showDialog(npcId, key) {
+    if (key === undefined) key = 0;
+    const d = DIALOGS[npcId];
+    if (!d) return;
+    const line = typeof key === 'number' ? d.lines[key] : d[key];
+    document.getElementById('dialogSpeaker').textContent = d.speaker;
+    document.getElementById('dialogText').textContent = line.text;
+    const optsEl = document.getElementById('dialogOptions');
+    optsEl.innerHTML = '';
+    line.options.forEach(opt => {
+        const b = document.createElement('button');
+        b.className = 'dialog-option';
+        b.textContent = '▸ ' + opt.text;
+        b.onclick = () => {
+            if (opt.next) showDialog(npcId, opt.next);
+            else handleDialogAction(opt.action);
+        };
+        optsEl.appendChild(b);
+    });
+    document.getElementById('dialogBox').classList.add('active');
+    game.state = 'dialog';
+}
+
+function closeDialog() {
+    document.getElementById('dialogBox').classList.remove('active');
+    game.state = 'playing';
+}
+
+function drawNPCSprite(npc, sx, sy) {
+    const bob = Math.sin(npc.anim / 25) * 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(sx, sy + 22, 14, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+    
+    if (npc.id === 'innkeeper') {
+        ctx.fillStyle = '#5a3a1a';
+        ctx.fillRect(sx - 10, sy - 2 + bob, 20, 22);
+        ctx.fillStyle = '#d4af6e';
+        ctx.fillRect(sx - 7, sy + 2 + bob, 14, 16);
+        ctx.fillStyle = '#e8c9a0';
+        ctx.fillRect(sx - 7, sy - 16 + bob, 14, 14);
+        ctx.fillStyle = '#d4d0c0';
+        ctx.beginPath();
+        ctx.moveTo(sx - 7, sy - 6 + bob);
+        ctx.lineTo(sx - 8, sy + 2 + bob);
+        ctx.lineTo(sx + 8, sy + 2 + bob);
+        ctx.lineTo(sx + 7, sy - 6 + bob);
+        ctx.fill();
+        ctx.fillStyle = '#d4af8e';
+        ctx.fillRect(sx - 6, sy - 16 + bob, 12, 5);
+        ctx.fillStyle = '#d4d0c0';
+        ctx.fillRect(sx - 8, sy - 12 + bob, 3, 6);
+        ctx.fillRect(sx + 5, sy - 12 + bob, 3, 6);
+        ctx.fillStyle = '#1a1209';
+        ctx.fillRect(sx - 3, sy - 10 + bob, 2, 2);
+        ctx.fillRect(sx + 1, sy - 10 + bob, 2, 2);
+        ctx.fillStyle = 'rgba(200,100,100,0.5)';
+        ctx.beginPath();
+        ctx.arc(sx - 5, sy - 7 + bob, 2, 0, Math.PI*2);
+        ctx.arc(sx + 5, sy - 7 + bob, 2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#8b6914';
+        ctx.fillRect(sx + 10, sy + 4 + bob, 5, 6);
+        ctx.fillStyle = '#f0c75e';
+        ctx.fillRect(sx + 10, sy + 4 + bob, 5, 1);
+    } else if (npc.id === 'merchant') {
+        ctx.fillStyle = '#3a1a4a';
+        ctx.fillRect(sx - 11, sy - 2 + bob, 22, 24);
+        ctx.fillStyle = '#f0c75e';
+        ctx.fillRect(sx - 11, sy + 18 + bob, 22, 2);
+        ctx.fillRect(sx - 11, sy - 2 + bob, 22, 2);
+        ctx.fillStyle = '#e8d0a8';
+        ctx.fillRect(sx - 7, sy - 18 + bob, 14, 16);
+        ctx.fillStyle = '#d4af6e';
+        ctx.fillRect(sx - 9, sy - 18 + bob, 18, 6);
+        ctx.fillRect(sx - 9, sy - 12 + bob, 3, 10);
+        ctx.fillRect(sx + 6, sy - 12 + bob, 3, 10);
+        ctx.fillStyle = '#e8d0a8';
+        ctx.beginPath();
+        ctx.moveTo(sx - 7, sy - 10 + bob);
+        ctx.lineTo(sx - 11, sy - 14 + bob);
+        ctx.lineTo(sx - 7, sy - 6 + bob);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(sx + 7, sy - 10 + bob);
+        ctx.lineTo(sx + 11, sy - 14 + bob);
+        ctx.lineTo(sx + 7, sy - 6 + bob);
+        ctx.fill();
+        ctx.fillStyle = '#5a8c3a';
+        ctx.fillRect(sx - 4, sy - 12 + bob, 2, 3);
+        ctx.fillRect(sx + 2, sy - 12 + bob, 2, 3);
+        ctx.strokeStyle = '#5a3a1a';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(sx, sy - 6 + bob, 3, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+        ctx.fillStyle = '#8b6914';
+        ctx.beginPath();
+        ctx.ellipse(sx + 12, sy + 4 + bob, 5, 7, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#d4af6e';
+        ctx.fillRect(sx + 10, sy - 1 + bob, 4, 2);
+    } else if (npc.id === 'hermit') {
+        ctx.fillStyle = '#3a3a2a';
+        ctx.fillRect(sx - 10, sy - 4 + bob, 20, 24);
+        ctx.fillStyle = '#5a5a4a';
+        ctx.fillRect(sx - 10, sy - 4 + bob, 20, 4);
+        ctx.fillStyle = '#2a2a1a';
+        ctx.beginPath();
+        ctx.moveTo(sx - 9, sy - 10 + bob);
+        ctx.lineTo(sx - 11, sy - 4 + bob);
+        ctx.lineTo(sx + 11, sy - 4 + bob);
+        ctx.lineTo(sx + 9, sy - 10 + bob);
+        ctx.quadraticCurveTo(sx, sy - 18 + bob, sx - 9, sy - 10 + bob);
+        ctx.fill();
+        ctx.fillStyle = '#3a2810';
+        ctx.fillRect(sx - 5, sy - 8 + bob, 10, 6);
+        ctx.fillStyle = '#88ddff';
+        ctx.fillRect(sx - 3, sy - 6 + bob, 2, 2);
+        ctx.fillRect(sx + 1, sy - 6 + bob, 2, 2);
+        ctx.fillStyle = '#e8e0d0';
+        ctx.beginPath();
+        ctx.moveTo(sx - 4, sy - 1 + bob);
+        ctx.lineTo(sx - 6, sy + 10 + bob);
+        ctx.lineTo(sx + 6, sy + 10 + bob);
+        ctx.lineTo(sx + 4, sy - 1 + bob);
+        ctx.fill();
+        ctx.fillStyle = '#5a3a1a';
+        ctx.fillRect(sx + 11, sy - 16 + bob, 3, 36);
+        ctx.fillStyle = '#88ddff';
+        ctx.beginPath();
+        ctx.arc(sx + 12, sy - 18 + bob, 4, 0, Math.PI*2);
+        ctx.fill();
+    } else if (npc.id === 'ghost') {
+        const ghostBob = Math.sin(npc.anim/15) * 3;
+        ctx.globalAlpha = 0.75;
+        ctx.fillStyle = '#e0e8f0';
+        ctx.beginPath();
+        ctx.moveTo(sx - 12, sy + 20 + ghostBob);
+        ctx.quadraticCurveTo(sx - 8, sy + 25, sx - 4, sy + 20 + ghostBob);
+        ctx.quadraticCurveTo(sx, sy + 26, sx + 4, sy + 20 + ghostBob);
+        ctx.quadraticCurveTo(sx + 8, sy + 25, sx + 12, sy + 20 + ghostBob);
+        ctx.lineTo(sx + 12, sy - 18 + ghostBob);
+        ctx.quadraticCurveTo(sx, sy - 28 + ghostBob, sx - 12, sy - 18 + ghostBob);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#00aaff';
+        ctx.beginPath();
+        ctx.arc(sx - 4, sy - 12 + ghostBob, 2, 0, Math.PI*2);
+        ctx.arc(sx + 4, sy - 12 + ghostBob, 2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = '#88ddff';
+        ctx.beginPath();
+        ctx.arc(sx - 4, sy - 12 + ghostBob, 5, 0, Math.PI*2);
+        ctx.arc(sx + 4, sy - 12 + ghostBob, 5, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#1a3a5a';
+        ctx.beginPath();
+        ctx.ellipse(sx, sy - 4 + ghostBob, 3, 4, 0, 0, Math.PI*2);
+        ctx.fill();
+        if (game.time % 5 === 0) {
+            game.particles.push({
+                x: npc.x + (Math.random()-0.5)*30, y: npc.y + 10,
+                vx: 0, vy: -1 - Math.random(), life: 40, color: '#88ddff', size: 2
+            });
+        }
+    }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function isWall(x, y) {
+    if (!game.currentMap) return false;
+    const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+    const row = game.currentMap.tiles[ty];
+    if (!row) return true;
+    const c = row[tx];
+    return c === '1';
+}
+
+function spawnFloat(x, y, text, type) {
+    game.floatTexts.push({ x: x, y: y, text: text, type: type, life: 60, vy: -1 });
+}
+
+function spawnParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+        game.particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 6,
+            vy: (Math.random() - 0.5) * 6 - 2,
+            life: 40 + Math.random() * 20,
+            color: color,
+            size: 2 + Math.random() * 3
+        });
+    }
+}
+
+let shake = 0;
+function screenShake(amt) { shake = amt; }
+
+function logMsg(msg, type) {
+    if (!type) type = '';
+    const log = document.getElementById('messageLog');
+    const e = document.createElement('div');
+    e.className = 'log-entry ' + (type ? 'log-' + type : '');
+    e.textContent = msg;
+    log.insertBefore(e, log.firstChild);
+    while (log.children.length > 10) log.removeChild(log.lastChild);
+}
+
+function showBossWarning(name) {
+    const el = document.getElementById('bossWarning');
+    el.textContent = '⚠ ' + name + ' ⚠';
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    logMsg('⚠ ' + name + ' appears!', 'boss');
+}
+
+function loadMap(mapId, px, py) {
+    game.currentMap = MAPS[mapId];
+    game.currentMapId = mapId;
+    game.enemies = [];
+    game.items = [];
+    game.npcs = [];
+    game.projectiles = [];
+    game.particles = [];
+    
+    game.currentMap.spawns.enemies.forEach(s => {
+        game.enemies.push(new Enemy(s.type, s.x, s.y));
+    });
+    
+    game.currentMap.spawns.npcs.forEach(s => {
+        game.npcs.push({
+            id: s.id, x: s.x * TILE + TILE/2, y: s.y * TILE + TILE/2,
+            name: s.name, anim: 0
+        });
+    });
+    
+    game.currentMap.spawns.items.forEach(s => {
+        game.items.push({
+            type: s.type,
+            x: s.x * TILE + TILE/2,
+            y: s.y * TILE + TILE/2,
+            alive: true,
+            bob: 0,
+            inChest: s.inChest || false,
+            opened: false
+        });
+    });
+    
+    if (game.player) {
+        game.player.x = px * TILE + TILE/2;
+        game.player.y = py * TILE + TILE/2;
+        game.player.invulnTimer = 60;
+        game.player.exitCD = 30; // prevent instant re-entry through the exit
+    }
+    
+    document.getElementById('locationDisplay').textContent = '📍 ' + game.currentMap.name;
+    logMsg('Entered ' + game.currentMap.name, 'system');
+}
+
+// ============================================================
+// MAP DRAW
+// ============================================================
+function drawMap() {
+    const map = game.currentMap;
+    if (!map) return;
+    
+    const startCol = Math.max(0, Math.floor(game.camera.x / TILE));
+    const endCol = Math.min(map.tiles[0].length, Math.ceil((game.camera.x + W) / TILE));
+    const startRow = Math.max(0, Math.floor(game.camera.y / TILE));
+    const endRow = Math.min(map.tiles.length, Math.ceil((game.camera.y + H) / TILE));
+    
+    for (let y = startRow; y < endRow; y++) {
+        for (let x = startCol; x < endCol; x++) {
+            const tile = map.tiles[y][x];
+            const px = x * TILE - game.camera.x;
+            const py = y * TILE - game.camera.y;
+            
+            if (tile === '1') {
+                ctx.fillStyle = map.wallColor;
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(px, py + TILE - 8, TILE, 8);
+                ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                ctx.fillRect(px, py, TILE, 4);
+                ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(px, py + TILE/2);
+                ctx.lineTo(px + TILE, py + TILE/2);
+                if (y % 2 === 0) {
+                    ctx.moveTo(px + TILE/2, py + TILE/2);
+                    ctx.lineTo(px + TILE/2, py + TILE);
+                } else {
+                    ctx.moveTo(px + TILE/2, py);
+                    ctx.lineTo(px + TILE/2, py + TILE/2);
+                }
+                ctx.stroke();
+            } else {
+                ctx.fillStyle = map.floorColor;
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(px, py, TILE, TILE);
+                
+                if (tile === '5') {
+                    // Don't draw the tile marker — the chest item itself renders
+                } else if (tile === '6') {
+                    ctx.fillStyle = '#3a2a14';
+                    ctx.fillRect(px + TILE/2 - 3, py + TILE/2, 6, TILE/2 - 4);
+                    const flicker = 1 + Math.sin(game.time / 4 + x * y) * 0.2;
+                    ctx.fillStyle = 'rgba(255,' + Math.floor(100 + flicker*50) + ',0,0.9)';
+                    ctx.beginPath();
+                    ctx.ellipse(px + TILE/2, py + TILE/2 - 4, 8 * flicker, 12 * flicker, 0, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.fillStyle = 'rgba(255,255,200,' + (0.5 * flicker) + ')';
+                    ctx.beginPath();
+                    ctx.ellipse(px + TILE/2, py + TILE/2 - 6, 4 * flicker, 6 * flicker, 0, 0, Math.PI*2);
+                    ctx.fill();
+                    const grad = ctx.createRadialGradient(px + TILE/2, py + TILE/2, 0, px + TILE/2, py + TILE/2, 100);
+                    grad.addColorStop(0, 'rgba(255,140,0,0.3)');
+                    grad.addColorStop(1, 'rgba(255,140,0,0)');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(px - 60, py - 60, 200, 200);
+                }
+            }
+        }
+    }
+    
+    // Draw exit markers
+    map.exits.forEach(exit => {
+        const px = exit.x * TILE - game.camera.x;
+        const py = exit.y * TILE - game.camera.y;
+        if (exit.requiresKey && !game.player.hasItem(exit.requiresKey)) {
+            ctx.fillStyle = '#8b2e2e';
+            ctx.fillRect(px + 12, py + 8, TILE - 24, TILE - 16);
+            ctx.fillStyle = '#f0c75e';
+            ctx.beginPath();
+            ctx.arc(px + TILE/2, py + TILE/2, 5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#1a1209';
+            ctx.fillRect(px + TILE/2 - 1, py + TILE/2, 2, 5);
+        } else {
+            // Glowing portal
+            const pulse = 1 + Math.sin(game.time/8) * 0.15;
+            const grad = ctx.createRadialGradient(px + TILE/2, py + TILE/2, 0, px + TILE/2, py + TILE/2, 30 * pulse);
+            grad.addColorStop(0, 'rgba(90,200,90,0.6)');
+            grad.addColorStop(1, 'rgba(90,200,90,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(px - 10, py - 10, TILE + 20, TILE + 20);
+            ctx.fillStyle = '#5a8c3a';
+            ctx.font = 'bold 24px serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('➤', px + TILE/2, py + TILE/2 + 8);
+        }
+    });
+}
+
+function drawItems() {
+    game.items.forEach(item => {
+        if (!item.alive) return;
+        item.bob += 0.05;
+        const sx = item.x - game.camera.x;
+        const baseY = item.y - game.camera.y;
+        
+        if (item.inChest && !item.opened) {
+            // CHEST RENDER
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.beginPath();
+            ctx.ellipse(sx, baseY + 14, 16, 5, 0, 0, Math.PI*2);
+            ctx.fill();
+            // Chest body
+            ctx.fillStyle = '#5a3a1a';
+            ctx.fillRect(sx - 14, baseY - 6, 28, 18);
+            // Chest lid
+            ctx.fillStyle = '#7a4a2a';
+            ctx.beginPath();
+            ctx.moveTo(sx - 14, baseY - 6);
+            ctx.lineTo(sx - 14, baseY - 12);
+            ctx.quadraticCurveTo(sx, baseY - 18, sx + 14, baseY - 12);
+            ctx.lineTo(sx + 14, baseY - 6);
+            ctx.closePath();
+            ctx.fill();
+            // Iron bands
+            ctx.fillStyle = '#3a2a1a';
+            ctx.fillRect(sx - 14, baseY - 2, 28, 2);
+            ctx.fillRect(sx - 14, baseY + 6, 28, 2);
+            // Lock
+            ctx.fillStyle = '#f0c75e';
+            ctx.fillRect(sx - 3, baseY + 1, 6, 6);
+            ctx.fillStyle = '#1a1209';
+            ctx.fillRect(sx - 1, baseY + 3, 2, 2);
+            // Corner studs
+            ctx.fillStyle = '#d4af6e';
+            ctx.fillRect(sx - 13, baseY - 11, 2, 2);
+            ctx.fillRect(sx + 11, baseY - 11, 2, 2);
+            ctx.fillRect(sx - 13, baseY + 9, 2, 2);
+            ctx.fillRect(sx + 11, baseY + 9, 2, 2);
+            
+            // [E] Open prompt when player is near
+            if (game.player) {
+                const dx = game.player.x - item.x, dy = game.player.y - item.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 60) {
+                    const glow = ctx.createRadialGradient(sx, baseY, 0, sx, baseY, 35);
+                    glow.addColorStop(0, 'rgba(240,199,94,0.3)');
+                    glow.addColorStop(1, 'rgba(240,199,94,0)');
+                    ctx.fillStyle = glow;
+                    ctx.fillRect(sx - 35, baseY - 35, 70, 70);
+                    ctx.fillStyle = '#f0c75e';
+                    ctx.font = 'bold 14px MedievalSharp';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('[E] Open', sx, baseY - 26 + Math.sin(game.time/10) * 2);
+                }
+            }
+        } else {
+            // FLOATING ITEM
+            const sy = baseY + Math.sin(item.bob) * 3;
+            const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 30);
+            grad.addColorStop(0, 'rgba(240,199,94,0.5)');
+            grad.addColorStop(1, 'rgba(240,199,94,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(sx - 30, sy - 30, 60, 60);
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(sx, baseY + 12, 12, 4, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.font = '28px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(ITEMS[item.type].icon, sx, sy);
+        }
+    });
+}
+
+function drawNPCs() {
+    game.npcs.forEach(npc => {
+        npc.anim++;
+        const sx = npc.x - game.camera.x;
+        const sy = npc.y - game.camera.y;
+        drawNPCSprite(npc, sx, sy);
+        
+        const dx = game.player.x - npc.x, dy = game.player.y - npc.y;
+        if (Math.sqrt(dx*dx + dy*dy) < 60) {
+            ctx.fillStyle = '#f0c75e';
+            ctx.font = 'bold 14px MedievalSharp';
+            ctx.textAlign = 'center';
+            ctx.fillText('[E]', sx, sy - 30 + Math.sin(game.time/10) * 2);
+            ctx.font = '11px Cinzel';
+            ctx.fillStyle = '#d4af6e';
+            ctx.fillText(npc.name, sx, sy - 45);
+        }
+    });
+}
+
+function drawParticles() {
+    game.particles.forEach(p => {
+        const sx = p.x - game.camera.x, sy = p.y - game.camera.y;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life / 60;
+        ctx.fillRect(sx - p.size/2, sy - p.size/2, p.size, p.size);
+        ctx.globalAlpha = 1;
+    });
+}
+
+function drawProjectiles() {
+    game.projectiles.forEach(p => {
+        const sx = p.x - game.camera.x, sy = p.y - game.camera.y;
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 12, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 6, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.beginPath();
+        ctx.arc(sx, sy, 3, 0, Math.PI*2);
+        ctx.fill();
+    });
+}
+
+function drawFloatTexts() {
+    game.floatTexts.forEach(f => {
+        const sx = f.x - game.camera.x;
+        const sy = f.y - game.camera.y - (60 - f.life);
+        const colors = { damage: '#ff4444', heal: '#5a8c3a', crit: '#f0c75e', xp: '#4488ff' };
+        ctx.fillStyle = colors[f.type] || '#fff';
+        ctx.globalAlpha = f.life / 60;
+        ctx.font = f.type === 'crit' ? 'bold 28px MedievalSharp' : 'bold 18px MedievalSharp';
+        ctx.textAlign = 'center';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+        ctx.strokeText(f.text, sx, sy);
+        ctx.fillText(f.text, sx, sy);
+        ctx.globalAlpha = 1;
+    });
+}
+
+function drawMinimap() {
+    if (!game.currentMap) return;
+    mctx.fillStyle = '#0a0604';
+    mctx.fillRect(0, 0, 220, 220);
+    
+    const map = game.currentMap;
+    const w = map.tiles[0].length, h = map.tiles.length;
+    const cellW = 220 / w, cellH = 220 / h;
+    
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const c = map.tiles[y][x];
+            if (c === '1') mctx.fillStyle = map.wallColor;
+            else if (c === '6') mctx.fillStyle = '#ff8c00';
+            else mctx.fillStyle = map.floorColor;
+            mctx.fillRect(x * cellW, y * cellH, cellW + 1, cellH + 1);
+        }
+    }
+    
+    // Exits
+    map.exits.forEach(exit => {
+        if (exit.requiresKey && !game.player.hasItem(exit.requiresKey)) {
+            mctx.fillStyle = '#8b2e2e';
+        } else {
+            mctx.fillStyle = '#5a8c3a';
+        }
+        mctx.fillRect(exit.x * cellW, exit.y * cellH, cellW + 1, cellH + 1);
+    });
+    
+    game.enemies.forEach(e => {
+        if (!e.alive) return;
+        if (e.boss) mctx.fillStyle = '#ff0000';
+        else if (e.miniboss) mctx.fillStyle = '#c79bd6';
+        else mctx.fillStyle = '#a83232';
+        const sz = e.boss ? 6 : (e.miniboss ? 4 : 3);
+        mctx.fillRect(e.x / TILE * cellW - sz/2, e.y / TILE * cellH - sz/2, sz, sz);
+    });
+    
+    game.npcs.forEach(n => {
+        mctx.fillStyle = '#f0c75e';
+        mctx.fillRect(n.x / TILE * cellW - 2, n.y / TILE * cellH - 2, 4, 4);
+    });
+    
+    game.items.forEach(i => {
+        if (!i.alive) return;
+        if (i.inChest && !i.opened) mctx.fillStyle = '#d4af6e';
+        else mctx.fillStyle = '#f0c75e';
+        mctx.fillRect(i.x / TILE * cellW - 1.5, i.y / TILE * cellH - 1.5, 3, 3);
+    });
+    
+    if (game.player) {
+        mctx.fillStyle = '#fff';
+        mctx.fillRect(game.player.x / TILE * cellW - 3, game.player.y / TILE * cellH - 3, 6, 6);
+    }
+}
+
+// ============================================================
+// LOOPS
+// ============================================================
+function update() {
+    if (game.state === 'playing') {
+        game.time++;
+        game.player.update();
+        game.enemies.forEach(e => e.update());
+        
+        game.projectiles.forEach(p => {
+            p.x += p.vx; p.y += p.vy; p.life--;
+            if (isWall(p.x, p.y)) {
+                p.life = 0;
+                spawnParticles(p.x, p.y, p.color, 6);
+            }
+            if (p.friendly) {
+                game.enemies.forEach(e => {
+                    if (!e.alive) return;
+                    const dx = e.x - p.x, dy = e.y - p.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < e.size/2 + 6) {
+                        e.takeDamage(p.dmg, false);
+                        p.life = 0;
+                        spawnParticles(p.x, p.y, p.color, 8);
+                    }
+                });
+            } else {
+                const dx = game.player.x - p.x, dy = game.player.y - p.y;
+                if (Math.sqrt(dx*dx + dy*dy) < game.player.size) {
+                    game.player.takeDamage(p.dmg);
+                    p.life = 0;
+                    spawnParticles(p.x, p.y, p.color, 8);
+                }
+            }
+        });
+        game.projectiles = game.projectiles.filter(p => p.life > 0);
+        
+        game.particles.forEach(p => {
+            p.x += p.vx; p.y += p.vy;
+            p.vy += 0.2;
+            p.vx *= 0.95;
+            p.life--;
+        });
+        game.particles = game.particles.filter(p => p.life > 0);
+        
+        game.floatTexts.forEach(f => f.life--);
+        game.floatTexts = game.floatTexts.filter(f => f.life > 0);
+        
+        game.camera.x += ((game.player.x - W/2) - game.camera.x) * 0.1;
+        game.camera.y += ((game.player.y - H/2) - game.camera.y) * 0.1;
+        
+        if (shake > 0) {
+            game.camera.x += (Math.random() - 0.5) * shake;
+            game.camera.y += (Math.random() - 0.5) * shake;
+            shake *= 0.85;
+            if (shake < 0.5) shake = 0;
+        }
+    }
+    
+    updateUI();
+}
+
+function updateUI() {
+    if (!game.player) return;
+    const p = game.player;
+    document.getElementById('hpText').textContent = Math.ceil(p.hp) + '/' + p.maxHp;
+    document.getElementById('hpFill').style.width = (p.hp / p.maxHp * 100) + '%';
+    document.getElementById('mpText').textContent = Math.ceil(p.mp) + '/' + p.maxMp;
+    document.getElementById('mpFill').style.width = (p.mp / p.maxMp * 100) + '%';
+    document.getElementById('xpText').textContent = p.xp + '/' + p.xpNext;
+    document.getElementById('xpFill').style.width = (p.xp / p.xpNext * 100) + '%';
+    document.getElementById('lvlText').textContent = p.level;
+    document.getElementById('statAtk').textContent = p.atk;
+    document.getElementById('statDef').textContent = p.def;
+    document.getElementById('statSpd').textContent = p.spd.toFixed(1);
+    document.getElementById('statGold').textContent = p.gold;
+    document.getElementById('statKills').textContent = p.kills;
+    document.getElementById('playerClassDisplay').textContent = CLASSES[p.classType].icon + ' ' + p.name + ' [' + DIFFICULTIES[game.difficulty].name + ']';
+}
+
+function render() {
+    if (!game.currentMap) return;
+    
+    ctx.fillStyle = game.currentMap.bgColor;
+    ctx.fillRect(0, 0, W, H);
+    
+    drawMap();
+    drawItems();
+    drawNPCs();
+    
+    const all = [game.player].concat(game.enemies.filter(e => e.alive));
+    all.sort((a, b) => a.y - b.y);
+    all.forEach(e => e.draw());
+    
+    drawProjectiles();
+    drawParticles();
+    drawFloatTexts();
+    
+    const vgrad = ctx.createRadialGradient(W/2, H/2, H/3, W/2, H/2, H);
+    vgrad.addColorStop(0, 'rgba(0,0,0,0)');
+    vgrad.addColorStop(1, 'rgba(0,0,0,0.7)');
+    ctx.fillStyle = vgrad;
+    ctx.fillRect(0, 0, W, H);
+    
+    drawMinimap();
+}
+
+function gameLoop() {
+    update();
+    render();
+    requestAnimationFrame(gameLoop);
+}
+
+// ============================================================
+// INVENTORY
+// ============================================================
+function toggleInventory() {
+    const modal = document.getElementById('inventoryModal');
+    if (modal.classList.contains('active')) {
+        modal.classList.remove('active');
+    } else {
+        modal.classList.add('active');
+        renderInventory();
+    }
+}
+
+function setInvTab(tab, btn) {
+    game.invTab = tab;
+    document.querySelectorAll('.inv-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderInventory();
+}
+
+function renderInventory() {
+    const grid = document.getElementById('invGrid');
+    grid.innerHTML = '';
+    
+    let items = game.player.inventory;
+    if (game.invTab !== 'all') items = items.filter(i => ITEMS[i.id].type === game.invTab);
+    
+    items.forEach(inv => {
+        const item = ITEMS[inv.id];
+        const slot = document.createElement('div');
+        slot.className = 'inv-slot';
+        if (game.player.equipped.weapon === inv.id || game.player.equipped.armor === inv.id) {
+            slot.classList.add('equipped');
+        }
+        slot.innerHTML = item.icon;
+        if (inv.count > 1) {
+            const count = document.createElement('span');
+            count.className = 'inv-slot-count';
+            count.textContent = inv.count;
+            slot.appendChild(count);
+        }
+        
+        slot.onmouseenter = (e) => {
+            const tip = document.getElementById('itemTooltip');
+            let stats = '';
+            if (item.atk) stats += '⚔️ +' + item.atk + ' Attack<br>';
+            if (item.def) stats += '🛡️ +' + item.def + ' Defense<br>';
+            if (item.heal) stats += '❤️ +' + item.heal + ' HP<br>';
+            if (item.mana) stats += '💧 +' + item.mana + ' MP<br>';
+            if (item.spd) stats += '💨 +' + item.spd + ' Speed<br>';
+            tip.innerHTML = '<div class="tooltip-name">' + item.name + '</div>' +
+                             '<div class="tooltip-type">' + item.type.toUpperCase() + '</div>' +
+                             '<div class="tooltip-stats">' + stats + '</div>' +
+                             '<div class="tooltip-desc">' + item.desc + '</div>';
+            tip.classList.add('show');
+            tip.style.left = (e.pageX + 15) + 'px';
+            tip.style.top = (e.pageY + 15) + 'px';
+        };
+        slot.onmousemove = (e) => {
+            const tip = document.getElementById('itemTooltip');
+            tip.style.left = (e.pageX + 15) + 'px';
+            tip.style.top = (e.pageY + 15) + 'px';
+        };
+        slot.onmouseleave = () => { document.getElementById('itemTooltip').classList.remove('show'); };
+        
+        slot.onclick = () => {
+            if (item.type === 'weapon' || item.type === 'armor') {
+                game.player.equipItem(inv.id);
+                renderInventory();
+            } else if (item.type === 'potion') {
+                game.player.usePotion(inv.id);
+                renderInventory();
+            }
+        };
+        
+        grid.appendChild(slot);
+    });
+    
+    for (let i = items.length; i < 24; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'inv-slot empty';
+        grid.appendChild(slot);
+    }
+}
+
+// ============================================================
+// GAME CONTROL
+// ============================================================
+function startGame(classType) {
+    document.getElementById('mainMenu').style.display = 'none';
+    document.getElementById('gameUI').classList.add('active');
+    document.getElementById('deathScreen').classList.remove('active');
+    document.getElementById('victoryScreen').classList.remove('active');
+    
+    game.player = new Player(classType);
+    game.questFlags = {};
+    game.startTime = Date.now();
+    document.getElementById('playerNameDisplay').textContent = 'Hero of Eldrath';
+    loadMap('cellar', 2, 2);
+    game.state = 'playing';
+    logMsg('🗡️ Your quest begins...', 'quest');
+    logMsg('⚙️ Difficulty: ' + DIFFICULTIES[game.difficulty].name, 'system');
+    logMsg('Defeat the 4 champion guardians to claim their keys, then face Pyraxx!', 'quest');
+}
+
+function returnToMenu() {
+    document.getElementById('mainMenu').style.display = 'flex';
+    document.getElementById('gameUI').classList.remove('active');
+    document.getElementById('deathScreen').classList.remove('active');
+    document.getElementById('victoryScreen').classList.remove('active');
+    document.getElementById('messageLog').innerHTML = '';
+    game.state = 'menu';
+}
+
+function fillEndStats(elId) {
+    const elapsed = Math.floor((Date.now() - game.startTime) / 1000);
+    const min = Math.floor(elapsed / 60), sec = elapsed % 60;
+    const p = game.player;
+    document.getElementById(elId).innerHTML =
+        '<strong>⏱️ Time:</strong> ' + min + 'm ' + sec + 's<br>' +
+        '<strong>⚔️ Class:</strong> ' + p.name + '<br>' +
+        '<strong>💀 Difficulty:</strong> ' + DIFFICULTIES[game.difficulty].name + '<br>' +
+        '<strong>⭐ Final Level:</strong> ' + p.level + '<br>' +
+        '<strong>🗡️ Kills:</strong> ' + p.kills + '<br>' +
+        '<strong>🪙 Gold Earned:</strong> ' + p.gold;
+}
+
+function triggerDeath() {
+    game.state = 'dead';
+    fillEndStats('deathStats');
+    setTimeout(() => document.getElementById('deathScreen').classList.add('active'), 500);
+    // --- BEGIN: Save Nightmare score for leaderboard ---
+if (game.difficulty === 'nightmare') {
+    let eldrathScores = JSON.parse(localStorage.getItem('eldrathScores')) || {};
+    // Use final level as score (you can change to gold, time, etc)
+    const playerScore = game.player.level;
+    if (!eldrathScores.nightmare || playerScore > eldrathScores.nightmare) {
+        eldrathScores.nightmare = playerScore;
+        localStorage.setItem('eldrathScores', JSON.stringify(eldrathScores));
+    }
+    // Also update arcadeScores for leaderboard compatibility
+    let arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    if (!arcadeScores.eldrath_nightmare || playerScore > arcadeScores.eldrath_nightmare) {
+        arcadeScores.eldrath_nightmare = playerScore;
+        localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
+    }
+}
+// --- END: Save Nightmare score for leaderboard ---
+}
+
+function triggerVictory() {
+    game.state = 'victory';
+    fillEndStats('victoryStats');
+    setTimeout(() => document.getElementById('victoryScreen').classList.add('active'), 1000);
+    // --- BEGIN: Save Nightmare score for leaderboard ---
+if (game.difficulty === 'nightmare') {
+    let eldrathScores = JSON.parse(localStorage.getItem('eldrathScores')) || {};
+    // Use final level as score (you can change to gold, time, etc)
+    const playerScore = game.player.level;
+    if (!eldrathScores.nightmare || playerScore > eldrathScores.nightmare) {
+        eldrathScores.nightmare = playerScore;
+        localStorage.setItem('eldrathScores', JSON.stringify(eldrathScores));
+    }
+    // Also update arcadeScores for leaderboard compatibility
+    let arcadeScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
+    if (!arcadeScores.eldrath_nightmare || playerScore > arcadeScores.eldrath_nightmare) {
+        arcadeScores.eldrath_nightmare = playerScore;
+        localStorage.setItem('arcadeScores', JSON.stringify(arcadeScores));
+    }
+}
+// --- END: Save Nightmare score for leaderboard ---
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+window.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    game.keys[k] = true;
+    
+    if (game.state === 'playing') {
+        if (k === ' ') { e.preventDefault(); game.player.attack(); }
+        if (k === 'i') { e.preventDefault(); toggleInventory(); }
+        if (k === 'e') {
+            // Try NPCs first
+            let interacted = false;
+            game.npcs.forEach(npc => {
+                if (interacted) return;
+                const dx = game.player.x - npc.x, dy = game.player.y - npc.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 60) {
+                    showDialog(npc.id);
+                    interacted = true;
+                }
+            });
+            // Then try chests
+            if (!interacted) {
+                game.items.forEach(item => {
+                    if (interacted) return;
+                    if (!item.alive || !item.inChest || item.opened) return;
+                    const dx = game.player.x - item.x, dy = game.player.y - item.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < 60) {
+                        item.opened = true;
+                        logMsg('🎁 You opened a chest!', 'loot');
+                        spawnParticles(item.x, item.y, '#f0c75e', 25);
+                        screenShake(3);
+                        interacted = true;
+                    }
+                });
+            }
+        }
+        if (k === '1') {
+            const hp = game.player.inventory.find(i => i.id === 'potion_health');
+            if (hp) game.player.usePotion('potion_health');
+            else {
+                const gp = game.player.inventory.find(i => i.id === 'potion_greater');
+                if (gp) game.player.usePotion('potion_greater');
+            }
+        }
+        if (k === '2') {
+            const mp = game.player.inventory.find(i => i.id === 'potion_mana');
+            if (mp) game.player.usePotion('potion_mana');
+        }
+    }
+});
+window.addEventListener('keyup', e => { game.keys[e.key.toLowerCase()] = false; });
+
+canvas.addEventListener('mousedown', e => {
+    if (game.state === 'playing') game.player.attack();
+});
+
+gameLoop();
+</script>
+</body>
+</html>
