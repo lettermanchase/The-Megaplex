@@ -13,1006 +13,453 @@
 <script src="megaplex-firebase.js"></script>
 <script src="tavern-score-helper.js"></script>
 <style>
-/* ============================================================
-   ===== THEME TOKENS (matches Citadel Tavern) ===============
-   ============================================================ */
 :root {
-    --bg-900: #1a1209;
-    --bg-800: #241a0d;
-    --bg-700: #322310;
-    --surface: rgba(255,235,200,0.04);
-    --surface-hover: rgba(255,235,200,0.08);
-    --border: rgba(212,175,110,0.18);
-    --border-strong: rgba(212,175,110,0.35);
-    --accent: #d4af6e;
-    --accent-2: #8b2e2e;
-    --gold: #f0c75e;
-    --text: #f0e6d2;
-    --text-dim: #b09b76;
-    --radius: 8px;
-    --shadow: 0 8px 24px rgba(0,0,0,0.55);
-    --health: #5a8c3a;
-    --mana: #4a6b8a;
-    --rage: #a83232;
+    --bg-900: #1a1209; --bg-800: #241a0d; --bg-700: #322310;
+    --surface: rgba(255,235,200,0.04); --surface-hover: rgba(255,235,200,0.08);
+    --border: rgba(212,175,110,0.18); --border-strong: rgba(212,175,110,0.35);
+    --accent: #d4af6e; --accent-2: #8b2e2e; --gold: #f0c75e;
+    --text: #f0e6d2; --text-dim: #b09b76;
+    --health: #5a8c3a; --mana: #4a6b8a; --rage: #a83232;
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 body {
     font-family: 'Cinzel', serif;
-    background:
-        radial-gradient(1200px 600px at 50% -10%, #3a2a14 0%, var(--bg-900) 60%) fixed,
-        #1a1209;
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-    letter-spacing: 0.3px;
+    background: radial-gradient(1200px 600px at 50% -10%, #3a2a14 0%, var(--bg-900) 60%) fixed, #1a1209;
+    color: var(--text); min-height: 100vh; overflow-x: hidden; letter-spacing: 0.3px;
 }
-
 body::before {
-    content: " ";
-    display: block;
-    position: fixed;
-    inset: 0;
-    background:
-        radial-gradient(ellipse at 20% 10%, rgba(255,200,120,0.06), transparent 40%),
+    content: " "; display: block; position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 20% 10%, rgba(255,200,120,0.06), transparent 40%),
         radial-gradient(ellipse at 80% 90%, rgba(255,180,100,0.05), transparent 40%),
         repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 3px);
-    z-index: 1;
-    pointer-events: none;
-    opacity: 0.5;
+    z-index: 1; pointer-events: none; opacity: 0.5;
 }
-
 .embers { position: fixed; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; }
-.ember {
-    position: absolute;
-    background: #ffb347;
-    border-radius: 50%;
-    box-shadow: 0 0 6px #ff8c00;
-    animation: emberRise linear infinite;
-}
-@keyframes emberRise {
-    0%   { opacity: 0; transform: translateY(0) translateX(0); }
-    20%  { opacity: 1; }
-    80%  { opacity: 0.8; }
-    100% { opacity: 0; transform: translateY(-120px) translateX(20px); }
-}
+.ember { position: absolute; background: #ffb347; border-radius: 50%; box-shadow: 0 0 6px #ff8c00; animation: emberRise linear infinite; }
+@keyframes emberRise { 0%{opacity:0;transform:translateY(0)} 20%{opacity:1} 80%{opacity:0.8} 100%{opacity:0;transform:translateY(-120px) translateX(20px)} }
 
-/* ============================================================
-   ===== HEADER ===============================================
-   ============================================================ */
 header {
     position: sticky; top: 0; z-index: 50;
     background: linear-gradient(180deg, rgba(36,26,13,0.96), rgba(26,18,9,0.85));
-    border-bottom: 2px solid var(--border-strong);
-    box-shadow: 0 2px 20px rgba(0,0,0,0.6);
-    backdrop-filter: blur(6px);
-    padding: 14px 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
+    border-bottom: 2px solid var(--border-strong); box-shadow: 0 2px 20px rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px); padding: 14px 32px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
 }
-
-.logo {
-    font-family: 'MedievalSharp', serif;
-    font-size: 1.8em;
-    color: var(--accent);
-    text-shadow: 0 0 16px rgba(255,140,0,0.4);
-    letter-spacing: 2px;
-}
-
-.header-stats {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.stat-pill {
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    border-radius: 6px;
-    padding: 8px 14px;
-    font-weight: 700;
-    font-size: 0.9em;
-    display: flex; align-items: center; gap: 6px;
-}
+.logo { font-family: 'MedievalSharp', serif; font-size: 1.8em; color: var(--accent); text-shadow: 0 0 16px rgba(255,140,0,0.4); letter-spacing: 2px; }
+.header-stats { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.stat-pill { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 14px; font-weight: 700; font-size: 0.9em; display: flex; align-items: center; gap: 6px; }
 .stat-pill.gold { color: var(--gold); border-color: rgba(240,199,94,0.4); }
 .stat-pill.wave { color: var(--accent-2); border-color: rgba(168,50,50,0.4); }
 .stat-pill.beasts { color: #9b59b6; border-color: rgba(155,89,182,0.4); }
-
+.stat-pill.xp { color: #6ba3c7; border-color: rgba(107,163,199,0.4); }
 .header-btns { display: flex; gap: 10px; }
+.back-btn, .help-btn { background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-family: 'Cinzel', serif; font-weight: 600; text-decoration: none; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.back-btn:hover, .help-btn:hover { background: var(--surface-hover); border-color: var(--accent); transform: translateY(-1px); }
+.help-btn { background: linear-gradient(135deg, rgba(155,89,182,0.2), rgba(108,92,231,0.2)); border-color: #9b59b6; color: #c79bd6; }
 
-.back-btn, .help-btn {
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    color: var(--text);
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: 'Cinzel', serif;
-    font-weight: 600;
-    text-decoration: none;
-    transition: 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-.back-btn:hover, .help-btn:hover {
-    background: var(--surface-hover);
-    border-color: var(--accent);
-    transform: translateY(-1px);
-}
-.help-btn {
-    background: linear-gradient(135deg, rgba(155,89,182,0.2), rgba(108,92,231,0.2));
-    border-color: #9b59b6;
-    color: #c79bd6;
-}
+.game-container { max-width: 1600px; margin: 0 auto; padding: 24px; position: relative; z-index: 10; }
+.title-section { text-align: center; margin-bottom: 18px; }
+.game-title { font-family: 'MedievalSharp', serif; font-size: 2.6em; color: var(--accent); text-shadow: 0 0 20px rgba(255,140,0,0.5); letter-spacing: 3px; }
+.game-subtitle { color: var(--text-dim); font-style: italic; margin-top: 6px; letter-spacing: 1px; }
 
-/* ============================================================
-   ===== MAIN LAYOUT ==========================================
-   ============================================================ */
-.game-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 24px;
-    position: relative;
-    z-index: 10;
-}
-
-.title-section {
-    text-align: center;
-    margin-bottom: 24px;
-}
-.game-title {
-    font-family: 'MedievalSharp', serif;
-    font-size: 3em;
-    color: var(--accent);
-    text-shadow: 0 0 20px rgba(255,140,0,0.5);
-    letter-spacing: 3px;
-}
-.game-subtitle {
-    color: var(--text-dim);
-    font-style: italic;
-    margin-top: 6px;
-    letter-spacing: 1px;
-}
-
-/* ============================================================
-   ===== ARENA (BATTLEFIELD) ==================================
-   ============================================================ */
 .arena {
-    background:
-        radial-gradient(ellipse at center, rgba(139,46,46,0.15), transparent 70%),
-        linear-gradient(180deg, #2a1d0a 0%, #1a1209 100%);
-    border: 2px solid var(--border-strong);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 24px;
+    background: radial-gradient(ellipse at center, rgba(139,46,46,0.15), transparent 70%), linear-gradient(180deg, #2a1d0a 0%, #1a1209 100%);
+    border: 2px solid var(--border-strong); border-radius: 12px; padding: 20px; margin-bottom: 20px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.6), inset 0 0 60px rgba(0,0,0,0.4);
-    position: relative;
-    overflow: hidden;
-    min-height: 380px;
+    position: relative; overflow: hidden; min-height: 440px;
 }
-
 .arena::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-        repeating-linear-gradient(0deg, transparent 0, transparent 39px, rgba(212,175,110,0.05) 39px, rgba(212,175,110,0.05) 40px),
+    content: ''; position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(0deg, transparent 0, transparent 39px, rgba(212,175,110,0.05) 39px, rgba(212,175,110,0.05) 40px),
         repeating-linear-gradient(90deg, transparent 0, transparent 39px, rgba(212,175,110,0.05) 39px, rgba(212,175,110,0.05) 40px);
     pointer-events: none;
 }
-
-.arena-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    position: relative;
-    z-index: 2;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.wave-info {
-    font-family: 'MedievalSharp', serif;
-    font-size: 1.4em;
-    color: var(--gold);
-    text-shadow: 0 0 10px rgba(240,199,94,0.5);
-}
-
-.battle-status {
-    color: var(--text-dim);
-    font-style: italic;
-    font-size: 0.95em;
-}
-
-/* Row labels */
-.row-labels {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 8px;
-    color: var(--text-dim);
-    font-size: 0.75em;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    position: relative;
-    z-index: 2;
-}
+.arena-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; position: relative; z-index: 2; flex-wrap: wrap; gap: 10px; }
+.wave-info { font-family: 'MedievalSharp', serif; font-size: 1.4em; color: var(--gold); text-shadow: 0 0 10px rgba(240,199,94,0.5); }
+.wave-info.boss { color: #ff4040; text-shadow: 0 0 14px rgba(255,64,64,0.8); animation: bossWavePulse 1.5s ease-in-out infinite; }
+@keyframes bossWavePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05); text-shadow:0 0 25px #ff4040} }
+.battle-status { color: var(--text-dim); font-style: italic; font-size: 0.95em; }
+.row-labels { display: flex; justify-content: space-around; margin-bottom: 8px; color: var(--text-dim); font-size: 0.72em; letter-spacing: 2px; text-transform: uppercase; position: relative; z-index: 2; }
 .row-labels span { font-family: 'MedievalSharp', serif; }
 
 .battlefield {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 20px;
-    align-items: center;
-    position: relative;
-    z-index: 2;
-    min-height: 280px;
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px;
+    align-items: center; position: relative; z-index: 2; min-height: 340px;
 }
-
 .team-side {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 8px;
-    min-height: 280px;
-    position: relative;
+    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr);
+    gap: 6px; min-height: 340px; position: relative;
 }
-
-.team-side.player {
-    background: radial-gradient(ellipse at right center, rgba(90,140,58,0.1), transparent 70%);
-    border-radius: 10px;
-    padding: 10px;
-}
-
-.team-side.enemy {
-    background: radial-gradient(ellipse at left center, rgba(168,50,50,0.1), transparent 70%);
-    border-radius: 10px;
-    padding: 10px;
-}
-
-.team-label {
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--bg-800);
-    padding: 2px 12px;
-    border-radius: 10px;
-    font-family: 'MedievalSharp', serif;
-    font-size: 0.75em;
-    letter-spacing: 2px;
-    color: var(--text-dim);
-    border: 1px solid var(--border);
-}
+.team-side.player { background: radial-gradient(ellipse at right center, rgba(90,140,58,0.1), transparent 70%); border-radius: 10px; padding: 10px; }
+.team-side.enemy { background: radial-gradient(ellipse at left center, rgba(168,50,50,0.1), transparent 70%); border-radius: 10px; padding: 10px; }
+.team-label { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--bg-800); padding: 2px 12px; border-radius: 10px; font-family: 'MedievalSharp', serif; font-size: 0.75em; letter-spacing: 2px; color: var(--text-dim); border: 1px solid var(--border); }
 .team-side.player .team-label { color: var(--health); border-color: var(--health); }
 .team-side.enemy .team-label { color: var(--accent-2); border-color: var(--accent-2); }
 
-.vs-divider {
-    font-family: 'MedievalSharp', serif;
-    font-size: 2.5em;
-    color: var(--accent);
-    text-shadow: 0 0 20px rgba(212,175,110,0.7);
-    animation: vsPulse 2s ease-in-out infinite;
-    padding: 0 10px;
-}
-@keyframes vsPulse {
-    0%,100% { transform: scale(1); text-shadow: 0 0 20px rgba(212,175,110,0.7); }
-    50% { transform: scale(1.1); text-shadow: 0 0 30px rgba(255,140,0,1); }
-}
+.vs-divider { font-family: 'MedievalSharp', serif; font-size: 2.5em; color: var(--accent); text-shadow: 0 0 20px rgba(212,175,110,0.7); animation: vsPulse 2s ease-in-out infinite; padding: 0 6px; }
+@keyframes vsPulse { 0%,100%{transform:scale(1); text-shadow: 0 0 20px rgba(212,175,110,0.7)} 50%{transform:scale(1.1); text-shadow:0 0 30px rgba(255,140,0,1)} }
 
-/* ============================================================
-   ===== BATTLE SLOTS / UNITS =================================
-   ============================================================ */
-.battle-slot {
-    background: rgba(0,0,0,0.4);
-    border: 2px dashed rgba(212,175,110,0.2);
-    border-radius: 10px;
-    min-height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    transition: all 0.3s;
-    cursor: pointer;
-}
-.battle-slot.drag-over {
-    border-color: var(--gold);
-    border-style: solid;
-    background: rgba(240,199,94,0.1);
-    box-shadow: inset 0 0 20px rgba(240,199,94,0.3);
-}
+.battle-slot { background: rgba(0,0,0,0.4); border: 2px dashed rgba(212,175,110,0.2); border-radius: 10px; min-height: 130px; display: flex; align-items: center; justify-content: center; position: relative; transition: all 0.3s; cursor: pointer; }
+.battle-slot.drag-over { border-color: var(--gold); border-style: solid; background: rgba(240,199,94,0.1); box-shadow: inset 0 0 20px rgba(240,199,94,0.3); }
 .battle-slot.front { border-color: rgba(168,50,50,0.4); }
 .battle-slot.back { border-color: rgba(74,107,138,0.4); }
+.battle-slot.combine-target { border-color: #c79bd6; border-style: solid; background: rgba(155,89,182,0.2); box-shadow: inset 0 0 20px rgba(155,89,182,0.5); }
+.battle-slot::after { content: attr(data-pos); position: absolute; top: 4px; left: 6px; font-size: 0.6em; color: rgba(212,175,110,0.4); text-transform: uppercase; letter-spacing: 1px; }
 
-.battle-slot::after {
-    content: attr(data-pos);
-    position: absolute;
-    top: 4px; left: 6px;
-    font-size: 0.65em;
-    color: rgba(212,175,110,0.4);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.unit {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, var(--unit-color, #3a2a14), #1a1209);
-    border: 2px solid var(--unit-border, var(--accent));
-    border-radius: 8px;
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    position: relative;
-    cursor: grab;
-    transition: transform 0.2s;
-    overflow: hidden;
-}
+.unit { width: 100%; height: 100%; background: linear-gradient(135deg, var(--unit-color, #3a2a14), #1a1209); border: 2px solid var(--unit-border, var(--accent)); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; cursor: grab; transition: transform 0.2s; overflow: hidden; }
 .unit:hover { transform: translateY(-3px) scale(1.04); }
 .unit.dragging { opacity: 0.5; }
 .unit.attacking { animation: attackLunge 0.4s ease-out; }
 .unit.hit { animation: hitShake 0.3s; }
 .unit.dying { animation: dyingFade 0.6s forwards; }
+@keyframes attackLunge { 0%{transform:translateX(0)} 50%{transform:translateX(var(--attack-dir, 20px)) scale(1.15); filter:brightness(1.5)} 100%{transform:translateX(0)} }
+@keyframes hitShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px); filter:brightness(2) hue-rotate(-30deg)} 75%{transform:translateX(6px); filter:brightness(2) hue-rotate(-30deg)} }
+@keyframes dyingFade { 0%{opacity:1; transform:scale(1)} 50%{opacity:0.6; transform:scale(1.2) rotate(15deg); filter:brightness(2) blur(2px)} 100%{opacity:0; transform:scale(0) rotate(180deg)} }
 
-@keyframes attackLunge {
-    0% { transform: translateX(0); }
-    50% { transform: translateX(var(--attack-dir, 20px)) scale(1.15); filter: brightness(1.5); }
-    100% { transform: translateX(0); }
-}
-@keyframes hitShake {
-    0%,100% { transform: translateX(0); }
-    25% { transform: translateX(-6px); filter: brightness(2) hue-rotate(-30deg); }
-    75% { transform: translateX(6px); filter: brightness(2) hue-rotate(-30deg); }
-}
-@keyframes dyingFade {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.2) rotate(15deg); filter: brightness(2) blur(2px); }
-    100% { opacity: 0; transform: scale(0) rotate(180deg); }
-}
-
-.unit-icon {
-    font-size: 2em;
-    line-height: 1;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
-    z-index: 2;
-}
-
-.unit-name {
-    font-size: 0.65em;
-    font-weight: 700;
-    color: var(--text);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.9);
-    text-align: center;
-    line-height: 1.1;
-    z-index: 2;
-}
-
-.unit-level {
-    position: absolute;
-    top: 2px;
-    right: 4px;
-    background: var(--gold);
-    color: #1a1209;
-    font-size: 0.6em;
-    font-weight: 900;
-    padding: 1px 5px;
-    border-radius: 8px;
-    z-index: 3;
-}
-
-.unit-hp-bar {
-    width: 100%;
-    height: 6px;
-    background: rgba(0,0,0,0.6);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-top: 2px;
-    z-index: 2;
-}
-.unit-hp-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--health), #7ac74f);
-    transition: width 0.4s;
-    box-shadow: 0 0 4px rgba(90,140,58,0.6);
-}
+.unit-icon { font-size: 1.9em; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); z-index: 2; }
+.unit-name { font-size: 0.6em; font-weight: 700; color: var(--text); text-shadow: 0 1px 2px rgba(0,0,0,0.9); text-align: center; line-height: 1.1; z-index: 2; }
+.unit-level { position: absolute; top: 2px; right: 4px; background: var(--gold); color: #1a1209; font-size: 0.6em; font-weight: 900; padding: 1px 5px; border-radius: 8px; z-index: 3; }
+.unit-level.lv2 { background: #c79bd6; }
+.unit-level.lv3 { background: #ff4040; color: #fff; box-shadow: 0 0 8px #ff4040; }
+.unit-hp-bar { width: 100%; height: 6px; background: rgba(0,0,0,0.6); border-radius: 3px; overflow: hidden; margin-top: 2px; z-index: 2; }
+.unit-hp-fill { height: 100%; background: linear-gradient(90deg, var(--health), #7ac74f); transition: width 0.4s; box-shadow: 0 0 4px rgba(90,140,58,0.6); }
 .unit-hp-fill.low { background: linear-gradient(90deg, #d4870e, #f0c75e); }
 .unit-hp-fill.critical { background: linear-gradient(90deg, var(--rage), #ff6b6b); animation: critPulse 0.6s infinite; }
-@keyframes critPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes critPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.unit-shield { position: absolute; top: 18px; left: 4px; font-size: 0.7em; color: #6ba3c7; text-shadow: 0 0 4px #6ba3c7; z-index: 3; }
+.unit-status-icons { position: absolute; bottom: 12px; left: 2px; display: flex; gap: 2px; z-index: 3; }
+.unit-status-icons span { font-size: 0.7em; filter: drop-shadow(0 0 2px #000); }
+.unit-item-icon { position: absolute; bottom: 12px; right: 2px; font-size: 0.7em; filter: drop-shadow(0 0 3px var(--gold)); z-index: 3; }
 
-.unit-rarity-glow {
-    position: absolute;
-    inset: 0;
-    border-radius: 6px;
-    pointer-events: none;
-    z-index: 1;
-}
+.unit-rarity-glow { position: absolute; inset: 0; border-radius: 6px; pointer-events: none; z-index: 1; }
 .unit.rarity-common .unit-rarity-glow { box-shadow: inset 0 0 10px rgba(184,176,160,0.3); }
-.unit.rarity-rare .unit-rarity-glow {
-    box-shadow: inset 0 0 15px rgba(74,107,138,0.5);
-    animation: rareShimmer 3s ease-in-out infinite;
-}
-.unit.rarity-epic .unit-rarity-glow {
-    box-shadow: inset 0 0 20px rgba(155,89,182,0.6);
-    animation: epicShimmer 2.5s ease-in-out infinite;
-}
-.unit.rarity-legendary .unit-rarity-glow {
-    box-shadow: inset 0 0 25px rgba(240,199,94,0.8);
-    animation: legendShimmer 2s ease-in-out infinite;
-}
-@keyframes rareShimmer { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
-@keyframes epicShimmer { 0%,100% { opacity: 0.7; filter: hue-rotate(0); } 50% { opacity: 1; filter: hue-rotate(20deg); } }
-@keyframes legendShimmer {
-    0%,100% { opacity: 0.8; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.02); filter: brightness(1.3); }
-}
+.unit.rarity-rare .unit-rarity-glow { box-shadow: inset 0 0 15px rgba(74,107,138,0.5); animation: rareShimmer 3s ease-in-out infinite; }
+.unit.rarity-epic .unit-rarity-glow { box-shadow: inset 0 0 20px rgba(155,89,182,0.6); animation: epicShimmer 2.5s ease-in-out infinite; }
+.unit.rarity-legendary .unit-rarity-glow { box-shadow: inset 0 0 25px rgba(240,199,94,0.8); animation: legendShimmer 2s ease-in-out infinite; }
+.unit.rarity-mythic .unit-rarity-glow { box-shadow: inset 0 0 30px rgba(255,64,64,0.9); animation: mythicShimmer 1.5s ease-in-out infinite; }
+@keyframes rareShimmer { 0%,100%{opacity:0.6} 50%{opacity:1} }
+@keyframes epicShimmer { 0%,100%{opacity:0.7; filter:hue-rotate(0)} 50%{opacity:1; filter:hue-rotate(20deg)} }
+@keyframes legendShimmer { 0%,100%{opacity:0.8; transform:scale(1)} 50%{opacity:1; transform:scale(1.02); filter:brightness(1.3)} }
+@keyframes mythicShimmer { 0%,100%{opacity:0.9; transform:scale(1); filter:hue-rotate(0)} 50%{opacity:1; transform:scale(1.04); filter:brightness(1.5) hue-rotate(30deg)} }
 
-.damage-popup {
-    position: absolute;
-    color: #fff;
-    font-family: 'MedievalSharp', serif;
-    font-weight: 900;
-    font-size: 1.3em;
-    text-shadow: 0 0 8px #000, 0 0 4px #000, 2px 2px 4px #000;
-    pointer-events: none;
-    animation: dmgFloat 1s ease-out forwards;
-    z-index: 100;
-}
-.damage-popup.crit { color: var(--gold); font-size: 1.7em; }
+.damage-popup { position: absolute; color: #fff; font-family: 'MedievalSharp', serif; font-weight: 900; font-size: 1.2em; text-shadow: 0 0 8px #000, 0 0 4px #000, 2px 2px 4px #000; pointer-events: none; animation: dmgFloat 1s ease-out forwards; z-index: 100; }
+.damage-popup.crit { color: var(--gold); font-size: 1.6em; }
 .damage-popup.heal { color: #7ac74f; }
-@keyframes dmgFloat {
-    0% { opacity: 1; transform: translate(-50%, 0) scale(1.3); }
-    100% { opacity: 0; transform: translate(-50%, -60px) scale(1); }
-}
+.damage-popup.poison { color: #9b59b6; }
+.damage-popup.cleave { color: #ff8c00; }
+@keyframes dmgFloat { 0%{opacity:1; transform:translate(-50%, 0) scale(1.3)} 100%{opacity:0; transform:translate(-50%, -60px) scale(1)} }
 
-/* ============================================================
-   ===== CONTROLS PANEL =======================================
-   ============================================================ */
-.controls {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-}
-
-.btn {
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    color: var(--text);
-    padding: 12px 24px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: 'Cinzel', serif;
-    font-weight: 700;
-    font-size: 1em;
-    transition: 0.2s;
-    letter-spacing: 1px;
-}
-.btn:hover:not(:disabled) {
-    background: var(--surface-hover);
-    border-color: var(--accent);
-    transform: translateY(-2px);
-}
+.controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+.btn { background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); padding: 12px 22px; border-radius: 6px; cursor: pointer; font-family: 'Cinzel', serif; font-weight: 700; font-size: 0.95em; transition: 0.2s; letter-spacing: 1px; }
+.btn:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--accent); transform: translateY(-2px); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn.primary { background: linear-gradient(135deg, var(--accent-2), #c75e5e); color: #fff; border-color: transparent; box-shadow: 0 4px 15px rgba(168,50,50,0.4); }
+.btn.primary:hover:not(:disabled) { box-shadow: 0 6px 25px rgba(168,50,50,0.7); }
+.btn.gold { background: linear-gradient(135deg, var(--gold), #d4870e); color: #1a1209; border-color: transparent; }
+.btn.purple { background: linear-gradient(135deg, #9b59b6, #6c5ce7); color: #fff; border-color: transparent; }
+.btn.speed { background: var(--surface); padding: 12px 18px; }
+.btn.speed.active { background: var(--accent); color: #1a1209; }
 
-.btn.primary {
-    background: linear-gradient(135deg, var(--accent-2), #c75e5e);
-    color: #fff;
-    border-color: transparent;
-    box-shadow: 0 4px 15px rgba(168,50,50,0.4);
-}
-.btn.primary:hover:not(:disabled) {
-    box-shadow: 0 6px 25px rgba(168,50,50,0.7);
-}
+.bottom-panels { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 16px; }
+.panel { background: linear-gradient(180deg, rgba(50,35,16,0.92), rgba(36,26,13,0.92)); border: 2px solid var(--border); border-radius: 10px; padding: 16px; }
+.panel-title { font-family: 'MedievalSharp', serif; font-size: 1.2em; color: var(--gold); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.panel-hint { font-size: 0.68em; color: var(--text-dim); font-family: 'Cinzel', serif; letter-spacing: 0.5px; font-weight: 400; }
 
-.btn.gold {
-    background: linear-gradient(135deg, var(--gold), #d4870e);
-    color: #1a1209;
-    border-color: transparent;
-}
-
-.btn.speed {
-    background: var(--surface);
-    padding: 12px 18px;
-}
-.btn.speed.active {
-    background: var(--accent);
-    color: #1a1209;
-}
-
-/* ============================================================
-   ===== ROSTER (Beast Collection) ============================
-   ============================================================ */
-.bottom-panels {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-
-.panel {
-    background: linear-gradient(180deg, rgba(50,35,16,0.92), rgba(36,26,13,0.92));
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    padding: 18px;
-}
-
-.panel-title {
-    font-family: 'MedievalSharp', serif;
-    font-size: 1.3em;
-    color: var(--gold);
-    margin-bottom: 14px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border-strong);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.panel-hint {
-    font-size: 0.7em;
-    color: var(--text-dim);
-    font-family: 'Cinzel', serif;
-    letter-spacing: 0.5px;
-    font-weight: 400;
-}
-
-.roster-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
-    gap: 8px;
-    max-height: 280px;
-    overflow-y: auto;
-    padding-right: 4px;
-}
+.roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 6px; max-height: 300px; overflow-y: auto; padding-right: 4px; }
 .roster-grid::-webkit-scrollbar { width: 8px; }
 .roster-grid::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
 .roster-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
 
-.roster-card {
-    background: linear-gradient(135deg, var(--unit-color, #3a2a14), #1a1209);
-    border: 2px solid var(--unit-border, var(--accent));
-    border-radius: 8px;
-    padding: 6px;
-    cursor: grab;
-    transition: 0.2s;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    min-height: 90px;
-}
-.roster-card:hover {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-}
+.roster-card { background: linear-gradient(135deg, var(--unit-color, #3a2a14), #1a1209); border: 2px solid var(--unit-border, var(--accent)); border-radius: 8px; padding: 6px; cursor: grab; transition: 0.2s; position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 85px; }
+.roster-card:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 6px 20px rgba(0,0,0,0.5); }
 .roster-card.deployed { opacity: 0.4; cursor: not-allowed; }
-
-.roster-card .discard-btn {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 22px;
-    height: 22px;
-    background: linear-gradient(135deg, var(--accent-2), #6b1e1e);
-    color: #fff;
-    border: 2px solid var(--bg-800);
-    border-radius: 50%;
-    font-size: 0.85em;
-    font-weight: 900;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    z-index: 5;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.6);
-    transition: 0.2s;
-}
+.roster-card .discard-btn { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; background: linear-gradient(135deg, var(--accent-2), #6b1e1e); color: #fff; border: 2px solid var(--bg-800); border-radius: 50%; font-size: 0.75em; font-weight: 900; cursor: pointer; display: none; align-items: center; justify-content: center; line-height: 1; z-index: 5; box-shadow: 0 2px 6px rgba(0,0,0,0.6); transition: 0.2s; }
 .roster-card:hover .discard-btn { display: flex; }
-.roster-card .discard-btn:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 12px rgba(168,50,50,0.8);
-}
+.roster-card .discard-btn:hover { transform: scale(1.2); box-shadow: 0 0 12px rgba(168,50,50,0.8); }
+.roster-icon { font-size: 1.6em; line-height: 1; }
+.roster-name { font-size: 0.58em; font-weight: 700; text-align: center; line-height: 1; color: var(--text); }
+.roster-stats { font-size: 0.52em; color: var(--text-dim); display: flex; gap: 4px; }
+.roster-lv-badge { position: absolute; top: 2px; left: 2px; background: var(--gold); color: #1a1209; font-size: 0.55em; font-weight: 900; padding: 1px 4px; border-radius: 6px; z-index: 4; }
+.roster-lv-badge.lv2 { background: #c79bd6; }
+.roster-lv-badge.lv3 { background: #ff4040; color:#fff; }
 
-.roster-icon { font-size: 1.7em; line-height: 1; }
-.roster-name {
-    font-size: 0.6em;
-    font-weight: 700;
-    text-align: center;
-    line-height: 1;
-    color: var(--text);
-}
-.roster-stats {
-    font-size: 0.55em;
-    color: var(--text-dim);
-    display: flex;
-    gap: 4px;
-}
-.roster-stats span { display: flex; align-items: center; gap: 1px; }
-
-.roster-sell-value {
-    position: absolute;
-    bottom: -4px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--gold);
-    color: #1a1209;
-    font-size: 0.55em;
-    font-weight: 900;
-    padding: 1px 5px;
-    border-radius: 6px;
-    white-space: nowrap;
-    display: none;
-}
-.roster-card:hover .roster-sell-value { display: block; }
-
-/* ============================================================
-   ===== SHOP =================================================
-   ============================================================ */
-.shop-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 10px;
-}
-
-.shop-card {
-    background: linear-gradient(135deg, var(--unit-color, #3a2a14), #1a1209);
-    border: 2px solid var(--unit-border, var(--accent));
-    border-radius: 8px;
-    padding: 10px;
-    cursor: pointer;
-    transition: 0.2s;
-    text-align: center;
-    position: relative;
-}
-.shop-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-}
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 8px; }
+.shop-card { background: linear-gradient(135deg, var(--unit-color, #3a2a14), #1a1209); border: 2px solid var(--unit-border, var(--accent)); border-radius: 8px; padding: 8px; cursor: pointer; transition: 0.2s; text-align: center; position: relative; }
+.shop-card:hover { transform: translateY(-4px); box-shadow: 0 6px 20px rgba(0,0,0,0.6); }
 .shop-card.sold { opacity: 0.3; cursor: not-allowed; }
 .shop-card.cant-afford { opacity: 0.5; }
-.shop-card.cant-afford::after {
-    content: '🔒';
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    font-size: 0.9em;
-    opacity: 0.8;
-}
-
-.shop-icon {
-    font-size: 2.4em;
-    line-height: 1;
-    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));
-}
-.shop-name {
-    font-family: 'MedievalSharp', serif;
-    font-size: 0.85em;
-    color: var(--text);
-    margin: 4px 0;
-}
-.shop-rarity {
-    font-size: 0.65em;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 700;
-}
+.shop-card.cant-afford::after { content: '🔒'; position: absolute; top: 4px; right: 4px; font-size: 0.9em; opacity: 0.8; }
+.shop-icon { font-size: 2em; line-height: 1; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7)); }
+.shop-name { font-family: 'MedievalSharp', serif; font-size: 0.78em; color: var(--text); margin: 4px 0; }
+.shop-rarity { font-size: 0.6em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
 .shop-rarity.common { color: #b8b0a0; }
 .shop-rarity.rare { color: #6ba3c7; }
 .shop-rarity.epic { color: #c79bd6; }
 .shop-rarity.legendary { color: var(--gold); text-shadow: 0 0 8px var(--gold); }
-
-.shop-cost {
-    background: rgba(240,199,94,0.15);
-    border: 1px solid var(--gold);
-    border-radius: 4px;
-    color: var(--gold);
-    font-weight: 700;
-    padding: 3px 8px;
-    margin-top: 6px;
-    font-size: 0.85em;
-}
-
-.shop-stats {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 6px;
-    font-size: 0.7em;
-    color: var(--text-dim);
-}
-
-.shop-role-tag {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    background: rgba(0,0,0,0.7);
-    color: var(--text);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.55em;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+.shop-rarity.mythic { color: #ff4040; text-shadow: 0 0 8px #ff4040; }
+.shop-cost { background: rgba(240,199,94,0.15); border: 1px solid var(--gold); border-radius: 4px; color: var(--gold); font-weight: 700; padding: 2px 6px; margin-top: 5px; font-size: 0.78em; }
+.shop-stats { display: flex; justify-content: center; gap: 6px; margin-top: 5px; font-size: 0.65em; color: var(--text-dim); }
+.shop-ability { font-size: 0.6em; color: #c79bd6; margin-top: 4px; font-style: italic; }
+.shop-role-tag { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.7); color: var(--text); padding: 2px 5px; border-radius: 4px; font-size: 0.5em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 .shop-role-tag.front { color: var(--accent-2); border: 1px solid var(--accent-2); }
 .shop-role-tag.back { color: var(--mana); border: 1px solid var(--mana); }
 
-/* ============================================================
-   ===== SYNERGY DISPLAY ======================================
-   ============================================================ */
-.synergies-bar {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    padding: 10px 16px;
-    background: rgba(0,0,0,0.4);
-    border-radius: 8px;
-    margin-bottom: 16px;
-    border: 1px solid var(--border);
-    min-height: 50px;
-    align-items: center;
-}
+/* Items panel */
+.items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 6px; max-height: 200px; overflow-y: auto; }
+.item-card { background: linear-gradient(135deg, #2a1d0a, #1a1209); border: 2px solid var(--gold); border-radius: 8px; padding: 6px; cursor: grab; text-align: center; position: relative; transition: 0.2s; min-height: 78px; display: flex; flex-direction: column; align-items: center; }
+.item-card:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 4px 14px rgba(240,199,94,0.4); }
+.item-icon { font-size: 1.7em; filter: drop-shadow(0 0 4px var(--gold)); }
+.item-name { font-size: 0.58em; font-weight: 700; color: var(--gold); margin-top: 3px; line-height: 1.1; text-align: center; }
+.item-desc { font-size: 0.52em; color: var(--text-dim); font-style: italic; margin-top: 2px; line-height: 1.15; }
+.item-discard { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; background: var(--accent-2); color: #fff; border: 2px solid var(--bg-800); border-radius: 50%; font-size: 0.7em; font-weight: 900; cursor: pointer; display: none; align-items: center; justify-content: center; line-height: 1; z-index: 5; }
+.item-card:hover .item-discard { display: flex; }
 
-.synergy-empty {
-    color: var(--text-dim);
-    font-style: italic;
-    font-size: 0.9em;
-}
-
-.synergy-badge {
-    background: rgba(212,175,110,0.1);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    padding: 5px 12px;
-    border-radius: 14px;
-    font-size: 0.85em;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: 0.2s;
-    cursor: help;
-}
+.synergies-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 16px; background: rgba(0,0,0,0.4); border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border); min-height: 50px; align-items: center; }
+.synergy-empty { color: var(--text-dim); font-style: italic; font-size: 0.9em; }
+.synergy-badge { background: rgba(212,175,110,0.1); border: 1px solid var(--accent); color: var(--accent); padding: 5px 12px; border-radius: 14px; font-size: 0.82em; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: 0.2s; cursor: help; }
 .synergy-badge.tier-1 { background: rgba(184,176,160,0.15); border-color: #b8b0a0; color: #b8b0a0; }
-.synergy-badge.tier-2 {
-    background: rgba(155,89,182,0.2);
-    border-color: #9b59b6;
-    color: #c79bd6;
-    box-shadow: 0 0 12px rgba(155,89,182,0.4);
-}
-.synergy-badge.tier-3 {
-    background: linear-gradient(135deg, rgba(240,199,94,0.25), rgba(212,135,14,0.25));
-    border-color: var(--gold);
-    color: var(--gold);
-    box-shadow: 0 0 16px rgba(240,199,94,0.6);
-    animation: syngyPulse 2s ease-in-out infinite;
-}
-@keyframes syngyPulse {
-    0%,100% { box-shadow: 0 0 16px rgba(240,199,94,0.6); }
-    50% { box-shadow: 0 0 24px rgba(240,199,94,1); }
-}
+.synergy-badge.tier-2 { background: rgba(155,89,182,0.2); border-color: #9b59b6; color: #c79bd6; box-shadow: 0 0 12px rgba(155,89,182,0.4); }
+.synergy-badge.tier-3 { background: linear-gradient(135deg, rgba(240,199,94,0.25), rgba(212,135,14,0.25)); border-color: var(--gold); color: var(--gold); box-shadow: 0 0 16px rgba(240,199,94,0.6); animation: syngyPulse 2s ease-in-out infinite; }
+.synergy-badge.tier-4 { background: linear-gradient(135deg, rgba(255,64,64,0.3), rgba(255,140,0,0.3)); border-color: #ff4040; color: #ff8080; box-shadow: 0 0 20px rgba(255,64,64,0.7); animation: syngyPulse 1.3s ease-in-out infinite; }
+@keyframes syngyPulse { 0%,100%{box-shadow:0 0 16px rgba(240,199,94,0.6)} 50%{box-shadow:0 0 24px rgba(240,199,94,1)} }
 
-/* ============================================================
-   ===== MODALS ===============================================
-   ============================================================ */
-.modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(13,9,4,0.92);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    backdrop-filter: blur(8px);
-}
+.modal-overlay { position: fixed; inset: 0; background: rgba(13,9,4,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); }
 .modal-overlay.show { display: flex; animation: fadeIn 0.3s; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-.modal {
-    background: linear-gradient(135deg, #241a0d, #3a2a14);
-    border: 2px solid var(--gold);
-    border-radius: 14px;
-    padding: 32px;
-    max-width: 620px;
-    width: 90%;
-    box-shadow: 0 0 50px rgba(240,199,94,0.5);
-    text-align: center;
-    position: relative;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.modal h2 {
-    font-family: 'MedievalSharp', serif;
-    color: var(--gold);
-    font-size: 2em;
-    margin-bottom: 12px;
-    text-shadow: 0 0 15px rgba(240,199,94,0.5);
-}
-
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.modal { background: linear-gradient(135deg, #241a0d, #3a2a14); border: 2px solid var(--gold); border-radius: 14px; padding: 28px; max-width: 680px; width: 90%; box-shadow: 0 0 50px rgba(240,199,94,0.5); text-align: center; position: relative; max-height: 90vh; overflow-y: auto; }
+.modal h2 { font-family: 'MedievalSharp', serif; color: var(--gold); font-size: 2em; margin-bottom: 12px; text-shadow: 0 0 15px rgba(240,199,94,0.5); }
 .modal.victory { border-color: var(--health); box-shadow: 0 0 50px rgba(90,140,58,0.6); }
 .modal.victory h2 { color: var(--health); text-shadow: 0 0 15px rgba(90,140,58,0.6); }
 .modal.defeat { border-color: var(--accent-2); box-shadow: 0 0 50px rgba(168,50,50,0.6); }
 .modal.defeat h2 { color: var(--accent-2); text-shadow: 0 0 15px rgba(168,50,50,0.6); }
-
-.modal-close {
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    background: none;
-    border: none;
-    color: var(--text);
-    font-size: 1.6em;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: 0.2s;
-}
+.modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--text); font-size: 1.6em; cursor: pointer; opacity: 0.7; transition: 0.2s; }
 .modal-close:hover { opacity: 1; color: var(--accent-2); }
-
-.modal-stats {
-    background: rgba(0,0,0,0.4);
-    border-radius: 8px;
-    padding: 16px;
-    margin: 18px 0;
-    line-height: 2;
-}
-.modal-stats .stat-row {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px dashed var(--border);
-    padding: 4px 0;
-}
+.modal-stats { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 16px; margin: 18px 0; line-height: 2; }
+.modal-stats .stat-row { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); padding: 4px 0; }
 .modal-stats .stat-row:last-child { border-bottom: none; }
 .modal-stats strong { color: var(--gold); }
 
-/* ============================================================
-   ===== HELP MODAL CONTENT ===================================
-   ============================================================ */
-.help-section {
-    text-align: left;
-    margin: 18px 0;
-    padding: 14px 18px;
-    background: rgba(0,0,0,0.35);
-    border-radius: 8px;
-    border-left: 3px solid var(--accent);
-}
-.help-section h3 {
-    font-family: 'MedievalSharp', serif;
-    color: var(--accent);
-    margin-bottom: 8px;
-    font-size: 1.15em;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.help-section p,
-.help-section li {
-    color: var(--text-dim);
-    line-height: 1.6;
-    font-size: 0.92em;
-    margin-bottom: 6px;
-}
+.help-section { text-align: left; margin: 18px 0; padding: 14px 18px; background: rgba(0,0,0,0.35); border-radius: 8px; border-left: 3px solid var(--accent); }
+.help-section h3 { font-family: 'MedievalSharp', serif; color: var(--accent); margin-bottom: 8px; font-size: 1.15em; display: flex; align-items: center; gap: 8px; }
+.help-section p, .help-section li { color: var(--text-dim); line-height: 1.6; font-size: 0.92em; margin-bottom: 6px; }
 .help-section ul { padding-left: 22px; }
 .help-section strong { color: var(--gold); }
 .help-section .hl-good { color: var(--health); font-weight: 700; }
 .help-section .hl-bad { color: var(--accent-2); font-weight: 700; }
 .help-section .hl-info { color: var(--mana); font-weight: 700; }
 
-.rarity-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 10px;
-    margin: 4px 0;
-    background: rgba(0,0,0,0.3);
-    border-radius: 6px;
-}
-.rarity-chip {
-    padding: 2px 10px;
-    border-radius: 10px;
-    font-size: 0.75em;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-.rarity-chip.common { background: rgba(184,176,160,0.2); color: #b8b0a0; border: 1px solid #b8b0a0; }
-.rarity-chip.rare { background: rgba(107,163,199,0.2); color: #6ba3c7; border: 1px solid #6ba3c7; }
-.rarity-chip.epic { background: rgba(155,89,182,0.2); color: #c79bd6; border: 1px solid #c79bd6; }
-.rarity-chip.legendary { background: rgba(240,199,94,0.2); color: var(--gold); border: 1px solid var(--gold); }
-
-/* ============================================================
-   ===== INTRO/TUTORIAL =======================================
-   ============================================================ */
-.intro-card {
-    background: linear-gradient(135deg, rgba(50,35,16,0.92), rgba(36,26,13,0.92));
-    border: 2px solid var(--border-strong);
-    border-radius: 10px;
-    padding: 18px;
-    margin-bottom: 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 14px;
-}
-
-.tutorial-step {
-    text-align: center;
-    padding: 10px;
-    position: relative;
-}
-.tutorial-step::before {
-    content: attr(data-step);
-    position: absolute;
-    top: -4px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--gold);
-    color: #1a1209;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    font-weight: 900;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8em;
-    box-shadow: 0 0 10px rgba(240,199,94,0.6);
-}
-.tutorial-icon { font-size: 2em; margin-top: 18px; margin-bottom: 6px; }
-.tutorial-title {
-    font-family: 'MedievalSharp', serif;
-    color: var(--accent);
-    font-size: 1.1em;
-    margin-bottom: 4px;
-}
-.tutorial-desc {
-    color: var(--text-dim);
-    font-size: 0.85em;
-    line-height: 1.4;
-    font-style: italic;
-}
-
-/* ============================================================
-   ===== TOASTS ===============================================
-   ============================================================ */
 #toastContainer { position: fixed; top: 80px; right: 20px; z-index: 900; display: flex; flex-direction: column; gap: 10px; }
-.toast {
-    background: rgba(26,18,9,0.97);
-    color: var(--text);
-    border-left: 4px solid var(--accent);
-    padding: 12px 20px;
-    border-radius: 6px;
-    min-width: 240px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.6);
-    animation: slideIn 0.3s, fadeOut 0.4s ease 2.6s forwards;
-    font-family: 'Cinzel', serif;
-}
+.toast { background: rgba(26,18,9,0.97); color: var(--text); border-left: 4px solid var(--accent); padding: 12px 20px; border-radius: 6px; min-width: 240px; box-shadow: 0 5px 20px rgba(0,0,0,0.6); animation: slideIn 0.3s, fadeOut 0.4s ease 2.6s forwards; font-family: 'Cinzel', serif; }
 .toast.success { border-color: var(--health); }
 .toast.warning { border-color: var(--gold); }
 .toast.error { border-color: var(--accent-2); }
 .toast.info { border-color: var(--mana); }
-@keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
-@keyframes fadeOut { to { opacity: 0; transform: translateX(120%); } }
+.toast.epic { border-color: #c79bd6; background: linear-gradient(135deg, rgba(155,89,182,0.2), rgba(26,18,9,0.97)); }
+@keyframes slideIn { from{transform:translateX(120%)} to{transform:translateX(0)} }
+@keyframes fadeOut { to{opacity:0; transform:translateX(120%)} }
 
-/* ============================================================
-   ===== RESPONSIVE ===========================================
-   ============================================================ */
+@media (max-width: 1100px) {
+    .bottom-panels { grid-template-columns: 1fr 1fr; }
+    .team-side { grid-template-columns: repeat(4, 1fr); }
+}
 @media (max-width: 900px) {
     header { padding: 10px 16px; flex-wrap: wrap; }
     .logo { font-size: 1.3em; }
-    .game-title { font-size: 2em; }
+    .game-title { font-size: 1.8em; }
     .bottom-panels { grid-template-columns: 1fr; }
     .battlefield { grid-template-columns: 1fr; gap: 10px; }
     .vs-divider { display: none; }
-    .team-side { grid-template-columns: repeat(3, 1fr); min-height: 200px; }
+    .team-side { grid-template-columns: repeat(4, 1fr); min-height: 220px; }
+}
+/* ============================================================
+   ===== SVG BEAST ART ========================================
+   ============================================================ */
+   .beast-art {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.beast-art svg {
+    width: 75%;
+    height: 75%;
+    max-width: 60px;
+    max-height: 60px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+}
+.shop-icon .beast-art svg, .item-icon-art svg { width: 50px; height: 50px; max-width: 50px; max-height: 50px; }
+.roster-icon .beast-art svg { width: 40px; height: 40px; }
+
+/* ============================================================
+   ===== BEAUTIFUL HOVER TOOLTIP ==============================
+   ============================================================ */
+#beastTooltip {
+    position: fixed;
+    z-index: 9999;
+    background: linear-gradient(135deg, #2a1d0a 0%, #1a1209 100%);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.85), 0 0 30px rgba(240,199,94,0.4);
+    min-width: 260px;
+    max-width: 320px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s, transform 0.18s;
+    transform: translateY(8px) scale(0.96);
+    font-family: 'Cinzel', serif;
+    overflow: hidden;
+}
+#beastTooltip.show { opacity: 1; transform: translateY(0) scale(1); }
+#beastTooltip.rarity-common { border-color: #b8b0a0; box-shadow: 0 12px 40px rgba(0,0,0,0.85), 0 0 20px rgba(184,176,160,0.4); }
+#beastTooltip.rarity-rare { border-color: #6ba3c7; box-shadow: 0 12px 40px rgba(0,0,0,0.85), 0 0 25px rgba(107,163,199,0.5); }
+#beastTooltip.rarity-epic { border-color: #c79bd6; box-shadow: 0 12px 40px rgba(0,0,0,0.85), 0 0 30px rgba(199,155,214,0.6); }
+#beastTooltip.rarity-legendary { border-color: var(--gold); box-shadow: 0 12px 40px rgba(0,0,0,0.85), 0 0 35px rgba(240,199,94,0.7); }
+#beastTooltip.rarity-mythic { border-color: #ff4040; box-shadow: 0 12px 40px rgba(0,0,0,0.85), 0 0 40px rgba(255,64,64,0.7); }
+
+.tt-header {
+    background: linear-gradient(135deg, var(--tt-color, #3a2a14), #1a1209);
+    padding: 12px 14px;
+    border-bottom: 2px solid var(--tt-border, var(--accent));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+}
+.tt-portrait {
+    width: 56px; height: 56px;
+    background: rgba(0,0,0,0.4);
+    border: 2px solid var(--tt-border, var(--accent));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.6);
+}
+.tt-portrait svg { width: 44px; height: 44px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); }
+.tt-title-block { flex: 1; min-width: 0; }
+.tt-name { font-family: 'MedievalSharp', serif; font-size: 1.15em; color: var(--text); line-height: 1.1; margin-bottom: 3px; }
+.tt-rarity-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tt-rarity { font-size: 0.7em; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+.tt-rarity.common { background: rgba(184,176,160,0.2); color: #b8b0a0; }
+.tt-rarity.rare { background: rgba(107,163,199,0.2); color: #6ba3c7; }
+.tt-rarity.epic { background: rgba(199,155,214,0.2); color: #c79bd6; }
+.tt-rarity.legendary { background: rgba(240,199,94,0.2); color: var(--gold); }
+.tt-rarity.mythic { background: rgba(255,64,64,0.2); color: #ff8080; }
+.tt-level-badge { background: var(--gold); color: #1a1209; font-size: 0.7em; font-weight: 900; padding: 2px 7px; border-radius: 8px; }
+.tt-level-badge.lv2 { background: #c79bd6; }
+.tt-level-badge.lv3 { background: #ff4040; color: #fff; }
+
+.tt-body { padding: 12px 14px; }
+.tt-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.tt-stat {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.tt-stat-ic { font-size: 1.05em; }
+.tt-stat-label { font-size: 0.65em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.tt-stat-val { font-family: 'MedievalSharp', serif; font-size: 1.05em; color: var(--text); margin-left: auto; }
+.tt-stat-val.boost { color: var(--health); }
+.tt-stat-val.boost::after { content: ' ↑'; font-size: 0.8em; }
+
+.tt-section { margin-top: 10px; }
+.tt-section-title {
+    font-size: 0.7em; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--text-dim); margin-bottom: 5px; font-weight: 700;
+}
+.tt-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tt-tag {
+    background: rgba(212,175,110,0.15); border: 1px solid var(--accent);
+    color: var(--accent); padding: 2px 8px; border-radius: 10px;
+    font-size: 0.72em; font-weight: 700;
+}
+.tt-tag.active {
+    background: rgba(240,199,94,0.25); border-color: var(--gold);
+    color: var(--gold); box-shadow: 0 0 8px rgba(240,199,94,0.4);
+}
+
+.tt-ability {
+    background: rgba(155,89,182,0.15);
+    border-left: 3px solid #c79bd6;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-top: 8px;
+    font-size: 0.8em;
+}
+.tt-ability strong { color: #c79bd6; }
+
+.tt-role-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 0.7em;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.tt-role-pill.front { background: rgba(168,50,50,0.2); color: #e08585; border: 1px solid var(--accent-2); }
+.tt-role-pill.back { background: rgba(74,107,138,0.2); color: #8bb5d0; border: 1px solid var(--mana); }
+
+.tt-items {
+    display: flex; gap: 6px; margin-top: 8px;
+}
+.tt-item-slot {
+    width: 32px; height: 32px;
+    background: rgba(240,199,94,0.1);
+    border: 1.5px dashed rgba(240,199,94,0.4);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1em;
+}
+.tt-item-slot.filled {
+    background: rgba(240,199,94,0.25);
+    border-style: solid;
+    border-color: var(--gold);
+}
+
+.tt-combine-bar {
+    margin-top: 10px;
+    background: rgba(155,89,182,0.1);
+    border: 1px solid #c79bd6;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.78em;
+    color: #c79bd6;
+}
+.tt-combine-bar .pips { display: inline-flex; gap: 3px; margin-left: 6px; }
+.tt-combine-bar .pip { width: 12px; height: 12px; border-radius: 50%; background: rgba(199,155,214,0.25); border: 1px solid #c79bd6; }
+.tt-combine-bar .pip.on { background: #c79bd6; box-shadow: 0 0 6px #c79bd6; }
+
+.tt-flavor {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    font-size: 0.78em;
+    color: var(--text-dim);
+    font-style: italic;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.tt-hint {
+    background: rgba(0,0,0,0.4);
+    padding: 6px 10px;
+    margin-top: 8px;
+    border-radius: 4px;
+    font-size: 0.72em;
+    color: var(--accent);
+    text-align: center;
+    border-top: 1px solid var(--border);
 }
 </style>
 </head>
@@ -1026,201 +473,115 @@ header {
     <div class="header-stats">
         <div class="stat-pill gold">🪙 <span id="goldDisplay">100</span></div>
         <div class="stat-pill wave">⚔️ Wave <span id="waveDisplay">1</span></div>
-        <div class="stat-pill beasts">🐉 <span id="beastsDisplay">0</span>/12</div>
+        <div class="stat-pill beasts">🐉 <span id="beastsDisplay">0</span>/16</div>
+        <div class="stat-pill xp">💎 <span id="itemsDisplay">0</span>/8</div>
     </div>
     <div class="header-btns">
-        <button class="help-btn" onclick="openHelpModal()">📖 How to Play</button>
-        <a href="tavern.html" class="back-btn">← The Tavern</a>
+        <button class="help-btn" onclick="openHelpModal()">📖 Help</button>
+        <a href="tavern.html" class="back-btn">← Tavern</a>
     </div>
 </header>
 
 <div class="game-container">
-
     <div class="title-section">
         <div class="game-title">⚔️ BEASTMASTER'S ARENA ⚔️</div>
-        <div class="game-subtitle">Summon mighty beasts, master positioning, defeat the endless horde!</div>
+        <div class="game-subtitle">Summon mighty beasts • Master positioning • Combine duplicates • Conquer endless waves!</div>
     </div>
 
-    <!-- Tutorial card (shown only on wave 1) -->
-    <div class="intro-card" id="introCard">
-        <div class="tutorial-step" data-step="1">
-            <div class="tutorial-icon">🛒</div>
-            <div class="tutorial-title">RECRUIT</div>
-            <div class="tutorial-desc">Click beasts in the Bazaar to buy them with gold</div>
-        </div>
-        <div class="tutorial-step" data-step="2">
-            <div class="tutorial-icon">🎯</div>
-            <div class="tutorial-title">POSITION</div>
-            <div class="tutorial-desc">Drag from Menagerie to the arena. Front = Tank, Back = Ranged</div>
-        </div>
-        <div class="tutorial-step" data-step="3">
-            <div class="tutorial-icon">✨</div>
-            <div class="tutorial-title">SYNERGIZE</div>
-            <div class="tutorial-desc">Match types/classes for powerful bonuses (see top bar)</div>
-        </div>
-        <div class="tutorial-step" data-step="4">
-            <div class="tutorial-icon">⚔️</div>
-            <div class="tutorial-title">CONQUER</div>
-            <div class="tutorial-desc">Hit BATTLE! Win gold, buy stronger beasts, survive!</div>
-        </div>
-    </div>
-
-    <!-- Synergy display -->
     <div class="synergies-bar" id="synergiesBar">
         <span class="synergy-empty">⚡ Deploy beasts to activate synergies...</span>
     </div>
 
-    <!-- Arena -->
     <div class="arena">
         <div class="arena-header">
-            <div class="wave-info">🏰 Wave <span id="waveNum">1</span> — <span id="waveName">The Goblin Patrol</span></div>
+            <div class="wave-info" id="waveInfoHeader">🏰 Wave <span id="waveNum">1</span> — <span id="waveName">The Goblin Patrol</span></div>
             <div class="battle-status" id="battleStatus">Prepare thy team...</div>
         </div>
         <div class="row-labels">
-            <span>🛡️ Your Back Row (Ranged) ← → Your Front Row (Tanks) ⚔️</span>
+            <span>🛡️ Back Row (Ranged) ← → Front Row (Tanks) ⚔️ • 4×2 BATTLEFIELD</span>
         </div>
         <div class="battlefield">
-            <div class="team-side player" id="playerTeam">
-                <span class="team-label">⚔ YOUR ARMY</span>
-            </div>
+            <div class="team-side player" id="playerTeam"><span class="team-label">⚔ YOUR ARMY (8 SLOTS)</span></div>
             <div class="vs-divider">⚔</div>
-            <div class="team-side enemy" id="enemyTeam">
-                <span class="team-label">💀 ENEMIES</span>
-            </div>
+            <div class="team-side enemy" id="enemyTeam"><span class="team-label">💀 ENEMIES</span></div>
         </div>
     </div>
 
-    <!-- Controls -->
     <div class="controls">
         <button class="btn primary" id="battleBtn" onclick="startBattle()">⚔️ BEGIN BATTLE</button>
-        <button class="btn gold" id="rerollBtn" onclick="rerollShop()">🎲 Reroll Shop (5🪙)</button>
+        <button class="btn gold" id="rerollBtn" onclick="rerollShop()">🎲 Reroll (5🪙)</button>
+        <button class="btn purple" id="itemShopBtn" onclick="buyRandomItem()">💎 Buy Item (15🪙)</button>
         <button class="btn speed" id="speed1" onclick="setSpeed(1)">▶ 1x</button>
         <button class="btn speed active" id="speed2" onclick="setSpeed(2)">▶▶ 2x</button>
         <button class="btn speed" id="speed4" onclick="setSpeed(4)">▶▶▶ 4x</button>
+        <button class="btn speed" id="speed8" onclick="setSpeed(8)">⚡ 8x</button>
     </div>
 
-    <!-- Bottom panels: Shop + Roster -->
     <div class="bottom-panels">
         <div class="panel">
-            <div class="panel-title">
-                <span>🛒 Beast Bazaar</span>
-                <span class="panel-hint">💡 Click a beast to recruit it</span>
-            </div>
+            <div class="panel-title"><span>🛒 Beast Bazaar</span><span class="panel-hint">Click to buy</span></div>
             <div class="shop-grid" id="shopGrid"></div>
         </div>
         <div class="panel">
-            <div class="panel-title">
-                <span>📜 Thy Menagerie</span>
-                <span class="panel-hint">💡 Drag to arena • Hover for ✖ to discard (refunds ½ gold)</span>
-            </div>
+            <div class="panel-title"><span>📜 Menagerie</span><span class="panel-hint">Drag to deploy</span></div>
             <div class="roster-grid" id="rosterGrid"></div>
+        </div>
+        <div class="panel">
+            <div class="panel-title"><span>💎 Items</span><span class="panel-hint">Drag onto a beast</span></div>
+            <div class="items-grid" id="itemsGrid"></div>
         </div>
     </div>
 </div>
 
-<!-- HELP / RULES MODAL -->
 <div class="modal-overlay" id="helpModal" onclick="if(event.target===this)closeHelpModal()">
-    <div class="modal" style="max-width:680px; text-align:left;">
+    <div class="modal" style="max-width:720px; text-align:left;">
         <button class="modal-close" onclick="closeHelpModal()">×</button>
-        <h2 style="text-align:center;">📖 How to Play Beastmaster's Arena</h2>
-        <p style="text-align:center; color:var(--text-dim); font-style:italic; margin-bottom:8px;">
-            A strategic auto-battler — build the perfect team and survive endless waves!
-        </p>
+        <h2 style="text-align:center;">📖 Beastmaster's Codex</h2>
+        <p style="text-align:center; color:var(--text-dim); font-style:italic; margin-bottom:8px;">A strategic auto-battler with deep synergies, leveling, and items!</p>
 
         <div class="help-section">
             <h3>🎯 The Goal</h3>
-            <p>Defeat as many waves of enemies as possible. Each wave gets harder, but you earn <strong>more gold</strong> to buy <strong>stronger beasts</strong>. Your <strong class="hl-info">Highest Wave Reached</strong> is your score!</p>
+            <p>Survive endless waves of enemies. Every <strong>5th wave is a BOSS WAVE</strong> with elite enemies and bigger rewards!</p>
         </div>
 
         <div class="help-section">
-            <h3>🛒 Step 1: Recruit Beasts</h3>
+            <h3>⭐ NEW: Beast Combining (Auto-Battler Style)</h3>
+            <p>Buy <strong>3 of the same beast</strong> and they auto-combine into a <strong>Level 2</strong> version with massive stats!</p>
+            <p>Combine 3 Level 2s into a <strong>Level 3 super-beast</strong> with crazy power.</p>
+        </div>
+
+        <div class="help-section">
+            <h3>💎 NEW: Items</h3>
+            <p>Items give beasts special powers. Buy them or earn them from boss waves. <strong>Drag onto a deployed beast</strong> to equip!</p>
             <ul>
-                <li>The <strong>Beast Bazaar</strong> shows 5 random beasts for sale</li>
-                <li><strong>Click any beast</strong> to buy it (if you have enough 🪙 gold)</li>
-                <li>Spend <strong>5 🪙</strong> to <strong>reroll</strong> the shop for new beasts</li>
-                <li>You can own up to <strong>12 beasts</strong> in your Menagerie</li>
+                <li><strong>🗡️ Sharp Blade</strong> — +30% ATK</li>
+                <li><strong>🛡️ Tower Shield</strong> — +50% HP & Taunt</li>
+                <li><strong>💍 Ring of Power</strong> — +25% Crit chance</li>
+                <li><strong>🧪 Lifesteal Vial</strong> — Heal 30% of damage</li>
+                <li><strong>⚡ Storm Boots</strong> — Always attack first</li>
+                <li><strong>🔥 Flame Amulet</strong> — Cleave damage</li>
+                <li><strong>🌿 Druid Charm</strong> — Regen 5 HP/tick</li>
+                <li><strong>☠️ Poison Dagger</strong> — Damage over time</li>
             </ul>
         </div>
 
         <div class="help-section">
-            <h3>🗑️ Step 2: Discard (NEW!)</h3>
+            <h3>🆕 New Beast Types</h3>
             <ul>
-                <li><strong>Hover</strong> any beast in your Menagerie to see a red <strong class="hl-bad">✖ button</strong></li>
-                <li>Click it to <strong>sell the beast</strong> back to the bazaar</li>
-                <li>You get <strong>half the original cost</strong> back in gold 🪙</li>
-                <li>Useful when your roster is full or you found a better beast!</li>
+                <li><strong>⚡ Elemental</strong> — Spell damage scaling</li>
+                <li><strong>✨ Holy</strong> — Healers and divine units</li>
+                <li><strong>🌊 Aquatic</strong> — Splash damage</li>
+                <li><strong>🐝 Insect</strong> — Swarm bonus (more = stronger)</li>
+                <li><strong>🤖 Construct</strong> — Massive defense</li>
+                <li><strong>🗡️ Assassin</strong> — Backline targeting</li>
             </ul>
         </div>
 
         <div class="help-section">
-            <h3>🎯 Step 3: Position Your Army</h3>
+            <h3>⌨️ Shortcuts</h3>
             <ul>
-                <li><strong>Drag beasts</strong> from your Menagerie onto the 6 arena slots</li>
-                <li>You have <strong class="hl-bad">3 Front Row</strong> slots (Tanks — take hits)</li>
-                <li>You have <strong class="hl-info">3 Back Row</strong> slots (Ranged — deal damage safely)</li>
-                <li>Each beast has a <strong>preferred role</strong> (Front/Back) shown on shop cards</li>
-                <li><strong>Double-click</strong> a deployed beast to recall it back to the Menagerie</li>
-            </ul>
-        </div>
-
-        <div class="help-section">
-            <h3>✨ Step 4: Build Synergies</h3>
-            <p>When multiple beasts share a <strong>Type</strong> or <strong>Class</strong>, they unlock powerful bonuses:</p>
-            <ul>
-                <li><strong>Goblin</strong> (2/4) → +20% / +50% Attack</li>
-                <li><strong>Beast</strong> (2/4) → +15% / +40% HP</li>
-                <li><strong>Undead</strong> (2/4) → 25% / 50% Lifesteal (heal on hit)</li>
-                <li><strong>Demon</strong> (2/4) → +30% / +70% Crit Chance</li>
-                <li><strong>Dragon</strong> (2) → +25% ALL stats 🐉</li>
-                <li><strong>Human</strong> (2) → +20% HP & Attack</li>
-                <li><strong>Warrior</strong> (2/4) → +30% / +60% Armor (reduces damage)</li>
-                <li><strong>Mage</strong> (2/4) → +30% / +70% Spell Power (Mage damage)</li>
-                <li><strong>Ranger</strong> (2) → +40% Crit Damage</li>
-            </ul>
-            <p>Look at the <strong class="hl-info">Synergy Bar</strong> above the arena to see what's active!</p>
-        </div>
-
-        <div class="help-section">
-            <h3>⚔️ Step 5: Combat</h3>
-            <ul>
-                <li>Click <strong>⚔️ BEGIN BATTLE</strong> to start the auto-battle</li>
-                <li>Beasts attack automatically based on their <strong>ATK</strong> stat</li>
-                <li><strong>Front-row beasts</strong> prioritize attacking enemy front row</li>
-                <li><strong>Ranged beasts</strong> can pick any target</li>
-                <li>Critical hits show in <strong style="color:var(--gold)">gold</strong>, healing in <strong class="hl-good">green</strong></li>
-                <li>If <strong>ALL your beasts die</strong>, the game ends</li>
-                <li>If <strong>ALL enemies die</strong>, you win the wave + gold!</li>
-            </ul>
-        </div>
-
-        <div class="help-section">
-            <h3>💎 Beast Rarities</h3>
-            <div class="rarity-row"><span class="rarity-chip common">Common</span> <span>3🪙 — Basic stats, easy to find</span></div>
-            <div class="rarity-row"><span class="rarity-chip rare">Rare</span> <span>6🪙 — Solid mid-game beasts</span></div>
-            <div class="rarity-row"><span class="rarity-chip epic">Epic</span> <span>12🪙 — Strong synergy enablers</span></div>
-            <div class="rarity-row"><span class="rarity-chip legendary">Legendary</span> <span>24🪙 — Game-winning monsters 👑</span></div>
-            <p style="margin-top:8px;">Higher waves = better odds of rare/epic/legendary beasts appearing in the shop!</p>
-        </div>
-
-        <div class="help-section">
-            <h3>💡 Pro Tips</h3>
-            <ul>
-                <li><strong>Focus a synergy:</strong> 4 Goblins = +50% ATK is HUGE</li>
-                <li><strong>Mix front + back:</strong> Pure ranged dies to enemy frontline fast</li>
-                <li><strong>Save gold:</strong> Sometimes it's worth rerolling for a Legendary</li>
-                <li><strong>Discard weaklings:</strong> Free up roster space for stronger beasts</li>
-                <li><strong>Lifesteal Undead</strong> are amazing tanks in the back row</li>
-                <li><strong>Dragon Knight + Ancient Dragon</strong> = +25% to everything! 🔥</li>
-            </ul>
-        </div>
-
-        <div class="help-section">
-            <h3>⌨️ Keyboard Shortcuts</h3>
-            <ul>
-                <li><strong>SPACE</strong> — Begin Battle</li>
-                <li><strong>R</strong> — Reroll Shop</li>
-                <li><strong>1 / 2 / 4</strong> — Battle Speed</li>
-                <li><strong>ESC</strong> — Close this menu</li>
+                <li><strong>SPACE</strong> — Battle • <strong>R</strong> — Reroll • <strong>I</strong> — Buy Item</li>
+                <li><strong>1/2/4/8</strong> — Speed • <strong>ESC</strong> — Close menu</li>
             </ul>
         </div>
 
@@ -1230,7 +591,6 @@ header {
     </div>
 </div>
 
-<!-- Battle Result Modal -->
 <div class="modal-overlay" id="resultModal">
     <div class="modal" id="resultModalContent">
         <h2 id="resultTitle">VICTORY!</h2>
@@ -1240,7 +600,6 @@ header {
     </div>
 </div>
 
-<!-- DISCARD CONFIRMATION MODAL -->
 <div class="modal-overlay" id="discardModal" onclick="if(event.target===this)closeDiscardModal()">
     <div class="modal" style="max-width:420px;">
         <button class="modal-close" onclick="closeDiscardModal()">×</button>
@@ -1254,121 +613,309 @@ header {
 </div>
 
 <script>
+
 /* ============================================================
-   ===== BEAST DATABASE =======================================
+   ===== SVG BEAST ART LIBRARY ================================
+   Custom-drawn art for every beast. No more emoji fallback issues!
+   ============================================================ */
+   const BEAST_ART = {
+    // ===== COMMON =====
+    goblin_warrior: `<svg viewBox="0 0 64 64"><circle cx="32" cy="28" r="16" fill="#5a8c3a" stroke="#2a4a1a" stroke-width="2"/><path d="M16 28 L12 18 L22 24 Z M48 28 L52 18 L42 24 Z" fill="#5a8c3a" stroke="#2a4a1a" stroke-width="1.5"/><circle cx="26" cy="27" r="3" fill="#fff"/><circle cx="38" cy="27" r="3" fill="#fff"/><circle cx="26" cy="27" r="1.5" fill="#000"/><circle cx="38" cy="27" r="1.5" fill="#000"/><path d="M24 36 Q32 42 40 36" stroke="#2a4a1a" stroke-width="2" fill="none"/><path d="M28 38 L28 41 M36 38 L36 41" stroke="#fff" stroke-width="2"/><rect x="46" y="36" width="3" height="20" fill="#8b6914"/><polygon points="44,36 52,36 49,30" fill="#9aa0a8"/></svg>`,
+    forest_wolf: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="38" rx="20" ry="12" fill="#5a4530"/><path d="M14 32 L8 22 L18 28 Z M50 32 L56 22 L46 28 Z" fill="#5a4530"/><circle cx="32" cy="30" r="14" fill="#6b5436"/><path d="M22 26 L18 18 L26 22 Z M42 26 L46 18 L38 22 Z" fill="#3a2d18"/><circle cx="26" cy="30" r="2.5" fill="#ff8c00"/><circle cx="38" cy="30" r="2.5" fill="#ff8c00"/><polygon points="32,34 28,38 36,38" fill="#000"/><path d="M28 40 L26 44 M36 40 L38 44 M30 42 L34 42" stroke="#fff" stroke-width="1.5"/><path d="M26 44 L26 48 M30 44 L30 48 M34 44 L34 48 M38 44 L38 48" stroke="#fff" stroke-width="1.5"/></svg>`,
+    archer: `<svg viewBox="0 0 64 64"><circle cx="32" cy="22" r="10" fill="#e8e0d0" stroke="#1a1a1a" stroke-width="1.5"/><rect x="22" y="32" width="20" height="22" fill="#3a2d18" rx="2"/><circle cx="28" cy="20" r="2" fill="#000"/><circle cx="36" cy="20" r="2" fill="#000"/><path d="M28 26 L36 26 M27 24 L29 24 M35 24 L37 24" stroke="#1a1a1a" stroke-width="1"/><path d="M14 36 Q10 32 14 28 Q18 32 14 36" fill="none" stroke="#8b6914" stroke-width="2"/><line x1="14" y1="32" x2="22" y2="32" stroke="#5a4530" stroke-width="1"/><line x1="22" y1="32" x2="18" y2="28" stroke="#fff" stroke-width="1.5"/><path d="M22 30 L24 32 L22 34" fill="#fff"/></svg>`,
+    rat_king: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="40" rx="18" ry="10" fill="#6b6b6b"/><ellipse cx="32" cy="28" rx="14" ry="12" fill="#5a5a5a"/><ellipse cx="22" cy="22" rx="5" ry="6" fill="#4a4a4a"/><ellipse cx="42" cy="22" rx="5" ry="6" fill="#4a4a4a"/><circle cx="22" cy="22" rx="2" ry="3" fill="#ff8080"/><circle cx="42" cy="22" rx="2" ry="3" fill="#ff8080"/><circle cx="26" cy="30" r="2" fill="#000"/><circle cx="38" cy="30" r="2" fill="#000"/><ellipse cx="32" cy="36" rx="3" ry="2" fill="#ff8080"/><line x1="32" y1="38" x2="32" y2="42" stroke="#fff" stroke-width="2"/><path d="M30 40 L34 40" stroke="#fff" stroke-width="1.5"/><path d="M48 44 Q56 48 60 56" stroke="#5a5a5a" stroke-width="3" fill="none"/></svg>`,
+    kobold: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="38" rx="14" ry="14" fill="#a07020"/><path d="M22 26 L18 16 L26 22 Z M42 26 L46 16 L38 22 Z" fill="#a07020"/><polygon points="32,18 30,12 34,12" fill="#a07020"/><circle cx="26" cy="32" r="2" fill="#ffff00"/><circle cx="38" cy="32" r="2" fill="#ffff00"/><circle cx="26" cy="32" r="1" fill="#000"/><circle cx="38" cy="32" r="1" fill="#000"/><path d="M28 38 L36 38 L34 42 L30 42 Z" fill="#1a1209"/><path d="M30 42 L30 44 M34 42 L34 44" stroke="#fff" stroke-width="1.5"/><path d="M14 48 Q8 52 6 60" stroke="#a07020" stroke-width="4" fill="none"/></svg>`,
+    bee_drone: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="34" rx="16" ry="12" fill="#f0c75e"/><rect x="20" y="28" width="24" height="3" fill="#1a1209"/><rect x="20" y="34" width="24" height="3" fill="#1a1209"/><rect x="20" y="40" width="24" height="3" fill="#1a1209"/><ellipse cx="20" cy="22" rx="10" ry="6" fill="rgba(255,255,255,0.5)" stroke="#f0c75e" stroke-width="1"/><ellipse cx="44" cy="22" rx="10" ry="6" fill="rgba(255,255,255,0.5)" stroke="#f0c75e" stroke-width="1"/><circle cx="28" cy="30" r="1.5" fill="#000"/><circle cx="36" cy="30" r="1.5" fill="#000"/><polygon points="46,42 52,46 46,44" fill="#000"/></svg>`,
+    tide_pup: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="40" rx="18" ry="12" fill="#4a7ba0"/><circle cx="32" cy="28" r="14" fill="#5a8bb0"/><ellipse cx="22" cy="22" rx="4" ry="5" fill="#4a7ba0"/><ellipse cx="42" cy="22" rx="4" ry="5" fill="#4a7ba0"/><circle cx="26" cy="30" r="2.5" fill="#fff"/><circle cx="38" cy="30" r="2.5" fill="#fff"/><circle cx="26" cy="30" r="1.5" fill="#000"/><circle cx="38" cy="30" r="1.5" fill="#000"/><ellipse cx="32" cy="36" rx="2" ry="1.5" fill="#000"/><path d="M28 38 Q32 41 36 38" stroke="#000" stroke-width="1.5" fill="none"/><path d="M18 48 Q14 52 16 56 M46 48 Q50 52 48 56" stroke="#4a7ba0" stroke-width="3" fill="none"/></svg>`,
+    acolyte: `<svg viewBox="0 0 64 64"><path d="M16 56 L24 24 L40 24 L48 56 Z" fill="#e8dcc0"/><circle cx="32" cy="22" r="10" fill="#f0d0a8"/><path d="M22 22 Q22 12 32 12 Q42 12 42 22" fill="#d8c0a0"/><circle cx="28" cy="22" r="1.5" fill="#000"/><circle cx="36" cy="22" r="1.5" fill="#000"/><path d="M28 28 Q32 30 36 28" stroke="#000" stroke-width="1" fill="none"/><line x1="32" y1="34" x2="32" y2="50" stroke="#f0c75e" stroke-width="3"/><line x1="26" y1="40" x2="38" y2="40" stroke="#f0c75e" stroke-width="3"/><circle cx="32" cy="38" r="3" fill="rgba(255,255,200,0.6)"/></svg>`,
+
+    // ===== RARE =====
+    orc_brute: `<svg viewBox="0 0 64 64"><rect x="14" y="22" width="36" height="34" fill="#4a8c7a" stroke="#1a4a3a" stroke-width="2" rx="3"/><circle cx="32" cy="20" r="12" fill="#5a9c8a"/><path d="M20 20 L14 12 L24 16 Z M44 20 L50 12 L40 16 Z" fill="#5a9c8a"/><circle cx="26" cy="22" r="2.5" fill="#ff4040"/><circle cx="38" cy="22" r="2.5" fill="#ff4040"/><path d="M24 28 L26 32 L24 32 Z M40 28 L38 32 L40 32 Z" fill="#fff"/><path d="M22 30 L42 30" stroke="#000" stroke-width="2"/><rect x="50" y="20" width="4" height="30" fill="#3a2d18"/><polygon points="46,20 58,20 52,8" fill="#9aa0a8" stroke="#5a5a5a"/></svg>`,
+    bear_warrior: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="42" rx="22" ry="14" fill="#8b6914"/><circle cx="32" cy="26" r="16" fill="#a07e1a"/><circle cx="20" cy="18" r="5" fill="#8b6914"/><circle cx="44" cy="18" r="5" fill="#8b6914"/><circle cx="20" cy="18" r="2" fill="#3a2d18"/><circle cx="44" cy="18" r="2" fill="#3a2d18"/><circle cx="26" cy="26" r="2.5" fill="#000"/><circle cx="38" cy="26" r="2.5" fill="#000"/><ellipse cx="32" cy="32" rx="4" ry="3" fill="#3a2d18"/><circle cx="32" cy="32" r="2" fill="#000"/><path d="M26 36 L28 40 L26 40 M38 36 L36 40 L38 40" fill="#fff"/><rect x="8" y="36" width="6" height="4" fill="#9aa0a8"/></svg>`,
+    wizard: `<svg viewBox="0 0 64 64"><polygon points="32,4 22,28 42,28" fill="#4a6b8a" stroke="#2a3a5a" stroke-width="1.5"/><circle cx="32" cy="16" r="2" fill="#f0c75e"/><circle cx="32" cy="32" r="9" fill="#f0d0a8"/><path d="M20 38 L24 56 L40 56 L44 38 Z" fill="#4a6b8a"/><circle cx="28" cy="32" r="1.5" fill="#000"/><circle cx="36" cy="32" r="1.5" fill="#000"/><path d="M22 40 Q22 32 18 30 Q22 28 22 22" stroke="#fff" stroke-width="2" fill="none"/><path d="M30 38 Q32 40 34 38" stroke="#000" stroke-width="1" fill="none"/><rect x="46" y="20" width="2" height="36" fill="#8b6914"/><circle cx="47" cy="20" r="4" fill="#80c0ff" stroke="#f0c75e" stroke-width="1"/></svg>`,
+    fire_imp: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="38" rx="14" ry="14" fill="#a83232"/><polygon points="22,22 18,12 26,18 28,8 32,18 36,8 38,18 46,12 42,22" fill="#ff6b00"/><circle cx="32" cy="36" r="10" fill="#c75e5e"/><circle cx="26" cy="34" r="2" fill="#ffff00"/><circle cx="38" cy="34" r="2" fill="#ffff00"/><circle cx="26" cy="34" r="1" fill="#000"/><circle cx="38" cy="34" r="1" fill="#000"/><path d="M26 40 Q32 46 38 40" stroke="#fff" stroke-width="2" fill="none"/><path d="M28 42 L28 44 M32 42 L32 45 M36 42 L36 44" stroke="#fff" stroke-width="1.5"/><path d="M46 50 Q52 54 50 60" stroke="#a83232" stroke-width="3" fill="none"/><polygon points="48,58 54,60 50,62" fill="#a83232"/></svg>`,
+    eagle_scout: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="36" rx="10" ry="18" fill="#5a4530"/><path d="M22 30 Q4 26 4 36 Q4 42 22 38 Z" fill="#8b6914"/><path d="M42 30 Q60 26 60 36 Q60 42 42 38 Z" fill="#8b6914"/><circle cx="32" cy="22" r="10" fill="#d4af6e"/><polygon points="32,28 28,36 36,36" fill="#f0c75e"/><circle cx="28" cy="22" r="2.5" fill="#ffff00"/><circle cx="36" cy="22" r="2.5" fill="#ffff00"/><circle cx="28" cy="22" r="1.2" fill="#000"/><circle cx="36" cy="22" r="1.2" fill="#000"/><path d="M30 56 L30 60 L34 60 L34 56" stroke="#f0c75e" stroke-width="2" fill="none"/></svg>`,
+    ghoul: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="40" rx="16" ry="14" fill="#6b8b5a"/><circle cx="32" cy="24" r="14" fill="#8bab7a"/><circle cx="26" cy="22" r="3" fill="#fff"/><circle cx="38" cy="22" r="3" fill="#fff"/><circle cx="26" cy="22" r="1.5" fill="#ff0000"/><circle cx="38" cy="22" r="1.5" fill="#ff0000"/><path d="M22 30 L42 30 L40 36 L24 36 Z" fill="#000"/><path d="M24 32 L26 36 M30 32 L30 36 M34 32 L34 36 M40 32 L38 36" stroke="#fff" stroke-width="1.5"/><path d="M20 14 L22 18 M44 14 L42 18" stroke="#5a8c3a" stroke-width="2"/></svg>`,
+    spider: `<svg viewBox="0 0 64 64"><circle cx="32" cy="34" r="14" fill="#1a1a1a"/><circle cx="32" cy="22" r="8" fill="#2a2a2a"/><circle cx="28" cy="20" r="2" fill="#ff0000"/><circle cx="36" cy="20" r="2" fill="#ff0000"/><circle cx="26" cy="24" r="1.5" fill="#ff0000"/><circle cx="38" cy="24" r="1.5" fill="#ff0000"/><path d="M18 30 L4 24 M18 34 L4 36 M18 38 L4 44 M46 30 L60 24 M46 34 L60 36 M46 38 L60 44 M22 46 L18 58 M42 46 L46 58" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="32" cy="38" r="3" fill="#5b1a5b"/></svg>`,
+    merfolk: `<svg viewBox="0 0 64 64"><path d="M22 24 L42 24 L46 44 L18 44 Z" fill="#4a8c9a"/><circle cx="32" cy="22" r="10" fill="#f0d0a8"/><path d="M22 22 Q22 12 32 12 Q42 12 42 22" fill="#1a4a5b"/><circle cx="28" cy="22" r="1.5" fill="#000"/><circle cx="36" cy="22" r="1.5" fill="#000"/><path d="M14 38 Q14 44 22 50 L26 60 L38 60 L42 50 Q50 44 50 38" fill="#1a4a5b"/><polygon points="22,52 14,60 30,56" fill="#4a8c9a"/><polygon points="42,52 50,60 34,56" fill="#4a8c9a"/><line x1="32" y1="32" x2="32" y2="6" stroke="#9aa0a8" stroke-width="2"/><polygon points="28,8 36,8 32,2" fill="#9aa0a8"/></svg>`,
+    paladin: `<svg viewBox="0 0 64 64"><rect x="20" y="28" width="24" height="28" fill="#f0c75e" stroke="#8b6914" stroke-width="2"/><polygon points="32,28 20,28 26,18 38,18 44,28" fill="#9aa0a8" stroke="#5a5a5a"/><circle cx="32" cy="22" r="8" fill="#f0d0a8"/><rect x="22" y="20" width="20" height="3" fill="#9aa0a8"/><circle cx="28" cy="24" r="1.2" fill="#000"/><circle cx="36" cy="24" r="1.2" fill="#000"/><path d="M30 30 L32 32 L34 30" stroke="#000" stroke-width="1" fill="none"/><line x1="32" y1="32" x2="32" y2="52" stroke="#f0c75e" stroke-width="2"/><line x1="26" y1="38" x2="38" y2="38" stroke="#f0c75e" stroke-width="2"/><rect x="46" y="32" width="3" height="20" fill="#8b6914"/><polygon points="44,32 52,32 48,22" fill="#9aa0a8"/></svg>`,
+    iron_golem: `<svg viewBox="0 0 64 64"><rect x="14" y="20" width="36" height="40" fill="#7a7a8a" stroke="#3a3a4a" stroke-width="2" rx="2"/><rect x="20" y="14" width="24" height="14" fill="#9aa0a8" stroke="#3a3a4a" stroke-width="2"/><rect x="24" y="18" width="4" height="6" fill="#ff8c00"/><rect x="36" y="18" width="4" height="6" fill="#ff8c00"/><rect x="28" y="32" width="8" height="2" fill="#3a3a4a"/><rect x="22" y="40" width="20" height="4" fill="#3a3a4a"/><circle cx="20" cy="30" r="3" fill="#3a3a4a"/><circle cx="44" cy="30" r="3" fill="#3a3a4a"/><rect x="6" y="30" width="8" height="20" fill="#7a7a8a"/><rect x="50" y="30" width="8" height="20" fill="#7a7a8a"/></svg>`,
+    storm_sprite: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="18" fill="rgba(107,139,224,0.3)"/><polygon points="32,8 26,28 36,28 28,52 38,32 30,32 36,12" fill="#ffff80" stroke="#f0c75e" stroke-width="1.5"/><circle cx="32" cy="32" r="6" fill="#80a0ff"/><circle cx="32" cy="32" r="3" fill="#fff"/><circle cx="20" cy="20" r="2" fill="#80a0ff" opacity="0.6"/><circle cx="48" cy="44" r="2" fill="#80a0ff" opacity="0.6"/><circle cx="50" cy="22" r="1.5" fill="#fff" opacity="0.8"/></svg>`,
+    shadow: `<svg viewBox="0 0 64 64"><path d="M20 56 Q20 24 32 14 Q44 24 44 56 Z" fill="#1a1a2a"/><path d="M24 56 Q24 28 32 18 Q40 28 40 56 Z" fill="#2a2a3a"/><circle cx="28" cy="26" r="2" fill="#9b59b6"/><circle cx="36" cy="26" r="2" fill="#9b59b6"/><circle cx="28" cy="26" r="0.8" fill="#fff"/><circle cx="36" cy="26" r="0.8" fill="#fff"/><line x1="22" y1="32" x2="18" y2="28" stroke="#9b59b6" stroke-width="2"/><polygon points="16,30 20,26 14,24" fill="#9b59b6"/></svg>`,
+
+    // ===== EPIC =====
+    dragon_knight: `<svg viewBox="0 0 64 64"><rect x="18" y="28" width="28" height="28" fill="#a83232" stroke="#5b1a1a" stroke-width="2"/><polygon points="14,28 14,16 22,22 24,12 32,18 40,12 42,22 50,16 50,28" fill="#a83232" stroke="#5b1a1a"/><circle cx="32" cy="22" r="8" fill="#1a1209"/><polygon points="26,22 24,18 28,20 M38,22 L40,18 L36,20" fill="#ff8c00"/><circle cx="28" cy="22" r="1.5" fill="#ff0000"/><circle cx="36" cy="22" r="1.5" fill="#ff0000"/><path d="M26 28 L38 28 L36 30 L28 30 Z" fill="#fff"/><line x1="32" y1="32" x2="32" y2="50" stroke="#f0c75e" stroke-width="2"/><line x1="26" y1="38" x2="38" y2="38" stroke="#f0c75e" stroke-width="2"/></svg>`,
+    lich_lord: `<svg viewBox="0 0 64 64"><circle cx="32" cy="22" r="12" fill="#e8e0d0"/><circle cx="28" cy="22" r="3" fill="#000"/><circle cx="36" cy="22" r="3" fill="#000"/><circle cx="28" cy="22" r="2" fill="#9b59b6"/><circle cx="36" cy="22" r="2" fill="#9b59b6"/><path d="M24 30 L28 32 L26 36 M40 30 L36 32 L38 36 M28 32 L36 32" stroke="#000" stroke-width="1.5"/><path d="M16 38 L20 56 L44 56 L48 38 Z" fill="#3a1a5b"/><polygon points="22,12 24,18 18,16" fill="#f0c75e"/><polygon points="42,12 40,18 46,16" fill="#f0c75e"/><circle cx="32" cy="44" r="5" fill="#9b59b6"/><circle cx="32" cy="44" r="3" fill="#80a0ff"/></svg>`,
+    minotaur: `<svg viewBox="0 0 64 64"><rect x="14" y="32" width="36" height="24" fill="#8b6914" rx="2"/><circle cx="32" cy="26" r="14" fill="#a07e1a"/><path d="M18 22 L8 12 L20 18 Z M46 22 L56 12 L44 18 Z" fill="#e8e0d0"/><polygon points="8,12 4,8 14,10" fill="#fff"/><polygon points="56,12 60,8 50,10" fill="#fff"/><circle cx="26" cy="26" r="2.5" fill="#ff0000"/><circle cx="38" cy="26" r="2.5" fill="#ff0000"/><ellipse cx="32" cy="32" rx="3" ry="2" fill="#3a2d18"/><path d="M24 38 L40 38" stroke="#000" stroke-width="2"/><rect x="50" y="28" width="4" height="24" fill="#3a2d18"/><polygon points="46,28 58,28 52,16" fill="#9aa0a8"/></svg>`,
+    phoenix: `<svg viewBox="0 0 64 64"><path d="M20 32 Q4 20 4 40 Q12 36 20 38 Z" fill="#ff8c00"/><path d="M44 32 Q60 20 60 40 Q52 36 44 38 Z" fill="#ff8c00"/><ellipse cx="32" cy="34" rx="12" ry="16" fill="#ff4040"/><polygon points="32,18 28,28 36,28" fill="#ff8c00"/><circle cx="28" cy="32" r="2" fill="#ffff00"/><circle cx="36" cy="32" r="2" fill="#ffff00"/><circle cx="28" cy="32" r="1" fill="#000"/><circle cx="36" cy="32" r="1" fill="#000"/><path d="M32 50 L28 60 L36 60 Z" fill="#ff8c00"/><path d="M20 14 Q24 6 32 10 Q40 6 44 14" fill="#ff8c00"/><circle cx="32" cy="36" r="2" fill="#fff" opacity="0.8"/></svg>`,
+    kraken_spawn: `<svg viewBox="0 0 64 64"><circle cx="32" cy="28" r="14" fill="#4a8c9a"/><circle cx="26" cy="26" r="3" fill="#ffff00"/><circle cx="38" cy="26" r="3" fill="#ffff00"/><circle cx="26" cy="26" r="1.5" fill="#000"/><circle cx="38" cy="26" r="1.5" fill="#000"/><path d="M18 38 Q12 50 8 58 M24 40 Q22 52 18 60 M32 42 Q32 54 32 60 M40 40 Q42 52 46 60 M46 38 Q52 50 56 58" stroke="#1a4a5b" stroke-width="3" fill="none"/><circle cx="12" cy="56" r="1.5" fill="#fff"/><circle cx="20" cy="58" r="1.5" fill="#fff"/><circle cx="44" cy="58" r="1.5" fill="#fff"/><circle cx="54" cy="56" r="1.5" fill="#fff"/></svg>`,
+    angel: `<svg viewBox="0 0 64 64"><path d="M16 28 Q2 18 4 36 Q12 32 22 30 Z" fill="#fff"/><path d="M48 28 Q62 18 60 36 Q52 32 42 30 Z" fill="#fff"/><circle cx="32" cy="22" r="10" fill="#f0d0a8"/><circle cx="32" cy="10" r="4" fill="none" stroke="#f0c75e" stroke-width="2"/><circle cx="28" cy="22" r="1.5" fill="#000"/><circle cx="36" cy="22" r="1.5" fill="#000"/><path d="M28 26 Q32 28 36 26" stroke="#000" stroke-width="1" fill="none"/><path d="M22 30 L42 30 L40 56 L24 56 Z" fill="#fff0a0"/><line x1="32" y1="32" x2="32" y2="50" stroke="#f0c75e" stroke-width="2"/><line x1="26" y1="38" x2="38" y2="38" stroke="#f0c75e" stroke-width="2"/></svg>`,
+    mech_titan: `<svg viewBox="0 0 64 64"><rect x="10" y="16" width="44" height="40" fill="#7a7a8a" stroke="#1a1a2a" stroke-width="2" rx="2"/><rect x="22" y="22" width="20" height="14" fill="#3a3a4a"/><rect x="26" y="26" width="3" height="6" fill="#ff0000"/><rect x="35" y="26" width="3" height="6" fill="#ff0000"/><rect x="18" y="38" width="28" height="4" fill="#3a3a4a"/><circle cx="18" cy="22" r="3" fill="#ff8c00"/><circle cx="46" cy="22" r="3" fill="#ff8c00"/><rect x="4" y="24" width="6" height="24" fill="#7a7a8a"/><rect x="54" y="24" width="6" height="24" fill="#7a7a8a"/><rect x="14" y="46" width="36" height="8" fill="#3a3a4a"/><circle cx="22" cy="50" r="2" fill="#ff8c00"/><circle cx="42" cy="50" r="2" fill="#ff8c00"/></svg>`,
+    swarm_queen: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="36" rx="14" ry="16" fill="#7ac74f"/><rect x="20" y="32" width="24" height="2" fill="#1a1209"/><rect x="20" y="38" width="24" height="2" fill="#1a1209"/><circle cx="32" cy="22" r="10" fill="#5ab07a"/><ellipse cx="16" cy="24" rx="8" ry="5" fill="rgba(255,255,255,0.5)" stroke="#5ab07a"/><ellipse cx="48" cy="24" rx="8" ry="5" fill="rgba(255,255,255,0.5)" stroke="#5ab07a"/><circle cx="28" cy="22" r="2" fill="#ff0000"/><circle cx="36" cy="22" r="2" fill="#ff0000"/><polygon points="22,12 26,16 20,18 M42,12 L38,16 L44,18" fill="#5ab07a"/><polygon points="32,12 28,4 36,4" fill="#f0c75e"/><polygon points="32,52 28,60 36,60" fill="#000"/></svg>`,
+    demon_archer: `<svg viewBox="0 0 64 64"><circle cx="32" cy="24" r="12" fill="#8b2e2e"/><path d="M22 18 L18 8 L26 14 M42 18 L46 8 L38 14" fill="#8b2e2e"/><circle cx="28" cy="24" r="2" fill="#ffff00"/><circle cx="36" cy="24" r="2" fill="#ffff00"/><circle cx="28" cy="24" r="1" fill="#000"/><circle cx="36" cy="24" r="1" fill="#000"/><path d="M26 30 L38 30 L36 32 L28 32 Z" fill="#fff"/><rect x="22" y="34" width="20" height="20" fill="#5b1a2a"/><path d="M6 38 Q2 32 6 26 Q10 32 6 38" stroke="#8b6914" stroke-width="2" fill="none"/><line x1="6" y1="32" x2="22" y2="32" stroke="#5a4530"/><line x1="22" y1="32" x2="18" y2="28" stroke="#ff4040" stroke-width="2"/><polygon points="22,30 24,32 22,34" fill="#ff4040"/></svg>`,
+    lava_elemental: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="38" rx="18" ry="16" fill="#ff6b00"/><polygon points="14,32 10,16 20,24 24,12 32,22 40,12 44,24 54,16 50,32" fill="#ff4040"/><circle cx="32" cy="36" r="12" fill="#5b1a1a"/><circle cx="26" cy="34" r="2" fill="#ffff00"/><circle cx="38" cy="34" r="2" fill="#ffff00"/><circle cx="32" cy="40" r="2" fill="#ffff00"/><path d="M22 44 L24 50 L20 50 Z M30 46 L32 52 L28 52 Z M40 44 L42 50 L38 50 Z" fill="#ff8c00"/><circle cx="20" cy="22" r="2" fill="#ffff00" opacity="0.7"/><circle cx="48" cy="20" r="2" fill="#ffff00" opacity="0.7"/></svg>`,
+    death_knight: `<svg viewBox="0 0 64 64"><rect x="18" y="28" width="28" height="28" fill="#3a1a5b" stroke="#1a0a3a" stroke-width="2"/><polygon points="14,28 14,16 22,22 24,8 32,18 40,8 42,22 50,16 50,28" fill="#3a1a5b"/><circle cx="32" cy="22" r="8" fill="#000"/><circle cx="28" cy="22" r="2" fill="#9b59b6"/><circle cx="36" cy="22" r="2" fill="#9b59b6"/><circle cx="28" cy="22" r="1" fill="#fff"/><circle cx="36" cy="22" r="1" fill="#fff"/><path d="M26 28 L38 28 L36 30 L28 30 Z" fill="#fff"/><line x1="32" y1="32" x2="32" y2="52" stroke="#9b59b6" stroke-width="3"/><line x1="26" y1="38" x2="38" y2="38" stroke="#9b59b6" stroke-width="3"/><polygon points="32,32 36,36 32,40 28,36" fill="#000"/></svg>`,
+    high_druid: `<svg viewBox="0 0 64 64"><path d="M16 56 L24 24 L40 24 L48 56 Z" fill="#2a5b3a"/><circle cx="32" cy="22" r="10" fill="#f0d0a8"/><path d="M22 22 Q22 10 32 8 Q42 10 42 22" fill="#5b3a20"/><circle cx="20" cy="14" r="3" fill="#5ab07a"/><circle cx="44" cy="14" r="3" fill="#5ab07a"/><circle cx="32" cy="6" r="3" fill="#5ab07a"/><circle cx="28" cy="22" r="1.5" fill="#000"/><circle cx="36" cy="22" r="1.5" fill="#000"/><rect x="46" y="20" width="2" height="36" fill="#5b3a20"/><circle cx="47" cy="20" r="4" fill="#5ab07a"/><circle cx="44" cy="18" r="2" fill="#3a8c4a"/><circle cx="50" cy="22" r="2" fill="#3a8c4a"/></svg>`,
+    wyvern: `<svg viewBox="0 0 64 64"><path d="M14 24 Q2 14 4 30 Q14 28 22 30 Z" fill="#3a3a8b"/><path d="M50 24 Q62 14 60 30 Q50 28 42 30 Z" fill="#3a3a8b"/><ellipse cx="32" cy="36" rx="12" ry="14" fill="#6b8be0"/><circle cx="32" cy="22" r="9" fill="#3a3a8b"/><polygon points="32,16 28,24 36,24" fill="#80a0ff"/><circle cx="28" cy="22" r="2" fill="#ffff00"/><circle cx="36" cy="22" r="2" fill="#ffff00"/><circle cx="28" cy="22" r="1" fill="#000"/><circle cx="36" cy="22" r="1" fill="#000"/><path d="M28 26 L36 26 L34 28 L30 28 Z" fill="#fff"/><path d="M32 50 L28 60 L36 60 Z" fill="#3a3a8b"/><path d="M48 50 L56 58 L50 56" stroke="#3a3a8b" stroke-width="2" fill="#3a3a8b"/></svg>`,
+    gargoyle: `<svg viewBox="0 0 64 64"><path d="M8 28 Q2 18 12 16 L20 22 Z" fill="#5a5a6b"/><path d="M56 28 Q62 18 52 16 L44 22 Z" fill="#5a5a6b"/><rect x="18" y="28" width="28" height="28" fill="#8b6b8b" stroke="#3a3a4a" stroke-width="2"/><circle cx="32" cy="22" r="12" fill="#7a5a7a"/><polygon points="22,14 26,20 18,18 M42,14 L38,20 L46,18" fill="#7a5a7a"/><circle cx="28" cy="22" r="2.5" fill="#ff0000"/><circle cx="36" cy="22" r="2.5" fill="#ff0000"/><path d="M22 30 L42 30 L40 32 L24 32 Z" fill="#000"/><path d="M26 30 L26 33 M30 30 L30 33 M34 30 L34 33 M38 30 L38 33" stroke="#fff" stroke-width="1.5"/></svg>`,
+
+    // ===== LEGENDARY =====
+    ancient_dragon: `<svg viewBox="0 0 64 64"><path d="M10 28 Q-4 16 4 36 Q16 32 22 34 Z" fill="#5b1a5b"/><path d="M54 28 Q68 16 60 36 Q48 32 42 34 Z" fill="#5b1a5b"/><ellipse cx="32" cy="38" rx="14" ry="16" fill="#9b59b6"/><circle cx="32" cy="22" r="12" fill="#8b3a8b"/><polygon points="32,12 26,22 38,22" fill="#f0c75e"/><polygon points="22,18 16,12 24,16 M42,18 L48,12 L40,16" fill="#f0c75e"/><circle cx="26" cy="22" r="2.5" fill="#ffff00"/><circle cx="38" cy="22" r="2.5" fill="#ffff00"/><circle cx="26" cy="22" r="1.2" fill="#000"/><circle cx="38" cy="22" r="1.2" fill="#000"/><path d="M24 30 L40 30 L36 34 L28 34 Z" fill="#fff"/><path d="M26 32 L26 36 M30 32 L30 36 M34 32 L34 36 M38 32 L38 36" stroke="#000" stroke-width="1.5"/><circle cx="32" cy="42" r="3" fill="#f0c75e" opacity="0.8"/></svg>`,
+    paladin_king: `<svg viewBox="0 0 64 64"><rect x="18" y="28" width="28" height="28" fill="#f0c75e" stroke="#8b6914" stroke-width="2"/><polygon points="14,28 14,12 20,20 24,8 32,18 40,8 44,20 50,12 50,28" fill="#f0c75e" stroke="#8b6914" stroke-width="2"/><circle cx="20" cy="10" r="2" fill="#ff4040"/><circle cx="32" cy="6" r="2" fill="#ff4040"/><circle cx="44" cy="10" r="2" fill="#ff4040"/><circle cx="32" cy="24" r="8" fill="#f0d0a8"/><circle cx="28" cy="24" r="1.5" fill="#000"/><circle cx="36" cy="24" r="1.5" fill="#000"/><path d="M28 28 Q32 31 36 28" stroke="#000" stroke-width="1" fill="none"/><line x1="32" y1="32" x2="32" y2="52" stroke="#fff" stroke-width="3"/><line x1="24" y1="38" x2="40" y2="38" stroke="#fff" stroke-width="3"/></svg>`,
+    demon_lord: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="#5b1a1a"/><polygon points="14,18 6,4 22,14 M50,18 L58,4 L42,14" fill="#5b1a1a"/><polygon points="20,18 14,8 24,16 M44,18 L50,8 L40,16" fill="#a83232"/><circle cx="26" cy="28" r="3" fill="#ff0000"/><circle cx="38" cy="28" r="3" fill="#ff0000"/><circle cx="26" cy="28" r="1.5" fill="#ffff00"/><circle cx="38" cy="28" r="1.5" fill="#ffff00"/><path d="M22 36 L42 36 L40 42 L24 42 Z" fill="#000"/><path d="M24 36 L24 40 M28 36 L28 40 M32 36 L32 40 M36 36 L36 40 M40 36 L40 40" stroke="#fff" stroke-width="1.5"/><path d="M14 50 Q8 56 12 60 M50 50 Q56 56 52 60" stroke="#5b1a1a" stroke-width="3" fill="none"/></svg>`,
+    arch_lich: `<svg viewBox="0 0 64 64"><circle cx="32" cy="20" r="14" fill="#e8e0d0"/><polygon points="18,12 14,4 22,10 M46,12 L50,4 L42,10" fill="#9b59b6"/><circle cx="26" cy="20" r="4" fill="#000"/><circle cx="38" cy="20" r="4" fill="#000"/><circle cx="26" cy="20" r="2.5" fill="#9b59b6"/><circle cx="38" cy="20" r="2.5" fill="#9b59b6"/><circle cx="26" cy="20" r="1" fill="#fff"/><circle cx="38" cy="20" r="1" fill="#fff"/><path d="M22 30 L42 30 L40 36 L24 36 Z" fill="#000"/><path d="M24 30 L24 35 M28 30 L28 35 M32 30 L32 35 M36 30 L36 35 M40 30 L40 35" stroke="#fff" stroke-width="1.5"/><path d="M14 40 L22 56 L42 56 L50 40 Z" fill="#1a1a5b"/><circle cx="32" cy="46" r="4" fill="#9b59b6"/><circle cx="32" cy="46" r="2" fill="#fff"/></svg>`,
+    titan_giant: `<svg viewBox="0 0 64 64"><rect x="8" y="20" width="48" height="40" fill="#bababa" stroke="#3a3a5b" stroke-width="2"/><rect x="14" y="14" width="36" height="14" fill="#9aa0a8"/><rect x="20" y="18" width="6" height="8" fill="#ff8c00"/><rect x="38" y="18" width="6" height="8" fill="#ff8c00"/><rect x="24" y="32" width="16" height="3" fill="#3a3a5b"/><rect x="14" y="40" width="36" height="6" fill="#3a3a5b"/><rect x="0" y="28" width="8" height="24" fill="#bababa"/><rect x="56" y="28" width="8" height="24" fill="#bababa"/><circle cx="4" cy="34" r="2" fill="#ff8c00"/><circle cx="60" cy="34" r="2" fill="#ff8c00"/></svg>`,
+    leviathan: `<svg viewBox="0 0 64 64"><path d="M2 32 Q16 16 32 28 Q48 16 62 32 Q48 48 32 36 Q16 48 2 32" fill="#4a8cd0"/><path d="M8 32 Q20 22 32 30 Q44 22 56 32" stroke="#1a2a5b" stroke-width="2" fill="none"/><circle cx="14" cy="32" r="3" fill="#ffff00"/><circle cx="14" cy="32" r="1.5" fill="#000"/><circle cx="50" cy="32" r="3" fill="#ffff00"/><circle cx="50" cy="32" r="1.5" fill="#000"/><path d="M20 36 L24 40 L28 36 L32 40 L36 36 L40 40 L44 36" stroke="#fff" stroke-width="2" fill="none"/><path d="M32 16 Q28 4 32 0 Q36 4 32 16" fill="#4a8cd0"/></svg>`,
+    seraphim: `<svg viewBox="0 0 64 64"><path d="M14 24 Q-2 12 0 36 Q12 30 22 28 Z M50 24 Q66 12 64 36 Q52 30 42 28 Z" fill="#fff"/><path d="M16 36 Q4 28 4 44 Q16 40 22 38 M48 36 Q60 28 60 44 Q48 40 42 38" fill="#fff0a0"/><circle cx="32" cy="20" r="9" fill="#f0d0a8"/><circle cx="32" cy="6" r="5" fill="none" stroke="#fff0a0" stroke-width="2"/><circle cx="32" cy="6" r="3" fill="none" stroke="#f0c75e"/><circle cx="28" cy="20" r="1.5" fill="#80a0ff"/><circle cx="36" cy="20" r="1.5" fill="#80a0ff"/><path d="M22 30 L42 30 L40 56 L24 56 Z" fill="#fff0a0"/><line x1="32" y1="32" x2="32" y2="50" stroke="#f0c75e" stroke-width="3"/><line x1="24" y1="38" x2="40" y2="38" stroke="#f0c75e" stroke-width="3"/></svg>`,
+    hive_overlord: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="40" rx="18" ry="18" fill="#7ac74f"/><rect x="18" y="34" width="28" height="2" fill="#1a1209"/><rect x="18" y="42" width="28" height="2" fill="#1a1209"/><circle cx="32" cy="22" r="12" fill="#5ab07a"/><ellipse cx="14" cy="24" rx="9" ry="6" fill="rgba(255,255,255,0.4)" stroke="#5ab07a"/><ellipse cx="50" cy="24" rx="9" ry="6" fill="rgba(255,255,255,0.4)" stroke="#5ab07a"/><circle cx="26" cy="20" r="2" fill="#ff0000"/><circle cx="38" cy="20" r="2" fill="#ff0000"/><circle cx="22" cy="24" r="1.5" fill="#ff0000"/><circle cx="42" cy="24" r="1.5" fill="#ff0000"/><polygon points="22,8 26,14 18,12 M42,8 L38,14 L46,12" fill="#5ab07a"/><polygon points="32,10 28,2 36,2" fill="#f0c75e"/><polygon points="32,54 28,62 36,62" fill="#000"/><polygon points="18,52 14,60 22,56 M46,52 L50,60 L42,56" fill="#7ac74f"/></svg>`,
+    shadowblade: `<svg viewBox="0 0 64 64"><path d="M20 56 Q20 24 32 14 Q44 24 44 56 Z" fill="#1a1a2a"/><path d="M24 56 Q24 28 32 18 Q40 28 40 56 Z" fill="#2a2a3a"/><circle cx="28" cy="26" r="3" fill="#9b59b6"/><circle cx="36" cy="26" r="3" fill="#9b59b6"/><circle cx="28" cy="26" r="1.5" fill="#fff"/><circle cx="36" cy="26" r="1.5" fill="#fff"/><line x1="20" y1="36" x2="8" y2="24" stroke="#9b59b6" stroke-width="3"/><polygon points="8,24 4,20 12,18" fill="#fff"/><line x1="44" y1="36" x2="56" y2="24" stroke="#9b59b6" stroke-width="3"/><polygon points="56,24 60,20 52,18" fill="#fff"/></svg>`,
+    storm_god: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="22" fill="rgba(128,160,255,0.3)"/><polygon points="32,4 24,28 36,28 26,52 38,30 30,30 38,8" fill="#ffff80" stroke="#f0c75e" stroke-width="2"/><circle cx="14" cy="20" r="3" fill="#80a0ff" opacity="0.6"/><circle cx="50" cy="20" r="3" fill="#80a0ff" opacity="0.6"/><circle cx="14" cy="44" r="3" fill="#80a0ff" opacity="0.6"/><circle cx="50" cy="44" r="3" fill="#80a0ff" opacity="0.6"/><circle cx="32" cy="32" r="8" fill="#fff"/><circle cx="32" cy="32" r="4" fill="#80a0ff"/><circle cx="32" cy="32" r="2" fill="#fff"/></svg>`,
+
+    // ===== MYTHIC =====
+    world_serpent: `<svg viewBox="0 0 64 64"><path d="M4 32 Q10 16 24 24 Q38 32 24 40 Q10 48 16 32" stroke="#1a5b3a" stroke-width="6" fill="none"/><path d="M4 32 Q10 16 24 24 Q38 32 24 40 Q10 48 16 32" stroke="#5a9c5a" stroke-width="3" fill="none"/><circle cx="48" cy="28" r="14" fill="#1a5b3a"/><polygon points="48,16 42,28 54,28" fill="#5a9c5a"/><circle cx="42" cy="28" r="3" fill="#ff0000"/><circle cx="54" cy="28" r="3" fill="#ff0000"/><circle cx="42" cy="28" r="1.5" fill="#ffff00"/><circle cx="54" cy="28" r="1.5" fill="#ffff00"/><polygon points="44,36 52,36 50,42 46,42" fill="#fff"/><path d="M44 38 L44 41 M48 38 L48 42 M52 38 L52 41" stroke="#000" stroke-width="1.5"/><polygon points="60,32 64,28 64,36" fill="#ff4040"/></svg>`,
+    apocalypse: `<svg viewBox="0 0 64 64"><path d="M6 50 Q14 38 24 42 Q30 36 32 30 Q34 36 40 42 Q50 38 58 50 L52 56 L12 56 Z" fill="#5b1a1a"/><circle cx="32" cy="24" r="11" fill="#000"/><polygon points="22,16 18,8 26,12 M42,16 L46,8 L38,12" fill="#000"/><circle cx="28" cy="24" r="3" fill="#ff0000"/><circle cx="36" cy="24" r="3" fill="#ff0000"/><circle cx="28" cy="24" r="1.5" fill="#ffff00"/><circle cx="36" cy="24" r="1.5" fill="#ffff00"/><path d="M24 30 L40 30 L38 34 L26 34 Z" fill="#fff"/><path d="M26 30 L26 34 M30 30 L30 34 M34 30 L34 34 M38 30 L38 34" stroke="#000" stroke-width="1.5"/><circle cx="14" cy="50" r="3" fill="#3a3a3a"/><circle cx="50" cy="50" r="3" fill="#3a3a3a"/></svg>`,
+    godking: `<svg viewBox="0 0 64 64"><polygon points="10,20 16,8 22,16 32,4 42,16 48,8 54,20 50,28 14,28" fill="#fff0a0" stroke="#8b6914" stroke-width="2"/><circle cx="16" cy="14" r="2" fill="#ff0000"/><circle cx="32" cy="8" r="3" fill="#ff0000"/><circle cx="48" cy="14" r="2" fill="#ff0000"/><circle cx="32" cy="32" r="11" fill="#f0d0a8"/><circle cx="28" cy="30" r="2" fill="#80a0ff"/><circle cx="36" cy="30" r="2" fill="#80a0ff"/><circle cx="28" cy="30" r="1" fill="#fff"/><circle cx="36" cy="30" r="1" fill="#fff"/><path d="M28 36 Q32 39 36 36" stroke="#000" stroke-width="1" fill="none"/><rect x="20" y="40" width="24" height="20" fill="#f0c75e" stroke="#8b6914" stroke-width="2"/><line x1="32" y1="42" x2="32" y2="58" stroke="#fff" stroke-width="3"/><line x1="26" y1="48" x2="38" y2="48" stroke="#fff" stroke-width="3"/></svg>`
+};
+
+function getBeastArtHTML(beastId) {
+    return BEAST_ART[beastId] ? `<div class="beast-art">${BEAST_ART[beastId]}</div>` : `<div style="font-size:1.5em">⚔</div>`;
+}
+
+/* ============================================================
+   ===== FLAVOR TEXT FOR TOOLTIPS =============================
+   ============================================================ */
+const BEAST_FLAVOR = {
+    goblin_warrior: "A scrappy raider with a rusty blade.",
+    forest_wolf: "Hunts in packs through the deep woods.",
+    archer: "Bones knit by dark sorcery, eyes glow with malice.",
+    rat_king: "Plague follows in its filthy wake.",
+    kobold: "Small but treacherous, strikes from shadows.",
+    bee_drone: "One of many. The swarm is mighty.",
+    tide_pup: "Playful but bites surprisingly hard.",
+    acolyte: "Faith is their first weapon.",
+    orc_brute: "Smash first, smash again.",
+    bear_warrior: "A bear trained for war is a terror to behold.",
+    wizard: "Mastered the secrets of the arcane.",
+    fire_imp: "A spark of the abyss, gleeful and deadly.",
+    eagle_scout: "Spots prey from a mile high.",
+    ghoul: "Hungers eternally for the flesh of the living.",
+    spider: "Its venom rots the bones.",
+    merfolk: "Spear-master of the deep currents.",
+    paladin: "Sworn to defend the innocent unto death.",
+    iron_golem: "Forged in fire, animated by ancient rune-magic.",
+    storm_sprite: "A spark of pure tempest given form.",
+    shadow: "It moves between heartbeats.",
+    dragon_knight: "Bonded to dragons since birth.",
+    lich_lord: "Death is merely a doorway.",
+    minotaur: "Lord of the labyrinth.",
+    phoenix: "From its own ashes, reborn.",
+    kraken_spawn: "The deep waters birth nightmares.",
+    angel: "Mercy in one hand, judgment in the other.",
+    mech_titan: "Built to outlast empires.",
+    swarm_queen: "Her brood numbers in the thousands.",
+    demon_archer: "Each arrow drips with infernal venom.",
+    lava_elemental: "A walking eruption.",
+    death_knight: "Cursed knight bound to undying service.",
+    high_druid: "The forest answers his call.",
+    wyvern: "Lesser kin of dragons, yet still terrifying.",
+    gargoyle: "Statue by day, terror by night.",
+    ancient_dragon: "Old as the mountains themselves.",
+    paladin_king: "Crowned by the gods of light.",
+    demon_lord: "His name burns lesser tongues.",
+    arch_lich: "Has plotted his return for a thousand years.",
+    titan_giant: "A walking mountain of war.",
+    leviathan: "Whole ships vanish in his wake.",
+    seraphim: "Heaven's wrath given wings.",
+    hive_overlord: "Commands an empire of chitin.",
+    shadowblade: "You will never see the strike that ends you.",
+    storm_god: "Storms answer to his every gesture.",
+    world_serpent: "Coiled around the very root of the world.",
+    apocalypse: "He rides ahead of the end.",
+    godking: "Made gods kneel and called it justice."
+};
+/* ============================================================
+   ===== EXPANDED BEAST DATABASE — 47 BEASTS ==================
    ============================================================ */
 const BEAST_DATABASE = [
-    // COMMON
-    { id: 'goblin_warrior', name: 'Goblin Warrior', icon: '👹', rarity: 'common', cost: 3, hp: 60, atk: 12, role: 'front', types: ['Goblin','Warrior'], color: '#3a6b2a', border: '#5a8c3a' },
-    { id: 'forest_wolf', name: 'Forest Wolf', icon: '🐺', rarity: 'common', cost: 3, hp: 50, atk: 14, role: 'front', types: ['Beast','Warrior'], color: '#4a3a20', border: '#8b6914' },
-    { id: 'archer', name: 'Skeleton Archer', icon: '🏹', rarity: 'common', cost: 3, hp: 35, atk: 16, role: 'back', types: ['Undead','Ranger'], color: '#3a2a30', border: '#6b5b8c' },
-    { id: 'rat_king', name: 'Plague Rat', icon: '🐀', rarity: 'common', cost: 3, hp: 40, atk: 10, role: 'back', types: ['Beast','Mage'], color: '#3a3a3a', border: '#6b6b6b' },
+    // ========== COMMON (8) ==========
+    { id:'goblin_warrior', name:'Goblin Warrior', icon:'👹', rarity:'common', cost:3, hp:60, atk:12, role:'front', types:['Goblin','Warrior'], color:'#3a6b2a', border:'#5a8c3a' },
+    { id:'forest_wolf', name:'Forest Wolf', icon:'🐺', rarity:'common', cost:3, hp:50, atk:14, role:'front', types:['Beast','Warrior'], color:'#4a3a20', border:'#8b6914' },
+    { id:'archer', name:'Skeleton Archer', icon:'🏹', rarity:'common', cost:3, hp:35, atk:16, role:'back', types:['Undead','Ranger'], color:'#3a2a30', border:'#6b5b8c' },
+    { id:'rat_king', name:'Plague Rat', icon:'🐀', rarity:'common', cost:3, hp:40, atk:10, role:'back', types:['Beast','Mage'], color:'#3a3a3a', border:'#6b6b6b' },
+    { id:'kobold', name:'Kobold Sneak', icon:'🦎', rarity:'common', cost:3, hp:35, atk:18, role:'back', types:['Goblin','Assassin'], color:'#5b3a1a', border:'#a07020', ability:'backline' },
+    { id:'bee_drone', name:'Bee Drone', icon:'🐝', rarity:'common', cost:3, hp:30, atk:12, role:'back', types:['Insect','Ranger'], color:'#5b4a1a', border:'#f0c75e' },
+    { id:'tide_pup', name:'Tide Pup', icon:'🦦', rarity:'common', cost:3, hp:55, atk:11, role:'front', types:['Aquatic','Beast'], color:'#1a3a5b', border:'#4a7ba0' },
+    { id:'acolyte', name:'Holy Acolyte', icon:'🙏', rarity:'common', cost:3, hp:45, atk:8, role:'back', types:['Human','Holy'], color:'#5b5b3a', border:'#f0e6c0', ability:'heal' },
 
-    // RARE
-    { id: 'orc_brute', name: 'Orc Brute', icon: '👺', rarity: 'rare', cost: 6, hp: 110, atk: 20, role: 'front', types: ['Goblin','Warrior'], color: '#2a5b4a', border: '#4a8c7a' },
-    { id: 'bear_warrior', name: 'War Bear', icon: '🐻', rarity: 'rare', cost: 6, hp: 130, atk: 18, role: 'front', types: ['Beast','Warrior'], color: '#5b3a20', border: '#8b6914' },
-    { id: 'wizard', name: 'Arcane Wizard', icon: '🧙', rarity: 'rare', cost: 6, hp: 55, atk: 28, role: 'back', types: ['Human','Mage'], color: '#1a2a5b', border: '#4a6b8a' },
-    { id: 'fire_imp', name: 'Fire Imp', icon: '🔥', rarity: 'rare', cost: 6, hp: 60, atk: 24, role: 'back', types: ['Demon','Mage'], color: '#8b2e2e', border: '#ff6b00' },
-    { id: 'eagle_scout', name: 'Sky Eagle', icon: '🦅', rarity: 'rare', cost: 6, hp: 50, atk: 26, role: 'back', types: ['Beast','Ranger'], color: '#5b4a20', border: '#d4af6e' },
+    // ========== RARE (12) ==========
+    { id:'orc_brute', name:'Orc Brute', icon:'👺', rarity:'rare', cost:6, hp:110, atk:20, role:'front', types:['Goblin','Warrior'], color:'#2a5b4a', border:'#4a8c7a' },
+    { id:'bear_warrior', name:'War Bear', icon:'🐻', rarity:'rare', cost:6, hp:130, atk:18, role:'front', types:['Beast','Warrior'], color:'#5b3a20', border:'#8b6914' },
+    { id:'wizard', name:'Arcane Wizard', icon:'🧙', rarity:'rare', cost:6, hp:55, atk:28, role:'back', types:['Human','Mage'], color:'#1a2a5b', border:'#4a6b8a' },
+    { id:'fire_imp', name:'Fire Imp', icon:'🔥', rarity:'rare', cost:6, hp:60, atk:24, role:'back', types:['Demon','Elemental'], color:'#8b2e2e', border:'#ff6b00' },
+    { id:'eagle_scout', name:'Sky Eagle', icon:'🦅', rarity:'rare', cost:6, hp:50, atk:26, role:'back', types:['Beast','Ranger'], color:'#5b4a20', border:'#d4af6e' },
+    { id:'ghoul', name:'Hungry Ghoul', icon:'🧟', rarity:'rare', cost:6, hp:90, atk:22, role:'front', types:['Undead','Warrior'], color:'#3a4a2a', border:'#6b8b5a' },
+    { id:'spider', name:'Giant Spider', icon:'🕷️', rarity:'rare', cost:6, hp:70, atk:20, role:'front', types:['Insect','Assassin'], color:'#2a2a2a', border:'#5b1a5b', ability:'poison' },
+    { id:'merfolk', name:'Merfolk Spear', icon:'🧜', rarity:'rare', cost:6, hp:75, atk:22, role:'back', types:['Aquatic','Warrior'], color:'#1a4a5b', border:'#4a8c9a' },
+    { id:'paladin', name:'Knight Paladin', icon:'⚔️', rarity:'rare', cost:6, hp:120, atk:18, role:'front', types:['Human','Holy','Warrior'], color:'#5b5b1a', border:'#f0c75e', ability:'taunt' },
+    { id:'iron_golem', name:'Iron Golem', icon:'🗿', rarity:'rare', cost:6, hp:150, atk:14, role:'front', types:['Construct','Warrior'], color:'#3a3a4a', border:'#7a7a8a' },
+    { id:'storm_sprite', name:'Storm Sprite', icon:'⚡', rarity:'rare', cost:6, hp:55, atk:26, role:'back', types:['Elemental','Mage'], color:'#3a3a8b', border:'#6b8be0' },
+    { id:'shadow', name:'Shadow Stalker', icon:'👤', rarity:'rare', cost:6, hp:60, atk:28, role:'back', types:['Undead','Assassin'], color:'#1a1a2a', border:'#4a4a6b', ability:'backline' },
 
-    // EPIC
-    { id: 'dragon_knight', name: 'Dragon Knight', icon: '🛡️', rarity: 'epic', cost: 12, hp: 200, atk: 32, role: 'front', types: ['Dragon','Warrior'], color: '#5b2a2a', border: '#a83232' },
-    { id: 'lich_lord', name: 'Lich Lord', icon: '💀', rarity: 'epic', cost: 12, hp: 90, atk: 42, role: 'back', types: ['Undead','Mage'], color: '#3a1a5b', border: '#9b59b6' },
-    { id: 'minotaur', name: 'Minotaur', icon: '🐂', rarity: 'epic', cost: 12, hp: 240, atk: 28, role: 'front', types: ['Beast','Warrior'], color: '#3a2a14', border: '#8b6914' },
-    { id: 'phoenix', name: 'Phoenix', icon: '🦃', rarity: 'epic', cost: 12, hp: 130, atk: 40, role: 'back', types: ['Beast','Mage'], color: '#8b2e2e', border: '#ff8c00' },
+    // ========== EPIC (14) ==========
+    { id:'dragon_knight', name:'Dragon Knight', icon:'🛡️', rarity:'epic', cost:12, hp:200, atk:32, role:'front', types:['Dragon','Warrior','Human'], color:'#5b2a2a', border:'#a83232' },
+    { id:'lich_lord', name:'Lich Lord', icon:'💀', rarity:'epic', cost:12, hp:90, atk:42, role:'back', types:['Undead','Mage'], color:'#3a1a5b', border:'#9b59b6' },
+    { id:'minotaur', name:'Minotaur', icon:'🐂', rarity:'epic', cost:12, hp:240, atk:28, role:'front', types:['Beast','Warrior'], color:'#3a2a14', border:'#8b6914', ability:'cleave' },
+    { id:'phoenix', name:'Phoenix', icon:'🦃', rarity:'epic', cost:12, hp:130, atk:40, role:'back', types:['Beast','Elemental','Mage'], color:'#8b2e2e', border:'#ff8c00' },
+    { id:'kraken_spawn', name:'Kraken Spawn', icon:'🐙', rarity:'epic', cost:12, hp:180, atk:34, role:'front', types:['Aquatic','Beast'], color:'#1a3a5b', border:'#4a8c9a', ability:'cleave' },
+    { id:'angel', name:'Battle Angel', icon:'😇', rarity:'epic', cost:12, hp:140, atk:36, role:'back', types:['Holy','Human','Mage'], color:'#5b5b3a', border:'#f0e6c0', ability:'heal' },
+    { id:'mech_titan', name:'Mech Titan', icon:'🤖', rarity:'epic', cost:12, hp:260, atk:30, role:'front', types:['Construct','Warrior'], color:'#3a3a4a', border:'#9b9bab' },
+    { id:'swarm_queen', name:'Swarm Queen', icon:'🦟', rarity:'epic', cost:12, hp:110, atk:38, role:'back', types:['Insect','Mage'], color:'#3a5b1a', border:'#7ac74f', ability:'poison' },
+    { id:'demon_archer', name:'Demon Archer', icon:'🏹', rarity:'epic', cost:12, hp:100, atk:44, role:'back', types:['Demon','Ranger'], color:'#5b1a2a', border:'#ff4040', ability:'backline' },
+    { id:'lava_elemental', name:'Lava Elemental', icon:'🌋', rarity:'epic', cost:12, hp:170, atk:36, role:'front', types:['Elemental','Construct'], color:'#5b1a1a', border:'#ff6b00', ability:'cleave' },
+    { id:'death_knight', name:'Death Knight', icon:'⚰️', rarity:'epic', cost:12, hp:190, atk:38, role:'front', types:['Undead','Warrior'], color:'#2a1a3a', border:'#6b3a8b' },
+    { id:'high_druid', name:'High Druid', icon:'🌿', rarity:'epic', cost:12, hp:120, atk:32, role:'back', types:['Human','Mage','Holy'], color:'#2a5b3a', border:'#5ab07a', ability:'heal' },
+    { id:'wyvern', name:'Storm Wyvern', icon:'🦂', rarity:'epic', cost:12, hp:150, atk:42, role:'back', types:['Dragon','Beast','Ranger'], color:'#3a3a8b', border:'#6b8be0' },
+    { id:'gargoyle', name:'Stone Gargoyle', icon:'🗿', rarity:'epic', cost:12, hp:220, atk:26, role:'front', types:['Construct','Demon'], color:'#3a3a4a', border:'#8b6b8b', ability:'taunt' },
 
-    // LEGENDARY
-    { id: 'ancient_dragon', name: 'Ancient Dragon', icon: '🐉', rarity: 'legendary', cost: 24, hp: 350, atk: 55, role: 'front', types: ['Dragon','Mage'], color: '#5b1a5b', border: '#f0c75e' },
-    { id: 'paladin_king', name: 'Paladin King', icon: '👑', rarity: 'legendary', cost: 24, hp: 320, atk: 50, role: 'front', types: ['Human','Warrior'], color: '#8b6914', border: '#f0c75e' },
-    { id: 'demon_lord', name: 'Demon Lord', icon: '😈', rarity: 'legendary', cost: 24, hp: 280, atk: 65, role: 'back', types: ['Demon','Mage'], color: '#5b1a1a', border: '#ff0000' }
+    // ========== LEGENDARY (10) ==========
+    { id:'ancient_dragon', name:'Ancient Dragon', icon:'🐉', rarity:'legendary', cost:24, hp:350, atk:55, role:'front', types:['Dragon','Mage','Elemental'], color:'#5b1a5b', border:'#f0c75e' },
+    { id:'paladin_king', name:'Paladin King', icon:'👑', rarity:'legendary', cost:24, hp:320, atk:50, role:'front', types:['Human','Warrior','Holy'], color:'#8b6914', border:'#f0c75e', ability:'taunt' },
+    { id:'demon_lord', name:'Demon Lord', icon:'😈', rarity:'legendary', cost:24, hp:280, atk:65, role:'back', types:['Demon','Mage'], color:'#5b1a1a', border:'#ff0000' },
+    { id:'arch_lich', name:'Arch-Lich', icon:'☠️', rarity:'legendary', cost:24, hp:200, atk:70, role:'back', types:['Undead','Mage','Elemental'], color:'#1a1a5b', border:'#9b59b6', ability:'cleave' },
+    { id:'titan_giant', name:'Titan Giant', icon:'🗻', rarity:'legendary', cost:24, hp:500, atk:42, role:'front', types:['Construct','Warrior','Elemental'], color:'#3a3a5b', border:'#bababa', ability:'taunt' },
+    { id:'leviathan', name:'Leviathan', icon:'🐳', rarity:'legendary', cost:24, hp:380, atk:52, role:'front', types:['Aquatic','Beast','Dragon'], color:'#1a2a5b', border:'#4a8cd0', ability:'cleave' },
+    { id:'seraphim', name:'Seraphim', icon:'👼', rarity:'legendary', cost:24, hp:260, atk:60, role:'back', types:['Holy','Mage'], color:'#5b5b1a', border:'#fff0a0', ability:'heal' },
+    { id:'hive_overlord', name:'Hive Overlord', icon:'🪲', rarity:'legendary', cost:24, hp:240, atk:58, role:'back', types:['Insect','Demon','Mage'], color:'#2a5b1a', border:'#7ac74f', ability:'poison' },
+    { id:'shadowblade', name:'Shadowblade Master', icon:'🗡️', rarity:'legendary', cost:24, hp:200, atk:75, role:'back', types:['Undead','Assassin'], color:'#1a1a2a', border:'#9b59b6', ability:'backline' },
+    { id:'storm_god', name:'Storm Avatar', icon:'⛈️', rarity:'legendary', cost:24, hp:280, atk:62, role:'back', types:['Elemental','Mage','Holy'], color:'#3a3a8b', border:'#80a0ff' },
+
+    // ========== MYTHIC (3) — boss-tier ==========
+    { id:'world_serpent', name:'World Serpent', icon:'🐍', rarity:'mythic', cost:50, hp:600, atk:80, role:'front', types:['Dragon','Aquatic','Beast'], color:'#1a5b3a', border:'#ff4040', ability:'cleave' },
+    { id:'apocalypse', name:'Apocalypse Rider', icon:'🏇', rarity:'mythic', cost:50, hp:450, atk:100, role:'front', types:['Undead','Demon','Warrior'], color:'#5b1a1a', border:'#ff4040', ability:'cleave' },
+    { id:'godking', name:'Godking Aurelius', icon:'🌟', rarity:'mythic', cost:50, hp:550, atk:85, role:'front', types:['Holy','Human','Warrior','Dragon'], color:'#8b6914', border:'#fff0a0', ability:'taunt' }
 ];
 
 /* ============================================================
-   ===== SYNERGY DEFINITIONS ==================================
+   ===== ITEMS ================================================
    ============================================================ */
-const SYNERGIES = {
-    'Goblin':   { tiers: [{n:2,bonus:'+20% ATK'},{n:4,bonus:'+50% ATK'}], stat: 'atk', mult: [1.2, 1.5] },
-    'Beast':    { tiers: [{n:2,bonus:'+15% HP'},{n:4,bonus:'+40% HP'}], stat: 'hp', mult: [1.15, 1.4] },
-    'Undead':   { tiers: [{n:2,bonus:'Lifesteal 25%'},{n:4,bonus:'Lifesteal 50%'}], stat: 'lifesteal', mult: [0.25, 0.5] },
-    'Demon':    { tiers: [{n:2,bonus:'+30% Crit'},{n:4,bonus:'+70% Crit'}], stat: 'crit', mult: [0.3, 0.7] },
-    'Dragon':   { tiers: [{n:2,bonus:'+25% ALL Stats'}], stat: 'all', mult: [1.25] },
-    'Human':    { tiers: [{n:2,bonus:'+20% HP & ATK'}], stat: 'hpAtk', mult: [1.2] },
-    'Warrior':  { tiers: [{n:2,bonus:'+30% Armor'},{n:4,bonus:'+60% Armor'}], stat: 'armor', mult: [0.3, 0.6] },
-    'Mage':     { tiers: [{n:2,bonus:'+30% Spell Power'},{n:4,bonus:'+70% Spell Power'}], stat: 'spell', mult: [1.3, 1.7] },
-    'Ranger':   { tiers: [{n:2,bonus:'+40% Crit Damage'}], stat: 'critDmg', mult: [1.4] }
-};
+const ITEM_DATABASE = [
+    { id:'blade', name:'Sharp Blade', icon:'🗡️', desc:'+30% ATK', effect:{atk:1.3} },
+    { id:'shield', name:'Tower Shield', icon:'🛡️', desc:'+50% HP, Taunt', effect:{hp:1.5, taunt:true} },
+    { id:'ring', name:'Ring of Power', icon:'💍', desc:'+25% Crit', effect:{crit:0.25} },
+    { id:'vial', name:'Lifesteal Vial', icon:'🧪', desc:'30% Lifesteal', effect:{lifesteal:0.3} },
+    { id:'boots', name:'Storm Boots', icon:'👢', desc:'Attacks first', effect:{firstStrike:true, atk:1.1} },
+    { id:'amulet', name:'Flame Amulet', icon:'🔥', desc:'Cleave damage', effect:{cleave:true, atk:1.15} },
+    { id:'charm', name:'Druid Charm', icon:'🌿', desc:'Regen 5 HP/tick', effect:{regen:5} },
+    { id:'dagger', name:'Poison Dagger', icon:'☠️', desc:'Inflicts poison', effect:{poison:true} },
+    { id:'orb', name:'Mage Orb', icon:'🔮', desc:'+40% ATK (Mages)', effect:{mageAtk:1.4} },
+    { id:'crown', name:'Crown of Kings', icon:'👑', desc:'+25% all stats', effect:{atk:1.25, hp:1.25} },
+    { id:'wings', name:'Phoenix Wings', icon:'🪶', desc:'Revive 50% HP once', effect:{revive:true} },
+    { id:'tome', name:'Spell Tome', icon:'📕', desc:'+20% Crit Dmg', effect:{critDmg:0.4} }
+];
 
 /* ============================================================
-   ===== WAVE DEFINITIONS =====================================
+   ===== SYNERGIES — Expanded with tiers ======================
    ============================================================ */
+const SYNERGIES = {
+    'Goblin':   { tiers:[{n:2,bonus:'+20% ATK'},{n:4,bonus:'+50% ATK'},{n:6,bonus:'+100% ATK'}], stat:'atk', mult:[1.2,1.5,2.0] },
+    'Beast':    { tiers:[{n:2,bonus:'+15% HP'},{n:4,bonus:'+40% HP'},{n:6,bonus:'+80% HP'}], stat:'hp', mult:[1.15,1.4,1.8] },
+    'Undead':   { tiers:[{n:2,bonus:'Lifesteal 25%'},{n:4,bonus:'Lifesteal 50%'},{n:6,bonus:'Lifesteal 80%'}], stat:'lifesteal', mult:[0.25,0.5,0.8] },
+    'Demon':    { tiers:[{n:2,bonus:'+30% Crit'},{n:4,bonus:'+70% Crit'},{n:6,bonus:'+100% Crit'}], stat:'crit', mult:[0.3,0.7,1.0] },
+    'Dragon':   { tiers:[{n:2,bonus:'+25% ALL Stats'},{n:3,bonus:'+50% ALL Stats'}], stat:'all', mult:[1.25,1.5] },
+    'Human':    { tiers:[{n:2,bonus:'+20% HP & ATK'},{n:4,bonus:'+45% HP & ATK'}], stat:'hpAtk', mult:[1.2,1.45] },
+    'Warrior':  { tiers:[{n:2,bonus:'+30% Armor'},{n:4,bonus:'+60% Armor'},{n:6,bonus:'+90% Armor'}], stat:'armor', mult:[0.3,0.6,0.9] },
+    'Mage':     { tiers:[{n:2,bonus:'+30% Mage ATK'},{n:4,bonus:'+70% Mage ATK'},{n:6,bonus:'+120% Mage ATK'}], stat:'spell', mult:[1.3,1.7,2.2] },
+    'Ranger':   { tiers:[{n:2,bonus:'+40% Crit Dmg'},{n:4,bonus:'+80% Crit Dmg'}], stat:'critDmg', mult:[1.4,1.8] },
+    'Elemental':{ tiers:[{n:2,bonus:'+25% Spell ATK'},{n:3,bonus:'+60% Spell ATK'}], stat:'spell', mult:[1.25,1.6] },
+    'Holy':     { tiers:[{n:2,bonus:'Heal 8/tick'},{n:3,bonus:'Heal 20/tick'}], stat:'regen', mult:[8,20] },
+    'Aquatic':  { tiers:[{n:2,bonus:'Cleave 30%'},{n:3,bonus:'Cleave 60%'}], stat:'cleave', mult:[0.3,0.6] },
+    'Insect':   { tiers:[{n:3,bonus:'+50% ATK & Poison'},{n:5,bonus:'+100% ATK & Poison'}], stat:'swarm', mult:[1.5,2.0] },
+    'Construct':{ tiers:[{n:2,bonus:'+60% Armor & HP'},{n:3,bonus:'+120% Armor & HP'}], stat:'fortify', mult:[1.6,2.2] },
+    'Assassin': { tiers:[{n:2,bonus:'Backline Strike'},{n:3,bonus:'Backline +Crit'}], stat:'assassin', mult:[1,1.5] }
+};
+
 const WAVE_NAMES = [
-    'The Goblin Patrol', 'Skeleton Crew', 'Forest Ambush', 'Bandit Raiders',
-    'Orc War Party', 'Crypt Wraiths', 'Cursed Knights', 'Dragon Spawn',
-    'Demon Incursion', 'The Lich\'s Army', 'Hellgate Opens', 'The Dragon Lord'
+    'The Goblin Patrol','Skeleton Crew','Forest Ambush','Bandit Raiders',
+    '🏰 ORC WARLORD','Crypt Wraiths','Cursed Knights','Dragon Spawn','Demon Incursion',
+    '🏰 THE LICH KING','Hellgate Opens','Aquatic Horde','Holy Crusade','Insect Swarm',
+    '🏰 THE DEMON LORD','Elemental Storm','Construct Army','Assassin Brotherhood','Dragon Flight',
+    '🏰 APOCALYPSE','The Final Wave','Endless Horde','Eternal Darkness','Reality Tear',
+    '🏰 GODKING\'S WRATH'
 ];
 
 function generateEnemyWave(waveNum) {
-    const enemyCount = Math.min(2 + Math.floor(waveNum / 2), 6);
+    const isBoss = waveNum % 5 === 0;
+    const enemyCount = isBoss ? Math.min(4 + Math.floor(waveNum/3), 8) : Math.min(3 + Math.floor(waveNum/2), 8);
     const enemies = [];
-    const difficulty = 1 + (waveNum - 1) * 0.35;
+    const difficulty = 1 + (waveNum - 1) * 0.32;
+    const bossMult = isBoss ? 1.4 : 1;
 
     let pool;
     if (waveNum <= 3) pool = BEAST_DATABASE.filter(b => b.rarity === 'common');
     else if (waveNum <= 6) pool = BEAST_DATABASE.filter(b => ['common','rare'].includes(b.rarity));
     else if (waveNum <= 10) pool = BEAST_DATABASE.filter(b => ['rare','epic'].includes(b.rarity));
-    else pool = BEAST_DATABASE.filter(b => ['epic','legendary'].includes(b.rarity));
+    else if (waveNum <= 15) pool = BEAST_DATABASE.filter(b => ['epic','legendary'].includes(b.rarity));
+    else pool = BEAST_DATABASE.filter(b => ['legendary','mythic'].includes(b.rarity));
+    
+    if (isBoss && waveNum >= 5) {
+        // Boss waves include at least 1 high-tier boss
+        const bossPool = waveNum >= 20 ? BEAST_DATABASE.filter(b => b.rarity === 'mythic')
+                       : waveNum >= 10 ? BEAST_DATABASE.filter(b => b.rarity === 'legendary')
+                       : BEAST_DATABASE.filter(b => b.rarity === 'epic');
+        const boss = bossPool[Math.floor(Math.random() * bossPool.length)];
+        enemies.push({
+            ...boss, uid: 'enemy_boss_' + waveNum,
+            maxHp: Math.floor(boss.hp * difficulty * bossMult * 1.5),
+            currentHp: Math.floor(boss.hp * difficulty * bossMult * 1.5),
+            atk: Math.floor(boss.atk * difficulty * bossMult * 1.2),
+            level: 2 + Math.floor(waveNum/5), isEnemy: true
+        });
+    }
 
-    for (let i = 0; i < enemyCount; i++) {
+    for (let i = enemies.length; i < enemyCount; i++) {
         const template = pool[Math.floor(Math.random() * pool.length)];
         enemies.push({
-            ...template,
-            uid: 'enemy_' + waveNum + '_' + i,
-            maxHp: Math.floor(template.hp * difficulty),
-            currentHp: Math.floor(template.hp * difficulty),
-            atk: Math.floor(template.atk * difficulty),
-            level: 1 + Math.floor(waveNum / 4),
-            isEnemy: true
+            ...template, uid: 'enemy_' + waveNum + '_' + i,
+            maxHp: Math.floor(template.hp * difficulty * bossMult),
+            currentHp: Math.floor(template.hp * difficulty * bossMult),
+            atk: Math.floor(template.atk * difficulty * bossMult),
+            level: 1 + Math.floor(waveNum/4), isEnemy: true
         });
     }
     return enemies;
 }
 
 /* ============================================================
-   ===== GAME STATE ===========================================
+   ===== STATE ================================================
    ============================================================ */
 let state = {
-    gold: 100,
-    wave: 1,
-    roster: [],
-    deployed: [null,null,null,null,null,null],
-    enemies: [],
-    shop: [],
-    battleSpeed: 2,
-    inBattle: false,
+    gold: 100, wave: 1,
+    roster: [], deployed: new Array(8).fill(null),
+    enemies: new Array(8).fill(null),
+    shop: [], items: [],
+    battleSpeed: 2, inBattle: false,
     highestWave: parseInt(localStorage.getItem('beastArenaHighWave')) || 1,
-    totalKills: 0,
-    teamPower: 0,
-    pendingDiscardUid: null
+    totalKills: 0, pendingDiscardUid: null
 };
 
 let uidCounter = 0;
 function nextUid() { return 'beast_' + (++uidCounter); }
 
 /* ============================================================
-   ===== INIT & RENDER ========================================
+   ===== INIT =================================================
    ============================================================ */
 function init() {
     spawnEmbers();
+    rollShop();
     renderShop();
     renderRoster();
+    renderItems();
     renderArena();
     updateHUD();
     updateSynergies();
-    
-    // Auto-open help modal on first visit
-    if (!localStorage.getItem('beastArenaTutorialSeen')) {
+    if (!localStorage.getItem('beastArenaTutorialSeenV2')) {
         setTimeout(() => openHelpModal(), 500);
-        localStorage.setItem('beastArenaTutorialSeen', '1');
+        localStorage.setItem('beastArenaTutorialSeenV2', '1');
     }
 }
 
@@ -1378,8 +925,7 @@ function spawnEmbers() {
         const e = document.createElement('div');
         e.className = 'ember';
         const size = Math.random() * 3 + 1;
-        e.style.width = size + 'px';
-        e.style.height = size + 'px';
+        e.style.width = size + 'px'; e.style.height = size + 'px';
         e.style.left = Math.random() * 100 + '%';
         e.style.top = (Math.random() * 60 + 40) + '%';
         e.style.animationDuration = (Math.random() * 4 + 3) + 's';
@@ -1392,30 +938,26 @@ function updateHUD() {
     document.getElementById('goldDisplay').innerText = state.gold;
     document.getElementById('waveDisplay').innerText = state.wave;
     document.getElementById('beastsDisplay').innerText = state.roster.length;
+    document.getElementById('itemsDisplay').innerText = state.items.length;
     document.getElementById('waveNum').innerText = state.wave;
+    const isBoss = state.wave % 5 === 0;
+    document.getElementById('waveInfoHeader').classList.toggle('boss', isBoss);
     document.getElementById('waveName').innerText = WAVE_NAMES[Math.min(state.wave-1, WAVE_NAMES.length-1)] || 'Endless Horde';
     document.getElementById('rerollBtn').disabled = state.gold < 5 || state.inBattle;
+    document.getElementById('itemShopBtn').disabled = state.gold < 15 || state.inBattle || state.items.length >= 8;
     document.getElementById('battleBtn').disabled = state.inBattle || state.deployed.every(s => !s);
-    
-    if (state.wave > 1) document.getElementById('introCard').style.display = 'none';
 }
 
-/* ============================================================
-   ===== HELP MODAL ===========================================
-   ============================================================ */
-function openHelpModal() {
-    document.getElementById('helpModal').classList.add('show');
-}
-function closeHelpModal() {
-    document.getElementById('helpModal').classList.remove('show');
-}
+function openHelpModal(){ document.getElementById('helpModal').classList.add('show'); }
+function closeHelpModal(){ document.getElementById('helpModal').classList.remove('show'); }
 
 /* ============================================================
    ===== SHOP =================================================
    ============================================================ */
 function rollShop() {
     const shop = [];
-    for (let i = 0; i < 5; i++) {
+    const shopSize = 5;
+    for (let i = 0; i < shopSize; i++) {
         const r = Math.random() * 100;
         let pool;
         if (state.wave <= 3) {
@@ -1423,15 +965,20 @@ function rollShop() {
             else if (r < 95) pool = BEAST_DATABASE.filter(b => b.rarity === 'rare');
             else pool = BEAST_DATABASE.filter(b => b.rarity === 'epic');
         } else if (state.wave <= 7) {
-            if (r < 40) pool = BEAST_DATABASE.filter(b => b.rarity === 'common');
+            if (r < 35) pool = BEAST_DATABASE.filter(b => b.rarity === 'common');
             else if (r < 75) pool = BEAST_DATABASE.filter(b => b.rarity === 'rare');
             else if (r < 95) pool = BEAST_DATABASE.filter(b => b.rarity === 'epic');
             else pool = BEAST_DATABASE.filter(b => b.rarity === 'legendary');
-        } else {
-            if (r < 20) pool = BEAST_DATABASE.filter(b => b.rarity === 'common');
-            else if (r < 55) pool = BEAST_DATABASE.filter(b => b.rarity === 'rare');
-            else if (r < 85) pool = BEAST_DATABASE.filter(b => b.rarity === 'epic');
+        } else if (state.wave <= 14) {
+            if (r < 15) pool = BEAST_DATABASE.filter(b => b.rarity === 'common');
+            else if (r < 45) pool = BEAST_DATABASE.filter(b => b.rarity === 'rare');
+            else if (r < 80) pool = BEAST_DATABASE.filter(b => b.rarity === 'epic');
             else pool = BEAST_DATABASE.filter(b => b.rarity === 'legendary');
+        } else {
+            if (r < 25) pool = BEAST_DATABASE.filter(b => b.rarity === 'rare');
+            else if (r < 60) pool = BEAST_DATABASE.filter(b => b.rarity === 'epic');
+            else if (r < 92) pool = BEAST_DATABASE.filter(b => b.rarity === 'legendary');
+            else pool = BEAST_DATABASE.filter(b => b.rarity === 'mythic');
         }
         const template = pool[Math.floor(Math.random() * pool.length)];
         shop.push({ ...template, sold: false, shopId: nextUid() });
@@ -1440,7 +987,6 @@ function rollShop() {
 }
 
 function renderShop() {
-    if (state.shop.length === 0) rollShop();
     const grid = document.getElementById('shopGrid');
     grid.innerHTML = '';
     state.shop.forEach(item => {
@@ -1450,20 +996,20 @@ function renderShop() {
         card.style.setProperty('--unit-color', item.color);
         card.style.setProperty('--unit-border', item.border);
         const roleLabel = item.role === 'front' ? 'TANK' : 'RANGED';
+        const abilityTxt = item.ability ? `<div class="shop-ability">⚡ ${item.ability}</div>` : '';
         card.innerHTML = `
             <div class="shop-role-tag ${item.role}">${roleLabel}</div>
-            <div class="shop-icon">${item.icon}</div>
+            <div class="shop-icon">${getBeastArtHTML(item.id)}</div>
             <div class="shop-name">${item.name}</div>
             <div class="shop-rarity ${item.rarity}">${item.rarity}</div>
-            <div class="shop-stats">
-                <span>❤️ ${item.hp}</span>
-                <span>⚔️ ${item.atk}</span>
-            </div>
+            <div class="shop-stats"><span>❤${item.hp}</span><span>⚔${item.atk}</span></div>
+            ${abilityTxt}
             <div class="shop-cost">${item.cost} 🪙</div>
         `;
         if (!item.sold) {
             card.onclick = () => buyBeast(item);
-            card.title = `${item.name}\nTypes: ${item.types.join(', ')}\nRole: ${roleLabel}\nClick to buy for ${item.cost}🪙`;
+            card.addEventListener('mouseenter', e => showBeastTooltip(item, e.target, 'shop'));
+            card.addEventListener('mouseleave', hideBeastTooltip);
         }
         grid.appendChild(card);
     });
@@ -1471,28 +1017,218 @@ function renderShop() {
 
 function buyBeast(item) {
     if (state.inBattle) { toast('Cannot buy during battle!', 'warning'); return; }
-    if (state.gold < item.cost) { toast(`Need ${item.cost - state.gold} more gold! Tip: Try discarding weaker beasts.`, 'error'); return; }
-    if (state.roster.length >= 12) { toast('Menagerie full! Discard a beast first (hover for ✖)', 'warning'); return; }
+    if (state.gold < item.cost) { toast(`Need ${item.cost - state.gold} more gold!`, 'error'); return; }
+    if (state.roster.length >= 16) { toast('Menagerie full! (max 16)', 'warning'); return; }
 
     state.gold -= item.cost;
     item.sold = true;
     const newBeast = {
-        ...item,
-        uid: nextUid(),
-        maxHp: item.hp,
-        currentHp: item.hp,
-        level: 1,
-        deployed: false,
-        originalCost: item.cost
+        ...item, uid: nextUid(),
+        maxHp: item.hp, currentHp: item.hp,
+        level: 1, deployed: false,
+        originalCost: item.cost, items: []
     };
-    delete newBeast.sold;
-    delete newBeast.shopId;
+    delete newBeast.sold; delete newBeast.shopId;
     state.roster.push(newBeast);
-
     toast(`Recruited ${item.name}!`, 'success');
+
+    // Check for auto-combine AFTER adding the new beast
+    checkAutoCombine(item.id);
+
     renderShop();
     renderRoster();
+    renderItems();
+    updateSynergies();
     updateHUD();
+}
+
+/* ============================================================
+   ===== BEAUTIFUL TOOLTIP ====================================
+   ============================================================ */
+   let tooltipEl = null;
+function ensureTooltip() {
+    if (!tooltipEl) {
+        tooltipEl = document.createElement('div');
+        tooltipEl.id = 'beastTooltip';
+        document.body.appendChild(tooltipEl);
+    }
+    return tooltipEl;
+}
+
+function showBeastTooltip(beast, anchor, context) {
+    const tt = ensureTooltip();
+    tt.style.setProperty('--tt-color', beast.color);
+    tt.style.setProperty('--tt-border', beast.border);
+    tt.className = `rarity-${beast.rarity}`;
+
+    const lvl = beast.level || 1;
+    const lvClass = lvl >= 3 ? 'lv3' : lvl === 2 ? 'lv2' : '';
+    const roleLabel = beast.role === 'front' ? '⚔ FRONT (Tank)' : '🛡 BACK (Ranged)';
+    const roleClass = beast.role;
+
+    // Count copies for combine progress
+    const sameCount = state.roster.filter(b => b.id === beast.id && (b.level||1) === lvl).length;
+    const showCombine = context === 'roster' && lvl < 3 && sameCount > 0;
+    
+    // Active synergies for this beast
+    const activeSyn = calculateSynergies().filter(s => beast.types.includes(s.type));
+
+    // Effective stats if synergies are active
+    const showBoost = beast.effectiveAtk && (beast.effectiveAtk !== beast.atk || beast.effectiveMaxHp !== beast.maxHp);
+
+    const atkDisplay = showBoost ? `<span class="tt-stat-val boost">${beast.effectiveAtk}</span>` : `<span class="tt-stat-val">${beast.atk}</span>`;
+    const hpDisplay = showBoost ? `<span class="tt-stat-val boost">${beast.effectiveMaxHp}</span>` : `<span class="tt-stat-val">${beast.maxHp}</span>`;
+
+    let html = `
+        <div class="tt-header">
+            <div class="tt-portrait">${BEAST_ART[beast.id] || ''}</div>
+            <div class="tt-title-block">
+                <div class="tt-name">${beast.name}</div>
+                <div class="tt-rarity-row">
+                    <span class="tt-rarity ${beast.rarity}">${beast.rarity}</span>
+                    ${lvl > 1 ? `<span class="tt-level-badge ${lvClass}">LV ${lvl}</span>` : ''}
+                    <span class="tt-role-pill ${roleClass}">${roleLabel}</span>
+                </div>
+            </div>
+        </div>
+        <div class="tt-body">
+            <div class="tt-stats-grid">
+                <div class="tt-stat"><span class="tt-stat-ic">❤️</span><span class="tt-stat-label">HP</span>${hpDisplay}</div>
+                <div class="tt-stat"><span class="tt-stat-ic">⚔️</span><span class="tt-stat-label">ATK</span>${atkDisplay}</div>
+                ${beast.cost ? `<div class="tt-stat"><span class="tt-stat-ic">🪙</span><span class="tt-stat-label">Cost</span><span class="tt-stat-val">${beast.cost}</span></div>` : ''}
+                ${beast.critChance ? `<div class="tt-stat"><span class="tt-stat-ic">💥</span><span class="tt-stat-label">Crit</span><span class="tt-stat-val">${Math.round(beast.critChance*100)}%</span></div>` : ''}
+            </div>
+
+            <div class="tt-section">
+                <div class="tt-section-title">Types</div>
+                <div class="tt-tags">
+                    ${beast.types.map(t => {
+                        const isActive = activeSyn.find(s => s.type === t);
+                        return `<span class="tt-tag ${isActive ? 'active' : ''}">${t}${isActive ? ` (T${isActive.tier})` : ''}</span>`;
+                    }).join('')}
+                </div>
+            </div>
+
+            ${beast.ability ? `<div class="tt-ability"><strong>Ability:</strong> ${getAbilityDesc(beast.ability)}</div>` : ''}
+
+            ${context === 'roster' || context === 'arena' ? `
+                <div class="tt-section">
+                    <div class="tt-section-title">Items</div>
+                    <div class="tt-items">
+                        ${[0,1].map(i => {
+                            const item = (beast.items||[])[i];
+                            return `<div class="tt-item-slot ${item ? 'filled' : ''}" title="${item ? item.name + ': ' + item.desc : 'Empty slot'}">${item ? item.icon : '+'}</div>`;
+                        }).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            ${showCombine ? `
+                <div class="tt-combine-bar">
+                    ⭐ Combine: ${sameCount}/3
+                    <span class="pips">${[0,1,2].map(i => `<span class="pip ${i<sameCount?'on':''}"></span>`).join('')}</span>
+                    ${sameCount >= 3 ? ' → LV ' + (lvl+1) + '!' : ''}
+                </div>
+            ` : ''}
+
+            ${BEAST_FLAVOR[beast.id] ? `<div class="tt-flavor">"${BEAST_FLAVOR[beast.id]}"</div>` : ''}
+
+            <div class="tt-hint">${getContextHint(context, beast)}</div>
+        </div>
+    `;
+    tt.innerHTML = html;
+
+    // Position smartly
+    const rect = anchor.getBoundingClientRect();
+    const ttRect = tt.getBoundingClientRect();
+    let left = rect.right + 12;
+    let top = rect.top;
+    if (left + 320 > window.innerWidth) left = rect.left - ttRect.width - 12;
+    if (left < 8) left = 8;
+    if (top + 400 > window.innerHeight) top = Math.max(8, window.innerHeight - 410);
+    tt.style.left = left + 'px';
+    tt.style.top = top + 'px';
+    requestAnimationFrame(() => tt.classList.add('show'));
+}
+
+function hideBeastTooltip() {
+    if (tooltipEl) tooltipEl.classList.remove('show');
+}
+
+function getAbilityDesc(ab) {
+    const d = {
+        taunt: '🛡 <em>Taunt</em> — Forces enemies to attack this unit first.',
+        heal: '💚 <em>Healer</em> — Restores HP to allies each tick.',
+        cleave: '⚔ <em>Cleave</em> — Damages adjacent enemies on attack.',
+        poison: '☠ <em>Venomous</em> — Inflicts poison damage over time.',
+        backline: '🗡 <em>Assassin</em> — Strikes the enemy back row first.'
+    };
+    return d[ab] || ab;
+}
+
+function getContextHint(context, beast) {
+    if (context === 'shop') return `Click to buy for ${beast.cost} 🪙`;
+    if (context === 'roster') {
+        if (beast.deployed) return 'Double-click on battlefield to recall';
+        return '✋ Drag to battlefield • Hover ✖ to discard';
+    }
+    if (context === 'arena') return 'Double-click to recall to Menagerie';
+    return '';
+}
+
+/* ============================================================
+   ===== FIXED AUTO-COMBINE ===================================
+   Properly combines 3 of same id+level into +1 level
+   ============================================================ */
+function checkAutoCombine(beastId) {
+    // Keep trying until no more combines possible
+    let didCombine = true;
+    let safety = 5;
+    while (didCombine && safety-- > 0) {
+        didCombine = false;
+        for (let lvl = 1; lvl <= 2; lvl++) {
+            const matches = state.roster.filter(b => b.id === beastId && (b.level || 1) === lvl);
+            if (matches.length >= 3) {
+                // Combine: keep one, upgrade it, remove the other two
+                // Prefer keeping a deployed one if any are deployed
+                matches.sort((a, b) => (b.deployed ? 1 : 0) - (a.deployed ? 1 : 0));
+                const survivor = matches[0];
+                const consumed = [matches[1], matches[2]];
+
+                survivor.level = lvl + 1;
+                // Upgrade stats: 1.8x multiplier
+                const newMaxHp = Math.floor(survivor.maxHp * 1.8);
+                const newAtk = Math.floor(survivor.atk * 1.8);
+                survivor.maxHp = newMaxHp;
+                survivor.hp = newMaxHp;
+                survivor.currentHp = newMaxHp;
+                survivor.atk = newAtk;
+
+                // Return items from consumed beasts to bag
+                consumed.forEach(b => {
+                    (b.items || []).forEach(i => {
+                        if (state.items.length < 8) state.items.push(i);
+                    });
+                });
+
+                // Remove consumed beasts from roster
+                state.roster = state.roster.filter(b => b !== consumed[0] && b !== consumed[1]);
+
+                // Update any deployed slots that referenced the consumed beasts
+                state.deployed.forEach((d, i) => {
+                    if (d === consumed[0] || d === consumed[1]) state.deployed[i] = null;
+                });
+                // Make sure survivor's deployed status is preserved correctly
+                if (survivor.deployed) {
+                    // Re-link in deployed array if necessary (it should already be there)
+                }
+
+                toast(`✨ COMBINED! ${survivor.name} → LEVEL ${survivor.level}! (${newMaxHp}❤ ${newAtk}⚔)`, 'epic');
+                didCombine = true;
+                break; // restart loop to check level 2 -> 3
+            }
+        }
+    }
 }
 
 function rerollShop() {
@@ -1504,13 +1240,74 @@ function rerollShop() {
 }
 
 /* ============================================================
-   ===== ROSTER + DISCARD =====================================
+   ===== ITEMS ================================================
    ============================================================ */
-function renderRoster() {
+function buyRandomItem() {
+    if (state.inBattle) { toast('Cannot buy during battle!', 'warning'); return; }
+    if (state.gold < 15) { toast('Need 15🪙 for an item', 'error'); return; }
+    if (state.items.length >= 8) { toast('Item bag full (max 8)', 'warning'); return; }
+    state.gold -= 15;
+    const item = { ...ITEM_DATABASE[Math.floor(Math.random() * ITEM_DATABASE.length)], uid: nextUid() };
+    state.items.push(item);
+    toast(`Found ${item.icon} ${item.name}!`, 'epic');
+    renderItems(); updateHUD();
+}
+
+function renderItems() {
+    const grid = document.getElementById('itemsGrid');
+    grid.innerHTML = '';
+    if (state.items.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-dim); padding:14px; font-size:0.85em; font-style:italic;">No items yet. Buy with 💎 button or earn from bosses!</div>';
+        return;
+    }
+    state.items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.draggable = true;
+        card.dataset.itemUid = item.uid;
+        card.title = `${item.name}: ${item.desc}\nDrag onto a deployed beast to equip`;
+        card.innerHTML = `
+            <button class="item-discard" onclick="event.stopPropagation(); discardItem('${item.uid}')">✖</button>
+            <div class="item-icon">${item.icon}</div>
+            <div class="item-name">${item.name}</div>
+            <div class="item-desc">${item.desc}</div>
+        `;
+        card.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text/plain', 'item:' + item.uid);
+            card.style.opacity = '0.5';
+        });
+        card.addEventListener('dragend', () => { card.style.opacity = '1'; });
+        grid.appendChild(card);
+    });
+}
+
+function discardItem(uid) {
+    state.items = state.items.filter(i => i.uid !== uid);
+    state.gold += 5;
+    renderItems(); updateHUD();
+    toast('Item sold for 5🪙', 'info');
+}
+
+function equipItem(itemUid, beastUid) {
+    const item = state.items.find(i => i.uid === itemUid);
+    const beast = state.roster.find(b => b.uid === beastUid);
+    if (!item || !beast) return;
+    beast.items = beast.items || [];
+    if (beast.items.length >= 2) { toast(`${beast.name} can only hold 2 items!`, 'warning'); return; }
+    beast.items.push(item);
+    state.items = state.items.filter(i => i.uid !== itemUid);
+    toast(`${beast.name} equipped ${item.icon} ${item.name}!`, 'epic');
+    renderItems(); renderArena(); renderRoster(); updateSynergies();
+}
+
+/* ============================================================
+   ===== ROSTER ===============================================
+   ============================================================ */
+   function renderRoster() {
     const grid = document.getElementById('rosterGrid');
     grid.innerHTML = '';
     if (state.roster.length === 0) {
-        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-dim); padding:20px; font-style:italic;">No beasts yet. Visit the bazaar! 🛒</div>';
+        grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-dim); padding:14px; font-size:0.85em; font-style:italic;">No beasts yet. Visit bazaar! 🛒</div>';
         return;
     }
     state.roster.forEach(beast => {
@@ -1520,57 +1317,45 @@ function renderRoster() {
         card.style.setProperty('--unit-border', beast.border);
         card.draggable = !beast.deployed;
         card.dataset.uid = beast.uid;
-        const sellValue = Math.floor((beast.originalCost || beast.cost) / 2);
-        card.title = `${beast.name}\nTypes: ${beast.types.join(', ')}\nRole: ${beast.role === 'front' ? 'TANK (Front Row)' : 'RANGED (Back Row)'}\nHover ✖ to discard for ${sellValue}🪙`;
+        const sellValue = Math.floor((beast.originalCost || beast.cost) / 2) * (beast.level || 1);
+        const lvBadge = beast.level > 1 ? `<div class="roster-lv-badge lv${beast.level}">LV${beast.level}</div>` : '';
         card.innerHTML = `
-            <button class="discard-btn" title="Discard for ${sellValue}🪙" onclick="event.stopPropagation(); promptDiscard('${beast.uid}')">✖</button>
-            <div class="roster-icon">${beast.icon}</div>
+            ${lvBadge}
+            <button class="discard-btn" onclick="event.stopPropagation(); promptDiscard('${beast.uid}')">✖</button>
+            <div class="roster-icon">${getBeastArtHTML(beast.id)}</div>
             <div class="roster-name">${beast.name}</div>
-            <div class="roster-stats">
-                <span>❤️${beast.maxHp}</span>
-                <span>⚔️${beast.atk}</span>
-            </div>
-            <div class="roster-sell-value">Sell: ${sellValue}🪙</div>
+            <div class="roster-stats"><span>❤${beast.maxHp}</span><span>⚔${beast.atk}</span></div>
         `;
         card.addEventListener('dragstart', e => {
             if (beast.deployed) { e.preventDefault(); return; }
-            // Don't initiate drag if the discard button is clicked
             if (e.target.classList.contains('discard-btn')) { e.preventDefault(); return; }
             e.dataTransfer.setData('text/plain', beast.uid);
             card.style.opacity = '0.5';
         });
         card.addEventListener('dragend', () => { card.style.opacity = '1'; });
+        card.addEventListener('mouseenter', e => showBeastTooltip(beast, e.target, 'roster'));
+        card.addEventListener('mouseleave', hideBeastTooltip);
         grid.appendChild(card);
     });
 }
 
-/* ===== DISCARD FUNCTION ===== */
 function promptDiscard(uid) {
-    if (state.inBattle) {
-        toast('Cannot discard during battle!', 'warning');
-        return;
-    }
+    if (state.inBattle) { toast('Cannot discard during battle!', 'warning'); return; }
     const beast = state.roster.find(b => b.uid === uid);
     if (!beast) return;
-    
-    const sellValue = Math.floor((beast.originalCost || beast.cost) / 2);
+    const sellValue = Math.floor((beast.originalCost || beast.cost) / 2) * (beast.level || 1);
     state.pendingDiscardUid = uid;
-    
     document.getElementById('discardModalBody').innerHTML = `
         <div style="background:linear-gradient(135deg, ${beast.color}, #1a1209); border:2px solid ${beast.border}; border-radius:8px; padding:14px; margin:14px 0;">
-            <div style="font-size:2.5em; line-height:1;">${beast.icon}</div>
-            <div style="font-family:'MedievalSharp',serif; font-size:1.2em; color:var(--text); margin-top:4px;">${beast.name}</div>
+            <div style="font-size:2.5em;">${beast.icon}</div>
+            <div style="font-family:'MedievalSharp',serif; font-size:1.2em; color:var(--text); margin-top:4px;">${beast.name} ${beast.level>1?`<span style="color:var(--gold)">Lv.${beast.level}</span>`:''}</div>
             <div style="color:var(--text-dim); font-size:0.85em; margin-top:4px;">${beast.types.join(' • ')}</div>
             <div style="display:flex; justify-content:center; gap:14px; margin-top:8px; color:var(--text-dim); font-size:0.9em;">
-                <span>❤️ ${beast.maxHp} HP</span>
-                <span>⚔️ ${beast.atk} ATK</span>
+                <span>❤️ ${beast.maxHp}</span><span>⚔️ ${beast.atk}</span>
             </div>
         </div>
-        <p style="color:var(--text-dim); margin-bottom:6px;">Are you sure you want to discard this beast?</p>
         <p style="color:var(--gold); font-weight:700; font-size:1.1em;">You'll receive: <strong>${sellValue} 🪙</strong></p>
-        <p style="color:var(--text-dim); font-size:0.8em; margin-top:6px; font-style:italic;">(Half of original ${beast.originalCost || beast.cost}🪙 cost)</p>
     `;
-    
     document.getElementById('confirmDiscardBtn').onclick = () => confirmDiscard(uid);
     document.getElementById('discardModal').classList.add('show');
 }
@@ -1583,52 +1368,55 @@ function closeDiscardModal() {
 function confirmDiscard(uid) {
     const beastIdx = state.roster.findIndex(b => b.uid === uid);
     if (beastIdx === -1) return;
-    
     const beast = state.roster[beastIdx];
-    const sellValue = Math.floor((beast.originalCost || beast.cost) / 2);
-    
-    // If deployed, remove from arena slot
+    const sellValue = Math.floor((beast.originalCost || beast.cost) / 2) * (beast.level || 1);
     if (beast.deployed) {
         const slotIdx = state.deployed.findIndex(d => d && d.uid === uid);
         if (slotIdx !== -1) state.deployed[slotIdx] = null;
     }
-    
-    // Remove from roster, refund gold
+    // Return items to bag
+    (beast.items || []).forEach(i => state.items.push(i));
     state.roster.splice(beastIdx, 1);
     state.gold += sellValue;
-    
     closeDiscardModal();
-    renderRoster();
-    renderArena();
-    updateSynergies();
-    updateHUD();
-    
+    renderRoster(); renderArena(); renderItems(); updateSynergies(); updateHUD();
     toast(`Discarded ${beast.name} for +${sellValue}🪙`, 'info');
 }
 
 /* ============================================================
-   ===== ARENA / DEPLOYMENT ===================================
+   ===== ARENA (4x2 grid: 8 slots per side) ===================
    ============================================================ */
 function renderArena() {
     const playerEl = document.getElementById('playerTeam');
     const enemyEl = document.getElementById('enemyTeam');
-    
-    playerEl.innerHTML = '<span class="team-label">⚔ YOUR ARMY</span>';
+    playerEl.innerHTML = '<span class="team-label">⚔ YOUR ARMY (8 SLOTS)</span>';
     enemyEl.innerHTML = '<span class="team-label">💀 ENEMIES</span>';
 
-    const playerOrder = [3,4,5, 0,1,2];
+    // Player layout: back row (4 slots: 4,5,6,7) on left, front row (4 slots: 0,1,2,3) on right
+    // Visual order in grid: row1=back, row2=front, both 4 cols
+    // We want player back on LEFT-visual, front on RIGHT-visual
+    const playerOrder = [4,5,6,7, 0,1,2,3];
     playerOrder.forEach(i => {
         const slot = document.createElement('div');
-        const isFront = i < 3;
+        const isFront = i < 4;
         slot.className = 'battle-slot ' + (isFront ? 'front' : 'back');
-        slot.dataset.pos = isFront ? '⚔️ Front (Tank)' : '🛡️ Back (Ranged)';
+        slot.dataset.pos = isFront ? '⚔️ Front' : '🛡️ Back';
         slot.dataset.slot = i;
         slot.dataset.side = 'player';
         if (state.deployed[i]) {
             const unitEl = buildUnitEl(state.deployed[i], 'player');
             unitEl.style.setProperty('--attack-dir', '20px');
             unitEl.ondblclick = () => recallBeast(i);
-            unitEl.title = state.deployed[i].name + ' — Double-click to recall to Menagerie';
+            unitEl.title = state.deployed[i].name + ' — Double-click to recall';
+            // Allow item drop on deployed unit
+            slot.addEventListener('dragover', e => { e.preventDefault(); });
+            slot.addEventListener('drop', e => {
+                e.preventDefault();
+                const data = e.dataTransfer.getData('text/plain');
+                if (data.startsWith('item:')) {
+                    equipItem(data.slice(5), state.deployed[i].uid);
+                }
+            });
             slot.appendChild(unitEl);
         } else {
             slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
@@ -1636,17 +1424,21 @@ function renderArena() {
             slot.addEventListener('drop', e => {
                 e.preventDefault();
                 slot.classList.remove('drag-over');
-                const uid = e.dataTransfer.getData('text/plain');
-                deployBeast(uid, i);
+                const data = e.dataTransfer.getData('text/plain');
+                if (data.startsWith('item:')) {
+                    toast('Drop items on deployed beasts!', 'warning'); return;
+                }
+                deployBeast(data, i);
             });
         }
         playerEl.appendChild(slot);
     });
 
-    const enemyOrder = [0,1,2, 3,4,5];
+    // Enemy layout: front first (left visual), back after (right visual)
+    const enemyOrder = [0,1,2,3, 4,5,6,7];
     enemyOrder.forEach(i => {
         const slot = document.createElement('div');
-        const isFront = i < 3;
+        const isFront = i < 4;
         slot.className = 'battle-slot ' + (isFront ? 'front' : 'back');
         slot.dataset.pos = isFront ? 'Front' : 'Back';
         slot.dataset.slot = i;
@@ -1666,19 +1458,29 @@ function buildUnitEl(beast, side) {
     el.style.setProperty('--unit-color', beast.color);
     el.style.setProperty('--unit-border', beast.border);
     el.id = `unit_${side}_${beast.uid}`;
-    
-    const hpPct = (beast.currentHp / beast.maxHp) * 100;
+    el.dataset.beastUid = beast.uid;
+    el.dataset.beastSide = side;
+    const hpPct = (beast.currentHp / (beast.effectiveMaxHp || beast.maxHp)) * 100;
     let hpClass = '';
     if (hpPct < 30) hpClass = 'critical';
     else if (hpPct < 60) hpClass = 'low';
-
+    const lvl = beast.level || 1;
+    const lvClass = lvl >= 3 ? 'lv3' : lvl === 2 ? 'lv2' : '';
+    const itemIcons = (beast.items||[]).map(i => `<span>${i.icon}</span>`).join('');
+    const statusIcons = [];
+    if (beast.poisoned) statusIcons.push('☠');
     el.innerHTML = `
         <div class="unit-rarity-glow"></div>
-        <div class="unit-level">${beast.level || 1}</div>
-        <div class="unit-icon">${beast.icon}</div>
+        <div class="unit-level ${lvClass}">${lvl}</div>
+        <div class="unit-icon">${getBeastArtHTML(beast.id)}</div>
         <div class="unit-name">${beast.name}</div>
         <div class="unit-hp-bar"><div class="unit-hp-fill ${hpClass}" style="width:${hpPct}%"></div></div>
+        ${itemIcons ? `<div class="unit-item-icon">${itemIcons}</div>` : ''}
+        ${statusIcons.length ? `<div class="unit-status-icons">${statusIcons.map(s=>`<span>${s}</span>`).join('')}</div>` : ''}
     `;
+    // Hover tooltip
+    el.addEventListener('mouseenter', e => showBeastTooltip(beast, e.target));
+    el.addEventListener('mouseleave', hideBeastTooltip);
     return el;
 }
 
@@ -1686,20 +1488,12 @@ function deployBeast(uid, slot) {
     if (state.inBattle) { toast('Cannot deploy during battle!', 'warning'); return; }
     const beast = state.roster.find(b => b.uid === uid);
     if (!beast || beast.deployed) return;
-    
-    const isFrontSlot = slot < 3;
-    if (beast.role === 'back' && isFrontSlot) {
-        toast(`${beast.name} prefers BACK row (ranged) but works anywhere!`, 'warning');
-    } else if (beast.role === 'front' && !isFrontSlot) {
-        toast(`${beast.name} prefers FRONT row (tank) but works anywhere!`, 'warning');
-    }
-    
+    const isFrontSlot = slot < 4;
+    if (beast.role === 'back' && isFrontSlot) toast(`${beast.name} prefers BACK row`, 'warning');
+    else if (beast.role === 'front' && !isFrontSlot) toast(`${beast.name} prefers FRONT row`, 'warning');
     beast.deployed = true;
     state.deployed[slot] = beast;
-    renderArena();
-    renderRoster();
-    updateSynergies();
-    updateHUD();
+    renderArena(); renderRoster(); updateSynergies(); updateHUD();
 }
 
 function recallBeast(slot) {
@@ -1708,11 +1502,8 @@ function recallBeast(slot) {
     if (!beast) return;
     beast.deployed = false;
     state.deployed[slot] = null;
-    renderArena();
-    renderRoster();
-    updateSynergies();
-    updateHUD();
-    toast(`${beast.name} recalled to Menagerie`, 'info');
+    renderArena(); renderRoster(); updateSynergies(); updateHUD();
+    toast(`${beast.name} recalled`, 'info');
 }
 
 /* ============================================================
@@ -1722,45 +1513,35 @@ function calculateSynergies() {
     const counts = {};
     state.deployed.forEach(beast => {
         if (!beast) return;
-        beast.types.forEach(t => {
-            counts[t] = (counts[t] || 0) + 1;
-        });
+        beast.types.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
     });
     const active = [];
     Object.keys(counts).forEach(type => {
         const syn = SYNERGIES[type];
         if (!syn) return;
-        let tier = 0;
         for (let i = syn.tiers.length - 1; i >= 0; i--) {
             if (counts[type] >= syn.tiers[i].n) {
-                tier = i + 1;
                 active.push({
-                    type, count: counts[type], tier,
-                    required: syn.tiers[i].n,
+                    type, count: counts[type], tier: i + 1,
                     bonus: syn.tiers[i].bonus,
-                    mult: syn.mult[i],
-                    stat: syn.stat
+                    mult: syn.mult[i], stat: syn.stat
                 });
                 break;
             }
         }
     });
-    return active;
+    return active.sort((a,b) => b.tier - a.tier);
 }
 
 function updateSynergies() {
     const bar = document.getElementById('synergiesBar');
     const synergies = calculateSynergies();
     if (synergies.length === 0) {
-        bar.innerHTML = '<span class="synergy-empty">⚡ Deploy beasts of the same Type or Class to activate synergies...</span>';
+        bar.innerHTML = '<span class="synergy-empty">⚡ Deploy beasts with shared Types to activate synergies...</span>';
         return;
     }
-    bar.innerHTML = synergies.map(s => 
-        `<div class="synergy-badge tier-${s.tier}" title="${s.bonus} bonus applies to all ${s.type} units">
-            <span>${s.type}</span>
-            <span style="opacity:0.7;">(${s.count})</span>
-            <span style="font-size:0.8em;">▸ ${s.bonus}</span>
-        </div>`
+    bar.innerHTML = synergies.map(s =>
+        `<div class="synergy-badge tier-${s.tier}" title="${s.bonus}"><span>${s.type}</span><span style="opacity:0.7;">(${s.count})</span><span style="font-size:0.85em;">▸ ${s.bonus}</span></div>`
     ).join('');
 }
 
@@ -1770,14 +1551,13 @@ function applySynergiesToTeam(team) {
         if (!beast) return;
         beast.types.forEach(t => counts[t] = (counts[t] || 0) + 1);
     });
-    
     team.forEach(beast => {
         if (!beast) return;
-        beast.atkBonus = 1;
-        beast.hpBonus = 1;
-        beast.lifesteal = 0;
-        beast.critChance = 0.1;
-        beast.critDmgMult = 1.5;
+        beast.atkBonus = 1; beast.hpBonus = 1; beast.lifesteal = 0;
+        beast.critChance = 0.1; beast.critDmgMult = 1.5;
+        beast.armor = 0; beast.regen = 0; beast.cleaveBonus = 0;
+        beast.firstStrike = false; beast.poisonAttacks = false;
+        beast.taunt = false; beast.canRevive = false; beast.shield = 0;
         
         beast.types.forEach(type => {
             const syn = SYNERGIES[type];
@@ -1789,143 +1569,267 @@ function applySynergiesToTeam(team) {
                     else if (syn.stat === 'hp') beast.hpBonus *= mult;
                     else if (syn.stat === 'lifesteal') beast.lifesteal = Math.max(beast.lifesteal, mult);
                     else if (syn.stat === 'crit') beast.critChance += mult;
-                    else if (syn.stat === 'critDmg') beast.critDmgMult = mult + 0.5;
+                    else if (syn.stat === 'critDmg') beast.critDmgMult = Math.max(beast.critDmgMult, mult);
                     else if (syn.stat === 'all') { beast.atkBonus *= mult; beast.hpBonus *= mult; }
                     else if (syn.stat === 'hpAtk') { beast.atkBonus *= mult; beast.hpBonus *= mult; }
-                    else if (syn.stat === 'armor') beast.armor = (beast.armor || 0) + mult;
-                    else if (syn.stat === 'spell') { if (beast.types.includes('Mage')) beast.atkBonus *= mult; }
+                    else if (syn.stat === 'armor') beast.armor += mult;
+                    else if (syn.stat === 'spell') { if (beast.types.includes('Mage') || beast.types.includes('Elemental')) beast.atkBonus *= mult; }
+                    else if (syn.stat === 'regen') beast.regen = Math.max(beast.regen, mult);
+                    else if (syn.stat === 'cleave') beast.cleaveBonus = Math.max(beast.cleaveBonus, mult);
+                    else if (syn.stat === 'swarm') { beast.atkBonus *= mult; beast.poisonAttacks = true; }
+                    else if (syn.stat === 'fortify') { beast.armor += 0.4; beast.hpBonus *= mult; }
+                    else if (syn.stat === 'assassin' && counts[type] >= 2) { /* targeting handled in attack */ }
                     break;
                 }
             }
         });
         
+        // Beast ability passives
+        if (beast.ability === 'taunt') beast.taunt = true;
+        if (beast.ability === 'cleave') beast.cleaveBonus = Math.max(beast.cleaveBonus, 0.4);
+        if (beast.ability === 'heal') beast.regen += 6;
+        if (beast.ability === 'poison') beast.poisonAttacks = true;
+        if (beast.ability === 'backline') beast.targetsBackline = true;
+        
+        // Items
+        (beast.items || []).forEach(item => {
+            const e = item.effect;
+            if (e.atk) beast.atkBonus *= e.atk;
+            if (e.hp) beast.hpBonus *= e.hp;
+            if (e.crit) beast.critChance += e.crit;
+            if (e.critDmg) beast.critDmgMult += e.critDmg;
+            if (e.lifesteal) beast.lifesteal = Math.max(beast.lifesteal, e.lifesteal);
+            if (e.firstStrike) beast.firstStrike = true;
+            if (e.cleave) beast.cleaveBonus = Math.max(beast.cleaveBonus, 0.4);
+            if (e.regen) beast.regen += e.regen;
+            if (e.poison) beast.poisonAttacks = true;
+            if (e.taunt) beast.taunt = true;
+            if (e.mageAtk && beast.types.includes('Mage')) beast.atkBonus *= e.mageAtk;
+            if (e.revive) beast.canRevive = true;
+        });
+        
         beast.effectiveAtk = Math.floor(beast.atk * beast.atkBonus);
         beast.effectiveMaxHp = Math.floor(beast.maxHp * beast.hpBonus);
         beast.currentHp = beast.effectiveMaxHp;
+        beast.poisoned = false; beast.poisonTicks = 0;
+        beast.hasRevived = false;
     });
 }
 
 /* ============================================================
-   ===== BATTLE SYSTEM ========================================
+   ===== BATTLE ===============================================
    ============================================================ */
 function startBattle() {
     if (state.inBattle) return;
-    if (state.deployed.every(s => !s)) {
-        toast('Deploy at least one beast! Drag from Menagerie.', 'error');
-        return;
-    }
+    if (state.deployed.every(s => !s)) { toast('Deploy at least one beast!', 'error'); return; }
     state.inBattle = true;
     document.getElementById('battleStatus').innerText = '⚔️ Battle commences!';
     document.getElementById('battleBtn').disabled = true;
-    
     state.enemies = generateEnemyWave(state.wave);
-    
+    // pad to 8
+    while (state.enemies.length < 8) state.enemies.push(null);
     applySynergiesToTeam(state.deployed);
     state.enemies.forEach(e => {
-        e.atkBonus = 1; e.hpBonus = 1; e.lifesteal = 0; e.critChance = 0.05; e.critDmgMult = 1.5;
+        if (!e) return;
+        e.atkBonus = 1; e.hpBonus = 1; e.lifesteal = 0;
+        e.critChance = 0.05; e.critDmgMult = 1.5;
+        e.armor = 0; e.regen = 0; e.cleaveBonus = 0;
+        if (e.ability === 'cleave') e.cleaveBonus = 0.3;
+        if (e.ability === 'poison') e.poisonAttacks = true;
+        if (e.ability === 'taunt') e.taunt = true;
         e.effectiveAtk = e.atk; e.effectiveMaxHp = e.maxHp; e.currentHp = e.maxHp;
     });
-    
-    renderArena();
-    updateHUD();
-    
+    renderArena(); updateHUD();
+    battleTickCounter = 0;
     setTimeout(battleTick, 800 / state.battleSpeed);
 }
 
 let battleTickCounter = 0;
 function battleTick() {
     if (!state.inBattle) return;
-    
     const playerAlive = state.deployed.filter(b => b && b.currentHp > 0);
     const enemyAlive = state.enemies.filter(e => e && e.currentHp > 0);
     
-    if (playerAlive.length === 0) { endBattle(false); return; }
-    if (enemyAlive.length === 0) { endBattle(true); return; }
+    // Process regen + poison
+    [...playerAlive, ...enemyAlive].forEach(b => {
+        if (b.regen > 0 && b.currentHp > 0) {
+            const heal = Math.min(b.regen, (b.effectiveMaxHp || b.maxHp) - b.currentHp);
+            if (heal > 0) {
+                b.currentHp += heal;
+                const side = state.deployed.includes(b) ? 'player' : 'enemy';
+                showDamagePopup(b, side, heal, false, true);
+                updateUnitHpBar(b, side);
+            }
+        }
+        if (b.poisoned && b.poisonTicks > 0) {
+            const dmg = Math.floor((b.effectiveMaxHp || b.maxHp) * 0.05);
+            b.currentHp = Math.max(0, b.currentHp - dmg);
+            const side = state.deployed.includes(b) ? 'player' : 'enemy';
+            const el = document.getElementById(`unit_${side}_${b.uid}`);
+            if (el) {
+                const p = document.createElement('div');
+                p.className = 'damage-popup poison';
+                p.style.left = '50%'; p.style.top = '40%';
+                p.innerText = '-' + dmg + '☠️';
+                el.appendChild(p);
+                setTimeout(()=>p.remove(), 1000);
+            }
+            updateUnitHpBar(b, side);
+            b.poisonTicks--;
+            if (b.poisonTicks <= 0) b.poisoned = false;
+            if (b.currentHp <= 0) handleDeath(b, side);
+        }
+    });
+    
+    if (playerAlive.filter(b => b.currentHp > 0).length === 0) { endBattle(false); return; }
+    if (enemyAlive.filter(e => e.currentHp > 0).length === 0) { endBattle(true); return; }
     
     battleTickCounter++;
+    
+    // First-strike units always go first
+    const playerFirst = playerAlive.filter(b => b.firstStrike);
+    const enemyFirst = enemyAlive.filter(e => e.firstStrike);
+    const playerRest = playerAlive.filter(b => !b.firstStrike);
+    const enemyRest = enemyAlive.filter(e => !e.firstStrike);
+    
     const attackPlayer = battleTickCounter % 2 === 1;
     
-    if (attackPlayer) {
-        playerAlive.forEach((attacker, idx) => {
-            setTimeout(() => performAttack(attacker, 'player'), idx * 150);
-        });
-    } else {
-        enemyAlive.forEach((attacker, idx) => {
-            setTimeout(() => performAttack(attacker, 'enemy'), idx * 150);
-        });
-    }
+    [...playerFirst, ...(attackPlayer ? playerRest : [])].forEach((a, i) => {
+        setTimeout(() => performAttack(a, 'player'), i * 120);
+    });
+    [...enemyFirst, ...(!attackPlayer ? enemyRest : [])].forEach((a, i) => {
+        setTimeout(() => performAttack(a, 'enemy'), i * 120);
+    });
     
-    setTimeout(battleTick, 1200 / state.battleSpeed);
+    setTimeout(battleTick, 1100 / state.battleSpeed);
 }
 
 function performAttack(attacker, side) {
     if (!state.inBattle || attacker.currentHp <= 0) return;
-    
-    const targets = side === 'player' 
-        ? state.enemies.filter(e => e && e.currentHp > 0)
-        : state.deployed.filter(b => b && b.currentHp > 0);
-    
+    const enemyArr = side === 'player' ? state.enemies : state.deployed;
+    const targets = enemyArr.filter(e => e && e.currentHp > 0);
     if (targets.length === 0) return;
     
+    // Taunt has highest priority
+    const taunters = targets.filter(t => t.taunt);
     let target;
-    const fronts = targets.filter(t => {
-        const arr = side === 'player' ? state.enemies : state.deployed;
-        const slot = arr.indexOf(t);
-        return slot < 3;
-    });
-    if (attacker.role === 'front' && fronts.length > 0) {
-        target = fronts[Math.floor(Math.random() * fronts.length)];
+    
+    if (taunters.length > 0) {
+        target = taunters[Math.floor(Math.random() * taunters.length)];
+    } else if (attacker.targetsBackline) {
+        // Assassin: prefer back row
+        const backs = targets.filter(t => enemyArr.indexOf(t) >= 4);
+        target = backs.length > 0 ? backs[Math.floor(Math.random() * backs.length)] : targets[Math.floor(Math.random() * targets.length)];
     } else {
-        target = targets[Math.floor(Math.random() * targets.length)];
+        // Default: front row first, then back
+        const fronts = targets.filter(t => enemyArr.indexOf(t) < 4);
+        if (attacker.role === 'front' && fronts.length > 0) {
+            target = fronts[Math.floor(Math.random() * fronts.length)];
+        } else if (fronts.length > 0 && Math.random() < 0.75) {
+            target = fronts[Math.floor(Math.random() * fronts.length)];
+        } else {
+            target = targets[Math.floor(Math.random() * targets.length)];
+        }
     }
     
     let dmg = attacker.effectiveAtk || attacker.atk;
     const isCrit = Math.random() < (attacker.critChance || 0.1);
     if (isCrit) dmg = Math.floor(dmg * (attacker.critDmgMult || 1.5));
-    
     const armor = target.armor || 0;
-    dmg = Math.max(1, Math.floor(dmg * (1 - armor * 0.3)));
+    dmg = Math.max(1, Math.floor(dmg * (1 - Math.min(armor * 0.3, 0.75))));
     
-    target.currentHp = Math.max(0, target.currentHp - dmg);
+    dealDamage(target, side === 'player' ? 'enemy' : 'player', dmg, isCrit);
     
-    if (attacker.lifesteal > 0) {
-        const heal = Math.floor(dmg * attacker.lifesteal);
-        attacker.currentHp = Math.min(
-            attacker.effectiveMaxHp || attacker.maxHp,
-            attacker.currentHp + heal
-        );
-        if (heal > 0) showDamagePopup(attacker, side, heal, false, true);
+    // Cleave: hit adjacent target too
+    if (attacker.cleaveBonus > 0) {
+        const tIdx = enemyArr.indexOf(target);
+        const adjacent = targets.filter(t => t !== target && Math.abs(enemyArr.indexOf(t) - tIdx) <= 1);
+        if (adjacent.length > 0) {
+            const cleaveTarget = adjacent[Math.floor(Math.random() * adjacent.length)];
+            const cleaveDmg = Math.max(1, Math.floor(dmg * attacker.cleaveBonus));
+            setTimeout(() => {
+                if (cleaveTarget.currentHp > 0) {
+                    dealDamage(cleaveTarget, side === 'player' ? 'enemy' : 'player', cleaveDmg, false, true);
+                }
+            }, 150);
+        }
     }
     
-    const attackerEl = document.getElementById(`unit_${side}_${attacker.uid}`);
-    const targetSide = side === 'player' ? 'enemy' : 'player';
-    const targetEl = document.getElementById(`unit_${targetSide}_${target.uid}`);
+    // Poison
+    if (attacker.poisonAttacks && target.currentHp > 0) {
+        target.poisoned = true;
+        target.poisonTicks = 3;
+    }
     
+    // Lifesteal
+    if (attacker.lifesteal > 0) {
+        const heal = Math.floor(dmg * attacker.lifesteal);
+        if (heal > 0) {
+            attacker.currentHp = Math.min(attacker.effectiveMaxHp || attacker.maxHp, attacker.currentHp + heal);
+            showDamagePopup(attacker, side, heal, false, true);
+            updateUnitHpBar(attacker, side);
+        }
+    }
+    
+    // Animations
+    const attackerEl = document.getElementById(`unit_${side}_${attacker.uid}`);
     if (attackerEl) {
         attackerEl.classList.add('attacking');
         setTimeout(() => attackerEl.classList.remove('attacking'), 400);
     }
+}
+
+function dealDamage(target, targetSide, dmg, isCrit, isCleave) {
+    target.currentHp = Math.max(0, target.currentHp - dmg);
+    const targetEl = document.getElementById(`unit_${targetSide}_${target.uid}`);
     if (targetEl) {
         setTimeout(() => {
             targetEl.classList.add('hit');
             setTimeout(() => targetEl.classList.remove('hit'), 300);
-        }, 200);
+        }, 100);
     }
-    
-    setTimeout(() => showDamagePopup(target, targetSide, dmg, isCrit), 250);
-    setTimeout(() => updateUnitHpBar(target, targetSide), 250);
+    setTimeout(() => {
+        if (isCleave) {
+            const el = document.getElementById(`unit_${targetSide}_${target.uid}`);
+            if (el) {
+                const p = document.createElement('div');
+                p.className = 'damage-popup cleave';
+                p.style.left = '50%'; p.style.top = '30%';
+                p.innerText = '-' + dmg + '⚔';
+                el.appendChild(p);
+                setTimeout(()=>p.remove(), 1000);
+            }
+        } else {
+            showDamagePopup(target, targetSide, dmg, isCrit);
+        }
+        updateUnitHpBar(target, targetSide);
+    }, 150);
     
     if (target.currentHp <= 0) {
-        setTimeout(() => {
-            if (targetEl) {
-                targetEl.classList.add('dying');
-                setTimeout(() => {
-                    if (targetEl.parentNode) targetEl.parentNode.removeChild(targetEl);
-                }, 600);
-            }
-            if (side === 'player') state.totalKills++;
-        }, 400);
+        // Revive check
+        if (target.canRevive && !target.hasRevived) {
+            target.hasRevived = true;
+            target.currentHp = Math.floor((target.effectiveMaxHp || target.maxHp) * 0.5);
+            setTimeout(() => {
+                showDamagePopup(target, targetSide, Math.floor(target.currentHp), false, true);
+                updateUnitHpBar(target, targetSide);
+                toast(`✨ ${target.name} REVIVED!`, 'epic');
+            }, 300);
+            return;
+        }
+        handleDeath(target, targetSide);
     }
+}
+
+function handleDeath(target, targetSide) {
+    setTimeout(() => {
+        const targetEl = document.getElementById(`unit_${targetSide}_${target.uid}`);
+        if (targetEl) {
+            targetEl.classList.add('dying');
+            setTimeout(() => { if (targetEl.parentNode) targetEl.parentNode.removeChild(targetEl); }, 600);
+        }
+        if (targetSide === 'enemy') state.totalKills++;
+    }, 300);
 }
 
 function showDamagePopup(target, side, amount, isCrit, isHeal) {
@@ -1933,8 +1837,7 @@ function showDamagePopup(target, side, amount, isCrit, isHeal) {
     if (!el) return;
     const popup = document.createElement('div');
     popup.className = 'damage-popup' + (isCrit ? ' crit' : '') + (isHeal ? ' heal' : '');
-    popup.style.left = '50%';
-    popup.style.top = '20%';
+    popup.style.left = '50%'; popup.style.top = '20%';
     popup.innerText = (isHeal ? '+' : '-') + amount + (isCrit ? '!' : '');
     el.appendChild(popup);
     setTimeout(() => popup.remove(), 1000);
@@ -1956,14 +1859,9 @@ function updateUnitHpBar(beast, side) {
 function endBattle(victory) {
     state.inBattle = false;
     const survivorsCount = state.deployed.filter(b => b && b.currentHp > 0).length;
-    const killsThisWave = state.enemies.length - state.enemies.filter(e => e.currentHp > 0).length;
+    const killsThisWave = state.enemies.filter(e => e && e.currentHp <= 0).length;
     
-    state.deployed.forEach(b => {
-        if (b) {
-            b.currentHp = b.maxHp;
-            b.deployed = true;
-        }
-    });
+    state.deployed.forEach(b => { if (b) { b.currentHp = b.maxHp; b.deployed = true; b.poisoned = false; b.hasRevived = false; } });
     
     const modal = document.getElementById('resultModal');
     const modalContent = document.getElementById('resultModalContent');
@@ -1971,26 +1869,32 @@ function endBattle(victory) {
     const body = document.getElementById('resultBody');
     const stats = document.getElementById('resultStats');
     const nextBtn = document.getElementById('nextWaveBtn');
-    
     modalContent.className = 'modal ' + (victory ? 'victory' : 'defeat');
     
     if (victory) {
-        const goldReward = 30 + (state.wave * 10);
+        const isBoss = state.wave % 5 === 0;
+        const goldReward = (30 + (state.wave * 10)) * (isBoss ? 2 : 1);
         state.gold += goldReward;
-        
+        let bonusItem = '';
+        if (isBoss) {
+            const item = { ...ITEM_DATABASE[Math.floor(Math.random() * ITEM_DATABASE.length)], uid: nextUid() };
+            if (state.items.length < 8) {
+                state.items.push(item);
+                bonusItem = `<div class="stat-row"><span>🏆 Boss Item</span><strong>${item.icon} ${item.name}</strong></div>`;
+            }
+        }
         saveHighWaveToTavern(state.wave);
-        
-        title.innerText = '🏆 VICTORY!';
-        body.innerHTML = `<p style="font-style:italic; color:var(--text-dim);">The beasts cower before thy might!</p>`;
+        title.innerText = isBoss ? '🏆 BOSS DEFEATED!' : '🏆 VICTORY!';
+        body.innerHTML = `<p style="font-style:italic; color:var(--text-dim);">${isBoss ? 'A legendary triumph!' : 'The beasts cower before thy might!'}</p>`;
         stats.innerHTML = `
-            <div class="stat-row"><span>Wave Cleared</span><strong>${state.wave}</strong></div>
+            <div class="stat-row"><span>Wave Cleared</span><strong>${state.wave}${isBoss?' 🏰':''}</strong></div>
             <div class="stat-row"><span>Enemies Defeated</span><strong>${killsThisWave}</strong></div>
             <div class="stat-row"><span>Survivors</span><strong>${survivorsCount}/${state.deployed.filter(b=>b).length}</strong></div>
             <div class="stat-row"><span>Gold Earned</span><strong>+${goldReward} 🪙</strong></div>
+            ${bonusItem}
             <div class="stat-row"><span>Total Kills</span><strong>${state.totalKills}</strong></div>
         `;
         nextBtn.innerText = `Wave ${state.wave + 1} →`;
-        nextBtn.style.display = 'block';
         nextBtn.onclick = nextWave;
     } else {
         if (state.wave > state.highestWave) {
@@ -1998,67 +1902,51 @@ function endBattle(victory) {
             localStorage.setItem('beastArenaHighWave', state.wave);
         }
         saveHighWaveToTavern(state.wave);
-        
         title.innerText = '💀 DEFEAT';
-        body.innerHTML = `<p style="font-style:italic; color:var(--text-dim);">Thy beasts have fallen... but legends never truly die.</p>`;
+        body.innerHTML = `<p style="font-style:italic; color:var(--text-dim);">Thy beasts have fallen... but legends never die.</p>`;
         stats.innerHTML = `
             <div class="stat-row"><span>Final Wave</span><strong>${state.wave}</strong></div>
             <div class="stat-row"><span>Total Kills</span><strong>${state.totalKills}</strong></div>
-            <div class="stat-row"><span>Team Size</span><strong>${state.deployed.filter(b=>b).length}</strong></div>
-            <div class="stat-row"><span>🏆 Highest Wave Ever</span><strong style="color:var(--gold);">${state.highestWave}</strong></div>
+            <div class="stat-row"><span>🏆 Highest Wave</span><strong style="color:var(--gold);">${state.highestWave}</strong></div>
         `;
         nextBtn.innerText = '⚔ NEW EXPEDITION';
         nextBtn.onclick = resetGame;
     }
-    
     modal.classList.add('show');
-    renderArena();
-    updateHUD();
+    renderArena(); renderItems(); updateHUD();
 }
 
 function nextWave() {
     state.wave++;
-    state.enemies = [];
+    state.enemies = new Array(8).fill(null);
     rollShop();
-    renderShop();
-    renderArena();
-    updateHUD();
+    renderShop(); renderArena(); updateHUD();
     document.getElementById('resultModal').classList.remove('show');
     document.getElementById('battleStatus').innerText = 'Prepare thy team...';
-    toast(`⚔️ Wave ${state.wave} approaches!`, 'success');
+    const isBoss = state.wave % 5 === 0;
+    toast(isBoss ? `🏰 BOSS WAVE ${state.wave} approaches!` : `⚔️ Wave ${state.wave} approaches!`, isBoss ? 'error' : 'success');
 }
 
 function resetGame() {
-    state.gold = 100;
-    state.wave = 1;
-    state.roster = [];
-    state.deployed = [null,null,null,null,null,null];
-    state.enemies = [];
-    state.totalKills = 0;
-    state.shop = [];
+    state = {
+        gold: 100, wave: 1, roster: [],
+        deployed: new Array(8).fill(null), enemies: new Array(8).fill(null),
+        shop: [], items: [], battleSpeed: state.battleSpeed, inBattle: false,
+        highestWave: state.highestWave, totalKills: 0, pendingDiscardUid: null
+    };
     rollShop();
-    renderShop();
-    renderRoster();
-    renderArena();
-    updateHUD();
-    updateSynergies();
+    renderShop(); renderRoster(); renderItems(); renderArena(); updateHUD(); updateSynergies();
     document.getElementById('resultModal').classList.remove('show');
-    document.getElementById('introCard').style.display = 'grid';
     toast('🦁 A new expedition begins!', 'success');
 }
 
-/* ============================================================
-   ===== SPEED CONTROL ========================================
-   ============================================================ */
 function setSpeed(s) {
     state.battleSpeed = s;
     document.querySelectorAll('.btn.speed').forEach(b => b.classList.remove('active'));
-    document.getElementById('speed' + s).classList.add('active');
+    const btn = document.getElementById('speed' + s);
+    if (btn) btn.classList.add('active');
 }
 
-/* ============================================================
-   ===== TOAST ================================================
-   ============================================================ */
 function toast(msg, type = 'success') {
     const c = document.getElementById('toastContainer');
     const t = document.createElement('div');
@@ -2068,38 +1956,28 @@ function toast(msg, type = 'success') {
     setTimeout(() => t.remove(), 3000);
 }
 
-/* ============================================================
-   ===== KEYBOARD =============================================
-   ============================================================ */
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-        closeHelpModal();
-        closeDiscardModal();
-    }
+    if (e.key === 'Escape') { closeHelpModal(); closeDiscardModal(); }
     if (e.key === ' ' && !state.inBattle) { e.preventDefault(); startBattle(); }
     if (e.key === 'r' || e.key === 'R') rerollShop();
+    if (e.key === 'i' || e.key === 'I') buyRandomItem();
     if (e.key === '1') setSpeed(1);
     if (e.key === '2') setSpeed(2);
     if (e.key === '4') setSpeed(4);
+    if (e.key === '8') setSpeed(8);
     if (e.key === 'h' || e.key === 'H') openHelpModal();
 });
 
-/* ============================================================
-   ===== TAVERN LEADERBOARD INTEGRATION =======================
-   ============================================================ */
 function saveHighWaveToTavern(waveReached) {
     let scores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
     const currentBest = scores.beastmaster_wave || 0;
-    
     if (waveReached > currentBest) {
         scores.beastmaster_wave = waveReached;
         localStorage.setItem('arcadeScores', JSON.stringify(scores));
-        
         if (window.MegaplexCloud && typeof window.MegaplexCloud.saveToCloud === 'function') {
             window.MegaplexCloud.saveToCloud();
         }
-        
-        toast(`🏆 NEW RECORD! Wave ${waveReached} saved to Hall of Fame!`, 'success');
+        toast(`🏆 NEW RECORD! Wave ${waveReached}!`, 'success');
     } else {
         if (window.MegaplexCloud && typeof window.MegaplexCloud.saveToCloud === 'function') {
             window.MegaplexCloud.saveToCloud();
