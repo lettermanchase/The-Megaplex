@@ -2638,6 +2638,15 @@
              4. Set data-name (lowercase search keywords)
              5. Replace the emoji icon, title, description and tag
         -->
+        <a href="dungeondice.html" class="card-link amethyst" data-category="logic arcade fighting" data-name="dungeon dice d20 turn based rpg knight rogue mage cleric dragons crawler" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
+            <span class="new-badge">NEW</span>
+            <div class="card-thumb"><span class="thumb-icon">🎲</span></div>
+            <div class="card-body">
+                <h2>Dungeon Dice</h2>
+                <p class="card-desc">A turn-based D&D dice crawler! Choose your hero, roll the bones, battle monsters & descend ever deeper.</p>
+                <div class="card-bottom"><span class="card-tag">Dice RPG</span><span class="card-cta">Embark ➔</span></div>
+            </div>
+        </a>
         <a href="gladiatorspit.html" class="card-link crimson" data-category="fighting pvp arcade" data-name="gladiator pit arena survival raytracing first person shop loadout" onmouseenter="sfx.hover()" onclick="trackPlayed(this); sfx.start()">
             <span class="new-badge">NEW</span>
             <div class="card-thumb"><span class="thumb-icon">⚔️</span></div>
@@ -3385,6 +3394,28 @@
       desc: 'Amass 30,000+ 🪙 in The Wandering Merchant.',
       reward: 5000,
       check: (s) => (s.merchant_gold || 0) >= 30000 },
+      // ════════════════════════════════════════════════════════════
+// 🎲 DUNGEON DICE (key: dungeon_dice)
+// ════════════════════════════════════════════════════════════
+{ id: 'ach_dice_1', tier: 1, icon: '🎲', title: 'First Delve',
+  desc: 'Score 500 points in Dungeon Dice.',
+  reward: 800,
+  check: (s) => (s.dungeon_dice || 0) >= 500 },
+
+{ id: 'ach_dice_2', tier: 1, icon: '🗝️', title: 'Lockpick Apprentice',
+  desc: 'Score 1,500 points in Dungeon Dice.',
+  reward: 1500,
+  check: (s) => (s.dungeon_dice || 0) >= 1500 },
+
+{ id: 'ach_dice_3', tier: 2, icon: '⚔️', title: 'Dungeon Veteran',
+  desc: 'Score 3,500 points in Dungeon Dice.',
+  reward: 3000,
+  check: (s) => (s.dungeon_dice || 0) >= 3500 },
+
+{ id: 'ach_dice_4', tier: 2, icon: '🐲', title: 'Crit of Legend',
+  desc: 'Score 7,000+ points in Dungeon Dice.',
+  reward: 5000,
+  check: (s) => (s.dungeon_dice || 0) >= 7000 },
     // ════════════════════════════════════════════════════════════
     // 🏛️ COMPLETIONIST (claim all OTHER trophies)
     // ════════════════════════════════════════════════════════════
@@ -3602,7 +3633,8 @@ function calculateTokens() {
     { key: 'potion_panic',        title: '🧪 Potion Panic (Best Day Score)',       unit: ' Pts', reverse: false, default: 0 },
     { key: 'shadow_archer_score', title: '🏹 Shadow Archer (Highest Score)',       unit: ' Pts', reverse: false, default: 0 },
     { key: 'gladiator_score',     title: '⚔️ Gladiator\'s Pit (Highest Score)',    unit: ' Pts', reverse: false, default: 0 },
-    { key: 'merchant_gold',       title: '🛒 The Wandering Merchant (Best Gold)',  unit: ' 🪙',  reverse: false, default: 0 }
+    { key: 'merchant_gold',       title: '🛒 The Wandering Merchant (Best Gold)',  unit: ' 🪙',  reverse: false, default: 0 },
+    { key: 'dungeon_dice',        title: '🎲 Dungeon Dice (Highest Score)',         unit: ' Pts', reverse: false, default: 0 }
 ];
 function loadScores() {
     let currentScores = JSON.parse(localStorage.getItem('arcadeScores')) || {};
@@ -4110,7 +4142,8 @@ function escapeHtml(str) {
 
         /* ====== Carousel ====== */
         const featuredGames = [
-    { icon: "🏹", title: "Shadow Archer", desc: "Defend the Citadel from endless waves of shadow creatures! Slay 5 epic bosses including the Eternal Dragon!", link: "shadowarcher.html" },
+        { icon: "🎲", title: "Dungeon Dice", desc: "A turn-based D&D dice crawler! Choose your hero, roll the bones, battle monsters & descend ever deeper.", link: "dungeondice.html" },
+        { icon: "🏹", title: "Shadow Archer", desc: "Defend the Citadel from endless waves of shadow creatures! Slay 5 epic bosses including the Eternal Dragon!", link: "shadowarcher.html" },
 ];
         let carouselIndex = 0, carouselInterval;
         function renderCarousel() {
@@ -4702,7 +4735,8 @@ const BOUNTY_TEMPLATES = [
       trackKey: 'beastmaster_wave', type: 'beat', target: 3,
       cost: 300, reward: 1100, gameLink: 'beastmaster.html' },
 
-    // ===== MEDIUM =====
+    
+      // ===== MEDIUM =====
     { id: 'b_archer_med', difficulty: 'medium', icon: '🏹', title: 'Tower Sentinel',
       desc: 'Set a NEW Shadow Archer score record of at least 1,500.',
       trackKey: 'shadow_archer_score', type: 'beat', target: 1500,
@@ -4743,7 +4777,31 @@ const BOUNTY_TEMPLATES = [
     { id: 'b_potion_legend', difficulty: 'legendary', icon: '✨', title: 'Legendary Brewmaster',
       desc: 'Set a NEW Potion Panic record of 3,000+.',
       trackKey: 'potion_panic', type: 'beat', target: 3000,
-      cost: 5500, reward: 21000, prestigeReward: 1, gameLink: 'potion-panic.html' }
+      cost: 5500, reward: 21000, prestigeReward: 1, gameLink: 'potion-panic.html' },
+
+      // Easy
+{ id: 'b_dice_easy', difficulty: 'easy', icon: '🎲', title: 'Brave the Bones',
+  desc: 'Set a NEW Dungeon Dice record of at least 500 points.',
+  trackKey: 'dungeon_dice', type: 'beat', target: 500,
+  cost: 250, reward: 950, gameLink: 'dungeondice.html' },
+
+// Medium
+{ id: 'b_dice_med', difficulty: 'medium', icon: '🗡️', title: 'Deep Delver',
+  desc: 'Set a NEW Dungeon Dice record of at least 2,000 points.',
+  trackKey: 'dungeon_dice', type: 'beat', target: 2000,
+  cost: 750, reward: 2900, gameLink: 'dungeondice.html' },
+
+// Hard
+{ id: 'b_dice_hard', difficulty: 'hard', icon: '⚰️', title: 'Reaper\'s Bane',
+  desc: 'Set a NEW Dungeon Dice record of at least 5,000 points.',
+  trackKey: 'dungeon_dice', type: 'beat', target: 5000,
+  cost: 1800, reward: 7000, gameLink: 'dungeondice.html' },
+
+// Legendary
+{ id: 'b_dice_legend', difficulty: 'legendary', icon: '🐉', title: 'Lord of the Vault',
+  desc: 'Set a NEW Dungeon Dice record of 10,000+ points.',
+  trackKey: 'dungeon_dice', type: 'beat', target: 10000,
+  cost: 5000, reward: 19000, prestigeReward: 1, gameLink: 'dungeondice.html' },
 ];
 // ▲▲▲ END QUEST TEMPLATES ▲▲▲
 
@@ -5136,7 +5194,8 @@ const DAILY_GAME_POOL = [
     { key: 'potion_panic',      title: '🧪 Potion Panic',       link: 'potion-panic.html', unit: ' pts',  reverse: false },
     { key: 'shadow_archer_score', title: '🏹 Shadow Archer',    link: 'shadowarcher.html', unit: ' pts',  reverse: false },
     { key: 'gladiator_score',   title: '⚔️ Gladiator\'s Pit',   link: 'gladiatorspit.html', unit: ' pts', reverse: false },
-    { key: 'merchant_gold',     title: '🛒 The Wandering Merchant', link: 'merchant.html',  unit: ' 🪙',  reverse: false }
+    { key: 'merchant_gold',     title: '🛒 The Wandering Merchant', link: 'merchant.html',  unit: ' 🪙',  reverse: false },
+    { key: 'dungeon_dice',      title: '🎲 Dungeon Dice',       link: 'dungeondice.html',  unit: ' pts',  reverse: false }
 ];
 // ▲▲▲ END DAILY QUEST POOL ▲▲▲
 // ▲▲▲ END DAILY QUEST POOL ▲▲▲
